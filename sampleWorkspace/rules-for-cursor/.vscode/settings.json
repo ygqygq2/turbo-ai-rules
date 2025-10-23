@@ -1,0 +1,7 @@
+{
+  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.copilot.enabled": false,
+  "turbo-ai-rules.adapters.continue.enabled": false,
+  "turbo-ai-rules.sync.conflictStrategy": "priority",
+  "turbo-ai-rules.sync.auto": false
+}

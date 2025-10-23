@@ -1,0 +1,275 @@
+{
+  "name": "turbo-ai-rules",
+  "displayName": "Turbo AI Rules",
+  "description": "Sync AI coding rules from external Git repositories and generate config files for Cursor, Copilot, Continue.",
+  "version": "0.0.1",
+  "publisher": "ygqygq2",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ygqygq2/turbo-ai-rules.git"
+  },
+  "engines": {
+    "vscode": "^1.105.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages",
+    "Snippets"
+  ],
+  "keywords": [
+    "ai",
+    "rules",
+    "cursor",
+    "copilot",
+    "continue",
+    "coding-standards"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "l10n": "./l10n",
+  "contributes": {
+    "commands": [
+      {
+        "command": "turbo-ai-rules.addSource",
+        "title": "Add Rule Source",
+        "category": "Turbo AI Rules",
+        "icon": "$(add)"
+      },
+      {
+        "command": "turbo-ai-rules.removeSource",
+        "title": "Remove Rule Source",
+        "category": "Turbo AI Rules",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "turbo-ai-rules.syncRules",
+        "title": "Sync Rules",
+        "category": "Turbo AI Rules",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "turbo-ai-rules.searchRules",
+        "title": "Search Rules",
+        "category": "Turbo AI Rules",
+        "icon": "$(search)"
+      },
+      {
+        "command": "turbo-ai-rules.generateConfigs",
+        "title": "Generate Config Files",
+        "category": "Turbo AI Rules",
+        "icon": "$(file-code)"
+      },
+      {
+        "command": "turbo-ai-rules.manageSource",
+        "title": "Manage Sources",
+        "category": "Turbo AI Rules",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "turbo-ai-rules.refresh",
+        "title": "Refresh",
+        "category": "Turbo AI Rules",
+        "icon": "$(refresh)"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "turboAiRulesExplorer",
+          "name": "AI Rules",
+          "icon": "$(file-code)",
+          "contextualTitle": "Turbo AI Rules"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "turboAiRulesExplorer",
+        "contents": "No rule sources configured.\n[Add Source](command:turbo-ai-rules.addSource)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "turbo-ai-rules.addSource",
+          "when": "view == turboAiRulesExplorer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "turbo-ai-rules.syncRules",
+          "when": "view == turboAiRulesExplorer",
+          "group": "navigation@2"
+        },
+        {
+          "command": "turbo-ai-rules.refresh",
+          "when": "view == turboAiRulesExplorer",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "turbo-ai-rules.syncRules",
+          "when": "view == turboAiRulesExplorer && viewItem == source",
+          "group": "inline@1"
+        },
+        {
+          "command": "turbo-ai-rules.removeSource",
+          "when": "view == turboAiRulesExplorer && viewItem == source",
+          "group": "inline@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Turbo AI Rules",
+      "properties": {
+        "turbo-ai-rules.storage.useLocalConfig": {
+          "type": "boolean",
+          "default": false,
+          "description": "Store authentication in local config files instead of VSCode settings (not synced)"
+        },
+        "turbo-ai-rules.storage.useGlobalCache": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use global cache directory for storing cloned repositories"
+        },
+        "turbo-ai-rules.storage.projectLocalDir": {
+          "type": "string",
+          "default": ".ai-rules",
+          "description": "Local directory for project-specific rules"
+        },
+        "turbo-ai-rules.storage.autoGitignore": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically add generated files to .gitignore"
+        },
+        "turbo-ai-rules.adapters.cursor.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Cursor adapter (.cursorrules)"
+        },
+        "turbo-ai-rules.adapters.cursor.autoUpdate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-update .cursorrules after sync"
+        },
+        "turbo-ai-rules.adapters.copilot.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable GitHub Copilot adapter (.github/.copilot-instructions.md)"
+        },
+        "turbo-ai-rules.adapters.copilot.autoUpdate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-update Copilot config after sync"
+        },
+        "turbo-ai-rules.adapters.continue.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable Continue adapter (.continuerules)"
+        },
+        "turbo-ai-rules.adapters.continue.autoUpdate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-update Continue config after sync"
+        },
+        "turbo-ai-rules.sync.auto": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic synchronization"
+        },
+        "turbo-ai-rules.sync.interval": {
+          "type": "number",
+          "default": 30,
+          "minimum": 5,
+          "description": "Sync interval in minutes"
+        },
+        "turbo-ai-rules.sync.onStartup": {
+          "type": "boolean",
+          "default": true,
+          "description": "Sync rules on startup"
+        },
+        "turbo-ai-rules.sync.conflictStrategy": {
+          "type": "string",
+          "default": "priority",
+          "enum": [
+            "priority",
+            "merge",
+            "skip-duplicates"
+          ],
+          "enumDescriptions": [
+            "Use highest priority rule when conflicts occur",
+            "Merge conflicting rules (not implemented yet)",
+            "Skip duplicate rules, keep first occurrence"
+          ],
+          "description": "Strategy for resolving rule conflicts"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "rm -rf out && npm run esbuild-base -- --minify",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "watch": "npm run esbuild --watch",
+    "pretest": "npm run lint",
+    "compile": "npm run esbuild-base -- --sourcemap",
+    "package": "vsce package --no-dependencies",
+    "publish": "vsce publish --no-dependencies",
+    "clean": "rimraf out/",
+    "test-compile": "npm run clean && tsc -p ./ && npm run compile",
+    "test": "npm run test-compile && vscode-test",
+    "test-grep": "vscode-test -f",
+    "test:suite:mocha": "npm run test-compile && node out/test/runTests.js",
+    "test:suite": "node out/test/runTests.js",
+    "test:unit": "vitest unit --watch=false",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src",
+    "lint-fix": "eslint --fix src",
+    "prepush": "pnpm run lint",
+    "postinstall": "simple-git-hooks",
+    "preinstall": "npx only-allow pnpm"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.38.0",
+    "@types/fs-extra": "^11.0.4",
+    "@types/lodash": "^4.17.20",
+    "@types/lodash-es": "^4.17.12",
+    "@types/mocha": "^10.0.10",
+    "@types/module-alias": "^2.0.4",
+    "@types/node": "~24.9.1",
+    "@types/tmp": "^0.2.6",
+    "@types/vscode": "^1.105.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vscode/l10n": "^0.0.18",
+    "@vscode/l10n-dev": "^0.0.35",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.25.11",
+    "eslint": "^9.38.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "fs-extra": "^11.3.2",
+    "glob": "^11.0.3",
+    "jest-mock-vscode": "^4.7.0",
+    "lint-staged": "^16.2.5",
+    "mocha": "^11.7.4",
+    "rimraf": "^6.0.1",
+    "simple-git-hooks": "^2.13.1",
+    "tmp": "^0.2.5",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.2",
+    "vite": "^7.1.11",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@ygqygq2/vscode-log": "^0.0.3",
+    "gray-matter": "^4.0.3",
+    "simple-git": "^3.28.0"
+  }
+}

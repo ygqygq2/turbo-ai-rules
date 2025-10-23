@@ -1,0 +1,9 @@
+{
+  "folders": [
+    { "path": "rules-for-cursor" },
+    { "path": "rules-for-copilot" },
+    { "path": "rules-for-continer" },
+    { "path": "rules-for-default" },
+  ],
+  "settings": {},
+}

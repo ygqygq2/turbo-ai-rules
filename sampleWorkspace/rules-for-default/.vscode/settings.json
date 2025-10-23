@@ -1,0 +1,6 @@
+{
+  "turbo-ai-rules.adapters.cursor.enabled": false,
+  "turbo-ai-rules.adapters.copilot.enabled": false,
+  "turbo-ai-rules.adapters.continue.enabled": false,
+  "turbo-ai-rules.adapters.rules.enabled": true
+}
