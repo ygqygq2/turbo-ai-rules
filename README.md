@@ -53,10 +53,10 @@ Turbo AI Rules: Sync Rules
 
 ## 规则文件格式
 
-规则文件使用 MDC (Markdown + YAML Frontmatter) 格式：
+规则文件使用 MDC (Markdown + YAML Frontmatter) 格式:
 
-## markdown
-
+```markdown
+---
 id: typescript-naming
 title: TypeScript 命名规范
 priority: high
@@ -64,7 +64,6 @@ tags: [typescript, naming, conventions]
 version: 1.0.0
 author: Your Name
 description: TypeScript 项目的命名约定
-
 ---
 
 # TypeScript 命名规范
@@ -77,7 +76,7 @@ description: TypeScript 项目的命名约定
 
 ## 示例
 
-```typescript
+\`\`\`typescript
 // 好的命名
 const userName = 'John';
 class UserService {}
@@ -86,6 +85,7 @@ const MAX_RETRY_COUNT = 3;
 // 避免
 const user_name = 'John'; // ❌
 class userservice {} // ❌
+\`\`\`
 ```
 
 ## 配置选项
@@ -137,60 +137,100 @@ class userservice {} // ❌
 - **skip-duplicates**：保留第一个规则，跳过重复
 - **merge**：合并规则（待实现）
 
+## 工作原理
+
+1. **规则源管理**: 从 Git 仓库克隆规则到全局缓存 (`~/.turbo-ai-rules/`)
+2. **规则解析**: 解析 MDC 格式的规则文件,提取元数据和内容
+3. **冲突解决**: 根据配置的策略(优先级/跳过重复)合并来自多个源的规则
+4. **适配器生成**: 使用适配器模式为不同 AI 工具生成配置文件
+5. **自动同步**: 定时检查规则源更新并自动重新生成配置
+
+## 目录结构
+
+```
+~/.turbo-ai-rules/          # 全局缓存目录
+  └── sources/              # Git 仓库克隆目录
+      └── <source-id>/      # 各规则源
+
+<workspace>/                # 工作区目录
+  ├── .cursorrules          # Cursor 配置
+  ├── .continuerules        # Continue 配置
+  └── .github/
+      └── .copilot-instructions.md  # Copilot 配置
+```
+
 ## 开发
 
-### 架构
+查看 [开发文档](./docs/DEVELOPMENT.md) 了解如何参与开发。
 
-```
-src/
-├── adapters/ # AI 工具适配器
-│ ├── CursorAdapter.ts
-│ ├── CopilotAdapter.ts
-│ └── ContinueAdapter.ts
-├── commands/ # 命令处理器
-├── parsers/ # MDC 解析器
-├── providers/ # UI 提供者
-├── services/ # 核心服务
-│ ├── ConfigManager.ts
-│ ├── GitManager.ts
-│ ├── RulesManager.ts
-│ └── FileGenerator.ts
-├── types/ # TypeScript 类型
-└── utils/ # 工具函数
-```
-
-### 构建
+### 快速开始
 
 ```bash
+# 安装依赖
 pnpm install
+
+# 编译
 pnpm run compile
-```
 
-### 测试
+# 运行测试
+pnpm test
 
-```bash
-pnpm test # 运行所有测试
-pnpm test:unit # 单元测试
-pnpm test:suite:mocha # 集成测试
+# 观察模式(开发时)
+pnpm run watch
 ```
 
 ## 常见问题
 
 ### Q: 私有仓库需要什么权限？
 
-A: 需要具有读取权限的 Personal Access Token (PAT)
+A: 需要具有读取权限的 Personal Access Token (PAT)。在 GitHub 上创建 Token 时,选择 `repo` 权限即可。
 
 ### Q: 规则文件必须是 .md 格式吗？
 
-A: 是的，目前仅支持 Markdown 格式的规则文件
+A: 是的,目前仅支持 Markdown 格式的规则文件,文件名需以 `.md` 结尾。
 
 ### Q: 可以手动编辑生成的配置文件吗？
 
-A: 不建议，因为下次同步会覆盖手动修改。应该修改源规则文件。
+A: 不建议手动编辑生成的配置文件(如 `.cursorrules`),因为下次同步会覆盖手动修改。应该修改规则源仓库中的规则文件。
 
 ### Q: 如何调试同步问题？
 
-A: 查看输出面板（Output > Turbo AI Rules）的日志
+A: 查看 VS Code 的输出面板(View > Output),选择 "Turbo AI Rules" 频道查看详细日志。
+
+### Q: 多个规则源有相同 ID 的规则怎么办？
+
+A: 扩展会根据配置的冲突策略处理:
+
+- `priority` (默认): 使用优先级最高的规则
+- `skip-duplicates`: 保留第一个出现的规则
+
+### Q: 如何禁用某个 AI 工具的配置生成？
+
+A: 在 VS Code 设置中将对应的适配器禁用,例如:
+
+```json
+{
+  "turbo-ai-rules.adapters.cursor.enabled": false
+}
+```
+
+## 贡献
+
+欢迎贡献代码、提交问题或改进建议!请查看 [贡献指南](./CONTRIBUTING.md)。
+
+## 相关链接
+
+### 📚 文档
+
+- [文档中心](./docs/) - 所有技术文档的索引
+- [架构设计](./docs/01design.md) - 了解架构设计和技术决策
+- [开发指南](./docs/02-development.md) - 参与开发的完整指南
+- [维护文档](./docs/03-maintaining.md) - 日常维护和同步流程
+
+### 🔗 社区
+
+- [GitHub Issues](https://github.com/ygqygq2/turbo-ai-rules/issues) - 问题追踪和功能请求
+- [贡献指南](./CONTRIBUTING.md) - 如何为项目做贡献
 
 ## 许可证
 
