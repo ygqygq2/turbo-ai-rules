@@ -4,7 +4,8 @@
 
 🚀 **从外部 Git 仓库同步 AI 编码规则，自动生成多种 AI 工具的配置文件**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/ygqygq2/turbo-ai-rules)
+[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/ygqygq2.turbo-ai-rules.svg?color=07c160&label=turbo-ai-rules&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=ygqygq2.turbo-ai-rules)
+![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/ygqygq2.turbo-ai-rules)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
 [English](./README.md) | [中文文档](./README.md)
