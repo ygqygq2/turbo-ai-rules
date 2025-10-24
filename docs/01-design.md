@@ -610,7 +610,7 @@ C. 选择性启用（Selective Enable）
 推荐的源码与文档组织方式（只作参考，实际项目已存在实现）：
 
 - src/: 扩展源码（按模块分为 adapters/、commands/、parsers/、providers/、services/、types/、utils/ 等）
-- docs/: 设计与用户文档（本文件位于 docs/01design.md）
+- docs/: 设计与用户文档（本文件位于 docs/01-design.md）
 - sampleWorkspace/: 示例工作区配置
 - out/: 构建产物（编译后）
 
@@ -634,7 +634,7 @@ C. 选择性启用（Selective Enable）
 
 接下来我会：
 
-- 更新项目 `docs/01design.md`（已完成主要替换）；
+- 更新项目 `docs/01-design.md`（已完成主要替换）；
 - 将 Todo 列表更新为“审阅完成并已替换文中实现代码”，并标记任务为已完成；
 - 如果你愿意，我可以把 docs 目录下再补充一份 `MAINTAINING.md`，包含上面提到的维护建议与排查步骤。
 

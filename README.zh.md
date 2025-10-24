@@ -1,0 +1,1973 @@
+# Turbo AI Rules
+
+<div align="center">
+
+🚀 **从外部 Git 仓库同步 AI 编码规则，自动生成多种 AI 工具的配置文件**
+
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/ygqygq2/turbo-ai-rules)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
+
+[English](./README.md) | [中文文档](./README.md)
+
+</div>
+
+---
+
+## 📑 目录
+
+- [功能特性](#功能特性)
+- [快速开始](#快速开始)
+- [命令详解](#命令详解)
+- [配置指南](#配置指南)
+- [规则文件格式](#规则文件格式)
+- [工作原理](#工作原理)
+- [常见问题](#常见问题)
+- [开发](#开发)
+
+---
+
+## ✨ 功能特性
+
+- 🌐 **多源支持**：从多个 Git 仓库同步规则，统一管理
+- 🔄 **自动同步**：定时或手动同步规则更新，保持最新状态
+- 🎯 **智能适配**：自动生成不同 AI 工具的配置文件
+  - `.cursorrules` (Cursor)
+  - `.github/.copilot-instructions.md` (GitHub Copilot)
+  - `.continuerules` (Continue)
+  - **自定义适配器**: 支持配置任意数量的自定义输出(文件或目录)
+  - 默认包含 `rules/` 目录适配器(通用规则，按源组织)
+- 🔍 **规则搜索**：快速查找和浏览规则，支持模糊搜索
+- ⚙️ **冲突解决**：智能处理重复规则(优先级/跳过策略)
+- 🔐 **私有仓库**：支持 Token 认证访问私有仓库
+- 📊 **可视化管理**：树视图和状态栏集成，操作直观
+- 🌍 **多语言支持**：界面支持中文/英文切换
+
+---
+
+## 🚀 快速开始
+
+### 📦 安装
+
+1. 在 VS Code 扩展市场搜索 **Turbo AI Rules**
+2. 点击 **Install** 安装扩展
+3. 重新加载 VS Code
+
+### ⚡ 三步配置
+
+#### 第一步：添加规则源
+
+有三种方式添加规则源：
+
+**方式 1：通过状态栏**
+
+- 点击状态栏右下角的 **🤖 AI Rules** 图标
+- 选择 **Add Source**
+
+**方式 2：通过命令面板**
+
+- 按 `Ctrl+Shift+P` (Mac: `Cmd+Shift+P`)
+- 输入 `Turbo AI Rules: Add Source`
+
+**方式 3：通过树视图**
+
+- 打开侧边栏的 **AI Rules** 视图
+- 点击顶部的 **+** 按钮
+
+输入以下信息：
+
+```
+Git 仓库 URL:  https://github.com/username/ai-rules.git
+分支名:        main (可选，默认 main)
+子路径:        rules/ (可选，如果规则在子目录)
+显示名称:      My Rules (可选，方便识别)
+访问令牌:      ghp_xxxx (仅私有仓库需要)
+```
+
+#### 第二步：同步规则
+
+添加源后，自动触发首次同步。也可以手动同步：
+
+**方式 1：命令面板**
+
+```bash
+Ctrl+Shift+P → Turbo AI Rules: Sync Rules
+```
+
+**方式 2：树视图**
+
+- 点击 AI Rules 视图顶部的 **🔄 Sync** 按钮
+
+**方式 3：状态栏**
+
+- 点击状态栏的 **🤖 AI Rules** → **Sync Rules**
+
+#### 第三步：验证配置文件
+
+同步完成后，检查工作区根目录：
+
+```
+your-workspace/
+├── .cursorrules                           # ✅ Cursor AI 配置
+├── .github/.copilot-instructions.md       # ✅ GitHub Copilot 配置
+├── .continuerules                         # ⚙️ Continue (默认禁用)
+└── rules/                                 # ✅ 通用规则目录 (默认启用)
+    ├── index.md                          # 规则索引
+    └── my-rules/                         # 按源组织
+        ├── typescript-rules.md
+        └── react-rules.md
+```
+
+### 🎉 开始使用
+
+配置文件生成后，AI 工具会自动加载规则：
+
+- **Cursor**: 打开 Cursor，规则已生效
+- **GitHub Copilot**: 在 VS Code 中使用 Copilot，遵循规则建议
+- **Continue**: 启用后，使用 Continue 插件时应用规则
+
+---
+
+## 📋 命令详解
+
+扩展提供 6 个核心命令，涵盖规则源管理、同步和配置生成的完整流程。
+
+### 1. 🔗 添加规则源 (Add Source)
+
+**命令**: `Turbo AI Rules: Add Source`
+
+**功能**: 添加新的 Git 规则仓库作为规则源
+
+**使用场景**:
+
+- 首次配置扩展
+- 添加团队共享的规则仓库
+- 添加个人的规则仓库
+- 添加社区优质规则源
+
+**操作步骤**:
+
+1. 执行命令 (或点击状态栏/树视图的 + 按钮)
+2. 输入 Git 仓库 URL
+   - 公开仓库: `https://github.com/username/repo.git`
+   - 私有仓库: 需要在后续步骤提供访问令牌
+3. 选择分支 (可选，默认 `main`)
+4. 指定子路径 (可选，如果规则文件在子目录如 `rules/`)
+5. 设置显示名称 (可选，方便在树视图中识别)
+6. 提供访问令牌 (仅私有仓库需要)
+
+**示例**:
+
+```
+URL:      https://github.com/company/coding-rules.git
+分支:     main
+子路径:   best-practices/
+名称:     Company Rules
+Token:    ghp_xxxxxxxxxxxx (私有仓库)
+```
+
+**提示**:
+
+- 🔐 访问令牌仅需 `repo` (完整仓库访问) 权限
+- 📁 使用子路径可以只同步仓库中的特定目录
+- 🏷️ 设置清晰的名称便于管理多个规则源
+
+---
+
+### 2. 🗑️ 删除规则源 (Remove Source)
+
+**命令**: `Turbo AI Rules: Remove Source`
+
+**功能**: 删除已添加的规则源
+
+**使用场景**:
+
+- 移除不再需要的规则源
+- 清理过期的规则仓库
+- 移除团队不再使用的规则
+
+**操作步骤**:
+
+1. 执行命令
+2. 从列表中选择要删除的规则源
+3. 确认删除操作
+
+**或者**:
+
+- 在树视图中右键点击规则源
+- 选择 **Remove**
+
+**注意**:
+
+- ⚠️ 删除规则源会从缓存中移除该源的所有规则
+- 🔄 删除后会自动重新生成配置文件(不包含该源的规则)
+- 💾 本地 Git 克隆会被删除，但不影响远程仓库
+
+---
+
+### 3. 🔄 同步规则 (Sync Rules)
+
+**命令**: `Turbo AI Rules: Sync Rules`
+
+**功能**: 从所有已启用的规则源同步最新规则
+
+**使用场景**:
+
+- 获取规则源的最新更新
+- 首次添加规则源后同步
+- 手动触发规则更新(当自动同步未及时触发)
+
+**操作步骤**:
+
+1. 执行命令 (或点击树视图的 🔄 按钮)
+2. 扩展会依次:
+   - 从 Git 仓库拉取最新代码 (`git pull`)
+   - 解析所有规则文件 (`.md` 格式)
+   - 应用冲突解决策略(如有重复规则)
+   - 自动生成所有已启用的配置文件
+
+**输出日志示例**:
+
+```
+[Turbo AI Rules] Syncing rules from 3 sources...
+[Turbo AI Rules] ✓ Synced: Company Rules (15 rules)
+[Turbo AI Rules] ✓ Synced: Personal Rules (8 rules)
+[Turbo AI Rules] ✓ Synced: Community Rules (42 rules)
+[Turbo AI Rules] Total: 65 rules synced
+[Turbo AI Rules] Generating config files...
+[Turbo AI Rules] ✓ Generated: .cursorrules
+[Turbo AI Rules] ✓ Generated: .github/.copilot-instructions.md
+[Turbo AI Rules] ✓ Generated: rules/index.md
+[Turbo AI Rules] Sync completed successfully!
+```
+
+**配置选项**:
+
+- `sync.onStartup`: VS Code 启动时自动同步 (默认: `true`)
+- `sync.interval`: 自动同步间隔(分钟) (默认: `60`)
+- `sync.conflictStrategy`: 冲突解决策略 (默认: `priority`)
+
+**提示**:
+
+- ⏱️ 首次同步可能需要几秒到几分钟(取决于规则数量)
+- 🌐 需要网络连接访问 Git 仓库
+- 📊 可在 Output 面板查看详细同步日志
+
+---
+
+### 4. 🔍 搜索规则 (Search Rules)
+
+**命令**: `Turbo AI Rules: Search Rules`
+
+**功能**: 在所有已同步的规则中搜索特定内容
+
+**使用场景**:
+
+- 查找特定技术栈的规则(如 "TypeScript", "React")
+- 搜索特定主题的规则(如 "naming", "testing")
+- 浏览可用的规则列表
+
+**操作步骤**:
+
+1. 执行命令
+2. 输入搜索关键词(支持模糊搜索)
+3. 从结果列表中选择规则查看详情
+
+**搜索范围**:
+
+- 规则 ID (`id`)
+- 规则标题 (`title`)
+- 规则标签 (`tags`)
+- 规则描述 (`description`)
+
+**示例**:
+
+```
+搜索: "typescript"
+结果:
+  - TypeScript Naming Conventions
+  - TypeScript Best Practices
+  - TypeScript Testing Guide
+  - React + TypeScript Patterns
+```
+
+**提示**:
+
+- 🔤 搜索不区分大小写
+- 🏷️ 可以通过标签快速过滤(如 `#react`, `#testing`)
+- 📄 选择规则后会在编辑器中预览规则内容
+
+---
+
+### 5. 📝 生成配置文件 (Generate Config Files)
+
+**命令**: `Turbo AI Rules: Generate Config Files`
+
+**功能**: 手动重新生成所有 AI 工具的配置文件
+
+**使用场景**:
+
+- 配置文件被意外删除或修改
+- 更改了适配器配置后重新生成
+- 手动验证配置文件生成逻辑
+
+**操作步骤**:
+
+1. 执行命令
+2. 扩展会根据当前配置重新生成所有已启用的配置文件
+
+**生成的文件**:
+
+```
+✅ Cursor:       .cursorrules
+✅ Copilot:      .github/.copilot-instructions.md
+⚙️ Continue:     .continuerules (如果启用)
+✅ Custom:       根据自定义适配器配置生成
+```
+
+**注意**:
+
+- ⚠️ **会覆盖现有配置文件**，手动修改会丢失
+- 💡 推荐修改规则源而非配置文件本身
+- 🔄 同步规则时会自动调用此命令
+
+**提示**:
+
+- 如果不想某个工具的配置被生成，在设置中禁用对应适配器
+- 自定义适配器支持配置多个输出目标
+
+---
+
+### 6. ⚙️ 管理规则源 (Manage Sources)
+
+**命令**: `Turbo AI Rules: Manage Sources`
+
+**功能**: 编辑现有规则源的配置
+
+**使用场景**:
+
+- 更改规则源的分支(如从 `main` 切换到 `develop`)
+- 修改子路径(调整规则文件所在目录)
+- 更新显示名称
+- 更新访问令牌(Token 过期或更换)
+- 启用/禁用规则源
+
+**操作步骤**:
+
+1. 执行命令
+2. 选择要管理的规则源
+3. 选择要修改的属性:
+   - **Branch**: 更改 Git 分支
+   - **Subpath**: 修改子路径
+   - **Display Name**: 更新显示名称
+   - **Token**: 更新访问令牌
+   - **Enable/Disable**: 启用或禁用该源
+
+**或者**:
+
+- 在树视图中右键点击规则源
+- 选择对应的操作(Enable/Disable/Edit)
+
+**示例场景**:
+
+**场景 1**: 切换到开发分支
+
+```
+规则源: Company Rules
+操作:   更改分支
+旧值:   main
+新值:   develop
+```
+
+**场景 2**: 更新过期 Token
+
+```
+规则源: Private Rules
+操作:   更新 Token
+新值:   ghp_newtoken123456
+```
+
+**场景 3**: 临时禁用规则源
+
+```
+规则源: Experimental Rules
+操作:   Disable
+效果:   该源的规则不再包含在配置文件中
+```
+
+**提示**:
+
+- 🔄 修改配置后会自动重新同步
+- 💾 配置持久化保存在工作区设置中
+- 🌲 树视图会实时反映启用/禁用状态
+
+---
+
+## 🎯 使用建议
+
+### 命令快捷访问
+
+**通过状态栏**:
+
+- 点击 **🤖 AI Rules** 图标快速访问所有命令
+
+**通过树视图**:
+
+- 📂 **AI Rules** 视图提供可视化操作
+- 右键菜单支持快速操作
+
+**通过命令面板**:
+
+- `Ctrl+Shift+P` (Mac: `Cmd+Shift+P`)
+- 输入 `Turbo AI Rules` 查看所有命令
+
+### 推荐工作流程
+
+1. **初始化**: `Add Source` → 添加规则源
+2. **同步**: `Sync Rules` → 获取规则
+3. **验证**: 检查生成的配置文件
+4. **维护**: 定期 `Sync Rules` 获取更新
+5. **搜索**: 使用 `Search Rules` 查找特定规则
+6. **调整**: 通过 `Manage Sources` 调整配置
+
+---
+
+## 📖 规则文件格式
+
+规则文件使用 MDC (Markdown + YAML Frontmatter) 格式:
+
+```markdown
+---
+id: typescript-naming
+title: TypeScript 命名规范
+priority: high
+tags: [typescript, naming, conventions]
+version: 1.0.0
+author: Your Name
+description: TypeScript 项目的命名约定
+---
+
+# TypeScript 命名规范
+
+## 变量命名
+
+- 使用 camelCase 命名变量和函数
+- 使用 PascalCase 命名类和接口
+- 使用 UPPER_SNAKE_CASE 命名常量
+
+## 示例
+
+\`\`\`typescript
+// 好的命名
+const userName = 'John';
+class UserService {}
+const MAX_RETRY_COUNT = 3;
+
+// 避免
+const user_name = 'John'; // ❌
+class userservice {} // ❌
+\`\`\`
+```
+
+---
+
+## ⚙️ 配置指南
+
+### 📚 配置层级
+
+Turbo AI Rules 支持多层级配置，优先级从高到低：
+
+1. **工作区设置** (`.vscode/settings.json`) - 项目级配置
+2. **用户设置** (VS Code User Settings) - 全局配置
+3. **默认值** - 扩展内置默认配置
+
+推荐：团队项目使用工作区设置，个人使用用户设置。
+
+---
+
+### 🔧 完整配置示例
+
+在 `.vscode/settings.json` 或 VS Code 设置中添加：
+
+```json
+{
+  // ========== 存储配置 ==========
+  "turbo-ai-rules.storage.useGlobalCache": true,
+
+  // ========== 同步配置 ==========
+  "turbo-ai-rules.sync.onStartup": true,
+  "turbo-ai-rules.sync.interval": 60,
+  "turbo-ai-rules.sync.conflictStrategy": "priority",
+
+  // ========== 内置适配器 ==========
+  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.copilot.enabled": true,
+  "turbo-ai-rules.adapters.continue.enabled": false,
+
+  // ========== 自定义适配器 ==========
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "default-rules",
+      "name": "Generic Rules",
+      "enabled": true,
+      "autoUpdate": true,
+      "outputPath": "rules",
+      "outputType": "directory",
+      "organizeBySource": true,
+      "generateIndex": true,
+      "indexFileName": "index.md"
+    },
+    {
+      "id": "windsurf",
+      "name": "Windsurf AI",
+      "enabled": true,
+      "autoUpdate": true,
+      "outputPath": ".windsurfrules",
+      "outputType": "file",
+      "fileExtensions": [".md"]
+    }
+  ]
+}
+```
+
+---
+
+### 📊 配置选项详解
+
+#### 1. 存储配置 (`storage`)
+
+| 配置项           | 类型    | 默认值 | 说明                                         |
+| ---------------- | ------- | ------ | -------------------------------------------- |
+| `useGlobalCache` | boolean | `true` | 使用全局缓存 (`~/.turbo-ai-rules/`) 存储规则 |
+
+**建议**:
+
+- ✅ 保持默认 `true`，多个工作区共享规则缓存
+- ❌ 设为 `false` 会在每个工作区独立存储，占用更多空间
+
+---
+
+#### 2. 同步配置 (`sync`)
+
+| 配置项             | 类型    | 默认值     | 说明                                         |
+| ------------------ | ------- | ---------- | -------------------------------------------- |
+| `onStartup`        | boolean | `true`     | VS Code 启动时自动同步规则                   |
+| `interval`         | number  | `60`       | 自动同步间隔(分钟)，0 表示禁用自动同步       |
+| `conflictStrategy` | enum    | `priority` | 冲突解决策略: `priority` / `skip-duplicates` |
+
+**冲突解决策略说明**:
+
+- **`priority`** (推荐):
+  - 使用优先级最高的规则 (根据规则文件的 `priority` 字段)
+  - 适合有明确规则优先级的场景
+- **`skip-duplicates`**:
+  - 保留第一个出现的规则，忽略后续重复
+  - 适合规则源之间完全独立的场景
+
+**示例**:
+
+```json
+{
+  "turbo-ai-rules.sync.onStartup": true, // 启动时同步
+  "turbo-ai-rules.sync.interval": 120, // 每 2 小时同步一次
+  "turbo-ai-rules.sync.conflictStrategy": "priority"
+}
+```
+
+---
+
+#### 3. 内置适配器配置 (`adapters`)
+
+| 适配器   | 配置项             | 默认值  | 输出文件                           |
+| -------- | ------------------ | ------- | ---------------------------------- |
+| Cursor   | `cursor.enabled`   | `true`  | `.cursorrules`                     |
+| Copilot  | `copilot.enabled`  | `true`  | `.github/.copilot-instructions.md` |
+| Continue | `continue.enabled` | `false` | `.continuerules`                   |
+
+**示例**:
+
+```json
+{
+  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.copilot.enabled": true,
+  "turbo-ai-rules.adapters.continue.enabled": false
+}
+```
+
+**何时禁用适配器**:
+
+- 不使用某个 AI 工具时禁用对应适配器
+- 减少不必要的配置文件生成
+- 避免与其他扩展冲突
+
+---
+
+#### 4. 自定义适配器配置 (`adapters.custom`)
+
+自定义适配器是 Turbo AI Rules 最强大的功能，支持为**任何 AI 工具**配置输出格式。
+
+##### 配置结构
+
+```typescript
+{
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "unique-id",              // 唯一标识符 (kebab-case)
+      "name": "Display Name",         // 显示名称
+      "enabled": true,                // 是否启用
+      "autoUpdate": true,             // 同步后自动更新
+      "outputPath": "path/to/output", // 输出路径 (相对工作区根目录)
+      "outputType": "file",           // 输出类型: "file" | "directory"
+      "fileExtensions": [".md"],      // 文件过滤 (可选)
+      "organizeBySource": true,       // 按源组织 (仅 directory 模式)
+      "generateIndex": true,          // 生成索引 (仅 directory 模式)
+      "indexFileName": "index.md"     // 索引文件名 (仅 directory 模式)
+    }
+  ]
+}
+```
+
+##### 参数详解
+
+| 参数               | 类型     | 必填 | 默认值     | 说明                                                                       |
+| ------------------ | -------- | ---- | ---------- | -------------------------------------------------------------------------- |
+| `id`               | string   | ✅   | -          | 唯一标识符，使用 kebab-case (如 `windsurf`, `my-custom-ai`)                |
+| `name`             | string   | ✅   | -          | 显示名称，出现在日志和 UI 中                                               |
+| `enabled`          | boolean  | ❌   | `true`     | 是否启用该适配器                                                           |
+| `autoUpdate`       | boolean  | ❌   | `true`     | 同步规则后是否自动更新输出                                                 |
+| `outputPath`       | string   | ✅   | -          | 输出路径，相对于工作区根目录                                               |
+| `outputType`       | enum     | ✅   | -          | `"file"`: 单文件输出<br>`"directory"`: 目录结构输出                        |
+| `fileExtensions`   | string[] | ❌   | `[]`       | 文件扩展名过滤 (如 `[".md", ".mdc"]`)<br>**空数组或不配置 = 同步所有文件** |
+| `organizeBySource` | boolean  | ❌   | `true`     | (仅 `directory` 模式) 是否按源 ID 创建子目录                               |
+| `generateIndex`    | boolean  | ❌   | `true`     | (仅 `directory` 模式) 是否生成索引文件                                     |
+| `indexFileName`    | string   | ❌   | `index.md` | (仅 `directory` 模式) 索引文件名                                           |
+
+---
+
+##### 配置场景示例
+
+**场景 1: 默认 `rules/` 目录** (已内置，无需额外配置)
+
+```json
+{
+  "id": "default-rules",
+  "name": "Generic Rules",
+  "enabled": true,
+  "autoUpdate": true,
+  "outputPath": "rules",
+  "outputType": "directory",
+  "organizeBySource": true,
+  "generateIndex": true,
+  "indexFileName": "index.md"
+  // 不设置 fileExtensions = 同步所有文件
+}
+```
+
+**输出结构**:
+
+```
+rules/
+├── index.md                   # 规则索引
+├── company-rules/             # 源 1
+│   ├── typescript.md
+│   └── react.md
+└── personal-rules/            # 源 2
+    └── best-practices.md
+```
+
+---
+
+**场景 2: 单文件输出 (Windsurf, Cline, Aide)**
+
+```json
+{
+  "id": "windsurf",
+  "name": "Windsurf AI",
+  "enabled": true,
+  "autoUpdate": true,
+  "outputPath": ".windsurfrules",
+  "outputType": "file",
+  "fileExtensions": [".md"]
+}
+```
+
+**输出**:
+
+- 单个文件 `.windsurfrules`
+- 包含所有 `.md` 规则，按优先级排序
+- 自动添加分隔符和元数据
+
+---
+
+**场景 3: 完整目录同步 (所有文件类型)**
+
+```json
+{
+  "id": "full-sync",
+  "name": "Full Directory Sync",
+  "enabled": true,
+  "autoUpdate": true,
+  "outputPath": "ai-rules-full",
+  "outputType": "directory",
+  "organizeBySource": true,
+  "generateIndex": true
+  // 不设置 fileExtensions = 同步 .md, .mdc, .txt, .json 等所有文件
+}
+```
+
+**输出**:
+
+- 保留原始目录结构
+- 包含所有文件类型 (`.md`, `.mdc`, `.txt`, `.json`, ...)
+- 适合需要完整规则库的场景
+
+---
+
+**场景 4: 文档站点 AI 规则**
+
+```json
+{
+  "id": "docs-ai",
+  "name": "Documentation AI Rules",
+  "enabled": true,
+  "autoUpdate": true,
+  "outputPath": "docs/ai-rules",
+  "outputType": "directory",
+  "fileExtensions": [".md", ".mdc"],
+  "organizeBySource": false, // 平铺结构，不按源分组
+  "generateIndex": true,
+  "indexFileName": "README.md" // 使用 README.md 作为索引
+}
+```
+
+**输出**:
+
+```
+docs/ai-rules/
+├── README.md                  # 索引文件
+├── typescript.md
+├── react.md
+├── best-practices.md
+└── ...
+```
+
+---
+
+**场景 5: 多 AI 工具同时支持**
+
+```json
+{
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "windsurf",
+      "name": "Windsurf AI",
+      "enabled": true,
+      "outputPath": ".windsurfrules",
+      "outputType": "file",
+      "fileExtensions": [".md"]
+    },
+    {
+      "id": "cline",
+      "name": "Cline AI",
+      "enabled": true,
+      "outputPath": ".clinerules",
+      "outputType": "file",
+      "fileExtensions": [".md"]
+    },
+    {
+      "id": "aide",
+      "name": "Aide AI",
+      "enabled": true,
+      "outputPath": ".aide/rules.md",
+      "outputType": "file",
+      "fileExtensions": [".md"]
+    }
+  ]
+}
+```
+
+**效果**: 同时为 Windsurf、Cline、Aide 生成配置文件。
+
+---
+
+### 🎨 推荐配置组合
+
+#### 配置 1: 最小化配置 (默认)
+
+```json
+{
+  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.copilot.enabled": true
+}
+```
+
+**适用**: 只使用 Cursor 和 Copilot 的用户。
+
+---
+
+#### 配置 2: 全功能配置
+
+```json
+{
+  "turbo-ai-rules.sync.onStartup": true,
+  "turbo-ai-rules.sync.interval": 120,
+  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.copilot.enabled": true,
+  "turbo-ai-rules.adapters.continue.enabled": true,
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "default-rules",
+      "name": "Generic Rules",
+      "enabled": true,
+      "outputPath": "rules",
+      "outputType": "directory",
+      "organizeBySource": true,
+      "generateIndex": true
+    },
+    {
+      "id": "windsurf",
+      "name": "Windsurf AI",
+      "enabled": true,
+      "outputPath": ".windsurfrules",
+      "outputType": "file",
+      "fileExtensions": [".md"]
+    }
+  ]
+}
+```
+
+**适用**: 使用多个 AI 工具，需要完整规则管理的团队。
+
+---
+
+#### 配置 3: 离线/低频更新
+
+```json
+{
+  "turbo-ai-rules.sync.onStartup": false,
+  "turbo-ai-rules.sync.interval": 0,
+  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.copilot.enabled": true
+}
+```
+
+**适用**: 网络受限环境，手动控制同步时机。
+
+---
+
+### 💡 配置最佳实践
+
+1. **团队协作**:
+   - 将配置放在 `.vscode/settings.json` 中
+   - 提交到版本控制，团队共享配置
+2. **规则源管理**:
+   - 使用清晰的显示名称 (`name` 字段)
+   - 为私有仓库妥善保管 Token (不要提交到版本控制)
+3. **性能优化**:
+   - 合理设置 `sync.interval`，避免过于频繁
+   - 禁用不需要的适配器减少文件生成
+4. **文件过滤**:
+
+   - 大部分情况不需要设置 `fileExtensions` (默认同步所有)
+   - 仅在需要特定文件类型时配置过滤
+
+5. **自定义适配器**:
+   - 为新 AI 工具优先使用 `file` 输出类型
+   - `directory` 模式适合需要完整规则库的场景
+
+## 📖 规则文件格式 (MDC)
+
+规则文件使用 **MDC** (Markdown + YAML Frontmatter) 格式，结合了 YAML 元数据和 Markdown 内容。
+
+### 基本结构
+
+```markdown
+---
+id: rule-unique-id
+title: 规则标题
+priority: high
+tags: [tag1, tag2, tag3]
+version: 1.0.0
+author: 作者名
+description: 规则简短描述
+---
+
+# 规则详细内容
+
+规则的详细说明和示例...
+```
+
+---
+
+### 元数据字段说明
+
+| 字段          | 类型     | 必填 | 说明                                        |
+| ------------- | -------- | ---- | ------------------------------------------- |
+| `id`          | string   | ✅   | 规则唯一标识符 (kebab-case)                 |
+| `title`       | string   | ✅   | 规则标题                                    |
+| `priority`    | enum     | ❌   | 优先级: `low`, `medium`, `high`, `critical` |
+| `tags`        | string[] | ❌   | 标签数组，用于分类和搜索                    |
+| `version`     | string   | ❌   | 规则版本号 (语义化版本)                     |
+| `author`      | string   | ❌   | 规则作者                                    |
+| `description` | string   | ❌   | 规则简短描述                                |
+
+---
+
+### 完整示例
+
+```markdown
+---
+id: typescript-naming
+title: TypeScript 命名规范
+priority: high
+tags: [typescript, naming, conventions, best-practices]
+version: 1.0.0
+author: Your Name
+description: TypeScript 项目的命名约定和最佳实践
+---
+
+# TypeScript 命名规范
+
+## 变量命名
+
+### 规则
+
+- 使用 **camelCase** 命名变量和函数
+- 使用 **PascalCase** 命名类和接口
+- 使用 **UPPER_SNAKE_CASE** 命名常量
+- 使用 **\_prefix** 命名私有成员
+
+### ✅ 好的示例
+
+\`\`\`typescript
+// 变量和函数
+const userName = 'John';
+function getUserName() { ... }
+
+// 类和接口
+class UserService { ... }
+interface IUserData { ... }
+
+// 常量
+const MAX_RETRY_COUNT = 3;
+const API_BASE_URL = 'https://api.example.com';
+
+// 私有成员
+class User {
+private \_id: string;
+private \_password: string;
+}
+\`\`\`
+
+### ❌ 避免
+
+\`\`\`typescript
+// 错误：变量使用下划线分隔
+const user_name = 'John'; // ❌
+
+// 错误：类名使用 camelCase
+class userservice {} // ❌
+
+// 错误：常量使用 camelCase
+const maxRetryCount = 3; // ❌
+\`\`\`
+
+## 类型命名
+
+### 接口
+
+- 接口名使用 `I` 前缀 (可选但推荐)
+- 或使用描述性名称，以 `able` 结尾表示能力
+
+\`\`\`typescript
+// 方式 1: I 前缀
+interface IUser { ... }
+interface IUserService { ... }
+
+// 方式 2: 描述性名称
+interface Serializable { ... }
+interface Comparable { ... }
+\`\`\`
+
+### 类型别名
+
+使用 `Type` 后缀区分类型别名和接口
+
+\`\`\`typescript
+type UserIdType = string | number;
+type CallbackType = (data: any) => void;
+\`\`\`
+
+## 文件命名
+
+- 使用 **kebab-case** 命名文件
+- 组件文件使用 **PascalCase** (React/Vue)
+
+\`\`\`
+✅ user-service.ts
+✅ api-client.ts
+✅ UserProfile.tsx (React 组件)
+❌ UserService.ts (避免)
+❌ api_client.ts (避免)
+\`\`\`
+
+## 总结
+
+遵循统一的命名规范可以提高代码可读性和可维护性。团队应该在项目开始时就确定命名规范，并通过 ESLint 等工具强制执行。
+```
+
+---
+
+### 规则编写建议
+
+1. **结构清晰**:
+   - 使用标题层级组织内容
+   - 每个规则专注一个主题
+2. **代码示例**:
+   - 提供 ✅ 好的示例和 ❌ 错误示例
+   - 使用代码块高亮
+3. **元数据完整**:
+   - 设置合理的 `priority`
+   - 添加相关的 `tags` 便于搜索
+4. **版本管理**:
+   - 使用语义化版本号
+   - 重大更新时更新 `version`
+
+---
+
+## 🔧 工作原理
+
+### 系统架构
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                   Turbo AI Rules                        │
+├─────────────────────────────────────────────────────────┤
+│  1. 规则源管理 (Git Repository Management)              │
+│     - Clone/Pull from Git repositories                 │
+│     - Multi-source support                             │
+│     - Private repo authentication                      │
+├─────────────────────────────────────────────────────────┤
+│  2. 规则解析 (Rules Parsing)                            │
+│     - MDC format parser (YAML + Markdown)              │
+│     - Metadata extraction                              │
+│     - Content validation                               │
+├─────────────────────────────────────────────────────────┤
+│  3. 冲突解决 (Conflict Resolution)                      │
+│     - Priority-based merging                           │
+│     - Skip duplicates strategy                         │
+│     - Rule deduplication                               │
+├─────────────────────────────────────────────────────────┤
+│  4. 适配器系统 (Adapter System)                         │
+│     - Cursor Adapter        → .cursorrules             │
+│     - Copilot Adapter       → .copilot-instructions.md │
+│     - Continue Adapter      → .continuerules           │
+│     - Custom Adapters       → User-defined outputs     │
+├─────────────────────────────────────────────────────────┤
+│  5. 自动同步 (Auto Sync)                                │
+│     - Startup sync                                     │
+│     - Interval-based sync                              │
+│     - Manual sync trigger                              │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 工作流程
+
+```
+┌──────────────┐
+│  Add Source  │  1. 用户添加 Git 规则源
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│  Git Clone   │  2. 克隆仓库到全局缓存 (~/.turbo-ai-rules/)
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│  Parse Rules │  3. 解析 .md 文件，提取元数据和内容
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│   Resolve    │  4. 应用冲突解决策略 (priority/skip-duplicates)
+│  Conflicts   │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│   Generate   │  5. 使用适配器生成配置文件
+│   Configs    │     - .cursorrules
+└──────┬───────┘     - .copilot-instructions.md
+       │             - Custom outputs
+       ▼
+┌──────────────┐
+│   AI Tools   │  6. AI 工具加载并应用规则
+│ Load Configs │
+└──────────────┘
+```
+
+---
+
+### 目录结构
+
+#### 全局缓存目录
+
+```
+~/.turbo-ai-rules/                 # 用户主目录下的全局缓存
+└── sources/                       # Git 仓库克隆目录
+    ├── company-rules/             # 规则源 1
+    │   ├── .git/
+    │   └── rules/
+    │       ├── typescript.md
+    │       └── react.md
+    ├── personal-rules/            # 规则源 2
+    │   ├── .git/
+    │   └── best-practices.md
+    └── community-rules/           # 规则源 3
+        └── ...
+```
+
+#### 工作区目录
+
+```
+your-workspace/                    # VS Code 工作区根目录
+├── .vscode/
+│   └── settings.json              # 扩展配置
+├── .cursorrules                   # ✅ Cursor 配置 (自动生成)
+├── .continuerules                 # ⚙️ Continue 配置 (可选)
+├── .windsurfrules                 # ⚙️ Windsurf 配置 (自定义)
+├── .github/
+│   └── .copilot-instructions.md   # ✅ Copilot 配置 (自动生成)
+├── rules/                         # ✅ 通用规则目录 (默认)
+│   ├── index.md                  # 规则索引
+│   ├── company-rules/            # 源 1 的规则
+│   │   ├── typescript.md
+│   │   └── react.md
+│   └── personal-rules/           # 源 2 的规则
+│       └── best-practices.md
+└── src/
+    └── ...
+```
+
+---
+
+### 适配器模式
+
+扩展使用**适配器模式**为不同 AI 工具生成配置：
+
+```typescript
+// 适配器接口
+interface Adapter {
+  generate(rules: Rule[]): Promise<void>;
+}
+
+// 内置适配器
+class CursorAdapter implements Adapter { ... }
+class CopilotAdapter implements Adapter { ... }
+class ContinueAdapter implements Adapter { ... }
+
+// 自定义适配器
+class CustomAdapter implements Adapter {
+  constructor(config: CustomAdapterConfig) { ... }
+  generate(rules: Rule[]): Promise<void> {
+    if (config.outputType === 'file') {
+      // 生成单文件
+    } else {
+      // 生成目录结构
+    }
+  }
+}
+```
+
+**优势**:
+
+- 🔌 易于扩展：添加新 AI 工具只需创建新适配器
+- 🎯 灵活配置：每个适配器独立配置
+- 🔄 复用规则：同一套规则生成多种格式
+
+---
+
+## ❓ 常见问题 (FAQ)
+
+### 基础问题
+
+#### Q1: 私有仓库需要什么权限？
+
+**A**: 需要具有**读取权限**的 Personal Access Token (PAT)。
+
+**GitHub 创建 Token 步骤**:
+
+1. 访问 GitHub Settings → Developer settings → Personal access tokens
+2. 点击 **Generate new token** (classic)
+3. 选择权限: `repo` (完整仓库访问)
+4. 复制生成的 Token (格式: `ghp_xxxxxxxxxxxx`)
+5. 在添加规则源时粘贴 Token
+
+**注意**:
+
+- Token 需妥善保管，不要提交到版本控制
+- Token 过期后需在扩展中更新 (使用 `Manage Sources` 命令)
+
+---
+
+#### Q2: 规则文件必须是 `.md` 格式吗？
+
+**A**: 是的，目前扩展仅解析 **Markdown 格式** (`.md`) 的规则文件。
+
+文件需要满足：
+
+- 文件扩展名: `.md`
+- 格式: MDC (Markdown + YAML Frontmatter)
+- 元数据: 至少包含 `id` 和 `title` 字段
+
+未来可能支持其他格式 (如 `.mdx`, `.txt`)。
+
+---
+
+#### Q3: 可以手动编辑生成的配置文件吗？
+
+**A**: **不建议**手动编辑生成的配置文件 (如 `.cursorrules`)。
+
+**原因**:
+
+- ⚠️ 下次同步会**覆盖**手动修改
+- 难以追踪变更历史
+- 无法在团队间共享修改
+
+**正确做法**:
+
+1. 修改规则源仓库中的规则文件
+2. 提交到 Git
+3. 运行 `Sync Rules` 重新生成配置
+
+这样可以保证:
+
+- ✅ 版本控制
+- ✅ 团队共享
+- ✅ 可追溯性
+
+---
+
+#### Q4: 如何调试同步问题？
+
+**A**: 查看扩展的输出日志。
+
+**步骤**:
+
+1. 打开 VS Code **Output** 面板 (View → Output 或 `Ctrl+Shift+U`)
+2. 在下拉菜单中选择 **Turbo AI Rules**
+3. 查看详细同步日志
+
+**日志示例**:
+
+```
+[Turbo AI Rules] Syncing rules from 3 sources...
+[Turbo AI Rules] ✓ Synced: Company Rules (15 rules)
+[Turbo AI Rules] ✗ Error: Failed to clone repository: Authentication failed
+[Turbo AI Rules] ✓ Generated: .cursorrules
+```
+
+**常见错误**:
+
+- `Authentication failed`: Token 无效或过期
+- `Network error`: 网络连接问题
+- `Parse error`: 规则文件格式错误
+
+---
+
+### 冲突和优先级
+
+#### Q5: 多个规则源有相同 ID 的规则怎么办？
+
+**A**: 扩展会根据配置的**冲突解决策略**处理重复规则。
+
+**策略 1: `priority` (默认)**
+
+- 使用 `priority` 字段最高的规则
+- 优先级顺序: `critical` > `high` > `medium` > `low`
+- 如果 `priority` 相同，使用第一个出现的规则
+
+**示例**:
+
+```yaml
+# 源 A: typescript-naming (priority: high)
+# 源 B: typescript-naming (priority: critical)
+# 结果: 使用源 B (优先级更高)
+```
+
+**策略 2: `skip-duplicates`**
+
+- 保留第一个出现的规则
+- 跳过后续重复的规则
+- 适合完全独立的规则源
+
+**配置**:
+
+```json
+{
+  "turbo-ai-rules.sync.conflictStrategy": "priority" // 或 "skip-duplicates"
+}
+```
+
+---
+
+### 适配器和配置
+
+#### Q6: 如何禁用某个 AI 工具的配置生成？
+
+**A**: 在 VS Code 设置中禁用对应的适配器。
+
+**方法 1: 通过 UI**
+
+1. 打开 VS Code Settings (`Ctrl+,`)
+2. 搜索 `Turbo AI Rules`
+3. 找到对应的适配器选项
+4. 取消勾选 `Enabled`
+
+**方法 2: 通过 JSON**
+
+```json
+{
+  "turbo-ai-rules.adapters.cursor.enabled": false, // 禁用 Cursor
+  "turbo-ai-rules.adapters.copilot.enabled": true, // 保留 Copilot
+  "turbo-ai-rules.adapters.continue.enabled": false // 禁用 Continue
+}
+```
+
+**效果**: 禁用后，同步时不会生成对应的配置文件。
+
+---
+
+#### Q7: 什么是自定义适配器？
+
+**A**: 自定义适配器允许你为**任何 AI 工具**配置输出格式。
+
+**特性**:
+
+- 📄 **文件模式**: 合并所有规则到单个文件 (如 `.windsurfrules`, `.clinerules`)
+- 📁 **目录模式**: 生成完整的目录结构 (如 `rules/`, `docs/ai-rules`)
+- 🔍 **文件过滤**: 只包含特定后缀的规则文件 (如 `.md`, `.mdc`)
+- 🗂️ **灵活组织**: 可按源组织子目录，或使用平铺结构
+
+**应用场景**:
+
+- 支持新的 AI 工具 (Windsurf, Cline, Aide, ...)
+- 为文档站点导出规则
+- 团队内部规则分发
+
+**配置示例** → 参考 [配置指南 - 自定义适配器](#4-自定义适配器配置-adapterscustom)
+
+---
+
+#### Q8: 如何为新的 AI 工具 (如 Windsurf, Cline) 添加支持？
+
+**A**: 在设置中添加自定义适配器配置。
+
+**步骤**:
+
+1. 查看目标 AI 工具的文档，确认配置文件路径和格式
+2. 在 VS Code 设置中添加自定义适配器
+
+**示例 1: Windsurf** (单文件配置)
+
+```json
+{
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "windsurf",
+      "name": "Windsurf AI",
+      "enabled": true,
+      "autoUpdate": true,
+      "outputPath": ".windsurfrules",
+      "outputType": "file",
+      "fileExtensions": [".md"]
+    }
+  ]
+}
+```
+
+**示例 2: Cline** (目录结构)
+
+```json
+{
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "cline",
+      "name": "Cline AI",
+      "enabled": true,
+      "autoUpdate": true,
+      "outputPath": ".cline/rules",
+      "outputType": "directory",
+      "organizeBySource": false,
+      "generateIndex": true
+    }
+  ]
+}
+```
+
+3. 运行 `Generate Config Files` 命令
+4. 验证生成的配置文件
+
+详细配置说明 → [配置指南 - 自定义适配器](#4-自定义适配器配置-adapterscustom)
+
+---
+
+#### Q9: 默认的 `rules/` 目录可以修改或禁用吗？
+
+**A**: 可以！`rules/` 目录实际上是一个默认的**自定义适配器**。
+
+**修改配置**:
+
+```json
+{
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "default-rules",
+      "name": "Generic Rules",
+      "enabled": true,
+      "outputPath": "my-custom-rules", // 修改输出路径
+      "outputType": "directory",
+      "fileExtensions": [".md", ".mdc"], // 添加文件过滤
+      "organizeBySource": false, // 改为平铺结构
+      "generateIndex": true,
+      "indexFileName": "README.md" // 改为 README.md
+    }
+  ]
+}
+```
+
+**禁用**:
+
+```json
+{
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "default-rules",
+      "enabled": false // 禁用默认 rules/ 目录
+    }
+  ]
+}
+```
+
+**删除**: 从 `adapters.custom` 数组中完全移除该配置。
+
+---
+
+### 用户自定义规则
+
+#### Q10: 如何添加我自己的规则而不被同步覆盖？
+
+**A**: 根据输出模式不同，有两种方法：
+
+---
+
+**方法 1: 目录模式（如 `.cursor/rules/`）- 文件名前缀规避**
+
+**核心机制**: 扩展只管理 `000-799` 前缀的文件，使用 `800-999` 前缀的文件不会被修改或删除。
+
+**为什么推荐 800-999 前缀？**
+
+- 🛡️ **避免冲突**: 自动生成文件使用 `000-799` 前缀，你的文件使用 `800-999` 前缀，完全不会冲突
+- 📋 **清晰管理**: 一眼就能区分哪些是自动生成，哪些是用户自定义
+- 🔒 **自动保护**: 同步时会自动跳过 `800-999` 前缀的文件，无需额外配置
+
+> 💡 **注意**: `800-999` 前缀**不是强制要求**，只是为了避免与自动生成文件冲突的**推荐命名规范**。
+> 如果启用了 `protectUserRules` 配置（默认关闭），扩展会更智能地检测用户文件。
+
+**操作步骤**：
+
+```bash
+# 1. 进入 rules 目录
+cd .cursor/rules
+
+# 2. 创建自定义规则文件（使用 800-999 前缀）
+touch 850-my-team-rules.mdc
+
+# 3. 编辑文件
+code 850-my-team-rules.mdc
+```
+
+**命名建议**：
+
+| 前缀范围  | 用途                                | 优先级   | 示例                       |
+| --------- | ----------------------------------- | -------- | -------------------------- |
+| `000-799` | 🤖 自动生成（**会被覆盖/删除**）    | 自动规则 | `200-typescript.mdc`       |
+| `800-849` | ✍️ 高优先级自定义（可覆盖自动规则） | 最高     | `820-team-overrides.mdc`   |
+| `850-899` | ✍️ 常规自定义规则                   | 高       | `850-project-specific.mdc` |
+| `900-949` | ✍️ 补充规则                         | 中       | `900-code-review.mdc`      |
+| `950-999` | ✍️ FAQ、参考                        | 低       | `990-faq.mdc`              |
+
+**示例文件结构**：
+
+```
+.cursor/rules/
+├── 001-project-overview.mdc        ← 🤖 自动生成
+├── 200-typescript.mdc              ← 🤖 自动生成
+├── 300-react.mdc                   ← 🤖 自动生成
+├── 820-team-overrides.mdc          ← ✍️ 你创建（安全）
+├── 850-api-conventions.mdc         ← ✍️ 你创建（安全）
+└── 900-code-review-checklist.mdc   ← ✍️ 你创建（安全）
+```
+
+**⚠️ 重要提示**：
+
+**关于文件优先级的说明**：
+
+| AI 工具        | 优先级机制                     | 确认状态        | 数据来源             |
+| -------------- | ------------------------------ | --------------- | -------------------- |
+| GitHub Copilot | 所有文件合并，无顺序区分       | ✅ 官方文档确认 | GitHub Docs          |
+| Continue       | 按字典序加载                   | ✅ 源代码确认   | Continue GitHub 仓库 |
+| Cline          | 优先级层次：用户 > 项目 > 全局 | ✅ 源代码确认   | Cline GitHub 仓库    |
+| **Cursor**     | **数字小优先级高？**           | ⚠️ **社区经验** | **无官方文档**       |
+| Windsurf       | 未知                           | ❌ 无文档       | -                    |
+| Aide           | 未知                           | ❌ 无文档       | -                    |
+
+> 📌 **设计策略说明**：
+>
+> - 虽然 **Cursor** 的"数字小优先级高"广泛流传于社区，但**未找到官方文档确认**
+> - 本扩展采用**保守策略**：使用 `800-999` 前缀保护用户自定义文件
+> - 即使 Cursor 实际优先级与社区传闻不同，该策略仍能有效保护用户文件不被覆盖
+> - 建议**实际测试**你所用 AI 工具的优先级行为，并在规则内容中**显式声明优先级**
+
+**如果需要覆盖自动规则，建议在内容中显式声明**：
+
+```markdown
+---
+id: team-naming-conventions
+title: 团队命名约定
+priority: critical # 最高优先级
+---
+
+> ⚠️ **注意**: 此规则覆盖默认的命名规范
+
+# 我们的特殊命名规则
+
+我们团队数据库字段相关变量使用 snake_case...
+```
+
+---
+
+**方法 2: 单文件模式（如 `.copilot-instructions.md`）- 块标记保护**
+
+单文件配置使用**块标记**分隔自动生成和用户自定义区域。
+
+**文件结构**：
+
+```markdown
+<!-- TURBO-AI-RULES:BEGIN -->
+<!-- ⚠️  WARNING: Auto-generated content - Will be overwritten on sync -->
+<!-- ⚠️  警告：自动生成内容 - 同步时会被覆盖 -->
+
+# TypeScript 规范
+
+使用 camelCase 命名变量...
+
+# React 最佳实践
+
+...
+
+<!-- TURBO-AI-RULES:END -->
+
+<!-- ============================================== -->
+<!-- 🎯 自定义规则区域（优先级最高） -->
+<!-- ✅ 在下方添加你的自定义规则 -->
+<!-- ✅ 此区域不会被同步覆盖 -->
+<!-- ============================================== -->
+
+# 🎯 我的自定义规则
+
+## 项目 API 规范
+
+所有 API 调用必须：
+
+1. 使用统一的 `apiClient` 封装
+2. 添加 loading 状态
+3. 实现请求取消
+
+## 代码审查标准
+
+...
+```
+
+**使用规则**：
+
+1. ✅ **在块标记外添加内容**（推荐在文件底部）
+2. ❌ **不要修改块内内容**（会被下次同步覆盖）
+3. ✅ 你的自定义内容**优先级最高**，可以覆盖自动规则
+
+**优先级说明**：
+
+- 自动生成的块内会包含优先级提示
+- AI 会优先遵循标记为"最高优先级"的自定义规则
+- 如有冲突，自定义规则覆盖自动规则
+
+**示例**（覆盖默认规则）：
+
+````markdown
+<!-- TURBO-AI-RULES:BEGIN -->
+
+# TypeScript 命名规范
+
+使用 camelCase 命名变量...
+
+<!-- TURBO-AI-RULES:END -->
+
+# 🎯 团队规范（⚠️ 覆盖上方规则）
+
+## 命名约定
+
+我们团队对数据库字段变量使用 `snake_case`：
+
+```typescript
+const user_id = getUserId(); // ✅ 正确
+const userId = getUserId(); // ❌ 错误
+```
+````
+
+````
+
+---
+
+#### Q11: 为什么我的自定义规则没有生效？
+
+**A**: 检查以下几点：
+
+**目录模式**：
+1. ✅ 文件名使用了 `800-999` 前缀吗？
+2. ✅ 文件格式正确（MDC 格式，包含 frontmatter）吗？
+3. ✅ 文件编码是 UTF-8 吗？
+4. ✅ 规则内容清晰明确吗？
+
+**单文件模式**：
+1. ✅ 自定义内容在块标记**外**吗？
+2. ✅ 使用了明确的标题和优先级声明吗？
+3. ✅ 最近有同步过规则吗？（确保文件是最新的）
+
+**通用检查**：
+1. ✅ 规则内容是否足够具体？（模糊的规则 AI 可能忽略）
+2. ✅ 有没有与自动规则冲突但没有明确声明覆盖？
+3. ✅ 尝试在规则开头添加"此规则优先级最高"的声明
+
+**AI 工具差异**：
+不同 AI 工具对规则优先级的处理方式不同（参见 Q10 表格）：
+
+- **GitHub Copilot**: 合并所有 `.github/copilot-instructions.md`，无文件顺序区分
+- **Continue**: 按字典序加载配置文件，后加载的覆盖先加载的
+- **Cline**: 按层次覆盖（用户级 > 项目级 > 全局级）
+- **Cursor**: 社区普遍认为"数字小优先级高"，但**未经官方确认**，建议实际测试
+
+**调试方法**：
+```markdown
+# 在自定义规则开头添加测试
+> ⚠️ **测试标记**: 如果你看到这条信息，说明规则文件已被读取
+
+# 我的规则
+...
+````
+
+然后询问 AI："你读取到测试标记了吗？"以验证规则是否被加载。
+
+**如果仍不生效**：
+
+1. 检查文件路径是否正确（参考 Q3 配置路径说明）
+2. 重启 AI 工具或 VS Code
+3. 查看 AI 工具的输出/日志面板，确认规则文件是否被加载
+4. 尝试简化规则内容，测试是否是内容解析问题
+
+---
+
+#### Q12: `protectUserRules` 配置是什么？
+
+**A**: 这是一个**高级保护功能**（默认关闭），用于智能检测和保护用户自定义规则文件。
+
+**默认行为（`protectUserRules: false`）**：
+
+- ✅ 简单直接：只根据文件名前缀判断（`800-999` = 用户文件）
+- ✅ 性能更好：不需要读取文件内容
+- ✅ 足够用：适合大多数使用场景
+
+**启用后（`protectUserRules: true`）**：
+
+- 🔍 智能检测：会读取文件内容，检查是否包含用户自定义标记
+- 🛡️ 双重保护：同时检查前缀 + 内容标记
+- ⚠️ 冲突提示：发现潜在冲突时会显示警告，避免误删
+
+**如何启用**：
+
+```json
+{
+  "turbo-ai-rules.sync.protectUserRules": true,
+  "turbo-ai-rules.sync.userPrefixRange": [800, 999] // 可自定义范围
+}
+```
+
+**使用建议**：
+
+- 🆕 新用户：保持默认关闭，遵循 `800-999` 前缀命名即可
+- 👥 团队协作：如果团队成员可能不遵循命名规范，建议启用
+- 🔧 复杂场景：需要更精细的保护控制时启用
+
+---
+
+### 性能和同步
+
+#### Q13: 同步很慢怎么办？
+
+**A**: 优化同步性能的几个方法:
+
+**1. 调整同步间隔**
+
+```json
+{
+  "turbo-ai-rules.sync.interval": 0 // 禁用自动同步，仅手动同步
+}
+```
+
+**2. 减少规则源数量**
+
+- 移除不常用的规则源
+- 合并相似的规则源
+
+**3. 使用子路径**
+
+```
+# 仅同步子目录，减少文件数量
+子路径: best-practices/
+```
+
+**4. 检查网络**
+
+- 确保稳定的网络连接
+- 考虑使用国内 Git 镜像
+
+**5. 查看日志**
+
+```
+Output → Turbo AI Rules
+# 找出慢的步骤 (Clone/Parse/Generate)
+```
+
+---
+
+#### Q14: 可以离线使用吗？
+
+**A**: 可以，但有限制。
+
+**首次同步**: 需要网络连接从 Git 仓库克隆规则
+
+**后续使用**:
+
+- ✅ 可以离线生成配置文件 (使用缓存的规则)
+- ✅ 可以离线搜索规则
+- ❌ 无法同步最新规则 (需要网络)
+
+**离线配置建议**:
+
+```json
+{
+  "turbo-ai-rules.sync.onStartup": false,
+  "turbo-ai-rules.sync.interval": 0
+}
+```
+
+---
+
+### 高级问题
+
+#### Q15: 如何在 CI/CD 中使用？
+
+**A**: 可以在 CI/CD 流程中自动生成配置文件。
+
+**示例 (GitHub Actions)**:
+
+```yaml
+name: Sync AI Rules
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # 每天同步
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install VS Code Extension
+        run: code --install-extension turbo-ai-rules
+
+      - name: Sync Rules
+        run: code --command turbo-ai-rules.syncRules
+
+      - name: Commit Changes
+        run: |
+          git config user.name "Bot"
+          git config user.email "bot@example.com"
+          git add .cursorrules .github/ rules/
+          git commit -m "Update AI rules [skip ci]"
+          git push
+```
+
+---
+
+#### Q16: 如何贡献规则到社区？
+
+**A**: 创建一个公开的 Git 仓库分享你的规则。
+
+**步骤**:
+
+1. **创建仓库**
+
+```bash
+mkdir my-ai-rules
+cd my-ai-rules
+git init
+```
+
+2. **添加规则文件**
+
+```markdown
+## <!-- rules/typescript-best-practices.md -->
+
+id: typescript-best-practices
+title: TypeScript Best Practices
+priority: high
+tags: [typescript, best-practices]
+
+---
+
+# TypeScript Best Practices
+
+...
+```
+
+3. **创建 README**
+
+```markdown
+# My AI Rules
+
+Usage:
+
+1. Add as source: `https://github.com/username/my-ai-rules.git`
+2. Sync rules
+3. Enjoy!
+```
+
+4. **推送到 GitHub**
+
+```bash
+git add .
+git commit -m "Initial commit"
+git push origin main
+```
+
+5. **分享**: 在社区中分享你的仓库 URL
+
+---
+
+## 🛠️ 开发
+
+### 🤝 贡献指南
+
+欢迎贡献代码、提交问题或改进建议！
+
+**贡献方式**:
+
+1. **报告 Bug**:
+
+   - 在 [GitHub Issues](https://github.com/ygqygq2/turbo-ai-rules/issues) 提交问题
+   - 提供详细的复现步骤和环境信息
+
+2. **功能建议**:
+
+   - 在 Issues 中提出功能请求
+   - 说明使用场景和预期效果
+
+3. **代码贡献**:
+
+   ```bash
+   # Fork 仓库
+   # 创建功能分支
+   git checkout -b feature/amazing-feature
+
+   # 提交更改
+   git commit -m 'Add amazing feature'
+
+   # 推送到分支
+   git push origin feature/amazing-feature
+
+   # 创建 Pull Request
+   ```
+
+4. **文档改进**:
+   - 修正错别字和表述
+   - 添加示例和最佳实践
+   - 翻译文档
+
+**开发规范**:
+
+- 遵循 TypeScript 最佳实践
+- 添加单元测试
+- 更新相关文档
+- 提交前运行 `pnpm run compile` 和 `pnpm test`
+
+详细指南 → [开发文档](./docs/02-development.md)
+
+---
+
+## 📚 相关链接
+
+### 文档资源
+
+- 📘 [架构设计](./docs/01-design.md) - 了解架构设计和技术决策
+- 📗 [开发指南](./docs/02-development.md) - 参与开发的完整指南
+- 📙 [维护文档](./docs/03-maintaining.md) - 日常维护和同步流程
+- 📕 [自定义适配器设计](./docs/04-custom-adapters-design.md) - 自定义适配器详细设计
+
+### 社区资源
+
+- 💬 [GitHub Issues](https://github.com/ygqygq2/turbo-ai-rules/issues) - 问题追踪和功能请求
+- 📝 [更新日志](./CHANGELOG.md) - 版本更新历史
+- ⚖️ [许可证](./LICENSE) - MIT License
+
+---
+
+## 📄 许可证
+
+本项目采用 **MIT License**。详见 [LICENSE](./LICENSE) 文件。
+
+---
+
+## 💬 反馈与支持
+
+### 遇到问题？
+
+1. 查看 [常见问题](#❓-常见问题-faq)
+2. 搜索 [GitHub Issues](https://github.com/ygqygq2/turbo-ai-rules/issues)
+3. 提交新的 Issue
+
+### 功能建议？
+
+在 [GitHub Issues](https://github.com/ygqygq2/turbo-ai-rules/issues) 提交功能请求，并说明:
+
+- 使用场景
+- 预期效果
+- 可能的实现方式
+
+### 联系方式
+
+- GitHub: [@ygqygq2](https://github.com/ygqygq2)
+- Email: ygqygq2@qq.com
+
+---
+
+<div align="center">
+
+**⭐ 如果这个项目对你有帮助，请给我们一个 Star！ ⭐**
+
+Made with ❤️ by [ygqygq2](https://github.com/ygqygq2)
+
+</div>

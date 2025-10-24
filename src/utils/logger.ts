@@ -17,7 +17,7 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
  * 日志上下文
  */
 export interface LogContext {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**

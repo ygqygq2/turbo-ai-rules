@@ -67,7 +67,7 @@ export const BRANCH_NAME_REGEX = /^[\w./]+$/;
 /**
  * 规则 ID 正则
  */
-export const RULE_ID_REGEX = /^[\w\-]+$/;
+export const RULE_ID_REGEX = /^[\w-]+$/;
 
 /**
  * LRU 缓存大小

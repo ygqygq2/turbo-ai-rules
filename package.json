@@ -1,7 +1,7 @@
 {
   "name": "turbo-ai-rules",
   "displayName": "Turbo AI Rules",
-  "description": "Sync AI coding rules from external Git repositories and generate config files for Cursor, Copilot, Continue.",
+  "description": "%description%",
   "version": "0.0.1",
   "publisher": "ygqygq2",
   "repository": {
@@ -33,43 +33,43 @@
     "commands": [
       {
         "command": "turbo-ai-rules.addSource",
-        "title": "Add Rule Source",
+        "title": "%turboAiRules.addSource.title%",
         "category": "Turbo AI Rules",
         "icon": "$(add)"
       },
       {
         "command": "turbo-ai-rules.removeSource",
-        "title": "Remove Rule Source",
+        "title": "%turboAiRules.removeSource.title%",
         "category": "Turbo AI Rules",
         "icon": "$(trash)"
       },
       {
         "command": "turbo-ai-rules.syncRules",
-        "title": "Sync Rules",
+        "title": "%turboAiRules.syncRules.title%",
         "category": "Turbo AI Rules",
         "icon": "$(sync)"
       },
       {
         "command": "turbo-ai-rules.searchRules",
-        "title": "Search Rules",
+        "title": "%turboAiRules.searchRules.title%",
         "category": "Turbo AI Rules",
         "icon": "$(search)"
       },
       {
         "command": "turbo-ai-rules.generateConfigs",
-        "title": "Generate Config Files",
+        "title": "%turboAiRules.generateConfigs.title%",
         "category": "Turbo AI Rules",
         "icon": "$(file-code)"
       },
       {
         "command": "turbo-ai-rules.manageSource",
-        "title": "Manage Sources",
+        "title": "%turboAiRules.manageSource.title%",
         "category": "Turbo AI Rules",
         "icon": "$(settings-gear)"
       },
       {
         "command": "turbo-ai-rules.refresh",
-        "title": "Refresh",
+        "title": "%turboAiRules.refresh.title%",
         "category": "Turbo AI Rules",
         "icon": "$(refresh)"
       }
@@ -122,73 +122,200 @@
       ]
     },
     "configuration": {
-      "title": "Turbo AI Rules",
+      "title": "%configuration.title%",
       "properties": {
         "turbo-ai-rules.storage.useLocalConfig": {
           "type": "boolean",
           "default": false,
-          "description": "Store authentication in local config files instead of VSCode settings (not synced)"
+          "description": "%turboAiRules.storage.useLocalConfig.description%"
         },
         "turbo-ai-rules.storage.useGlobalCache": {
           "type": "boolean",
           "default": true,
-          "description": "Use global cache directory for storing cloned repositories"
+          "description": "%turboAiRules.storage.useGlobalCache.description%"
         },
         "turbo-ai-rules.storage.projectLocalDir": {
           "type": "string",
           "default": ".ai-rules",
-          "description": "Local directory for project-specific rules"
+          "description": "%turboAiRules.storage.projectLocalDir.description%"
         },
         "turbo-ai-rules.storage.autoGitignore": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically add generated files to .gitignore"
+          "description": "%turboAiRules.storage.autoGitignore.description%"
+        },
+        "turbo-ai-rules.protectUserRules": {
+          "type": "boolean",
+          "default": false,
+          "description": "%turboAiRules.protectUserRules.description%"
+        },
+        "turbo-ai-rules.userPrefixRange": {
+          "type": "object",
+          "default": {
+            "min": 800,
+            "max": 999
+          },
+          "properties": {
+            "min": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 999,
+              "description": "%turboAiRules.userPrefixRange.min.description%"
+            },
+            "max": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 999,
+              "description": "%turboAiRules.userPrefixRange.max.description%"
+            }
+          },
+          "description": "%turboAiRules.userPrefixRange.description%"
+        },
+        "turbo-ai-rules.blockMarkers": {
+          "type": "object",
+          "default": {
+            "begin": "<!-- TURBO-AI-RULES:BEGIN -->",
+            "end": "<!-- TURBO-AI-RULES:END -->"
+          },
+          "properties": {
+            "begin": {
+              "type": "string",
+              "description": "%turboAiRules.blockMarkers.begin.description%"
+            },
+            "end": {
+              "type": "string",
+              "description": "%turboAiRules.blockMarkers.end.description%"
+            }
+          },
+          "description": "%turboAiRules.blockMarkers.description%"
         },
         "turbo-ai-rules.adapters.cursor.enabled": {
           "type": "boolean",
-          "default": true,
-          "description": "Enable Cursor adapter (.cursorrules)"
+          "default": false,
+          "description": "%turboAiRules.adapters.cursor.enabled.description%"
         },
         "turbo-ai-rules.adapters.cursor.autoUpdate": {
           "type": "boolean",
-          "default": true,
-          "description": "Auto-update .cursorrules after sync"
+          "default": false,
+          "description": "%turboAiRules.adapters.cursor.autoUpdate.description%"
         },
         "turbo-ai-rules.adapters.copilot.enabled": {
           "type": "boolean",
-          "default": true,
-          "description": "Enable GitHub Copilot adapter (.github/.copilot-instructions.md)"
+          "default": false,
+          "description": "%turboAiRules.adapters.copilot.enabled.description%"
         },
         "turbo-ai-rules.adapters.copilot.autoUpdate": {
           "type": "boolean",
-          "default": true,
-          "description": "Auto-update Copilot config after sync"
+          "default": false,
+          "description": "%turboAiRules.adapters.copilot.autoUpdate.description%"
         },
         "turbo-ai-rules.adapters.continue.enabled": {
           "type": "boolean",
           "default": false,
-          "description": "Enable Continue adapter (.continuerules)"
+          "description": "%turboAiRules.adapters.continue.enabled.description%"
         },
         "turbo-ai-rules.adapters.continue.autoUpdate": {
           "type": "boolean",
           "default": true,
-          "description": "Auto-update Continue config after sync"
+          "description": "%turboAiRules.adapters.continue.autoUpdate.description%"
+        },
+        "turbo-ai-rules.adapters.custom": {
+          "type": "array",
+          "default": [
+            {
+              "id": "default-rules",
+              "name": "Generic Rules",
+              "enabled": true,
+              "autoUpdate": true,
+              "outputPath": "rules",
+              "outputType": "directory",
+              "organizeBySource": true,
+              "generateIndex": true,
+              "indexFileName": "index.md"
+            }
+          ],
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "outputPath",
+              "outputType"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9-]+$",
+                "description": "%turboAiRules.adapters.custom.items.properties.id.description%"
+              },
+              "name": {
+                "type": "string",
+                "description": "%turboAiRules.adapters.custom.items.properties.name.description%"
+              },
+              "enabled": {
+                "type": "boolean",
+                "default": true,
+                "description": "%turboAiRules.adapters.custom.items.properties.enabled.description%"
+              },
+              "autoUpdate": {
+                "type": "boolean",
+                "default": true,
+                "description": "%turboAiRules.adapters.custom.items.properties.autoUpdate.description%"
+              },
+              "outputPath": {
+                "type": "string",
+                "description": "%turboAiRules.adapters.custom.items.properties.outputPath.description%"
+              },
+              "outputType": {
+                "type": "string",
+                "enum": [
+                  "file",
+                  "directory"
+                ],
+                "description": "%turboAiRules.adapters.custom.items.properties.outputType.description%"
+              },
+              "fileExtensions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^\\.[a-z0-9]+$"
+                },
+                "description": "%turboAiRules.adapters.custom.items.properties.fileExtensions.description%"
+              },
+              "organizeBySource": {
+                "type": "boolean",
+                "default": true,
+                "description": "%turboAiRules.adapters.custom.items.properties.organizeBySource.description%"
+              },
+              "generateIndex": {
+                "type": "boolean",
+                "default": true,
+                "description": "%turboAiRules.adapters.custom.items.properties.generateIndex.description%"
+              },
+              "indexFileName": {
+                "type": "string",
+                "default": "index.md",
+                "description": "%turboAiRules.adapters.custom.items.properties.indexFileName.description%"
+              }
+            }
+          },
+          "description": "%turboAiRules.adapters.custom.description%"
         },
         "turbo-ai-rules.sync.auto": {
           "type": "boolean",
           "default": true,
-          "description": "Enable automatic synchronization"
+          "description": "%turboAiRules.sync.auto.description%"
         },
         "turbo-ai-rules.sync.interval": {
           "type": "number",
-          "default": 30,
+          "default": 60,
           "minimum": 5,
-          "description": "Sync interval in minutes"
+          "description": "%turboAiRules.sync.interval.description%"
         },
         "turbo-ai-rules.sync.onStartup": {
           "type": "boolean",
           "default": true,
-          "description": "Sync rules on startup"
+          "description": "%turboAiRules.sync.onStartup.description%"
         },
         "turbo-ai-rules.sync.conflictStrategy": {
           "type": "string",
@@ -199,11 +326,11 @@
             "skip-duplicates"
           ],
           "enumDescriptions": [
-            "Use highest priority rule when conflicts occur",
-            "Merge conflicting rules (not implemented yet)",
-            "Skip duplicate rules, keep first occurrence"
+            "%turboAiRules.sync.conflictStrategy.priority%",
+            "%turboAiRules.sync.conflictStrategy.merge%",
+            "%turboAiRules.sync.conflictStrategy.skip-duplicates%"
           ],
-          "description": "Strategy for resolving rule conflicts"
+          "description": "%turboAiRules.sync.conflictStrategy.description%"
         }
       }
     }

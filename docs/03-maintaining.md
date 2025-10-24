@@ -39,7 +39,7 @@
 
 ```bash
 # 步骤 1: 设计阶段
-# 更新 docs/01design.md,明确:
+# 更新 docs/01-design.md,明确:
 - 功能目标和使用场景
 - 架构设计和模块划分
 - 接口定义和数据流
@@ -96,7 +96,7 @@ git commit -m "fix: resolve issue #123 with xyz"
 # - 是否需要更新设计文档
 
 # 步骤 2: 更新设计(如需要)
-# 如果架构有变化,先更新 docs/01design.md
+# 如果架构有变化,先更新 docs/01-design.md
 
 # 步骤 3: 重构
 # - 保持测试通过
@@ -119,7 +119,7 @@ git commit -m "refactor: improve module structure"
 1. **设计阶段**
 
    ```markdown
-   # 在 docs/01design.md 中添加:
+   # 在 docs/01-design.md 中添加:
 
    - 新适配器的目标文件路径
    - 配置文件格式说明

@@ -128,7 +128,7 @@ export async function safeRemove(targetPath: string, basePath?: string): Promise
 export async function pathExists(targetPath: string): Promise<boolean> {
   try {
     return await fs.pathExists(targetPath);
-  } catch (error) {
+  } catch (_error) {
     Logger.warn('Error checking path existence', { targetPath });
     return false;
   }

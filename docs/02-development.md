@@ -85,7 +85,8 @@ turbo-ai-rules/
 │   │   ├── CursorAdapter.ts      # Cursor 适配器
 │   │   ├── CopilotAdapter.ts     # GitHub Copilot 适配器
 │   │   ├── ContinueAdapter.ts    # Continue 适配器
-│   │   └── RulesAdapter.ts       # 通用规则适配器
+│   │   ├── CustomAdapter.ts      # 自定义适配器(通用,可配置)
+│   │   └── RulesAdapter.ts       # (已废弃,由 CustomAdapter 替代)
 │   ├── commands/                 # VSCode 命令实现
 │   │   ├── addSource.ts          # 添加规则源
 │   │   ├── removeSource.ts       # 删除规则源
@@ -132,6 +133,56 @@ turbo-ai-rules/
     ├── launch.json               # 调试配置
     └── tasks.json                # 任务配置
 ```
+
+---
+
+## 核心概念
+
+### 自定义适配器系统
+
+从 v0.x.x 开始,扩展采用灵活的自定义适配器系统,允许用户为任意 AI 工具配置输出。
+
+#### 适配器类型
+
+1. **内置适配器** (固定格式)
+
+   - `CursorAdapter`: 生成 `.cursorrules`
+   - `CopilotAdapter`: 生成 `.github/.copilot-instructions.md`
+   - `ContinueAdapter`: 生成 `.continuerules`
+
+2. **自定义适配器** (用户可配置)
+   - `CustomAdapter`: 通用适配器,支持任意输出配置
+   - 配置存储在 `adapters.custom[]` 数组中
+   - 默认包含 `rules/` 目录适配器
+
+#### 输出模式
+
+**文件模式** (`outputType: 'file'`)
+
+- 合并所有规则到单个文件
+- 适用于大多数 AI 工具(Windsurf, Cline 等)
+- 支持文件后缀过滤
+
+**目录模式** (`outputType: 'directory'`)
+
+- 生成完整的目录结构
+- 可按源 ID 组织子目录(`organizeBySource: true`)
+- 可生成索引文件(`generateIndex: true`)
+
+#### 添加新适配器支持
+
+如需为新的 AI 工具添加内置支持:
+
+1. 在 `src/adapters/` 创建新适配器类(继承 `BaseAdapter`)
+2. 实现 `generate()`, `getFilePath()`, `validate()` 方法
+3. 在 `src/adapters/index.ts` 导出
+4. 在 `src/services/FileGenerator.ts` 注册
+5. 在 `package.json` 添加配置项
+6. 更新类型定义 `src/types/config.ts`
+7. 编写单元测试
+8. 更新文档
+
+**提示**: 大多数情况下,使用自定义适配器配置即可,无需创建新的内置适配器。
 
 ---
 

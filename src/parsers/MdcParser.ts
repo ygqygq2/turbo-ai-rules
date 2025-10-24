@@ -10,7 +10,7 @@ import * as path from 'path';
 import { ErrorCodes, ParseError } from '../types/errors';
 import type { ParsedRule, RuleMetadata } from '../types/rules';
 import { MAX_PARSE_DEPTH, MAX_PARSE_FILES, RULE_FILE_EXTENSIONS } from '../utils/constants';
-import { readDir, safeReadFile } from '../utils/fileSystem';
+import { safeReadFile } from '../utils/fileSystem';
 import { Logger } from '../utils/logger';
 import { validateRuleId } from '../utils/validator';
 
@@ -375,7 +375,7 @@ export class MdcParser {
       }
 
       return true;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }

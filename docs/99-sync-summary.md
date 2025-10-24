@@ -16,7 +16,7 @@
 - ✅ 扩展"常见问题"章节,添加更多实用问答
 - ✅ 添加"相关链接"章节,引导到其他文档
 
-#### docs/01design.md (设计文档)
+#### docs/01-design.md (设计文档)
 
 - ✅ 保持现有的设计理念和架构说明
 - ✅ 文档已经是概念性说明,无需大幅修改
@@ -77,18 +77,18 @@ turbo-ai-rules/
 ├── LICENSE                      # 许可证 (现有)
 └── docs/
     ├── README.md                # 文档索引 (导航中心)
-    ├── 01design.md              # 架构设计 (设计理念)
+    ├── 01-design.md              # 架构设计 (设计理念)
     ├── 02-development.md           # 开发指南 (技术实现)
     └── 03-maintaining.md           # 维护指南 (日常维护)
 ```
 
 ## 🎯 文档定位
 
-| 文档                | 目标读者      | 主要内容                     | 更新时机        |
-| ------------------- | ------------- | ---------------------------- | --------------- |
-| README.md           | 最终用户      | 功能介绍、使用方法、常见问题 | 功能变更时      |
-| CONTRIBUTING.md     | 贡献者        | 贡献流程、规范、模板         | 流程变更时      |
-| docs/01design.md    | 架构师/开发者 | 设计理念、架构决策           | 架构变更时      |
+| 文档                   | 目标读者      | 主要内容                     | 更新时机        |
+| ---------------------- | ------------- | ---------------------------- | --------------- |
+| README.md              | 最终用户      | 功能介绍、使用方法、常见问题 | 功能变更时      |
+| CONTRIBUTING.md        | 贡献者        | 贡献流程、规范、模板         | 流程变更时      |
+| docs/01-design.md      | 架构师/开发者 | 设计理念、架构决策           | 架构变更时      |
 | docs/02-development.md | 新开发者      | 环境搭建、开发流程           | 工具/流程变更时 |
 | docs/03-maintaining.md | 维护者        | 同步流程、故障排查           | 维护流程变更时  |
 
@@ -115,7 +115,7 @@ turbo-ai-rules/
 
 ### 实践要点
 
-1. **设计先行**: 重大功能前先更新 `docs/01design.md`
+1. **设计先行**: 重大功能前先更新 `docs/01-design.md`
 2. **边写边测**: 实现功能时同步编写测试
 3. **文档同步**: 功能完成后立即更新 `README.md`
 4. **版本控制**: 所有改动在同一个 PR 中完成
@@ -182,7 +182,7 @@ turbo-ai-rules/
 - [README.md](../README.md)
 - [CONTRIBUTING.md](../CONTRIBUTING.md)
 - [docs/README.md](./README.md)
-- [docs/01design.md](./01design.md)
+- [docs/01-design.md](./01-design.md)
 - [docs/02-development.md](./02-development.md)
 - [docs/03-maintaining.md](./03-maintaining.md)
 

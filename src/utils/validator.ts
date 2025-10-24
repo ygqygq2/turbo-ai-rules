@@ -45,7 +45,7 @@ export function validatePath(userPath: string, basePath: string): boolean {
     const resolved = path.resolve(basePath, normalized);
     const baseResolved = path.resolve(basePath);
     return resolved.startsWith(baseResolved);
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }
@@ -100,48 +100,52 @@ export function isSshUrl(url: string): boolean {
 /**
  * 验证配置对象的完整性
  */
-export function validateConfig(config: any): {
+export function validateConfig(config: unknown): {
   valid: boolean;
   errors: string[];
 } {
   const errors: string[] = [];
 
-  if (!config) {
+  if (!config || typeof config !== 'object') {
     errors.push('Configuration is null or undefined');
     return { valid: false, errors };
   }
 
+  const cfg = config as Record<string, unknown>;
+
   // 验证 sources
-  if (!Array.isArray(config.sources)) {
+  if (!Array.isArray(cfg.sources)) {
     errors.push('sources must be an array');
   }
 
   // 验证 storage
-  if (!config.storage) {
+  if (!cfg.storage || typeof cfg.storage !== 'object') {
     errors.push('storage configuration is missing');
   } else {
-    if (typeof config.storage.useGlobalCache !== 'boolean') {
+    const storage = cfg.storage as Record<string, unknown>;
+    if (typeof storage.useGlobalCache !== 'boolean') {
       errors.push('storage.useGlobalCache must be a boolean');
     }
-    if (typeof config.storage.projectLocalDir !== 'string') {
+    if (typeof storage.projectLocalDir !== 'string') {
       errors.push('storage.projectLocalDir must be a string');
     }
-    if (typeof config.storage.autoGitignore !== 'boolean') {
+    if (typeof storage.autoGitignore !== 'boolean') {
       errors.push('storage.autoGitignore must be a boolean');
     }
   }
 
   // 验证 sync
-  if (!config.sync) {
+  if (!cfg.sync || typeof cfg.sync !== 'object') {
     errors.push('sync configuration is missing');
   } else {
-    if (typeof config.sync.auto !== 'boolean') {
+    const sync = cfg.sync as Record<string, unknown>;
+    if (typeof sync.auto !== 'boolean') {
       errors.push('sync.auto must be a boolean');
     }
-    if (!validateSyncInterval(config.sync.interval)) {
+    if (!validateSyncInterval(sync.interval as number)) {
       errors.push('sync.interval must be a valid number');
     }
-    if (typeof config.sync.onStartup !== 'boolean') {
+    if (typeof sync.onStartup !== 'boolean') {
       errors.push('sync.onStartup must be a boolean');
     }
   }

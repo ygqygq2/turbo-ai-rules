@@ -33,9 +33,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     // 1. 初始化服务
     const configManager = ConfigManager.getInstance(context);
-    const gitManager = GitManager.getInstance();
+    const _gitManager = GitManager.getInstance();
     const rulesManager = RulesManager.getInstance();
-    const fileGenerator = FileGenerator.getInstance();
+    const _fileGenerator = FileGenerator.getInstance();
 
     Logger.info('Services initialized');
 

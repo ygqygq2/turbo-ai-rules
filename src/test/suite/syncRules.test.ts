@@ -58,7 +58,7 @@ suite('Sync Rules Tests', () => {
     try {
       await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
       // 不应该抛出异常，而是显示错误消息
-    } catch (error) {
+    } catch (_error) {
       assert.fail('Sync command should handle errors gracefully, not throw');
     }
   });

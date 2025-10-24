@@ -22,7 +22,7 @@ export interface RuleMetadata {
   /** 描述 */
   description?: string;
   /** 其他自定义字段 */
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**

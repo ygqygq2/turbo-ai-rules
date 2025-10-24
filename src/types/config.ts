@@ -81,6 +81,33 @@ export interface AdapterConfig {
 }
 
 /**
+ * 输出类型
+ */
+export type OutputType = 'file' | 'directory';
+
+/**
+ * 自定义适配器配置
+ */
+export interface CustomAdapterConfig extends AdapterConfig {
+  /** 适配器唯一标识 (kebab-case) */
+  id: string;
+  /** 适配器显示名称 */
+  name: string;
+  /** 输出目标路径(相对于工作区根目录) */
+  outputPath: string;
+  /** 输出类型: file=单个文件, directory=目录结构 */
+  outputType: OutputType;
+  /** 文件过滤规则(文件后缀,如 ['.md', '.mdc']), 不配置或空数组则不过滤(同步所有文件) */
+  fileExtensions?: string[];
+  /** 是否按源ID组织子目录(仅对 directory 类型有效), 默认 true */
+  organizeBySource?: boolean;
+  /** 是否生成索引文件(仅对 directory 类型有效), 默认 true */
+  generateIndex?: boolean;
+  /** 索引文件名(默认 'index.md') */
+  indexFileName?: string;
+}
+
+/**
  * AI 工具适配器配置集合
  */
 export interface AdaptersConfig {
@@ -90,8 +117,8 @@ export interface AdaptersConfig {
   copilot?: AdapterConfig;
   /** Continue.dev 配置 */
   continue?: AdapterConfig;
-  /** 自定义适配器 */
-  [key: string]: AdapterConfig | undefined;
+  /** 自定义适配器列表 */
+  custom?: CustomAdapterConfig[];
 }
 
 /**
@@ -147,10 +174,24 @@ export const DEFAULT_CONFIG: ExtensionConfig = {
       enabled: false,
       autoUpdate: true,
     },
+    custom: [
+      {
+        id: 'default-rules',
+        name: 'Generic Rules',
+        enabled: true,
+        autoUpdate: true,
+        outputPath: 'rules',
+        outputType: 'directory',
+        // fileExtensions 不设置 = 同步所有文件,不过滤
+        organizeBySource: true,
+        generateIndex: true,
+        indexFileName: 'index.md',
+      },
+    ],
   },
   sync: {
     auto: true,
-    interval: 30,
+    interval: 60,
     onStartup: true,
     conflictStrategy: 'priority',
   },

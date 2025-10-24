@@ -2,7 +2,6 @@
  * Git 管理服务
  */
 
-import * as os from 'os';
 import * as path from 'path';
 import simpleGit, { SimpleGit, SimpleGitOptions } from 'simple-git';
 import * as vscode from 'vscode';

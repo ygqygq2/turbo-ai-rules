@@ -6,9 +6,9 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   {
     files: ['**/*.ts'],
-    plugins:{
+    plugins: {
       ['simple-import-sort']: simpleImportSortPlugin,
-    }
+    },
   },
   { ignores: ['sampleWorkspace', 'out', 'dist', '**/*.d.ts'] },
   eslint.configs.recommended,
@@ -18,12 +18,17 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-unused-vars': [
         'warn',
-        { varsIgnorePattern: '^_', argsIgnorePattern: '^_' },
+        {
+          varsIgnorePattern: '^_',
+          argsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+        },
       ],
       '@typescript-eslint/no-explicit-any': 'warn',
       'simple-import-sort/imports': 'warn',
       'simple-import-sort/exports': 'warn',
-      'prettier/prettier': 'warn'
+      'prettier/prettier': 'warn',
     },
   },
 );

@@ -66,7 +66,7 @@ class RuleTreeItem extends vscode.TreeItem {
         return this.data.source?.enabled
           ? new vscode.ThemeIcon('repo')
           : new vscode.ThemeIcon('repo', new vscode.ThemeColor('disabledForeground'));
-      case 'rule':
+      case 'rule': {
         const priority = this.data.rule?.metadata.priority;
         if (priority === 'high') {
           return new vscode.ThemeIcon('error', new vscode.ThemeColor('errorForeground'));
@@ -74,6 +74,7 @@ class RuleTreeItem extends vscode.TreeItem {
           return new vscode.ThemeIcon('warning', new vscode.ThemeColor('warningForeground'));
         }
         return new vscode.ThemeIcon('file');
+      }
       case 'tag':
         return new vscode.ThemeIcon('tag');
       default:

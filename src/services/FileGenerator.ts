@@ -3,18 +3,20 @@
  * 负责编排适配器，生成不同 AI 工具的配置文件
  */
 
+import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
 import type { AIToolAdapter, GeneratedConfig } from '../adapters';
-import { ContinueAdapter, CopilotAdapter, CursorAdapter } from '../adapters';
-import { RulesAdapter } from '../adapters/RulesAdapter';
+import { ContinueAdapter, CopilotAdapter, CursorAdapter, CustomAdapter } from '../adapters';
 import type { AdaptersConfig } from '../types/config';
 import { GenerateError, SystemError } from '../types/errors';
 import type { ConflictStrategy, ParsedRule } from '../types/rules';
 import { ensureDir, safeWriteFile } from '../utils/fileSystem';
 import { ensureIgnored } from '../utils/gitignore';
 import { Logger } from '../utils/logger';
+import type { UserRulesProtectionConfig } from '../utils/userRulesProtection';
+import { extractUserContent, isUserDefinedFile, mergeContent } from '../utils/userRulesProtection';
 
 /**
  * 生成结果
@@ -32,9 +34,23 @@ export interface GenerateResult {
 export class FileGenerator {
   private static instance: FileGenerator;
   private adapters: Map<string, AIToolAdapter>;
+  private protectionConfig: UserRulesProtectionConfig;
 
   private constructor() {
     this.adapters = new Map();
+    this.protectionConfig = this.loadProtectionConfig();
+  }
+
+  /**
+   * 加载用户规则保护配置
+   */
+  private loadProtectionConfig(): UserRulesProtectionConfig {
+    const config = vscode.workspace.getConfiguration('turboAIRules');
+    return {
+      enabled: config.get<boolean>('protectUserRules', false),
+      userPrefixRange: config.get('userPrefixRange', { min: 800, max: 999 }),
+      blockMarkers: config.get('blockMarkers'),
+    };
   }
 
   /**
@@ -56,21 +72,29 @@ export class FileGenerator {
 
     this.adapters.clear();
 
-    // 注册启用的适配器
-    if (config.cursor) {
+    // 注册内置适配器
+    if (config.cursor?.enabled) {
       this.adapters.set('cursor', new CursorAdapter(true));
     }
 
-    if (config.copilot) {
+    if (config.copilot?.enabled) {
       this.adapters.set('copilot', new CopilotAdapter(true));
     }
 
-    if (config.continue) {
+    if (config.continue?.enabled) {
       this.adapters.set('continue', new ContinueAdapter(true));
     }
 
-    // 始终启用通用规则适配器
-    this.adapters.set('rules', new RulesAdapter());
+    // 注册自定义适配器
+    if (config.custom && Array.isArray(config.custom)) {
+      for (const customConfig of config.custom) {
+        if (customConfig.enabled) {
+          const adapter = new CustomAdapter(customConfig);
+          this.adapters.set(`custom-${customConfig.id}`, adapter);
+          Logger.debug(`Registered custom adapter: ${customConfig.id}`, customConfig);
+        }
+      }
+    }
 
     Logger.info('Adapters initialized', {
       count: this.adapters.size,
@@ -169,28 +193,48 @@ export class FileGenerator {
       throw new GenerateError(`Generated content for ${adapter.name} is invalid`, 'TAI-4002');
     }
 
-    // 写入文件
+    // 写入文件（传递 adapter 用于判断输出类型）
     const fullPath = path.join(workspaceRoot, config.filePath);
-    await this.writeConfigFile(fullPath, config.content);
+    await this.writeConfigFile(fullPath, config.content, adapter);
 
     return config;
   }
 
   /**
-   * 写入配置文件
+   * 写入配置文件（支持用户规则保护）
    * @param filePath 文件路径
    * @param content 文件内容
+   * @param adapter 适配器实例（用于判断输出类型）
    */
-  private async writeConfigFile(filePath: string, content: string): Promise<void> {
+  private async writeConfigFile(
+    filePath: string,
+    content: string,
+    adapter?: AIToolAdapter,
+  ): Promise<void> {
     try {
       // 确保目录存在
       const dir = path.dirname(filePath);
       await ensureDir(dir);
 
-      // 写入文件
-      await safeWriteFile(filePath, content);
+      // 如果没有启用保护，直接写入
+      if (!this.protectionConfig.enabled) {
+        await safeWriteFile(filePath, content);
+        Logger.debug('Config file written (protection disabled)', { filePath });
+        return;
+      }
 
-      Logger.debug('Config file written', { filePath });
+      // 判断是目录模式还是文件模式
+      const isDirectoryMode = adapter && this.isDirectoryOutput(adapter);
+
+      if (isDirectoryMode) {
+        // 目录模式：检查文件前缀
+        await this.writeDirectoryModeFile(dir, filePath, content);
+      } else {
+        // 单文件模式：合并块内容
+        await this.writeSingleFileMode(filePath, content);
+      }
+
+      Logger.debug('Config file written (with protection)', { filePath, isDirectoryMode });
     } catch (error) {
       throw new SystemError(
         `Failed to write config file: ${filePath}`,
@@ -198,6 +242,87 @@ export class FileGenerator {
         error instanceof Error ? error : undefined,
       );
     }
+  }
+
+  /**
+   * 判断是否为目录输出模式
+   */
+  private isDirectoryOutput(adapter: AIToolAdapter): boolean {
+    // 对于 CustomAdapter，检查其配置
+    if ('config' in adapter && adapter.config) {
+      const customConfig = adapter.config as { outputType?: string };
+      return customConfig.outputType === 'directory';
+    }
+
+    // 对于内置适配器，Cursor 是目录模式
+    return adapter.name === 'Cursor Rules';
+  }
+
+  /**
+   * 目录模式写入（前缀保护）
+   */
+  private async writeDirectoryModeFile(
+    dir: string,
+    filePath: string,
+    content: string,
+  ): Promise<void> {
+    const filename = path.basename(filePath);
+
+    // 检查是否为用户自定义文件
+    if (isUserDefinedFile(filename, this.protectionConfig)) {
+      Logger.warn('Skipping user-defined file', { filename });
+      vscode.window.showWarningMessage(
+        vscode.l10n.t(
+          'File "{0}" is in user-defined range (800-999). Skipped to protect your custom rules.',
+          filename,
+        ),
+      );
+      return;
+    }
+
+    // 扫描目录，检查冲突
+    try {
+      if (fs.existsSync(dir)) {
+        fs.readdirSync(dir).map((f) => path.join(dir, f));
+      }
+    } catch (error) {
+      Logger.warn('Failed to read directory for conflict detection', { dir, error });
+    }
+
+    // 写入文件
+    await safeWriteFile(filePath, content);
+  }
+
+  /**
+   * 单文件模式写入（块标记保护）
+   */
+  private async writeSingleFileMode(filePath: string, newContent: string): Promise<void> {
+    let existingContent = '';
+
+    // 读取现有文件
+    try {
+      if (fs.existsSync(filePath)) {
+        existingContent = fs.readFileSync(filePath, 'utf-8');
+      }
+    } catch (error) {
+      Logger.warn('Failed to read existing file', { filePath, error });
+    }
+
+    // 如果文件存在，提取用户内容
+    let mergedContent = newContent;
+    if (existingContent) {
+      const { userContent } = extractUserContent(existingContent, this.protectionConfig);
+      mergedContent = mergeContent(newContent, userContent, this.protectionConfig);
+      Logger.debug('Merged user content with generated content', {
+        userContentLength: userContent.length,
+        filePath,
+      });
+    } else {
+      // 首次生成，添加用户区域模板
+      mergedContent = mergeContent(newContent, '', this.protectionConfig);
+    }
+
+    await safeWriteFile(filePath, mergedContent);
   }
 
   /**

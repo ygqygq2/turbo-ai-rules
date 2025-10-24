@@ -13,7 +13,6 @@ import { GitManager } from '../services/GitManager';
 import { RulesManager } from '../services/RulesManager';
 import type { RuleSource } from '../types/config';
 import type { ParsedRule } from '../types/rules';
-import { GLOBAL_CACHE_DIR } from '../utils/constants';
 import { Logger } from '../utils/logger';
 
 /**
@@ -64,7 +63,6 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
       async (progress) => {
         let totalRules = 0;
         let successCount = 0;
-        let failureCount = 0;
 
         // 4. 初始化适配器
         fileGenerator.initializeAdapters(config.adapters);
@@ -94,7 +92,6 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
               ruleCount: rules.length,
             });
           } catch (error) {
-            failureCount++;
             Logger.error(
               `Failed to sync source ${source.id}`,
               error instanceof Error ? error : undefined,
@@ -111,7 +108,6 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
           message: 'Generating config files...',
         });
 
-        const allRules = rulesManager.getAllRules();
         const mergedRules = rulesManager.mergeRules(config.sync.conflictStrategy || 'priority');
 
         const generateResult = await fileGenerator.generateAll(

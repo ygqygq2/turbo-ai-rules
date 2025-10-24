@@ -143,7 +143,7 @@ export async function isPatternIgnored(workspacePath: string, pattern: string): 
     const lines = content.split('\n').map((line) => line.trim());
 
     return lines.includes(pattern);
-  } catch (error) {
+  } catch (_error) {
     Logger.warn('Failed to check .gitignore pattern', { workspacePath, pattern });
     return false;
   }

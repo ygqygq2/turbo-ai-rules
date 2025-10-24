@@ -95,7 +95,7 @@ export class ConfigManager {
    */
   public async updateConfig(
     section: keyof ExtensionConfig,
-    value: any,
+    value: ExtensionConfig[keyof ExtensionConfig],
     global = false,
   ): Promise<void> {
     try {

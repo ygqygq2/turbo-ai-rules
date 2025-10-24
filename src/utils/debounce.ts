@@ -8,12 +8,14 @@
  * @param delay 延迟时间（毫秒）
  * @returns 防抖后的函数
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<T extends (...args: any[]) => any>(
   fn: T,
   delay: number,
 ): (...args: Parameters<T>) => void {
   let timeoutId: NodeJS.Timeout | null = null;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return function (this: any, ...args: Parameters<T>) {
     if (timeoutId) {
       clearTimeout(timeoutId);
@@ -32,6 +34,7 @@ export function debounce<T extends (...args: any[]) => any>(
  * @param delay 延迟时间（毫秒）
  * @returns 节流后的函数
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function throttle<T extends (...args: any[]) => any>(
   fn: T,
   delay: number,
@@ -39,6 +42,7 @@ export function throttle<T extends (...args: any[]) => any>(
   let lastCall = 0;
   let timeoutId: NodeJS.Timeout | null = null;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return function (this: any, ...args: Parameters<T>) {
     const now = Date.now();
 
@@ -68,6 +72,7 @@ export function throttle<T extends (...args: any[]) => any>(
  * @param delay 延迟时间（毫秒）
  * @returns 防抖后的异步函数
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounceAsync<T extends (...args: any[]) => Promise<any>>(
   fn: T,
   delay: number,
@@ -75,6 +80,7 @@ export function debounceAsync<T extends (...args: any[]) => Promise<any>>(
   let timeoutId: NodeJS.Timeout | null = null;
   let lastPromise: Promise<ReturnType<T>> | null = null;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return function (this: any, ...args: Parameters<T>): Promise<ReturnType<T>> {
     if (timeoutId) {
       clearTimeout(timeoutId);
@@ -102,6 +108,7 @@ export function debounceAsync<T extends (...args: any[]) => Promise<any>>(
  * @param delay 延迟时间（毫秒）
  * @returns 节流后的异步函数
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function throttleAsync<T extends (...args: any[]) => Promise<any>>(
   fn: T,
   delay: number,
@@ -109,6 +116,7 @@ export function throttleAsync<T extends (...args: any[]) => Promise<any>>(
   let lastCall = 0;
   let pending: Promise<ReturnType<T>> | null = null;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return async function (this: any, ...args: Parameters<T>): Promise<ReturnType<T> | void> {
     const now = Date.now();
 

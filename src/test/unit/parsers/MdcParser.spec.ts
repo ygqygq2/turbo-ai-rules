@@ -49,6 +49,7 @@ Simple content.
     it('should extract ID from filename', () => {
       // This is a private method, we test it indirectly through parseMdcFile
       // or we can use type assertion to access it
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const extractId = (parser as any).extractIdFromFilename.bind(parser);
 
       expect(extractId('/path/to/clean-code.md')).toBe('clean-code');
