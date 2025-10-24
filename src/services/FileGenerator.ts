@@ -68,7 +68,7 @@ export class FileGenerator {
    * @param config 适配器配置
    */
   public initializeAdapters(config: AdaptersConfig): void {
-    Logger.info('Initializing adapters', config);
+    Logger.info('Initializing adapters', config as Record<string, unknown>);
 
     this.adapters.clear();
 
@@ -91,7 +91,10 @@ export class FileGenerator {
         if (customConfig.enabled) {
           const adapter = new CustomAdapter(customConfig);
           this.adapters.set(`custom-${customConfig.id}`, adapter);
-          Logger.debug(`Registered custom adapter: ${customConfig.id}`, customConfig);
+          Logger.debug(
+            `Registered custom adapter: ${customConfig.id}`,
+            customConfig as unknown as Record<string, unknown>,
+          );
         }
       }
     }

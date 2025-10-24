@@ -54,7 +54,7 @@ describe('CursorAdapter', () => {
       expect(result.content).toContain('Test Rule');
       expect(result.content).toContain('Test content');
       expect(result.content).toContain('**Priority:** high');
-      expect(result.content).toContain('**Tags:** tag1, tag2');
+      expect(result.content).toContain('**Tags:** test, example');
       expect(result.ruleCount).toBe(1);
     });
 
