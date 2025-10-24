@@ -3,6 +3,43 @@ import * as path from 'path';
 import * as tmp from 'tmp';
 
 /**
+ * 创建临时目录
+ */
+async function createTempDir(): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tmp.dir((err: any, dir: string | PromiseLike<string>) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve(dir);
+    });
+  });
+}
+
+/**
+ * 创建临时的用户数据目录和默认设置
+ * 用于集成测试，避免交互式配置
+ */
+export async function createSettings(): Promise<string> {
+  const userDataDirectory = await createTempDir();
+  process.env.VSC_JUPYTER_VSCODE_SETTINGS_DIR = userDataDirectory;
+
+  // 创建用户设置目录
+  const settingsFile = path.join(userDataDirectory, 'User', 'settings.json');
+
+  // 预配置规则源，避免测试时弹出交互提示
+  const defaultSettings: Record<string, string | boolean | string[]> = {
+    'security.workspace.trust.enabled': false, // 禁用工作区信任
+  };
+
+  await fs.ensureDir(path.dirname(settingsFile));
+  await fs.writeFile(settingsFile, JSON.stringify(defaultSettings, undefined, 4));
+
+  return userDataDirectory;
+}
+
+/**
  * 创建临时的 VSCode 设置文件
  * @param workspaceDir 工作区目录
  * @param adapterType 适配器类型：cursor, copilot, continue, rules

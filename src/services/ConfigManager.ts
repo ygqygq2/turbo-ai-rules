@@ -43,17 +43,19 @@ export class ConfigManager {
 
   /**
    * 获取 VSCode 配置对象
+   * @param resource 资源 URI（用于指定 workspace folder）
    */
-  private getVscodeConfig(): vscode.WorkspaceConfiguration {
-    return vscode.workspace.getConfiguration(CONFIG_PREFIX);
+  private getVscodeConfig(resource?: vscode.Uri): vscode.WorkspaceConfiguration {
+    return vscode.workspace.getConfiguration(CONFIG_PREFIX, resource);
   }
 
   /**
    * 获取完整配置
+   * @param resource 资源 URI（用于指定 workspace folder）
    */
-  public getConfig(): ExtensionConfig {
+  public getConfig(resource?: vscode.Uri): ExtensionConfig {
     try {
-      const vscodeConfig = this.getVscodeConfig();
+      const vscodeConfig = this.getVscodeConfig(resource);
 
       // 从 workspace state 获取 sources（不是 VSCode 配置）
       const sources = this.context.workspaceState.get<RuleSource[]>(
@@ -127,18 +129,31 @@ export class ConfigManager {
 
   /**
    * 获取所有规则源
+   * 优先从 workspace state 读取（运行时添加的），如果为空则从配置读取（预配置的）
+   * @param resource 资源 URI（用于指定 workspace folder）
    */
-  public getSources(): RuleSource[] {
-    const sources = this.context.workspaceState.get<RuleSource[]>('sources');
-    // 如果未初始化，返回空数组
-    return sources || [];
+  public getSources(resource?: vscode.Uri): RuleSource[] {
+    // 1. 先尝试从 workspace state 读取（运行时添加的源）
+    const stateSources = this.context.workspaceState.get<RuleSource[]>('sources');
+
+    // 2. 如果 workspace state 有源，返回它
+    if (stateSources && stateSources.length > 0) {
+      return stateSources;
+    }
+
+    // 3. 否则从 VSCode 配置读取（预配置的源）
+    const vscodeConfig = this.getVscodeConfig(resource);
+    const configSources = vscodeConfig.get<RuleSource[]>('sources', []);
+
+    return configSources;
   }
 
   /**
    * 获取启用的规则源
+   * @param resource 资源 URI（用于指定 workspace folder）
    */
-  public getEnabledSources(): RuleSource[] {
-    return this.getSources().filter((source) => source.enabled);
+  public getEnabledSources(resource?: vscode.Uri): RuleSource[] {
+    return this.getSources(resource).filter((source) => source.enabled);
   }
 
   /**

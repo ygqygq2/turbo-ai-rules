@@ -55,9 +55,10 @@ export const GIT_CLONE_DEPTH = 1;
 
 /**
  * Git URL 正则
+ * 支持 HTTPS 和 SSH 格式，.git 后缀可选
  */
 export const GIT_URL_REGEX =
-  /^(https?:\/\/[\w.-]+(\d+)?(\/[\w.~:/?#[\]@!$&'()*+,;=]*)?\.git|git@[\w.-]+:[\w./]+\.git)$/;
+  /^(https?:\/\/[\w.-]+(:\d+)?(\/[\w.~:/?#[\]@!$&'()*+,;=-]*)*(\.git)?|git@[\w.-]+:[\w./-]+(\.git)?)$/;
 
 /**
  * 分支名正则

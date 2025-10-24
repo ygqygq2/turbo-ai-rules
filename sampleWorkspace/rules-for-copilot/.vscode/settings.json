@@ -1,6 +1,23 @@
 {
+  // Copilot 适配器测试场景
   "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": true,
   "turbo-ai-rules.adapters.continue.enabled": false,
-  "turbo-ai-rules.adapters.rules.enabled": false
+  "turbo-ai-rules.sync.auto": false,
+  "turbo-ai-rules.sync.onStartup": false,
+
+  // 预配置测试用规则源
+  "turbo-ai-rules.sources": [
+    {
+      "id": "awesome-cursorrules-3f7a3a29",
+      "name": "Test Copilot Rules",
+      "gitUrl": "https://github.com/github/copilot-docs.git",
+      "branch": "main",
+      "subPath": "/",
+      "enabled": true,
+      "authentication": {
+        "type": "none"
+      }
+    }
+  ]
 }

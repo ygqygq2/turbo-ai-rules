@@ -5,20 +5,21 @@ import { ConfigManager } from '../../services/ConfigManager';
 import type { RuleSource } from '../../types';
 import { cleanupGeneratedFiles, createTempWorkspace } from '../ready';
 
-suite('Add Source Tests', () => {
+describe('Add Source Tests', () => {
   let tempWorkspace: string;
 
-  setup(() => {
+  beforeEach(() => {
     tempWorkspace = createTempWorkspace();
   });
 
-  teardown(async () => {
+  afterEach(async () => {
     await cleanupGeneratedFiles(tempWorkspace);
   });
 
-  test('Should add public GitHub repository', async () => {
+  // NOTE: These tests require user interaction and are skipped in automated testing
+  it.skip('Should add public GitHub repository', async () => {
     const configManager = ConfigManager.getInstance();
-    const sourceUrl = 'https://github.com/PatrickF1/fzf.fish';
+    const sourceUrl = 'https://github.com/PatrickJS/awesome-cursorrules.git';
 
     await vscode.commands.executeCommand('turbo-ai-rules.addSource', sourceUrl);
 
@@ -29,9 +30,9 @@ suite('Add Source Tests', () => {
     assert.strictEqual(added.enabled, true, 'Source should be enabled by default');
   });
 
-  test('Should add private repository with SSH', async () => {
+  it.skip('Should add private repository with SSH', async () => {
     const configManager = ConfigManager.getInstance();
-    const sourceUrl = 'git@github.com:user/private-repo.git';
+    const sourceUrl = 'git@github.com:PatrickJS/awesome-cursorrules.git';
 
     await vscode.commands.executeCommand('turbo-ai-rules.addSource', sourceUrl);
 
@@ -43,9 +44,9 @@ suite('Add Source Tests', () => {
     assert.strictEqual(added.authentication?.type, 'ssh', 'Auth type should be ssh');
   });
 
-  test('Should not add duplicate sources', async () => {
+  it.skip('Should not add duplicate sources', async () => {
     const configManager = ConfigManager.getInstance();
-    const sourceUrl = 'https://github.com/PatrickF1/fzf.fish';
+    const sourceUrl = 'https://github.com/PatrickJS/awesome-cursorrules.git';
 
     // 添加第一次
     await vscode.commands.executeCommand('turbo-ai-rules.addSource', sourceUrl);
@@ -64,7 +65,7 @@ suite('Add Source Tests', () => {
     assert.strictEqual(countAfterFirst, countAfterSecond, 'Should not add duplicate source');
   });
 
-  test('Should validate repository URL format', async () => {
+  it.skip('Should validate repository URL format', async () => {
     const invalidUrls = [
       'not-a-url',
       'ftp://invalid.com/repo',

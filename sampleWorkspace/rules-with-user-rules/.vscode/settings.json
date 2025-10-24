@@ -1,31 +1,27 @@
 {
-  // 默认 rules/ 目录适配器测试场景
+  // 用户自定义规则保护测试场景
+  // 使用 custom adapter 生成 rules/ 目录，避免与用户的 .cursorrules/ 目录冲突
   "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": false,
   "turbo-ai-rules.adapters.continue.enabled": false,
-  "turbo-ai-rules.sync.auto": false,
-  "turbo-ai-rules.sync.onStartup": false,
-
-  // 自定义适配器配置（默认 rules/ 目录）
   "turbo-ai-rules.adapters.custom": [
     {
       "id": "default-rules",
-      "name": "Generic Rules",
+      "name": "Default Rules",
       "enabled": true,
-      "autoUpdate": true,
-      "outputPath": "rules",
       "outputType": "directory",
-      "organizeBySource": true,
-      "generateIndex": true,
-      "indexFileName": "index.md"
+      "outputPath": "rules",
+      "fileExtension": ".md"
     }
   ],
+  "turbo-ai-rules.sync.auto": false,
+  "turbo-ai-rules.sync.onStartup": false,
 
-  // 预配置测试用规则源
+  // 配置规则源
   "turbo-ai-rules.sources": [
     {
       "id": "awesome-cursorrules-3f7a3a29",
-      "name": "Test Default Rules",
+      "name": "Test User Rules",
       "gitUrl": "https://github.com/PatrickJS/awesome-cursorrules.git",
       "branch": "main",
       "subPath": "/rules",

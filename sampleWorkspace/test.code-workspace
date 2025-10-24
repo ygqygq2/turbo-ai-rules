@@ -1,9 +1,35 @@
 {
   "folders": [
-    { "path": "rules-for-cursor" },
-    { "path": "rules-for-copilot" },
-    { "path": "rules-for-continer" },
-    { "path": "rules-for-default" },
+    {
+      "path": "rules-for-cursor",
+      "name": "Test: Cursor Adapter"
+    },
+    {
+      "path": "rules-for-copilot",
+      "name": "Test: Copilot Adapter"
+    },
+    {
+      "path": "rules-for-continue",
+      "name": "Test: Continue Adapter"
+    },
+    {
+      "path": "rules-for-default",
+      "name": "Test: Default Rules Directory"
+    },
+    {
+      "path": "rules-multi-source",
+      "name": "Test: Multi-Source Conflict Resolution"
+    },
+    {
+      "path": "rules-with-user-rules",
+      "name": "Test: User Rules Protection"
+    }
   ],
-  "settings": {},
+  "settings": {
+    // 全局测试配置 - 预配置规则源避免交互提示
+    "turbo-ai-rules.storage.useGlobalCache": true,
+    "turbo-ai-rules.storage.autoGitignore": false,
+    "turbo-ai-rules.sync.auto": false,
+    "turbo-ai-rules.sync.onStartup": false
+  }
 }

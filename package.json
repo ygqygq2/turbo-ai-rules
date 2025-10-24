@@ -192,6 +192,7 @@
         "turbo-ai-rules.adapters.cursor.enabled": {
           "type": "boolean",
           "default": false,
+          "scope": "resource",
           "description": "%turboAiRules.adapters.cursor.enabled.description%"
         },
         "turbo-ai-rules.adapters.cursor.autoUpdate": {
@@ -202,6 +203,7 @@
         "turbo-ai-rules.adapters.copilot.enabled": {
           "type": "boolean",
           "default": false,
+          "scope": "resource",
           "description": "%turboAiRules.adapters.copilot.enabled.description%"
         },
         "turbo-ai-rules.adapters.copilot.autoUpdate": {
@@ -212,6 +214,7 @@
         "turbo-ai-rules.adapters.continue.enabled": {
           "type": "boolean",
           "default": false,
+          "scope": "resource",
           "description": "%turboAiRules.adapters.continue.enabled.description%"
         },
         "turbo-ai-rules.adapters.continue.autoUpdate": {

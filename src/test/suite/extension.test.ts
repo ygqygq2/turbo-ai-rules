@@ -5,23 +5,23 @@ import { after } from 'mocha';
 import * as vscode from 'vscode';
 // import * as myExtension from '../extension';
 
-suite('Extension Test Suite1', () => {
-  suiteTeardown(() => {
+describe('Extension Test Suite1', () => {
+  after(() => {
     vscode.window.showInformationMessage('All tests done!');
   });
 
-  test('Sample test1', () => {
+  it('Sample test1', () => {
     assert.strictEqual(-1, [1, 2, 3].indexOf(5));
     assert.strictEqual(-1, [1, 2, 3].indexOf(0));
   });
 });
 
-suite('Extension Test Suite2', () => {
+describe('Extension Test Suite2', () => {
   after(() => {
     vscode.window.showInformationMessage('All tests done!');
   });
 
-  test('Sample test2', () => {
+  it('Sample test2', () => {
     assert.strictEqual(-1, [1, 2, 3].indexOf(5));
     assert.strictEqual(-1, [1, 2, 3].indexOf(0));
   });

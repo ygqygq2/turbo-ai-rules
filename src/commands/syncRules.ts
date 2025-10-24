@@ -31,7 +31,18 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
     const fileGenerator = FileGenerator.getInstance();
 
     // 1. 获取工作区根目录
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    // 优先使用活动编辑器所在的 workspace folder，如果没有则使用第一个
+    let workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+
+    // 尝试获取活动编辑器的 workspace folder
+    const activeEditor = vscode.window.activeTextEditor;
+    if (activeEditor) {
+      const activeWorkspaceFolder = vscode.workspace.getWorkspaceFolder(activeEditor.document.uri);
+      if (activeWorkspaceFolder) {
+        workspaceFolder = activeWorkspaceFolder;
+      }
+    }
+
     if (!workspaceFolder) {
       vscode.window.showErrorMessage('No workspace folder opened');
       return;
@@ -39,11 +50,11 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
 
     const workspaceRoot = workspaceFolder.uri.fsPath;
 
-    // 2. 获取配置
-    const config = await configManager.getConfig();
+    // 2. 获取配置（传递 workspace folder URI）
+    const config = await configManager.getConfig(workspaceFolder.uri);
     const sources = sourceId
-      ? (await configManager.getSources()).filter((s) => s.id === sourceId)
-      : await configManager.getSources();
+      ? configManager.getSources(workspaceFolder.uri).filter((s) => s.id === sourceId)
+      : configManager.getSources(workspaceFolder.uri);
 
     // 过滤启用的源
     const enabledSources = sources.filter((s) => s.enabled);
