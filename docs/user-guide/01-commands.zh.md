@@ -38,7 +38,7 @@
    - 公开仓库: `https://github.com/username/repo.git`
    - 私有仓库: 需要在后续步骤提供访问令牌
 3. 选择分支（可选，默认 `main`）
-4. 指定子路径（可选，如果规则文件在子目录如 `rules/`）
+4. 指定子路径（可选，必须以 `/` 开头，如 `/rules` 或 `/docs/rules`）
 5. 设置显示名称（可选，方便在树视图中识别）
 6. 提供访问令牌（仅私有仓库需要）
 
@@ -47,7 +47,7 @@
 ```
 URL:      https://github.com/company/coding-rules.git
 分支:     main
-子路径:   best-practices/
+子路径:   /best-practices
 名称:     Company Rules
 Token:    ghp_xxxxxxxxxxxx (私有仓库)
 ```
@@ -55,7 +55,7 @@ Token:    ghp_xxxxxxxxxxxx (私有仓库)
 ### 提示
 
 - 🔐 访问令牌仅需 `repo`（完整仓库访问）权限
-- 📁 使用子路径可以只同步仓库中的特定目录
+- 📁 使用子路径可以只同步仓库中的特定目录（必须以 `/` 开头）
 - 🏷️ 设置清晰的名称便于管理多个规则源
 
 ---

@@ -50,7 +50,7 @@ Enter your Git repository information:
 ```
 Repository URL: https://github.com/username/ai-rules.git
 Branch:         main (optional)
-Subpath:        rules/ (optional)
+Subpath:        /rules (optional, must start with /)
 Display Name:   My Rules (optional)
 Access Token:   ghp_xxxx (for private repos only)
 ```

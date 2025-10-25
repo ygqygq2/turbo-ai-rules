@@ -550,7 +550,7 @@ Then ask the AI: "Did you read the test marker？"to verify if the rules are loa
 
 ```
 # Sync only subdirectory, reduce file count
-Subpath: best-practices/
+Subpath: /best-practices
 ```
 
 **4. Check network**

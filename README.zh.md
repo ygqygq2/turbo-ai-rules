@@ -50,7 +50,7 @@
 ```
 仓库 URL: https://github.com/username/ai-rules.git
 分支:     main (可选)
-子路径:   rules/ (可选)
+子路径:   /rules (可选，必须以 / 开头)
 显示名称: My Rules (可选)
 访问令牌: ghp_xxxx (仅私有仓库需要)
 ```
