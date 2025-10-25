@@ -6,6 +6,7 @@
 import * as fs from 'fs-extra';
 import matter from 'gray-matter';
 import * as path from 'path';
+import * as vscode from 'vscode';
 
 import { ErrorCodes, ParseError } from '../types/errors';
 import type { ParsedRule, RuleMetadata } from '../types/rules';
@@ -33,6 +34,17 @@ interface ParseDirectoryOptions {
  */
 export class MdcParser {
   /**
+   * 获取解析器配置
+   */
+  private getParserConfig(): { strictMode: boolean; requireFrontmatter: boolean } {
+    const config = vscode.workspace.getConfiguration('turbo-ai-rules.parser');
+    return {
+      strictMode: config.get<boolean>('strictMode', false),
+      requireFrontmatter: config.get<boolean>('requireFrontmatter', false),
+    };
+  }
+
+  /**
    * 解析 MDC 文件
    * @param filePath 文件路径
    * @param sourceId 规则源 ID
@@ -42,38 +54,20 @@ export class MdcParser {
     try {
       Logger.debug('Parsing MDC file', { filePath, sourceId });
 
+      const { strictMode, requireFrontmatter } = this.getParserConfig();
+
       // 读取文件内容
       const content = await safeReadFile(filePath);
 
       // 解析 frontmatter
       const parsed = matter(content);
 
-      // 验证必需字段
-      const metadata = parsed.data as RuleMetadata;
-      const id = metadata.id || this.extractIdFromFilename(filePath);
-      const title = metadata.title || this.extractTitleFromContent(parsed.content);
-
-      if (!id) {
+      // 检查是否要求 frontmatter
+      const hasFrontmatter = parsed.data && Object.keys(parsed.data).length > 0;
+      if (requireFrontmatter && !hasFrontmatter) {
         throw new ParseError(
-          'Missing required field: id',
+          'Missing required YAML frontmatter',
           ErrorCodes.PARSE_MISSING_METADATA,
-          filePath,
-        );
-      }
-
-      if (!title) {
-        throw new ParseError(
-          'Missing required field: title',
-          ErrorCodes.PARSE_MISSING_METADATA,
-          filePath,
-        );
-      }
-
-      // 验证 ID 格式
-      if (!validateRuleId(id)) {
-        throw new ParseError(
-          `Invalid rule ID format: ${id} (must be kebab-case)`,
-          ErrorCodes.PARSE_VALIDATION_FAILED,
           filePath,
         );
       }
@@ -82,6 +76,65 @@ export class MdcParser {
       const trimmedContent = parsed.content.trim();
       if (!trimmedContent) {
         throw new ParseError('Rule content is empty', ErrorCodes.PARSE_VALIDATION_FAILED, filePath);
+      }
+
+      // 提取元数据
+      const metadata = parsed.data as RuleMetadata;
+
+      // 严格模式：必须有 id 和 title
+      if (strictMode) {
+        if (!metadata.id) {
+          throw new ParseError(
+            'Strict mode: id field required in frontmatter',
+            ErrorCodes.PARSE_MISSING_METADATA,
+            filePath,
+          );
+        }
+
+        if (!metadata.title) {
+          throw new ParseError(
+            'Strict mode: title field required in frontmatter',
+            ErrorCodes.PARSE_MISSING_METADATA,
+            filePath,
+          );
+        }
+
+        // 验证 ID 格式
+        if (!validateRuleId(metadata.id)) {
+          throw new ParseError(
+            `Invalid rule ID format: ${metadata.id} (must be kebab-case)`,
+            ErrorCodes.PARSE_VALIDATION_FAILED,
+            filePath,
+          );
+        }
+      }
+
+      // 提取或生成 id 和 title（宽松模式下总是尝试生成）
+      let id = metadata.id;
+      let title = metadata.title;
+
+      // 如果没有 id，从文件名生成
+      if (!id) {
+        id = this.extractIdFromFilename(filePath);
+        Logger.debug('Generated ID from filename', { filePath, id });
+      }
+
+      // 验证生成的 ID 格式
+      if (!validateRuleId(id)) {
+        // ID 格式无效，强制使用文件名生成
+        const fallbackId = this.extractIdFromFilename(filePath);
+        Logger.warn('Invalid rule ID format, using filename-based ID', {
+          filePath,
+          invalidId: id,
+          fallbackId,
+        });
+        id = fallbackId;
+      }
+
+      // 如果没有 title，尝试从内容或文件名提取
+      if (!title) {
+        title = this.extractTitleFromContent(parsed.content, filePath);
+        Logger.debug('Generated title from content/filename', { filePath, title });
       }
 
       const rule: ParsedRule = {
@@ -97,7 +150,7 @@ export class MdcParser {
         filePath,
       };
 
-      Logger.debug('MDC file parsed successfully', { filePath, ruleId: id });
+      Logger.debug('MDC file parsed successfully', { filePath, ruleId: id, strictMode });
 
       return rule;
     } catch (error) {
@@ -133,12 +186,27 @@ export class MdcParser {
   /**
    * 从内容中提取标题（如果 frontmatter 中没有）
    * @param content Markdown 内容
+   * @param filePath 文件路径（用于生成后备标题）
    * @returns 标题
    */
-  private extractTitleFromContent(content: string): string {
+  private extractTitleFromContent(content: string, filePath?: string): string {
     // 尝试从第一个 # 标题提取
     const match = content.match(/^#\s+(.+)$/m);
-    return match ? match[1].trim() : '';
+    if (match) {
+      return match[1].trim();
+    }
+
+    // 宽松模式：如果没有标题，使用文件名
+    if (filePath) {
+      const filename = path.basename(filePath, path.extname(filePath));
+      // 转换 kebab-case 为标题格式
+      return filename
+        .split('-')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+
+    return '';
   }
 
   /**
@@ -361,12 +429,16 @@ export class MdcParser {
    * @returns 是否有效
    */
   public validateMdcContent(content: string): boolean {
+    const { requireFrontmatter } = this.getParserConfig();
+
     try {
       const parsed = matter(content);
 
-      // 必须有 frontmatter
-      if (!parsed.data || Object.keys(parsed.data).length === 0) {
-        return false;
+      // 如果要求 frontmatter，检查是否存在
+      if (requireFrontmatter) {
+        if (!parsed.data || Object.keys(parsed.data).length === 0) {
+          return false;
+        }
       }
 
       // 必须有内容

@@ -10,13 +10,22 @@
 
 ### 📚 配置层级
 
-Turbo AI Rules 支持多层级配置，优先级从高到低：
+Turbo AI Rules 支持多层级配置，优先级从高到低:
 
 1. **工作区设置** (`.vscode/settings.json`) - 项目级配置
 2. **用户设置** (VS Code User Settings) - 全局配置
 3. **默认值** - 扩展内置默认配置
 
-推荐：团队项目使用工作区设置，个人使用用户设置。
+推荐:团队项目使用工作区设置,个人使用用户设置。
+
+**配置作用域说明**:
+
+扩展的大部分配置使用 VSCode 的 `resource` 作用域，这意味着:
+
+- ✅ 可以在不同工作区/文件夹设置不同的配置
+- ✅ 团队可以共享项目配置(通过 `.vscode/settings.json`)
+- ✅ 个人可以有全局默认配置,项目级配置会覆盖
+- 📌 例如:项目 A 启用 Cursor,项目 B 启用 Copilot
 
 ---
 
@@ -34,34 +43,17 @@ Turbo AI Rules 支持多层级配置，优先级从高到低：
   "turbo-ai-rules.sync.interval": 60,
   "turbo-ai-rules.sync.conflictStrategy": "priority",
 
+  // ========== 解析器配置 ==========
+  "turbo-ai-rules.parser.strictMode": false,
+  "turbo-ai-rules.parser.requireFrontmatter": false,
+
   // ========== 内置适配器 ==========
-  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": true,
   "turbo-ai-rules.adapters.continue.enabled": false,
 
   // ========== 自定义适配器 ==========
-  "turbo-ai-rules.adapters.custom": [
-    {
-      "id": "default-rules",
-      "name": "Generic Rules",
-      "enabled": true,
-      "autoUpdate": true,
-      "outputPath": "rules",
-      "outputType": "directory",
-      "organizeBySource": true,
-      "generateIndex": true,
-      "indexFileName": "index.md"
-    },
-    {
-      "id": "windsurf",
-      "name": "Windsurf AI",
-      "enabled": true,
-      "autoUpdate": true,
-      "outputPath": ".windsurfrules",
-      "outputType": "file",
-      "fileExtensions": [".md"]
-    }
-  ]
+  "turbo-ai-rules.adapters.custom": []
 }
 ```
 
@@ -111,19 +103,64 @@ Turbo AI Rules 支持多层级配置，优先级从高到低：
 
 ---
 
+#### 2.1 解析器配置 (`parser`)
+
+| 配置项               | 类型    | 默认值  | 说明                                                      |
+| -------------------- | ------- | ------- | --------------------------------------------------------- |
+| `strictMode`         | boolean | `false` | 启用严格模式:要求所有规则必须包含 id、title 和有效元数据  |
+| `requireFrontmatter` | boolean | `false` | 要求规则文件包含 YAML 前置元数据(禁用时可接受纯 Markdown) |
+
+**模式说明**:
+
+- **宽松模式** (默认 - `strictMode: false`, `requireFrontmatter: false`):
+  - ✅ 最大兼容性,接受所有格式的规则文件
+  - ✅ 自动从文件名生成 ID 和 Title
+  - ✅ 适合使用社区现有规则库
+  - ⚠️ 有限的冲突控制能力
+- **严格模式** (`strictMode: true`, `requireFrontmatter: true`):
+  - ✅ 强制元数据,精确控制规则
+  - ✅ 必需字段:id、title 必须在 frontmatter 中显式声明
+  - ✅ 适合企业级规则库管理
+  - ⚠️ 需要手动维护元数据
+
+**示例**:
+
+```json
+{
+  // 宽松模式(默认,推荐)
+  "turbo-ai-rules.parser.strictMode": false,
+  "turbo-ai-rules.parser.requireFrontmatter": false
+}
+```
+
+**何时使用严格模式**:
+
+- 企业级规则库,需要精确的优先级控制
+- 多团队协作,需要规则审计和版本管理
+- 自定义规则库,需要可追踪性
+
+**何时使用宽松模式**:
+
+- 使用社区规则(awesome-cursorrules 等)
+- 快速原型和测试
+- 个人项目或小团队
+- 不需要复杂规则管理
+
+---
+
 #### 3. 内置适配器配置 (`adapters`)
 
 | 适配器   | 配置项             | 默认值  | 输出文件                           |
 | -------- | ------------------ | ------- | ---------------------------------- |
-| Cursor   | `cursor.enabled`   | `true`  | `.cursorrules`                     |
 | Copilot  | `copilot.enabled`  | `true`  | `.github/.copilot-instructions.md` |
+| Cursor   | `cursor.enabled`   | `false` | `.cursorrules`                     |
 | Continue | `continue.enabled` | `false` | `.continuerules`                   |
 
 **示例**:
 
 ```json
 {
-  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": true,
   "turbo-ai-rules.adapters.continue.enabled": false
 }
@@ -331,7 +368,7 @@ docs/ai-rules/
 
 ```json
 {
-  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": true
 }
 ```
@@ -346,7 +383,7 @@ docs/ai-rules/
 {
   "turbo-ai-rules.sync.onStartup": true,
   "turbo-ai-rules.sync.interval": 120,
-  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": true,
   "turbo-ai-rules.adapters.continue.enabled": true,
   "turbo-ai-rules.adapters.custom": [
@@ -381,7 +418,7 @@ docs/ai-rules/
 {
   "turbo-ai-rules.sync.onStartup": false,
   "turbo-ai-rules.sync.interval": 0,
-  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": true
 }
 ```

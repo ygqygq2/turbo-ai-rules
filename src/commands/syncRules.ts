@@ -16,6 +16,29 @@ import type { ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
 
 /**
+ * 按仓库分组源，确保同一仓库的不同分支/目录串行处理
+ */
+interface RepositoryGroup {
+  gitUrl: string;
+  sources: RuleSource[];
+}
+
+function groupSourcesByRepository(sources: RuleSource[]): RepositoryGroup[] {
+  const groupMap = new Map<string, RuleSource[]>();
+
+  for (const source of sources) {
+    const existing = groupMap.get(source.gitUrl) || [];
+    existing.push(source);
+    groupMap.set(source.gitUrl, existing);
+  }
+
+  return Array.from(groupMap.entries()).map(([gitUrl, sources]) => ({
+    gitUrl,
+    sources,
+  }));
+}
+
+/**
  * 同步规则命令处理器
  * @param sourceId 规则源 ID（可选，如果提供则只同步指定源）
  */
@@ -78,40 +101,63 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
         // 4. 初始化适配器
         fileGenerator.initializeAdapters(config.adapters);
 
-        // 5. 为每个源同步规则
-        for (let i = 0; i < enabledSources.length; i++) {
-          const source = enabledSources[i];
-          const sourceName = source.name || source.gitUrl;
+        // 5. 按仓库分组，确保同一仓库的不同分支/目录串行处理
+        const sourcesByRepo = groupSourcesByRepository(enabledSources);
+        const totalGroups = sourcesByRepo.length;
 
-          progress.report({
-            message: `Syncing ${sourceName} (${i + 1}/${enabledSources.length})`,
-            increment: (100 / enabledSources.length) * 0.5,
+        Logger.info('Grouped sources by repository', {
+          totalSources: enabledSources.length,
+          repositories: totalGroups,
+        });
+
+        // 6. 为每个仓库组同步规则（同一仓库串行，不同仓库可并行）
+        for (let groupIndex = 0; groupIndex < sourcesByRepo.length; groupIndex++) {
+          const repoGroup = sourcesByRepo[groupIndex];
+          const repoName = repoGroup.gitUrl;
+
+          Logger.info(`Processing repository group ${groupIndex + 1}/${totalGroups}`, {
+            gitUrl: repoName,
+            sourceCount: repoGroup.sources.length,
           });
 
-          try {
-            // 同步单个源
-            const rules = await syncSingleSource(source, gitManager, parser, validator);
+          // 同一仓库的源按顺序处理，避免 git 操作冲突
+          for (let i = 0; i < repoGroup.sources.length; i++) {
+            const source = repoGroup.sources[i];
+            const sourceName = source.name || source.gitUrl;
+            const currentIndex = successCount + 1;
 
-            // 添加到规则管理器
-            rulesManager.addRules(source.id, rules);
-
-            totalRules += rules.length;
-            successCount++;
-
-            Logger.info(`Source synced successfully`, {
-              sourceId: source.id,
-              ruleCount: rules.length,
+            progress.report({
+              message: `Syncing ${sourceName} (${currentIndex}/${enabledSources.length})`,
+              increment: (100 / enabledSources.length) * 0.5,
             });
-          } catch (error) {
-            Logger.error(
-              `Failed to sync source ${source.id}`,
-              error instanceof Error ? error : undefined,
-            );
-          }
 
-          progress.report({
-            increment: (100 / enabledSources.length) * 0.5,
-          });
+            try {
+              // 同步单个源
+              const rules = await syncSingleSource(source, gitManager, parser, validator);
+
+              // 添加到规则管理器
+              rulesManager.addRules(source.id, rules);
+
+              totalRules += rules.length;
+              successCount++;
+
+              Logger.info(`Source synced successfully`, {
+                sourceId: source.id,
+                branch: source.branch || 'default',
+                subPath: source.subPath || '/',
+                ruleCount: rules.length,
+              });
+            } catch (error) {
+              Logger.error(
+                `Failed to sync source ${source.id}`,
+                error instanceof Error ? error : undefined,
+              );
+            }
+
+            progress.report({
+              increment: (100 / enabledSources.length) * 0.5,
+            });
+          }
         }
 
         // 6. 生成配置文件

@@ -2,6 +2,8 @@
  * 规则验证器
  */
 
+import * as vscode from 'vscode';
+
 import type {
   ParsedRule,
   ValidationError,
@@ -16,6 +18,17 @@ import { validateRuleId } from '../utils/validator';
  */
 export class RulesValidator {
   /**
+   * 获取解析器配置
+   */
+  private getParserConfig(): { strictMode: boolean; requireFrontmatter: boolean } {
+    const config = vscode.workspace.getConfiguration('turbo-ai-rules.parser');
+    return {
+      strictMode: config.get<boolean>('strictMode', false),
+      requireFrontmatter: config.get<boolean>('requireFrontmatter', false),
+    };
+  }
+
+  /**
    * 验证单个规则
    * @param rule 要验证的规则
    * @returns 验证结果
@@ -23,14 +36,23 @@ export class RulesValidator {
   public validateRule(rule: ParsedRule): ValidationResult {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
+    const { strictMode } = this.getParserConfig();
 
-    // 验证必需字段
+    // 验证必需字段 - 只在严格模式下强制要求
     if (!rule.id) {
-      errors.push({
-        code: 'MISSING_ID',
-        message: 'Rule ID is required',
-        field: 'id',
-      });
+      if (strictMode) {
+        errors.push({
+          code: 'MISSING_ID',
+          message: 'Rule ID is required (strict mode)',
+          field: 'id',
+        });
+      } else {
+        warnings.push({
+          code: 'MISSING_ID',
+          message: 'Rule ID is missing (auto-generated recommended)',
+          field: 'id',
+        });
+      }
     } else if (!validateRuleId(rule.id)) {
       errors.push({
         code: 'INVALID_ID_FORMAT',
@@ -40,11 +62,19 @@ export class RulesValidator {
     }
 
     if (!rule.title) {
-      errors.push({
-        code: 'MISSING_TITLE',
-        message: 'Rule title is required',
-        field: 'title',
-      });
+      if (strictMode) {
+        errors.push({
+          code: 'MISSING_TITLE',
+          message: 'Rule title is required (strict mode)',
+          field: 'title',
+        });
+      } else {
+        warnings.push({
+          code: 'MISSING_TITLE',
+          message: 'Rule title is missing (auto-generated recommended)',
+          field: 'title',
+        });
+      }
     }
 
     if (!rule.content || rule.content.trim() === '') {

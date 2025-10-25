@@ -13,7 +13,7 @@
     {
       "id": "awesome-cursorrules-3f7a3a29",
       "name": "Test Continue Rules",
-      "gitUrl": "https://github.com/continuedev/continue.git",
+      "gitUrl": "https://github.com/PatrickJS/awesome-cursorrules.git",
       "branch": "main",
       "subPath": "/docs",
       "enabled": true,

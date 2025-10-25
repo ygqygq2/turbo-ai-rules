@@ -6,6 +6,152 @@
 
 ---
 
+## 📖 规则文件格式概述
+
+Turbo AI Rules 支持两种解析模式,以适应不同的使用场景:
+
+### 官方约定 vs 扩展字段
+
+- **官方约定**: `description`, `globs` 等 Cursor/Copilot 官方支持的字段
+- **扩展字段**: `id`, `title`, `priority`, `tags`, `version`, `author` 等本扩展特有字段
+
+两种字段可以**共存**,互不冲突。
+
+---
+
+## ⚙️ 解析模式
+
+### 宽松模式(默认)
+
+**配置**:
+
+```json
+{
+  "turbo-ai-rules.parser.strictMode": false,
+  "turbo-ai-rules.parser.requireFrontmatter": false
+}
+```
+
+**特点**:
+
+- ✅ 接受纯 Markdown 文件(无 frontmatter)
+- ✅ Frontmatter 可选
+- ✅ 自动从文件名生成 `id` (kebab-case)
+- ✅ 自动从 `# 标题` 或文件名生成 `title`
+- ✅ 完全兼容 Cursor/Copilot 生态的规则文件
+- ⚠️ 规则冲突时可能无法精确控制优先级
+
+**适用场景**:
+
+- 使用社区现有的规则文件(如 awesome-cursorrules)
+- 快速原型和测试
+- 不需要复杂的规则管理
+
+**示例 1: 纯 Markdown**
+
+```markdown
+# Clean Code Guidelines
+
+## Constants Over Magic Numbers
+
+- Replace hard-coded values with named constants
+- Use descriptive constant names
+
+## Meaningful Names
+
+- Variables should reveal their purpose
+```
+
+**解析结果**:
+
+- `id`: `clean-code-guidelines` (从文件名生成)
+- `title`: `Clean Code Guidelines` (从第一个 # 标题提取)
+- `content`: 完整的 Markdown 内容
+
+**示例 2: 官方约定格式**
+
+```markdown
+---
+description: Guidelines for writing clean, maintainable code
+globs: **/*.{ts,js,tsx,jsx}
+---
+
+# Clean Code Guidelines
+
+## Constants Over Magic Numbers
+
+- Replace hard-coded values with named constants
+```
+
+**解析结果**:
+
+- `id`: `clean-code-guidelines` (从文件名生成)
+- `title`: `Clean Code Guidelines` (从 # 标题提取)
+- `metadata.description`: `"Guidelines for writing clean, maintainable code"`
+- `metadata.globs`: `"**/*.{ts,js,tsx,jsx}"`
+
+---
+
+### 严格模式
+
+**配置**:
+
+```json
+{
+  "turbo-ai-rules.parser.strictMode": true,
+  "turbo-ai-rules.parser.requireFrontmatter": true
+}
+```
+
+**特点**:
+
+- ✅ 强制要求 YAML frontmatter
+- ✅ 必须包含 `id` 和 `title` 字段
+- ✅ 支持 `priority` 和 `tags` 元数据
+- ✅ 精确的规则冲突解决
+- ✅ 更好的规则可追踪性
+- ⚠️ 需要手动维护规则元数据
+
+**适用场景**:
+
+- 企业级规则库管理
+- 多团队协作环境
+- 需要精确控制规则优先级
+- 规则版本管理和审计
+
+**示例: 完整元数据**
+
+```markdown
+---
+id: typescript-clean-code
+title: TypeScript Clean Code Guidelines
+priority: high
+tags: [typescript, clean-code, best-practices]
+version: 1.0.0
+author: Your Team
+description: Clean code guidelines for TypeScript projects
+globs: **/*.{ts,tsx}
+---
+
+# TypeScript Clean Code Guidelines
+
+## Type Safety First
+
+- Use explicit types for function parameters
+- Avoid `any` unless absolutely necessary
+```
+
+**解析结果**:
+
+- `id`: `typescript-clean-code` (frontmatter 明确指定)
+- `title`: `TypeScript Clean Code Guidelines`
+- `priority`: `high`
+- `tags`: `["typescript", "clean-code", "best-practices"]`
+- `metadata.description`: 官方字段
+- `metadata.globs`: 官方字段
+
+---
+
 ## 📖 规则文件格式
 
 规则文件使用 MDC (Markdown + YAML Frontmatter) 格式:
@@ -74,7 +220,7 @@ Turbo AI Rules 支持多层级配置，优先级从高到低：
   "turbo-ai-rules.sync.conflictStrategy": "priority",
 
   // ========== 内置适配器 ==========
-  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": true,
   "turbo-ai-rules.adapters.continue.enabled": false,
 
@@ -162,7 +308,7 @@ Turbo AI Rules 支持多层级配置，优先级从高到低：
 
 ```json
 {
-  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": true,
   "turbo-ai-rules.adapters.continue.enabled": false
 }
@@ -370,7 +516,7 @@ docs/ai-rules/
 
 ```json
 {
-  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": true
 }
 ```
@@ -385,7 +531,7 @@ docs/ai-rules/
 {
   "turbo-ai-rules.sync.onStartup": true,
   "turbo-ai-rules.sync.interval": 120,
-  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": true,
   "turbo-ai-rules.adapters.continue.enabled": true,
   "turbo-ai-rules.adapters.custom": [
@@ -420,7 +566,7 @@ docs/ai-rules/
 {
   "turbo-ai-rules.sync.onStartup": false,
   "turbo-ai-rules.sync.interval": 0,
-  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": true
 }
 ```

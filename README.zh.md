@@ -2,6 +2,8 @@
 
 <div align="center">
 
+<img src="./resources/images/logo.png" alt="Turbo AI Rules Logo" width="128" height="128" />
+
 🚀 **从外部 Git 仓库同步 AI 编码规则，自动生成多种 AI 工具的配置文件**
 
 [![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/ygqygq2.turbo-ai-rules.svg?color=07c160&label=turbo-ai-rules&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=ygqygq2.turbo-ai-rules)
@@ -66,10 +68,10 @@
 
 ```
 workspace/
-├── .cursorrules                      # ✅ Cursor AI 配置
-├── .github/.copilot-instructions.md  # ✅ GitHub Copilot 配置
-└── rules/                            # ✅ 通用规则目录
+├── .github/.copilot-instructions.md  # ✅ GitHub Copilot 配置 (默认生成)
 ```
+
+> **注意**: 默认只启用 GitHub Copilot 适配器。如需使用其他 AI 工具,请在设置中启用对应适配器。
 
 ---
 
@@ -95,29 +97,73 @@ workspace/
 
 ### 支持的 AI 工具
 
-| 工具           | 配置文件                           | 默认状态    |
-| -------------- | ---------------------------------- | ----------- |
-| Cursor         | `.cursorrules`                     | ✅ 已启用   |
-| GitHub Copilot | `.github/.copilot-instructions.md` | ✅ 已启用   |
-| Continue       | `.continuerules`                   | ⚙️ 已禁用   |
-| 自定义         | 可配置                             | ⚙️ 用户定义 |
+| 工具           | 配置文件                           | 默认状态  |
+| -------------- | ---------------------------------- | --------- |
+| GitHub Copilot | `.github/.copilot-instructions.md` | ✅ 已启用 |
+| Cursor         | `.cursorrules`                     | ⚙️ 已禁用 |
+| Continue       | `.continuerules`                   | ⚙️ 已禁用 |
+| 自定义适配器   | 可配置                             | ⚙️ 按需   |
 
-### 规则文件格式 (MDC)
+### 规则文件格式
 
-规则使用 **MDC** (Markdown + YAML Frontmatter) 格式：
+扩展支持**双模式解析**，兼顾灵活性和可管理性：
+
+#### **宽松模式（默认）**
+
+✅ 兼容社区现有规则文件（如 [awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules)）
+✅ Frontmatter 可选，支持纯 Markdown 文件
+✅ 自动从文件名/内容提取元数据
+
+**官方约定格式（Cursor/Copilot 社区标准）**:
 
 ```markdown
 ---
-id: typescript-naming
-title: TypeScript 命名规范
-priority: high
-tags: [typescript, naming]
+description: TypeScript 最佳实践指南
+globs: **/*.{ts,tsx}
+---
+
+# TypeScript Best Practices
+
+使用 camelCase 命名变量...
+```
+
+**纯 Markdown（无 frontmatter）**:
+
+```markdown
+# TypeScript Best Practices
+
+使用 camelCase 命名变量...
+```
+
+#### **严格模式（可选）**
+
+适用于企业级规则库管理，需要精确控制：
+
+```markdown
+---
+id: typescript-naming      # 必需：kebab-case 格式
+title: TypeScript 命名规范  # 必需
+description: TypeScript 最佳实践指南
+globs: **/*.{ts,tsx}
+priority: high             # 可选：low/medium/high
+tags: [typescript, naming] # 可选
 ---
 
 # TypeScript 命名规范
 
 使用 camelCase 命名变量...
 ```
+
+**启用严格模式**:
+
+```json
+{
+  "turbo-ai-rules.parser.strictMode": true,
+  "turbo-ai-rules.parser.requireFrontmatter": true
+}
+```
+
+📖 **详细说明**: [规则文件格式文档](./docs/RULE_FORMAT.md)
 
 ---
 

@@ -136,6 +136,16 @@ export interface SyncConfig {
 }
 
 /**
+ * 解析器配置
+ */
+export interface ParserConfig {
+  /** 启用严格模式：要求所有规则必须包含 id、title 和有效元数据 */
+  strictMode: boolean;
+  /** 要求 YAML 前置元数据：禁用时可接受纯 Markdown 文件 */
+  requireFrontmatter: boolean;
+}
+
+/**
  * 扩展完整配置
  */
 export interface ExtensionConfig {
@@ -147,6 +157,8 @@ export interface ExtensionConfig {
   adapters: AdaptersConfig;
   /** 同步策略 */
   sync: SyncConfig;
+  /** 解析器配置 */
+  parser: ParserConfig;
 }
 
 /**
@@ -194,5 +206,9 @@ export const DEFAULT_CONFIG: ExtensionConfig = {
     interval: 60,
     onStartup: true,
     conflictStrategy: 'priority',
+  },
+  parser: {
+    strictMode: false,
+    requireFrontmatter: false,
   },
 };

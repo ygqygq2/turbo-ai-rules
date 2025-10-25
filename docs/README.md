@@ -21,7 +21,9 @@ docs/
     ├── 01-design.md     # Architecture design
     ├── 02-development.md # Development guide
     ├── 03-maintaining.md # Maintenance guide
-    └── 04-custom-adapters-design.md
+    ├── 04-custom-adapters-design.md
+    ├── 05-sync-summary.md # Sync summary
+    └── 06-test-coverage.md # Test coverage
 ```
 
 ---
@@ -56,6 +58,8 @@ docs/
 | [开发指南](./development/02-development.md)                    | Development environment setup, coding standards, testing |
 | [维护指南](./development/03-maintaining.md)                    | Maintenance workflows and best practices                 |
 | [自定义适配器设计](./development/04-custom-adapters-design.md) | Custom adapter design documentation                      |
+| [同步总结](./development/05-sync-summary.md)                   | Documentation synchronization summary and history        |
+| [测试覆盖率](./development/06-test-coverage.md)                | Test coverage reports and analysis                       |
 
 ### Quick Start for Contributors
 
@@ -66,7 +70,6 @@ docs/
 ### Other Resources
 
 - [Sample Workspace](../sampleWorkspace/) - Configuration examples and test scenarios
-- [Sync Summary](./99-sync-summary.md) - Documentation sync history
 
 ---
 

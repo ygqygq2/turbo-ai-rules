@@ -2,8 +2,9 @@
   "name": "turbo-ai-rules",
   "displayName": "Turbo AI Rules",
   "description": "%description%",
-  "version": "0.0.1",
+  "version": "1.0.1",
   "publisher": "ygqygq2",
+  "icon": "resources/images/logo.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/ygqygq2/turbo-ai-rules.git"
@@ -189,6 +190,16 @@
           },
           "description": "%turboAiRules.blockMarkers.description%"
         },
+        "turbo-ai-rules.parser.strictMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "%turboAiRules.parser.strictMode.description%"
+        },
+        "turbo-ai-rules.parser.requireFrontmatter": {
+          "type": "boolean",
+          "default": false,
+          "description": "%turboAiRules.parser.requireFrontmatter.description%"
+        },
         "turbo-ai-rules.adapters.cursor.enabled": {
           "type": "boolean",
           "default": false,
@@ -202,7 +213,7 @@
         },
         "turbo-ai-rules.adapters.copilot.enabled": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "scope": "resource",
           "description": "%turboAiRules.adapters.copilot.enabled.description%"
         },
@@ -224,19 +235,7 @@
         },
         "turbo-ai-rules.adapters.custom": {
           "type": "array",
-          "default": [
-            {
-              "id": "default-rules",
-              "name": "Generic Rules",
-              "enabled": true,
-              "autoUpdate": true,
-              "outputPath": "rules",
-              "outputType": "directory",
-              "organizeBySource": true,
-              "generateIndex": true,
-              "indexFileName": "index.md"
-            }
-          ],
+          "default": [],
           "items": {
             "type": "object",
             "required": [

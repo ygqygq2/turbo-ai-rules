@@ -28,7 +28,7 @@
       "name": "Test Default Rules",
       "gitUrl": "https://github.com/PatrickJS/awesome-cursorrules.git",
       "branch": "main",
-      "subPath": "/rules",
+      "subPath": "/rules-new",
       "enabled": true,
       "authentication": {
         "type": "none"

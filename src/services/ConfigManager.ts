@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 import type {
   AdaptersConfig,
   ExtensionConfig,
+  ParserConfig,
   RuleSource,
   StorageConfig,
   SyncConfig,
@@ -68,6 +69,7 @@ export class ConfigManager {
         storage: vscodeConfig.get<StorageConfig>('storage', DEFAULT_CONFIG.storage),
         adapters: vscodeConfig.get<AdaptersConfig>('adapters', DEFAULT_CONFIG.adapters),
         sync: vscodeConfig.get<SyncConfig>('sync', DEFAULT_CONFIG.sync),
+        parser: vscodeConfig.get<ParserConfig>('parser', DEFAULT_CONFIG.parser),
       };
 
       // 验证配置

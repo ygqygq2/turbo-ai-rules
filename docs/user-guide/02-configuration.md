@@ -18,6 +18,15 @@ Turbo AI Rules supports multi-level configuration, priority from high to low:
 
 Recommendation: Use workspace settings for team projects, user settings for personal use.
 
+**Configuration Scope**:
+
+Most extension configurations use VSCode's `resource` scope, which means:
+
+- ✅ Different workspaces/folders can have different configurations
+- ✅ Teams can share project configurations (via `.vscode/settings.json`)
+- ✅ Personal global defaults, overridden by project-level configs
+- 📌 Example: Project A enables Cursor, Project B enables Copilot
+
 ---
 
 ### 🔧 Complete Configuration Example
@@ -34,34 +43,17 @@ Add to `.vscode/settings.json` or VS Code settings:
   "turbo-ai-rules.sync.interval": 60,
   "turbo-ai-rules.sync.conflictStrategy": "priority",
 
+  // ========== Parser Configuration ==========
+  "turbo-ai-rules.parser.strictMode": false,
+  "turbo-ai-rules.parser.requireFrontmatter": false,
+
   // ========== Built-in Adapters ==========
-  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": true,
   "turbo-ai-rules.adapters.continue.enabled": false,
 
   // ========== Custom Adapters ==========
-  "turbo-ai-rules.adapters.custom": [
-    {
-      "id": "default-rules",
-      "name": "Generic Rules",
-      "enabled": true,
-      "autoUpdate": true,
-      "outputPath": "rules",
-      "outputType": "directory",
-      "organizeBySource": true,
-      "generateIndex": true,
-      "indexFileName": "index.md"
-    },
-    {
-      "id": "windsurf",
-      "name": "Windsurf AI",
-      "enabled": true,
-      "autoUpdate": true,
-      "outputPath": ".windsurfrules",
-      "outputType": "file",
-      "fileExtensions": [".md"]
-    }
-  ]
+  "turbo-ai-rules.adapters.custom": []
 }
 ```
 
@@ -111,19 +103,64 @@ Add to `.vscode/settings.json` or VS Code settings:
 
 ---
 
-#### 3. Built-in Adapter Configuration (`adapters`)
+#### 2.1 Parser Configuration (`parser`)
 
-| Adapter  | Config Option      | Default | Output File                        |
+| Option               | Type    | Default | Description                                                             |
+| -------------------- | ------- | ------- | ----------------------------------------------------------------------- |
+| `strictMode`         | boolean | `false` | Enable strict mode: require id, title, and valid metadata in all rules  |
+| `requireFrontmatter` | boolean | `false` | Require YAML frontmatter in rule files (accept plain Markdown when off) |
+
+**Mode Description**:
+
+- **Relaxed Mode** (Default - `strictMode: false`, `requireFrontmatter: false`):
+  - ✅ Maximum compatibility, accepts all rule file formats
+  - ✅ Auto-generates ID and Title from filename
+  - ✅ Suitable for using community rule libraries
+  - ⚠️ Limited conflict control capability
+- **Strict Mode** (`strictMode: true`, `requireFrontmatter: true`):
+  - ✅ Enforces metadata, precise rule control
+  - ✅ Required fields: id, title must be explicitly declared in frontmatter
+  - ✅ Suitable for enterprise-level rule library management
+  - ⚠️ Requires manual metadata maintenance
+
+**Example**:
+
+```json
+{
+  // Relaxed mode (default, recommended)
+  "turbo-ai-rules.parser.strictMode": false,
+  "turbo-ai-rules.parser.requireFrontmatter": false
+}
+```
+
+**When to Use Strict Mode**:
+
+- Enterprise rule libraries requiring precise priority control
+- Multi-team collaboration needing rule auditing and version management
+- Custom rule libraries requiring traceability
+
+**When to Use Relaxed Mode**:
+
+- Using community rules (awesome-cursorrules, etc.)
+- Quick prototyping and testing
+- Personal projects or small teams
+- No need for complex rule management
+
+---
+
+#### 3. Built-in Adapters Configuration (`adapters`)
+
+| Adapter  | Config Key         | Default | Output File                        |
 | -------- | ------------------ | ------- | ---------------------------------- |
-| Cursor   | `cursor.enabled`   | `true`  | `.cursorrules`                     |
 | Copilot  | `copilot.enabled`  | `true`  | `.github/.copilot-instructions.md` |
+| Cursor   | `cursor.enabled`   | `false` | `.cursorrules`                     |
 | Continue | `continue.enabled` | `false` | `.continuerules`                   |
 
 **Example**:
 
 ```json
 {
-  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": true,
   "turbo-ai-rules.adapters.continue.enabled": false
 }
@@ -331,7 +368,7 @@ docs/ai-rules/
 
 ```json
 {
-  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": true
 }
 ```
@@ -346,7 +383,7 @@ docs/ai-rules/
 {
   "turbo-ai-rules.sync.onStartup": true,
   "turbo-ai-rules.sync.interval": 120,
-  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": true,
   "turbo-ai-rules.adapters.continue.enabled": true,
   "turbo-ai-rules.adapters.custom": [
@@ -381,7 +418,7 @@ docs/ai-rules/
 {
   "turbo-ai-rules.sync.onStartup": false,
   "turbo-ai-rules.sync.interval": 0,
-  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": true
 }
 ```
