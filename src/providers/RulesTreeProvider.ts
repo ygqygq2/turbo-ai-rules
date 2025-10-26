@@ -41,20 +41,44 @@ class RuleTreeItem extends vscode.TreeItem {
     this.iconPath = this.getIcon();
     this.contextValue = data.type;
     this.command = this.getCommand();
+    this.description = this.getDescription();
   }
 
   private getTooltip(): string {
     switch (this.data.type) {
       case 'source':
-        return this.data.source
-          ? `${this.data.source.gitUrl}\nBranch: ${this.data.source.branch}`
-          : '';
+        if (!this.data.source) return '';
+        const source = this.data.source;
+        const lines = [
+          `📦 ${source.name || 'Unnamed Source'}`,
+          `🔗 ${source.gitUrl}`,
+          `🌿 Branch: ${source.branch || 'main'}`,
+          `📁 Path: ${source.subPath || '/'}`,
+          `⚡ Status: ${source.enabled ? 'Enabled' : 'Disabled'}`,
+        ];
+        if (source.authentication?.token) {
+          lines.push('🔑 Private repository');
+        }
+        return lines.join('\n');
       case 'rule':
-        return this.data.rule
-          ? `ID: ${this.data.rule.id}\n${this.data.rule.metadata.description || ''}`
-          : '';
+        if (!this.data.rule) return '';
+        const rule = this.data.rule;
+        const ruleTip = [
+          `📝 ${rule.title}`,
+          `🆔 ID: ${rule.id}`,
+          `⚡ Priority: ${rule.metadata.priority || 'normal'}`,
+        ];
+        if (rule.metadata.tags && rule.metadata.tags.length > 0) {
+          ruleTip.push(`🏷️ Tags: ${rule.metadata.tags.join(', ')}`);
+        }
+        if (rule.metadata.description) {
+          ruleTip.push(`📄 ${rule.metadata.description}`);
+        }
+        return ruleTip.join('\n');
       case 'tag':
-        return `Tag: ${this.data.tag}`;
+        return `🏷️ Tag: ${this.data.tag}`;
+      case 'empty':
+        return 'No items to display';
       default:
         return '';
     }
@@ -63,22 +87,59 @@ class RuleTreeItem extends vscode.TreeItem {
   private getIcon(): vscode.ThemeIcon {
     switch (this.data.type) {
       case 'source':
-        return this.data.source?.enabled
-          ? new vscode.ThemeIcon('repo')
-          : new vscode.ThemeIcon('repo', new vscode.ThemeColor('disabledForeground'));
+        if (!this.data.source?.enabled) {
+          return new vscode.ThemeIcon('repo', new vscode.ThemeColor('disabledForeground'));
+        }
+        // 根据源的状态显示不同图标
+        return new vscode.ThemeIcon('repo', new vscode.ThemeColor('charts-blue'));
       case 'rule': {
         const priority = this.data.rule?.metadata.priority;
-        if (priority === 'high') {
-          return new vscode.ThemeIcon('error', new vscode.ThemeColor('errorForeground'));
-        } else if (priority === 'medium') {
-          return new vscode.ThemeIcon('warning', new vscode.ThemeColor('warningForeground'));
+        // 根据优先级显示不同的图标和颜色
+        switch (priority) {
+          case 'high':
+            return new vscode.ThemeIcon('flame', new vscode.ThemeColor('errorForeground'));
+          case 'medium':
+            return new vscode.ThemeIcon('warning', new vscode.ThemeColor('warningForeground'));
+          case 'low':
+            return new vscode.ThemeIcon('info', new vscode.ThemeColor('descriptionForeground'));
+          default:
+            return new vscode.ThemeIcon('file-text', new vscode.ThemeColor('foreground'));
         }
-        return new vscode.ThemeIcon('file');
       }
       case 'tag':
-        return new vscode.ThemeIcon('tag');
+        return new vscode.ThemeIcon('tag', new vscode.ThemeColor('charts-purple'));
+      case 'empty':
+        return new vscode.ThemeIcon('info', new vscode.ThemeColor('descriptionForeground'));
       default:
         return new vscode.ThemeIcon('question');
+    }
+  }
+
+  private getDescription(): string | undefined {
+    switch (this.data.type) {
+      case 'source':
+        if (!this.data.source) return undefined;
+        const status = this.data.source.enabled ? '✓' : '✗';
+        return `${status} ${this.data.source.branch || 'main'}`;
+      case 'rule':
+        if (!this.data.rule) return undefined;
+        const priority = this.data.rule.metadata.priority;
+        const tags = this.data.rule.metadata.tags;
+        const parts = [];
+        if (priority) {
+          parts.push(priority.toUpperCase());
+        }
+        if (tags && tags.length > 0) {
+          parts.push(tags.slice(0, 2).join(', '));
+          if (tags.length > 2) {
+            parts.push(`+${tags.length - 2}`);
+          }
+        }
+        return parts.length > 0 ? parts.join(' • ') : undefined;
+      case 'tag':
+        return undefined;
+      default:
+        return undefined;
     }
   }
 
@@ -101,10 +162,7 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
   private _onDidChangeTreeData = new vscode.EventEmitter<RuleTreeItem | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  constructor(
-    private configManager: ConfigManager,
-    private rulesManager: RulesManager,
-  ) {}
+  constructor(private configManager: ConfigManager, private rulesManager: RulesManager) {}
 
   /**
    * 刷新树视图

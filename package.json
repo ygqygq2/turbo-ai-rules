@@ -73,6 +73,60 @@
         "title": "%turboAiRules.refresh.title%",
         "category": "Turbo AI Rules",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "turbo-ai-rules.editSource",
+        "title": "Edit Source",
+        "category": "Turbo AI Rules",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "turbo-ai-rules.testConnection",
+        "title": "Test Connection",
+        "category": "Turbo AI Rules",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "turbo-ai-rules.toggleSource",
+        "title": "Toggle Enable/Disable",
+        "category": "Turbo AI Rules",
+        "icon": "$(circle-slash)"
+      },
+      {
+        "command": "turbo-ai-rules.copyRuleContent",
+        "title": "Copy Rule Content",
+        "category": "Turbo AI Rules",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "turbo-ai-rules.exportRule",
+        "title": "Export Rule",
+        "category": "Turbo AI Rules",
+        "icon": "$(export)"
+      },
+      {
+        "command": "turbo-ai-rules.ignoreRule",
+        "title": "Ignore Rule",
+        "category": "Turbo AI Rules",
+        "icon": "$(eye-closed)"
+      },
+      {
+        "command": "turbo-ai-rules.showWelcome",
+        "title": "Show Welcome",
+        "category": "Turbo AI Rules",
+        "icon": "$(home)"
+      },
+      {
+        "command": "turbo-ai-rules.showStatistics",
+        "title": "Show Statistics",
+        "category": "Turbo AI Rules",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "turbo-ai-rules.advancedSearch",
+        "title": "Advanced Rule Search",
+        "category": "Turbo AI Rules",
+        "icon": "$(search)"
       }
     ],
     "views": {
@@ -107,6 +161,16 @@
           "command": "turbo-ai-rules.refresh",
           "when": "view == turboAiRulesExplorer",
           "group": "navigation@3"
+        },
+        {
+          "command": "turbo-ai-rules.showStatistics",
+          "when": "view == turboAiRulesExplorer",
+          "group": "navigation@4"
+        },
+        {
+          "command": "turbo-ai-rules.advancedSearch",
+          "when": "view == turboAiRulesExplorer",
+          "group": "navigation@5"
         }
       ],
       "view/item/context": [
@@ -119,6 +183,36 @@
           "command": "turbo-ai-rules.removeSource",
           "when": "view == turboAiRulesExplorer && viewItem == source",
           "group": "inline@2"
+        },
+        {
+          "command": "turbo-ai-rules.editSource",
+          "when": "view == turboAiRulesExplorer && viewItem == source",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "turbo-ai-rules.testConnection",
+          "when": "view == turboAiRulesExplorer && viewItem == source",
+          "group": "1_actions@2"
+        },
+        {
+          "command": "turbo-ai-rules.toggleSource",
+          "when": "view == turboAiRulesExplorer && viewItem == source",
+          "group": "1_actions@3"
+        },
+        {
+          "command": "turbo-ai-rules.copyRuleContent",
+          "when": "view == turboAiRulesExplorer && viewItem == rule",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "turbo-ai-rules.exportRule",
+          "when": "view == turboAiRulesExplorer && viewItem == rule",
+          "group": "1_actions@2"
+        },
+        {
+          "command": "turbo-ai-rules.ignoreRule",
+          "when": "view == turboAiRulesExplorer && viewItem == rule",
+          "group": "2_manage@1"
         }
       ]
     },
@@ -335,7 +429,51 @@
           "description": "%turboAiRules.sync.conflictStrategy.description%"
         }
       }
-    }
+    },
+    "keybindings": [
+      {
+        "command": "turbo-ai-rules.syncRules",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "!terminalFocus"
+      },
+      {
+        "command": "turbo-ai-rules.addSource",
+        "key": "ctrl+shift+a",
+        "mac": "cmd+shift+a",
+        "when": "view == turboAiRulesExplorer"
+      },
+      {
+        "command": "turbo-ai-rules.searchRules",
+        "key": "ctrl+shift+f",
+        "mac": "cmd+shift+f",
+        "when": "view == turboAiRulesExplorer"
+      },
+      {
+        "command": "turbo-ai-rules.generateConfigs",
+        "key": "ctrl+shift+g",
+        "mac": "cmd+shift+g",
+        "when": "!terminalFocus"
+      },
+      {
+        "command": "turbo-ai-rules.showMenu",
+        "key": "ctrl+shift+m",
+        "mac": "cmd+shift+m",
+        "when": "!terminalFocus"
+      },
+      {
+        "command": "turbo-ai-rules.showStatistics",
+        "key": "ctrl+shift+s",
+        "mac": "cmd+shift+s",
+        "when": "view == turboAiRulesExplorer"
+      },
+      {
+        "command": "turbo-ai-rules.advancedSearch",
+        "key": "ctrl+shift+alt+f",
+        "mac": "cmd+shift+alt+f",
+        "when": "view == turboAiRulesExplorer"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "rm -rf out && npm run esbuild-base -- --minify",

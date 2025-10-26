@@ -8,3 +8,23 @@ export { manageSourceCommand } from './manageSource';
 export { removeSourceCommand } from './removeSource';
 export { searchRulesCommand } from './searchRules';
 export { syncRulesCommand } from './syncRules';
+
+// Context menu commands
+export {
+  copyRuleContentCommand,
+  editSourceCommand,
+  exportRuleCommand,
+  ignoreRuleCommand,
+  testConnectionCommand,
+  toggleSourceCommand,
+} from './contextMenuCommands';
+
+// Batch operations
+export {
+  batchDisableRulesCommand,
+  batchEnableRulesCommand,
+  batchExportRulesCommand,
+  batchDeleteRulesCommand,
+  deselectAllRulesCommand,
+  selectAllRulesCommand,
+} from './batchOperations';

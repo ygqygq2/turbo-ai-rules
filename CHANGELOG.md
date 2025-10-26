@@ -2,6 +2,33 @@
 
 All notable changes to the "turbo-ai-rules" extension will be documented in this file.
 
+# [Unreleased]
+
+## 新增功能 🌱
+
+- **feat: 高级搜索 Webview** - 强大的多条件组合搜索
+  - 支持名称/内容/标签/优先级/来源多条件搜索
+  - 搜索历史记录（最近 10 次，持久化存储）
+  - 快捷过滤器（按优先级快速筛选）
+  - 结果导出（JSON/CSV 格式）
+  - 快捷键：`Cmd+Shift+Alt+F`
+- **feat: 批量操作命令** - 提升规则管理效率
+  - 批量启用/禁用规则
+  - 批量导出规则
+  - 批量删除规则
+  - 模态确认对话框，防止误操作
+
+## 文档更新 📚
+
+- **docs: Phase 3 实现文档** - 添加 `10-ui-phase3-implementation.md`
+  - 详细的架构设计和实现说明
+  - 完整的测试清单
+  - 性能优化建议
+- **docs: 更新 README** - 添加新功能介绍
+  - 高级搜索功能说明
+  - 批量操作功能说明
+  - 新增快捷键文档
+
 # [1.0.1]
 
 ## 新增功能 🌱

@@ -26,6 +26,17 @@
 - 📊 **Visual Management** - Tree view and status bar integration
 - 🌍 **Multi-Language** - UI supports English/Chinese
 
+### 🎨 Enhanced UI Features
+
+- **Welcome Page** - First-launch guide with quick start steps and template library
+- **Statistics Dashboard** - Visual analytics with charts, metrics, and export capabilities
+- **Rule Details Panel** - Comprehensive rule inspector with metadata and content preview
+- **Advanced Search** - Multi-criteria search with history, filters, and export (JSON/CSV)
+- **Batch Operations** - Bulk enable/disable/export/delete rules
+- **Tree View** - Priority icons, tooltips, context menus (edit/test/toggle/copy/export)
+- **Status Bar** - Multi-state indicator with progress feedback and quick actions
+- **Keyboard Shortcuts** - Fast access: `Cmd+Shift+R` (refresh), `Cmd+Shift+S` (statistics), `Cmd+Shift+Alt+F` (search)
+
 ---
 
 ## 🚀 Quick Start
