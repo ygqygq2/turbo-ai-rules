@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' https://microsoft.github.io; font-src https://microsoft.github.io;">
+    <title>Status Bar States</title>
+    <link rel="stylesheet" href="https://microsoft.github.io/vscode-codicons/dist/codicon.css">
+    <style>
+        body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); background-color: var(--vscode-statusBar-background); padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .status-bar-item { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 4px; }
+        .idle { background-color: transparent; }
+        .syncing { background-color: transparent; }
+        .success { background-color: var(--vscode-statusBarItem-compactHoverBackground); color: var(--vscode-charts-green); }
+        .error { background-color: var(--vscode-statusBarItem-errorBackground); color: var(--vscode-statusBarItem-errorForeground); }
+        .conflict { background-color: var(--vscode-statusBarItem-warningBackground); color: var(--vscode-statusBarItem-warningForeground); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .codicon-sync~.spin, .codicon-loading~.spin { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body>
+    <div class="status-bar-item idle"><i class="codicon codicon-file-code"></i> 156 Rules</div>
+    <div class="status-bar-item syncing"><i class="codicon codicon-sync spin"></i> Syncing 2/3</div>
+    <div class="status-bar-item success"><i class="codicon codicon-check"></i> ✓ 156 Rules</div>
+    <div class="status-bar-item error"><i class="codicon codicon-error"></i> Sync Failed</div>
+    <div class="status-bar-item conflict"><i class="codicon codicon-warning"></i> ⚠️ 156 Rules</div>
+</body>
+</html>

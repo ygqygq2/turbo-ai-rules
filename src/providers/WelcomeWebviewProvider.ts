@@ -3,6 +3,8 @@
  * 显示首次使用引导和快速开始
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { ConfigManager } from '../services/ConfigManager';
@@ -43,243 +45,28 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
   /**
    * 生成 HTML 内容
    */
-  protected getHtmlContent(webview: vscode.Webview): string {
-    const nonce = this.getNonce();
+  protected async getHtmlContent(webview: vscode.Webview): Promise<string> {
+    // 获取编译后的 webview 文件路径
+    const htmlPath = path.join(
+      this.context.extensionPath,
+      'out',
+      'webview',
+      'welcome',
+      'index.html',
+    );
 
-    return `${this.getHtmlHead(webview, 'Welcome to Turbo AI Rules')}
-<body>
-    <div class="container">
-        <div class="hero">
-            <h1>🚀 Welcome to Turbo AI Rules</h1>
-            <p class="subtitle">Sync AI coding rules from Git repositories and automatically generate configuration files</p>
-        </div>
+    // 读取 HTML 文件
+    let html = fs.readFileSync(htmlPath, 'utf-8');
 
-        <div class="steps">
-            <div class="step-card">
-                <div class="step-number">1</div>
-                <div class="step-content">
-                    <h2>Add a Rule Source</h2>
-                    <p>Configure your first Git repository to sync rules from</p>
-                    <button class="button" onclick="addSource()">
-                        ➕ Add Source
-                    </button>
-                </div>
-            </div>
+    // 替换占位符
+    const stylesUri = this.getResourceUri(webview, 'out', 'webview', 'shared', 'base.css');
+    const cspSource = this.getCspSource(webview);
 
-            <div class="step-card">
-                <div class="step-number">2</div>
-                <div class="step-content">
-                    <h2>Sync Rules</h2>
-                    <p>Fetch and update AI rules from your configured sources</p>
-                    <button class="button" onclick="syncRules()">
-                        🔄 Sync Now
-                    </button>
-                </div>
-            </div>
+    html = html
+      .replace(/\{\{cspSource\}\}/g, cspSource)
+      .replace(/\{\{stylesUri\}\}/g, stylesUri.toString());
 
-            <div class="step-card">
-                <div class="step-number">3</div>
-                <div class="step-content">
-                    <h2>Generate Configs</h2>
-                    <p>Create configuration files for your AI coding tools</p>
-                    <button class="button button-secondary" onclick="generateConfigs()">
-                        📝 Generate Configs
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="templates">
-            <h2>📚 Quick Start Templates</h2>
-            <p class="section-desc">Popular rule repositories to get you started</p>
-            
-            <div class="template-grid">
-                <div class="template-card" onclick="useTemplate('typescript')">
-                    <div class="template-icon">TS</div>
-                    <h3>TypeScript Best Practices</h3>
-                    <p>Coding standards and style guide for TypeScript projects</p>
-                </div>
-                
-                <div class="template-card" onclick="useTemplate('react')">
-                    <div class="template-icon">⚛️</div>
-                    <h3>React Development Rules</h3>
-                    <p>Component patterns and React hooks best practices</p>
-                </div>
-                
-                <div class="template-card" onclick="useTemplate('python')">
-                    <div class="template-icon">🐍</div>
-                    <h3>Python Style Guide</h3>
-                    <p>PEP 8 compliant coding standards for Python</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="footer">
-            <button class="button button-secondary" onclick="viewDocs()">
-                📖 Documentation
-            </button>
-            <button class="button button-secondary" onclick="getHelp()">
-                💬 Get Help
-            </button>
-            <button class="button button-secondary" onclick="dismiss()">
-                ✓ Don't Show Again
-            </button>
-        </div>
-    </div>
-
-    <style>
-        .hero {
-            text-align: center;
-            margin-bottom: var(--spacing-lg);
-            padding: var(--spacing-lg) 0;
-        }
-        
-        .hero h1 {
-            font-size: 2em;
-            margin-bottom: var(--spacing-sm);
-        }
-        
-        .subtitle {
-            color: var(--vscode-descriptionForeground);
-            font-size: 1.1em;
-        }
-        
-        .steps {
-            margin-bottom: var(--spacing-lg);
-        }
-        
-        .step-card {
-            display: flex;
-            align-items: flex-start;
-            gap: var(--spacing-md);
-            padding: var(--spacing-md);
-            background-color: var(--vscode-editorWidget-background);
-            border: 1px solid var(--vscode-editorWidget-border);
-            border-radius: var(--border-radius);
-            margin-bottom: var(--spacing-md);
-        }
-        
-        .step-number {
-            flex-shrink: 0;
-            width: 40px;
-            height: 40px;
-            background-color: var(--vscode-button-background);
-            color: var(--vscode-button-foreground);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2em;
-            font-weight: bold;
-        }
-        
-        .step-content {
-            flex: 1;
-        }
-        
-        .step-content h2 {
-            font-size: 1.2em;
-            margin-bottom: var(--spacing-sm);
-        }
-        
-        .step-content p {
-            color: var(--vscode-descriptionForeground);
-            margin-bottom: var(--spacing-sm);
-        }
-        
-        .templates {
-            margin-bottom: var(--spacing-lg);
-        }
-        
-        .templates h2 {
-            margin-bottom: var(--spacing-sm);
-        }
-        
-        .section-desc {
-            color: var(--vscode-descriptionForeground);
-            margin-bottom: var(--spacing-md);
-        }
-        
-        .template-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: var(--spacing-md);
-        }
-        
-        .template-card {
-            padding: var(--spacing-md);
-            background-color: var(--vscode-editorWidget-background);
-            border: 1px solid var(--vscode-editorWidget-border);
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .template-card:hover {
-            border-color: var(--vscode-focusBorder);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        
-        .template-icon {
-            font-size: 2em;
-            margin-bottom: var(--spacing-sm);
-        }
-        
-        .template-card h3 {
-            font-size: 1em;
-            margin-bottom: var(--spacing-sm);
-        }
-        
-        .template-card p {
-            color: var(--vscode-descriptionForeground);
-            font-size: 0.9em;
-        }
-        
-        .footer {
-            display: flex;
-            gap: var(--spacing-sm);
-            justify-content: center;
-            padding-top: var(--spacing-lg);
-            border-top: 1px solid var(--vscode-editorWidget-border);
-        }
-    </style>
-
-    ${this.getVscodeApiScript()}
-    ${this.getScriptTag(
-      nonce,
-      `
-        function addSource() {
-            sendMessage('addSource');
-        }
-        
-        function syncRules() {
-            sendMessage('syncRules');
-        }
-        
-        function generateConfigs() {
-            sendMessage('generateConfigs');
-        }
-        
-        function useTemplate(type) {
-            sendMessage('useTemplate', { type });
-        }
-        
-        function viewDocs() {
-            sendMessage('viewDocs');
-        }
-        
-        function getHelp() {
-            sendMessage('getHelp');
-        }
-        
-        function dismiss() {
-            sendMessage('dismiss');
-        }
-    `,
-    )}
-</body>
-</html>`;
+    return html;
   }
 
   /**

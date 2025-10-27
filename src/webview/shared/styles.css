@@ -1,0 +1,149 @@
+/**
+ * VS Code Webview 共享样式
+ * 提供统一的设计系统
+ */
+
+:root {
+  --container-padding: 20px;
+  --border-radius: 4px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  font-weight: var(--vscode-font-weight);
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-editor-background);
+  padding: var(--container-padding);
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* 按钮样式 */
+.button {
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+  transition: background-color 0.2s;
+}
+
+.button:hover {
+  background-color: var(--vscode-button-hoverBackground);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button-secondary {
+  background-color: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+
+.button-secondary:hover {
+  background-color: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* 输入框样式 */
+.input {
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--border-radius);
+  padding: 6px 10px;
+  font-size: inherit;
+  font-family: inherit;
+  width: 100%;
+}
+
+.input:focus {
+  outline: 1px solid var(--vscode-focusBorder);
+}
+
+/* 卡片样式 */
+.card {
+  background-color: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+}
+
+/* 徽章样式 */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 600;
+  background-color: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--vscode-descriptionForeground);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: var(--spacing-md);
+  opacity: 0.5;
+}
+
+/* 表单样式 */
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  margin-bottom: var(--spacing-xs);
+  color: var(--vscode-descriptionForeground);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+/* 工具栏 */
+.toolbar {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}

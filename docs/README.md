@@ -58,8 +58,10 @@ docs/
 | [开发指南](./development/02-development.md)                    | Development environment setup, coding standards, testing |
 | [维护指南](./development/03-maintaining.md)                    | Maintenance workflows and best practices                 |
 | [自定义适配器设计](./development/04-custom-adapters-design.md) | Custom adapter design documentation                      |
-| [同步总结](./development/05-sync-summary.md)                   | Documentation synchronization summary and history        |
+| [文档系统说明](./development/05-documentation-system.md)       | Documentation system and synchronization                 |
 | [测试覆盖率](./development/06-test-coverage.md)                | Test coverage reports and analysis                       |
+| [UI 开发流程](./development/07-ui-development-process.md)      | UI design and development workflow                       |
+| [Webview 最佳实践](./development/08-webview-best-practices.md) | Webview development best practices and architecture      |
 
 ### Quick Start for Contributors
 

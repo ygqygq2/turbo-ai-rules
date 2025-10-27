@@ -1,0 +1,115 @@
+.hero {
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-lg) 0;
+}
+
+.hero h1 {
+  font-size: 2em;
+  margin-bottom: var(--spacing-sm);
+}
+
+.subtitle {
+  color: var(--vscode-descriptionForeground);
+  font-size: 1.1em;
+}
+
+.steps {
+  margin-bottom: var(--spacing-lg);
+}
+
+.step-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-md);
+}
+
+.step-number {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-content h2 {
+  font-size: 1.2em;
+  margin-bottom: var(--spacing-sm);
+}
+
+.step-content p {
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: var(--spacing-sm);
+}
+
+.templates {
+  margin-bottom: var(--spacing-lg);
+}
+
+.templates h2 {
+  margin-bottom: var(--spacing-sm);
+}
+
+.section-desc {
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: var(--spacing-md);
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.template-card {
+  padding: var(--spacing-md);
+  background-color: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.template-card:hover {
+  border-color: var(--vscode-focusBorder);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.template-icon {
+  font-size: 2em;
+  margin-bottom: var(--spacing-sm);
+}
+
+.template-card h3 {
+  font-size: 1em;
+  margin-bottom: var(--spacing-sm);
+}
+
+.template-card p {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.9em;
+}
+
+.footer {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: center;
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--vscode-editorWidget-border);
+}

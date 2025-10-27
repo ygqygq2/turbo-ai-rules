@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' https://microsoft.github.io; font-src https://microsoft.github.io; script-src 'nonce-{{nonce}}';">
+    <title>Rules Tree View</title>
+    <link rel="stylesheet" href="https://microsoft.github.io/vscode-codicons/dist/codicon.css">
+    <style>
+        body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); background-color: var(--vscode-sideBar-background); padding: 8px; }
+        .tree-container { list-style: none; padding: 0; margin: 0; }
+        .tree-item { display: flex; align-items: center; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+        .tree-item:hover { background-color: var(--vscode-list-hoverBackground); }
+        .tree-item.active { background-color: var(--vscode-list-activeSelectionBackground); color: var(--vscode-list-activeSelectionForeground); }
+        .tree-item-icon { margin-right: 6px; }
+        .tree-item-label { flex-grow: 1; }
+        .tree-item-description { font-size: 0.9em; color: var(--vscode-descriptionForeground); margin-left: 8px; }
+        .priority-high { color: var(--vscode-errorForeground); }
+        .priority-medium { color: var(--vscode-editorWarning-foreground); }
+        .priority-low { color: var(--vscode-descriptionForeground); }
+        .status-synced { color: var(--vscode-charts-green); }
+        .status-conflict { color: var(--vscode-charts-yellow); }
+        .status-error { color: var(--vscode-charts-red); }
+    </style>
+</head>
+<body>
+    <ul class="tree-container">
+        <li>
+            <div class="tree-item active">
+                <i class="codicon codicon-package tree-item-icon"></i>
+                <span class="tree-item-label">company-rules</span>
+                <span class="tree-item-description">main <span class="status-synced">✓</span></span>
+            </div>
+            <ul style="padding-left: 20px; list-style:none;">
+                <li><div class="tree-item"><i class="codicon codicon-flame tree-item-icon priority-high"></i><span class="tree-item-label">auth/jwt-validation.mdc</span><span class="tree-item-description">HIGH • auth</span></div></li>
+                <li><div class="tree-item"><i class="codicon codicon-warning tree-item-icon priority-medium"></i><span class="tree-item-label">security/input-sanitize.mdc</span><span class="tree-item-description">MEDIUM • security</span></div></li>
+            </ul>
+        </li>
+        <li>
+            <div class="tree-item">
+                <i class="codicon codicon-package tree-item-icon"></i>
+                <span class="tree-item-label">personal-rules</span>
+                <span class="tree-item-description">develop <span class="status-error">✗</span></span>
+            </div>
+        </li>
+        <li>
+            <div class="tree-item">
+                <i class="codicon codicon-package tree-item-icon"></i>
+                <span class="tree-item-label">archived-rules</span>
+                <span class="tree-item-description">main <span class="status-conflict">⚠️</span></span>
+            </div>
+        </li>
+    </ul>
+    <script nonce="{{nonce}}">
+        const vscode = acquireVsCodeApi();
+    </script>
+</body>
+</html>

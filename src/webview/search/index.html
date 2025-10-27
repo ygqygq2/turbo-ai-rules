@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src {{cspSource}} 'unsafe-inline'; script-src {{cspSource}}; img-src {{cspSource}} https:;"
+    />
+    <title>Advanced Rule Search</title>
+    <link rel="stylesheet" href="{{stylesUri}}" />
+    <link rel="stylesheet" href="./search.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Search Conditions -->
+      <div class="card section">
+        <div class="section-title">🔍 Search Conditions</div>
+        <div class="form-group">
+          <label class="form-label">Rule Name</label>
+          <input type="text" class="input" id="namePattern" placeholder="Enter rule name..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Content</label>
+          <input
+            type="text"
+            class="input"
+            id="contentPattern"
+            placeholder="Search in rule content..."
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tags (comma separated)</label>
+          <input type="text" class="input" id="tags" placeholder="e.g., authentication, security" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <select class="input" id="priority">
+              <option value="">All</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Source</label>
+            <input type="text" class="input" id="source" placeholder="Source ID..." />
+          </div>
+        </div>
+        <div class="toolbar">
+          <button class="button" id="searchBtn">🔍 Search</button>
+          <button class="button button-secondary" id="resetBtn">↺ Reset</button>
+        </div>
+      </div>
+
+      <!-- Quick Filters -->
+      <div class="card section">
+        <div class="section-title">⚡ Quick Filters</div>
+        <div class="toolbar">
+          <button class="quick-filter" data-filter="high">🔥 High Priority</button>
+          <button class="quick-filter" data-filter="medium">⚠️ Medium Priority</button>
+          <button class="quick-filter" data-filter="low">ℹ️ Low Priority</button>
+        </div>
+      </div>
+
+      <!-- Search History -->
+      <div class="card section" id="historySection" style="display: none">
+        <div class="section-title">
+          📜 Search History
+          <button class="button-secondary clear-history-btn" id="clearHistoryBtn">Clear</button>
+        </div>
+        <div id="historyList"></div>
+      </div>
+
+      <!-- Results -->
+      <div class="card section">
+        <div class="results-header">
+          <div class="results-count" id="resultsCount">Ready to search</div>
+          <div class="toolbar" id="exportButtons" style="display: none">
+            <button class="button button-secondary" id="exportJsonBtn">📥 Export JSON</button>
+            <button class="button button-secondary" id="exportCsvBtn">📊 Export CSV</button>
+          </div>
+        </div>
+        <div id="resultsList">
+          <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <div>Enter search criteria and click Search</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="./search.ts"></script>
+  </body>
+</html>

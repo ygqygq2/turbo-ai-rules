@@ -2,7 +2,7 @@
   "name": "turbo-ai-rules",
   "displayName": "Turbo AI Rules",
   "description": "%description%",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "publisher": "ygqygq2",
   "icon": "resources/images/logo.png",
   "repository": {
@@ -31,6 +31,15 @@
   "main": "./out/extension.js",
   "l10n": "./l10n",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "turbo-ai-rules",
+          "title": "Turbo AI Rules",
+          "icon": "resources/images/logo.svg"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "turbo-ai-rules.addSource",
@@ -130,11 +139,10 @@
       }
     ],
     "views": {
-      "explorer": [
+      "turbo-ai-rules": [
         {
           "id": "turboAiRulesExplorer",
-          "name": "AI Rules",
-          "icon": "$(file-code)",
+          "name": "Rules Explorer",
           "contextualTitle": "Turbo AI Rules"
         }
       ]
@@ -147,6 +155,11 @@
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "turbo-ai-rules.showWelcome",
+          "when": "view == turboAiRulesExplorer",
+          "group": "navigation@0"
+        },
         {
           "command": "turbo-ai-rules.addSource",
           "when": "view == turboAiRulesExplorer",
@@ -476,13 +489,16 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "rm -rf out && npm run esbuild-base -- --minify",
-    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "vscode:prepublish": "npm run build:webview && rm -rf out/extension && npm run esbuild-base -- --minify",
+    "build:webview": "vite build --mode webview",
+    "watch:webview": "vite build --mode webview --watch",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
-    "watch": "npm run esbuild --watch",
+    "watch": "npm run esbuild-watch",
+    "dev": "concurrently \"npm run watch:webview\" \"npm run esbuild-watch\"",
     "pretest": "npm run lint",
-    "compile": "npm run esbuild-base -- --sourcemap",
+    "compile": "npm run build:webview && npm run esbuild-base -- --sourcemap",
     "package": "vsce package --no-dependencies",
     "publish": "vsce publish --no-dependencies",
     "clean": "rimraf out/",

@@ -1,6 +1,14 @@
+/**
+ * 高级搜索 Webview 提供者
+ * 支持按标签、优先级、源等多条件搜索规则
+ */
+
 import * as vscode from 'vscode';
-import { BaseWebviewProvider } from './BaseWebviewProvider';
-import type { ParsedRule } from '../types/rules';
+
+import type { ParsedRule, RulePriority } from '../types/rules';
+import { Logger } from '../utils/logger';
+import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
+import { RulesManager } from '../services/RulesManager';
 
 /**
  * 搜索条件接口
@@ -9,7 +17,7 @@ interface SearchCriteria {
   namePattern?: string;
   contentPattern?: string;
   tags?: string[];
-  priority?: number;
+  priority?: RulePriority;
   source?: string;
 }
 
@@ -22,17 +30,7 @@ interface SearchResult {
 }
 
 /**
- * Webview 消息类型
- */
-type SearchMessage =
-  | { type: 'search'; criteria: SearchCriteria }
-  | { type: 'exportResults'; format: 'json' | 'csv' }
-  | { type: 'viewRule'; rulePath: string }
-  | { type: 'loadHistory' }
-  | { type: 'clearHistory' };
-
-/**
- * 高级搜索 Webview 提供器
+ * 高级搜索 Webview 提供者
  */
 export class SearchWebviewProvider extends BaseWebviewProvider {
   private static instance: SearchWebviewProvider | undefined;
@@ -40,14 +38,20 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
   private lastSearchResults: SearchResult[] = [];
   private readonly MAX_HISTORY = 10;
 
-  private constructor(context: vscode.ExtensionContext) {
-    super(context, 'advancedSearch', 'Advanced Rule Search');
+  private constructor(context: vscode.ExtensionContext, private rulesManager: RulesManager) {
+    super(context);
     this.loadSearchHistory();
   }
 
-  public static getInstance(context: vscode.ExtensionContext): SearchWebviewProvider {
+  /**
+   * 获取单例实例
+   */
+  public static getInstance(
+    context: vscode.ExtensionContext,
+    rulesManager: RulesManager,
+  ): SearchWebviewProvider {
     if (!SearchWebviewProvider.instance) {
-      SearchWebviewProvider.instance = new SearchWebviewProvider(context);
+      SearchWebviewProvider.instance = new SearchWebviewProvider(context, rulesManager);
     }
     return SearchWebviewProvider.instance;
   }
@@ -55,28 +59,48 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
   /**
    * 显示高级搜索面板
    */
-  public static async showSearch(context: vscode.ExtensionContext): Promise<void> {
-    const provider = SearchWebviewProvider.getInstance(context);
-    await provider.show(vscode.ViewColumn.One);
+  public async showSearch(): Promise<void> {
+    await this.show({
+      viewType: 'turboAiRules.search',
+      title: 'Advanced Rule Search',
+      viewColumn: vscode.ViewColumn.One,
+    });
   }
 
-  protected async handleMessage(message: SearchMessage): Promise<void> {
-    switch (message.type) {
-      case 'search':
-        await this.performSearch(message.criteria);
-        break;
-      case 'exportResults':
-        await this.exportResults(message.format);
-        break;
-      case 'viewRule':
-        await this.viewRule(message.rulePath);
-        break;
-      case 'loadHistory':
-        this.sendSearchHistory();
-        break;
-      case 'clearHistory':
-        this.clearHistory();
-        break;
+  /**
+   * 处理来自 Webview 的消息
+   */
+  protected async handleMessage(message: WebviewMessage): Promise<void> {
+    try {
+      switch (message.type) {
+        case 'search':
+          await this.performSearch(message.payload as SearchCriteria);
+          break;
+
+        case 'exportResults':
+          await this.exportResults(message.payload?.format || 'json');
+          break;
+
+        case 'viewRule':
+          await this.viewRule(message.payload?.ruleId);
+          break;
+
+        case 'loadHistory':
+          this.sendSearchHistory();
+          break;
+
+        case 'clearHistory':
+          this.clearHistory();
+          break;
+
+        default:
+          Logger.warn(`Unknown message type: ${message.type}`);
+      }
+    } catch (error) {
+      Logger.error('Failed to handle search message', error instanceof Error ? error : undefined);
+      vscode.window.showErrorMessage(
+        `Failed to handle action: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -133,7 +157,7 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
         }
 
         // 优先级匹配
-        if (isMatch && criteria.priority !== undefined && criteria.priority >= 0) {
+        if (isMatch && criteria.priority !== undefined && criteria.priority) {
           if (rule.metadata?.priority === criteria.priority) {
             matchedFields.push('priority');
           } else {
@@ -143,7 +167,7 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
 
         // 来源匹配
         if (isMatch && criteria.source && criteria.source.trim()) {
-          const sourceMatch = rule.source?.toLowerCase().includes(criteria.source.toLowerCase());
+          const sourceMatch = rule.sourceId?.toLowerCase().includes(criteria.source.toLowerCase());
           if (sourceMatch) {
             matchedFields.push('source');
           } else {
@@ -164,22 +188,27 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
       // 发送结果到 Webview
       this.postMessage({
         type: 'searchResults',
-        results: results.map((r) => ({
-          rule: {
-            path: r.rule.path,
-            name: r.rule.metadata?.title || 'Untitled',
-            priority: r.rule.metadata?.priority || 0,
-            tags: r.rule.metadata?.tags || [],
-            source: r.rule.source || 'Unknown',
-            description: r.rule.metadata?.description || '',
-          },
-          matchedFields: r.matchedFields,
-        })),
+        payload: {
+          results: results.map((r) => ({
+            rule: {
+              id: r.rule.id,
+              filePath: r.rule.filePath,
+              title: r.rule.title,
+              priority: r.rule.metadata?.priority || 'medium',
+              tags: r.rule.metadata?.tags || [],
+              sourceId: r.rule.sourceId,
+              description: r.rule.metadata?.description || '',
+            },
+            matchedFields: r.matchedFields,
+          })),
+        },
       });
     } catch (error) {
       this.postMessage({
         type: 'error',
-        message: `Search failed: ${error instanceof Error ? error.message : String(error)}`,
+        payload: {
+          message: `Search failed: ${error instanceof Error ? error.message : String(error)}`,
+        },
       });
     }
   }
@@ -209,11 +238,11 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
       if (format === 'json') {
         content = JSON.stringify(
           this.lastSearchResults.map((r) => ({
-            name: r.rule.metadata?.title,
-            path: r.rule.path,
+            title: r.rule.title,
+            filePath: r.rule.filePath,
             priority: r.rule.metadata?.priority,
             tags: r.rule.metadata?.tags,
-            source: r.rule.source,
+            sourceId: r.rule.sourceId,
             description: r.rule.metadata?.description,
             matchedFields: r.matchedFields,
           })),
@@ -222,16 +251,16 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
         );
       } else {
         // CSV format
-        const headers = 'Name,Path,Priority,Tags,Source,Description,Matched Fields\n';
+        const headers = 'Title,File Path,Priority,Tags,Source,Description,Matched Fields\n';
         const rows = this.lastSearchResults
           .map((r) => {
             const escapeCSV = (str: string) => `"${str.replace(/"/g, '""')}"`;
             return [
-              escapeCSV(r.rule.metadata?.title || ''),
-              escapeCSV(r.rule.path || ''),
-              r.rule.metadata?.priority || 0,
+              escapeCSV(r.rule.title || ''),
+              escapeCSV(r.rule.filePath || ''),
+              r.rule.metadata?.priority || 'medium',
               escapeCSV((r.rule.metadata?.tags || []).join(', ')),
-              escapeCSV(r.rule.source || ''),
+              escapeCSV(r.rule.sourceId || ''),
               escapeCSV(r.rule.metadata?.description || ''),
               escapeCSV(r.matchedFields.join(', ')),
             ].join(',');
@@ -254,27 +283,18 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
   /**
    * 查看规则详情
    */
-  private async viewRule(rulePath: string): Promise<void> {
-    const rule = this.lastSearchResults.find((r) => r.rule.path === rulePath)?.rule;
-    if (rule) {
-      await vscode.commands.executeCommand('turbo-ai-rules.showRuleDetail', rule);
+  private async viewRule(ruleId: string): Promise<void> {
+    const result = this.lastSearchResults.find((r) => r.rule.id === ruleId);
+    if (result) {
+      await vscode.commands.executeCommand('turbo-ai-rules.showRuleDetails', result.rule);
     }
   }
 
   /**
-   * 获取所有规则（模拟）
+   * 获取所有规则
    */
-  private async getAllRules(): Promise<ParsedRule[]> {
-    // 实际实现应该从 RulesManager 获取
-    // 这里使用命令获取
-    try {
-      const rules = (await vscode.commands.executeCommand(
-        'turbo-ai-rules.getAllRules',
-      )) as ParsedRule[];
-      return rules || [];
-    } catch {
-      return [];
-    }
+  private getAllRules(): ParsedRule[] {
+    return this.rulesManager.getAllRules();
   }
 
   /**
@@ -287,8 +307,7 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
     if (criteria.contentPattern?.trim())
       cleanCriteria.contentPattern = criteria.contentPattern.trim();
     if (criteria.tags && criteria.tags.length > 0) cleanCriteria.tags = criteria.tags;
-    if (criteria.priority !== undefined && criteria.priority >= 0)
-      cleanCriteria.priority = criteria.priority;
+    if (criteria.priority) cleanCriteria.priority = criteria.priority;
     if (criteria.source?.trim()) cleanCriteria.source = criteria.source.trim();
 
     // 检查是否已存在相同的搜索条件
@@ -317,7 +336,9 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
   private sendSearchHistory(): void {
     this.postMessage({
       type: 'searchHistory',
-      history: this.searchHistory,
+      payload: {
+        history: this.searchHistory,
+      },
     });
   }
 
@@ -346,14 +367,10 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
     this.context.globalState.update('searchHistory', this.searchHistory);
   }
 
-  protected getHtmlContent(): string {
+  protected getHtmlContent(webview: vscode.Webview): string {
     const nonce = this.getNonce();
 
-    return `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        ${this.getHtmlHead(nonce)}
+    return `${this.getHtmlHead(webview, 'Advanced Rule Search')}
         <style>
           .search-container {
             padding: 20px;

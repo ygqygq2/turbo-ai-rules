@@ -45,61 +45,17 @@ interface WebviewMessage {
 
 **设计模式**:
 
-- 模板方法模式：定义骨架，子类实现具体内容
-- 单例模式：每个提供者保持单一实例
-- 观察者模式：监听主题变化和面板关闭
+- **模板方法模式**：定义骨架，子类实现具体内容
+- **单例模式**：每个提供者保持单一实例
+- **观察者模式**：监听主题变化和面板关闭
 
-**技术实现**:
+**核心方法**（抽象）:
 
-```typescript
-abstract class BaseWebviewProvider {
-  protected currentPanel?: vscode.WebviewPanel;
-
-  // 单例管理
-  protected static instance: BaseWebviewProvider;
-
-  // 创建面板
-  protected createPanel(options: WebviewOptions): vscode.WebviewPanel {
-    const panel = vscode.window.createWebviewPanel(
-      options.viewType,
-      options.title,
-      options.viewColumn || vscode.ViewColumn.One,
-      {
-        enableScripts: options.enableScripts ?? true,
-        retainContextWhenHidden: options.retainContextWhenHidden ?? true,
-        localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, 'resources')],
-      },
-    );
-
-    // 设置内容
-    panel.webview.html = this.getHtmlContent(panel.webview);
-
-    // 监听消息
-    panel.webview.onDidReceiveMessage(
-      (message) => this.handleMessage(message),
-      undefined,
-      this.context.subscriptions,
-    );
-
-    // 监听面板关闭
-    panel.onDidDispose(() => (this.currentPanel = undefined));
-
-    return panel;
-  }
-
-  // 子类必须实现
-  protected abstract getHtmlContent(webview: vscode.Webview): string;
-  protected abstract handleMessage(message: WebviewMessage): void;
-
-  // CSP 生成
-  protected getCSP(webview: vscode.Webview, nonce: string): string {
-    return `default-src 'none'; 
-            style-src ${webview.cspSource} 'unsafe-inline'; 
-            script-src 'nonce-${nonce}';
-            img-src ${webview.cspSource} https:;`;
-  }
-}
-```
+- `getHtmlContent(webview)`: 子类必须实现，返回 HTML 内容
+- `handleMessage(message)`: 子类必须实现，处理消息
+- `getCSP(webview, nonce)`: 生成内容安全策略
+- `createPanel(options)`: 创建 Webview 面板
+- `dispose()`: 清理资源
 
 ---
 
@@ -133,33 +89,14 @@ abstract class BaseWebviewProvider {
 设置 welcomeShown = true
 ```
 
-**消息处理**:
+**消息处理流程**:
 
-```typescript
-async handleMessage(message: WebviewMessage) {
-  switch (message.type) {
-    case 'addSource':
-      await vscode.commands.executeCommand('turbo-ai-rules.addSource');
-      break;
-    case 'syncRules':
-      await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
-      break;
-    case 'generateConfigs':
-      await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
-      break;
-    case 'useTemplate':
-      await this.addTemplateSource(message.payload.template);
-      break;
-    case 'viewDocs':
-      vscode.env.openExternal(vscode.Uri.parse(message.payload.url));
-      break;
-    case 'dismiss':
-      await this.context.globalState.update('welcomeShown', true);
-      this.currentPanel?.dispose();
-      break;
-  }
-}
-```
+- `addSource`: 执行添加源命令
+- `syncRules`: 执行同步规则命令
+- `generateConfigs`: 执行生成配置命令
+- `useTemplate`: 添加预定义模板源
+- `viewDocs`: 打开外部文档链接
+- `dismiss`: 标记已查看，不再显示
 
 **模板库**:
 
@@ -213,66 +150,25 @@ interface StatisticsData {
 }
 ```
 
-**技术实现**:
+**技术实现要点**:
 
-```typescript
-class StatisticsWebviewProvider extends BaseWebviewProvider {
-  private cache: StatisticsData | null = null;
-  private cacheTimestamp = 0;
-  private refreshTimer?: NodeJS.Timeout;
+**数据缓存机制**:
 
-  async calculateStatistics(): Promise<StatisticsData> {
-    // 检查缓存
-    if (this.cache && Date.now() - this.cacheTimestamp < 30000) {
-      return this.cache;
-    }
+- 缓存时长：30 秒
+- 缓存失效时异步更新
+- 面板不可见时停止自动刷新
 
-    const rules = await this.rulesManager.getAllRules();
-    const sources = this.configManager.getRuleSources();
+**自动刷新策略**:
 
-    // 计算统计数据
-    const stats: StatisticsData = {
-      overview: {
-        totalRules: rules.length,
-        totalSources: sources.length,
-        enabledSources: sources.filter((s) => s.enabled).length,
-        conflicts: this.detectConflicts(rules).length,
-      },
-      sourceStats: sources.map((s) => ({
-        name: s.name,
-        ruleCount: rules.filter((r) => r.source === s.name).length,
-        enabled: s.enabled ?? true,
-        lastSync: s.lastSync,
-      })),
-      priorityDistribution: {
-        high: rules.filter((r) => r.priority === 'high').length,
-        medium: rules.filter((r) => r.priority === 'medium').length,
-        low: rules.filter((r) => r.priority === 'low').length,
-      },
-      topTags: this.calculateTopTags(rules, 20),
-    };
+- 刷新间隔：60 秒
+- 仅在面板可见时刷新
+- 使用定时器实现，dispose 时清理
 
-    // 更新缓存
-    this.cache = stats;
-    this.cacheTimestamp = Date.now();
+**性能优化**:
 
-    return stats;
-  }
-
-  // 自动刷新
-  private startAutoRefresh() {
-    this.refreshTimer = setInterval(async () => {
-      if (this.currentPanel && this.currentPanel.visible) {
-        const stats = await this.calculateStatistics();
-        await this.currentPanel.webview.postMessage({
-          type: 'updateData',
-          data: stats,
-        });
-      }
-    }, 60000);
-  }
-}
-```
+- 缓存统计结果避免重复计算
+- 按需计算标签统计（Top 20）
+- 异步计算不阻塞 UI
 
 **可视化元素**:
 
@@ -332,22 +228,19 @@ class StatisticsWebviewProvider extends BaseWebviewProvider {
 | 📝 Edit        | 在编辑器中打开原始文件           | `editRule`    |
 | ↔️ Toggle Wrap | 切换内容自动换行                 | `toggleWrap`  |
 
-**安全实现**:
+**安全实现要点**:
 
-```typescript
-// HTML 转义防止 XSS
-private escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
+**HTML 转义**:
 
-// 使用转义后的内容
-const safeContent = this.escapeHtml(rule.content);
-```
+- 防止 XSS 攻击
+- 转义特殊字符（&, <, >, ", '）
+- 确保用户输入安全显示
+
+**内容安全策略**:
+
+- 使用 nonce 限制脚本执行
+- 限制资源加载来源
+- 遵循 VS Code Webview 安全最佳实践
 
 ---
 
@@ -384,9 +277,10 @@ BaseWebviewProvider (抽象基类)
 
 ### 依赖注入
 
+**单例模式 + 工厂方法**:
+
 ```typescript
-// 单例模式 + 工厂方法
-class StatisticsWebviewProvider extends BaseWebviewProvider {
+class StatisticsWebviewProvider {
   private static instance: StatisticsWebviewProvider;
 
   static getInstance(
@@ -421,6 +315,8 @@ class StatisticsWebviewProvider extends BaseWebviewProvider {
 
 ### 内存管理
 
+**资源清理**:
+
 ```typescript
 class BaseWebviewProvider {
   dispose() {
@@ -441,6 +337,12 @@ class BaseWebviewProvider {
 }
 ```
 
+**注意事项**:
+
+- dispose 时清理所有定时器
+- 清理面板引用避免内存泄漏
+- 清空缓存释放内存
+
 ### 渲染优化
 
 - 使用 `nonce` 实现内联脚本 CSP
@@ -452,6 +354,8 @@ class BaseWebviewProvider {
 ## 技术实现细节
 
 ### 主题适配
+
+**CSS 变量方案**:
 
 ```css
 body {
@@ -474,24 +378,37 @@ button:hover {
 }
 ```
 
+**优势**:
+
+- 自动跟随 VS Code 主题
+- 无需手动监听主题变化
+- 保持视觉一致性
+
 ### 消息通信完整流程
 
-```typescript
-// 1. Webview HTML 中
+**Webview 端**:
+
+```javascript
+// 获取 VS Code API
 const vscode = acquireVsCodeApi();
 
+// 发送消息到扩展
 function handleAction(type, payload) {
   vscode.postMessage({ type, payload });
 }
 
-window.addEventListener('message', event => {
+// 接收扩展消息
+window.addEventListener('message', (event) => {
   const message = event.data;
   if (message.type === 'updateData') {
     renderData(message.data);
   }
 });
+```
 
-// 2. Extension Provider 中
+**Extension 端**:
+
+```typescript
 protected handleMessage(message: WebviewMessage) {
   switch (message.type) {
     case 'refresh':
@@ -512,16 +429,30 @@ async refreshData() {
 }
 ```
 
+**消息流向**:
+
+- Webview → Extension: `vscode.postMessage()`
+- Extension → Webview: `webview.postMessage()`
+
 ### 资源 URI 安全处理
 
+**资源加载方式**:
+
 ```typescript
+// 获取资源 URI
 const iconUri = this.currentPanel.webview.asWebviewUri(
   vscode.Uri.joinPath(this.context.extensionUri, 'resources', 'icons', 'logo.png'),
 );
 
-// 在 HTML 中使用
-<img src="${iconUri}" alt="Logo" />;
+// HTML 中使用
+const html = `<img src="${iconUri}" alt="Logo" />`;
 ```
+
+**安全要点**:
+
+- 使用 `asWebviewUri` 转换资源路径
+- 限制 `localResourceRoots`
+- 遵循 CSP 策略
 
 ---
 

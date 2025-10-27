@@ -2,7 +2,7 @@
 
 All notable changes to the "turbo-ai-rules" extension will be documented in this file.
 
-# [Unreleased]
+# [2.0.0]
 
 ## 新增功能 🌱
 
@@ -10,7 +10,6 @@ All notable changes to the "turbo-ai-rules" extension will be documented in this
   - 支持名称/内容/标签/优先级/来源多条件搜索
   - 搜索历史记录（最近 10 次，持久化存储）
   - 快捷过滤器（按优先级快速筛选）
-  - 结果导出（JSON/CSV 格式）
   - 快捷键：`Cmd+Shift+Alt+F`
 - **feat: 批量操作命令** - 提升规则管理效率
   - 批量启用/禁用规则

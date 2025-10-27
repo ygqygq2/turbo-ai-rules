@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src {{cspSource}} 'unsafe-inline'; script-src {{cspSource}}; img-src {{cspSource}} https:;"
+    />
+    <title>Statistics Dashboard</title>
+    <link rel="stylesheet" href="{{stylesUri}}" />
+    <link rel="stylesheet" href="./statistics.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>📊 Statistics Dashboard</h1>
+      <div id="stats-content">Loading statistics...</div>
+    </div>
+
+    <script type="module" src="./statistics.ts"></script>
+  </body>
+</html>

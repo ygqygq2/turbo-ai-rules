@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' https://microsoft.github.io; font-src https://microsoft.github.io; script-src 'nonce-{{nonce}}';">
+    <title>Advanced Rule Search</title>
+    <link rel="stylesheet" href="https://microsoft.github.io/vscode-codicons/dist/codicon.css">
+    <style>
+        :root {
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --border-radius: 4px;
+        }
+
+        body {
+            font-family: var(--vscode-font-family);
+            color: var(--vscode-foreground);
+            background-color: var(--vscode-editor-background);
+            padding: var(--spacing-md);
+        }
+
+        .search-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: var(--spacing-md);
+            height: calc(100vh - 32px);
+        }
+
+        .search-sidebar, .results-panel {
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .section {
+            background-color: var(--vscode-editorWidget-background);
+            border: 1px solid var(--vscode-editorWidget-border, transparent);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .form-grid label {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .form-grid input, .form-grid select {
+            width: 100%;
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            padding: 6px;
+            border-radius: var(--border-radius);
+            box-sizing: border-box;
+        }
+
+        .quick-filter-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+        }
+
+        .quick-filter {
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            border: none;
+            padding: 4px 8px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+        }
+        .quick-filter.active { background-color: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+
+        .history-item {
+            padding: 4px 0;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .history-item:hover { color: var(--vscode-textLink-activeForeground); }
+
+        .result-card {
+            background-color: var(--vscode-editorWidget-background);
+            border: 1px solid var(--vscode-editorWidget-border, transparent);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            animation: slideInUp 0.3s ease-out forwards;
+            opacity: 0;
+        }
+
+        @media (max-width: 900px) {
+            .search-container { grid-template-columns: 1fr; }
+        }
+
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="search-container">
+        <div class="search-sidebar">
+            <div class="section">
+                <h2 class="section-title">Search Conditions</h2>
+                <div class="form-grid">
+                    <div><label for="name-input">Name</label><input id="name-input" type="text"></div>
+                    <div style="margin-top:8px"><label for="content-input">Content</label><input id="content-input" type="text"></div>
+                    <div style="margin-top:8px"><label for="tags-input">Tags</label><input id="tags-input" type="text"></div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px">
+                        <div><label>Priority</label><select><option>All</option><option>High</option><option>Medium</option><option>Low</option></select></div>
+                        <div><label>Source</label><select><option>All</option><option>company-rules</option></select></div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2 class="section-title">Quick Filters</h2>
+                <div class="quick-filter-grid">
+                    <button class="quick-filter active">🔥 High</button>
+                    <button class="quick-filter">⚠️ Medium</button>
+                    <button class="quick-filter">ℹ️ Low</button>
+                    <button class="quick-filter">🔄 Clear</button>
+                </div>
+            </div>
+            <div class="section">
+                <h2 class="section-title">Search History</h2>
+                <div>
+                    <div class="history-item">"authentication rules" - 2 results</div>
+                    <div class="history-item">"high priority" - 15 results</div>
+                </div>
+            </div>
+        </div>
+        <div class="results-panel">
+            <div class="section-title" style="padding:0 0 8px 0;">Results (23 found)</div>
+            <div id="results-list">
+                <div class="result-card" style="animation-delay: 0.05s;">
+                    <div>🔥 auth/jwt-validation.mdc <button style="float:right">View</button></div>
+                    <div style="font-size:12px; color:var(--vscode-descriptionForeground);">Source: company-rules</div>
+                </div>
+                <div class="result-card" style="animation-delay: 0.1s;">
+                    <div>⚠️ security/input-sanitize.mdc <button style="float:right">View</button></div>
+                    <div style="font-size:12px; color:var(--vscode-descriptionForeground);">Source: best-practices</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script nonce="{{nonce}}">
+        const vscode = acquireVsCodeApi();
+        function sendMessage(type, payload) {
+            vscode.postMessage({ type, payload });
+        }
+    </script>
+</body>
+</html>

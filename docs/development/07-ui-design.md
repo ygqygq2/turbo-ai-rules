@@ -1,11 +1,14 @@
 # Turbo AI Rules - UI 设计方案
 
-> 版本: 2.0 | 状态: Phase 2 完成
+> **版本**: 3.0 | **状态**: SuperDesign 协作模式  
+> **开发流程**: AI 三角协作 (Copilot → SuperDesign → User)  
+> **最后更新**: 2025-10-27
 
 ---
 
 ## 📋 目录
 
+- [开发模式变革](#开发模式变革)
 - [项目概述](#项目概述)
 - [现状分析](#现状分析)
 - [设计目标](#设计目标)
@@ -13,6 +16,61 @@
 - [技术实现](#技术实现)
 - [实施路线图](#实施路线图)
 - [已完成功能](#已完成功能)
+
+---
+
+## 开发模式变革
+
+### 🎨 SuperDesign 协作模式
+
+从 Version 3.0 开始，UI 开发采用 **AI 三角协作**模式：
+
+```
+┌────────────────┐
+│  GitHub Copilot │  ← 需求分析、设计文档
+└────────┬────────┘
+         │ 设计文档
+         ↓
+┌────────────────┐
+│  SuperDesign AI │  ← UI 设计、HTML 生成
+└────────┬────────┘
+         │ HTML 原型
+         ↓
+┌────────────────┐
+│  User (开发者) │  ← 测试、反馈、集成
+└────────┬────────┘
+         │ 反馈
+         ↓
+      [迭代循环]
+```
+
+### 新增目录结构
+
+```
+.superdesign/
+├── rules.md              # SuperDesign 设计规范
+├── design_docs/          # 设计文档（Copilot 编写）
+│   ├── README.md
+│   ├── 01-welcome-page.md
+│   ├── 02-statistics-dashboard.md
+│   └── ...
+└── design_iterations/    # HTML 原型（SuperDesign 生成）
+    ├── welcome-page_v1.html
+    ├── statistics_v1.html
+    └── ...
+```
+
+### 开发流程
+
+详细流程见 **[07-ui-development-process.md](./07-ui-development-process.md)**
+
+**简要流程**:
+
+1. **Copilot**: 编写设计文档到 `.superdesign/design_docs/`
+2. **SuperDesign**: 根据设计文档生成 HTML 到 `.superdesign/design_iterations/`
+3. **User**: 测试 HTML 原型，提供反馈
+4. **迭代**: Copilot 更新文档 → SuperDesign 重新生成 → User 验证
+5. **集成**: 将验证通过的 HTML 集成到 `src/providers/`
 
 ---
 
@@ -381,38 +439,30 @@ sequenceDiagram
 
 ### 1. 技术栈
 
-```typescript
-// 核心组件
-const techStack = {
-  // 原生 VS Code API
-  native: {
-    treeView: 'vscode.TreeDataProvider',
-    statusBar: 'vscode.StatusBarItem',
-    quickPick: 'vscode.QuickPick',
-    progress: 'vscode.Progress',
-    webview: 'vscode.WebviewPanel',
-  },
+**核心组件**：
 
-  // Webview 技术
-  webview: {
-    framework: 'Vanilla JS + HTML/CSS',
-    styling: 'CSS Variables (VS Code Theme API)',
-    bundler: 'esbuild',
-  },
+- **原生 VS Code API**：
+  - TreeView (TreeDataProvider)
+  - 状态栏 (StatusBarItem)
+  - 快速选择 (QuickPick)
+  - 进度指示 (Progress API)
+  - Webview 面板
 
-  // 图标库
-  icons: {
-    primary: 'VS Code Codicons', // 免费、一致性好
-    custom: 'SVG (必要时)',
-  },
+**Webview 技术**：
 
-  // 状态管理
-  state: {
-    runtime: 'EventEmitter',
-    persistent: 'vscode.Memento',
-  },
-};
-```
+- 框架：Vanilla JS + HTML/CSS
+- 样式：CSS Variables (VS Code Theme API)
+- 构建：esbuild
+
+**图标库**：
+
+- 主要：VS Code Codicons
+- 自定义：SVG（必要时）
+
+**状态管理**：
+
+- 运行时：EventEmitter
+- 持久化：vscode.Memento
 
 ### 2. 组件架构
 
@@ -521,58 +571,33 @@ graph LR
 
 #### 3.1 多视图管理
 
-```typescript
-// 概念代码
-class MultiViewManager {
-  private views: Map<string, vscode.TreeView<any>>;
-  private activeView: string = 'sources';
+**设计思路**：使用 VS Code TreeView 的 `visible` 属性控制多视图显示
 
-  switchView(viewId: string): void {
-    // 隐藏所有视图
-    this.views.forEach((view) => (view.visible = false));
-    // 显示目标视图
-    this.views.get(viewId)!.visible = true;
-    this.activeView = viewId;
-  }
-}
-```
+**核心概念**：
+
+- 维护视图映射表
+- 提供视图切换接口
+- 保持激活视图状态
 
 #### 3.2 Webview 主题适配
 
-```css
-/* CSS 变量自动适配主题 */
-:root {
-  --bg-color: var(--vscode-editor-background);
-  --fg-color: var(--vscode-editor-foreground);
-  --border-color: var(--vscode-panel-border);
-  --primary-color: var(--vscode-button-background);
-}
+**设计思路**：使用 VS Code CSS 变量实现主题自动适配
 
-.container {
-  background: var(--bg-color);
-  color: var(--fg-color);
-  border: 1px solid var(--border-color);
-}
-```
+**核心概念**：
+
+- 使用 `var(--vscode-*)` CSS 变量
+- 自动跟随编辑器主题变化
+- 保持视觉一致性
 
 #### 3.3 状态持久化
 
-```typescript
-// 概念代码
-class UIStateManager {
-  constructor(private context: vscode.ExtensionContext) {}
+**设计思路**：使用 ExtensionContext 的 globalState 存储 UI 状态
 
-  // 保存 UI 状态
-  async saveState(key: string, value: any): Promise<void> {
-    await this.context.globalState.update(key, value);
-  }
+**核心概念**：
 
-  // 恢复 UI 状态
-  getState<T>(key: string): T | undefined {
-    return this.context.globalState.get<T>(key);
-  }
-}
-```
+- 保存用户界面偏好设置
+- 恢复上次的界面状态
+- 使用键值对存储机制
 
 ### 4. 性能优化策略
 
@@ -776,7 +801,7 @@ graph TB
 
 ## 已完成功能
 
-### Phase 1 成果展示
+### ✅ Phase 1: 基础 UI 优化 (完成)
 
 #### 1. 优化的树视图
 
@@ -839,6 +864,151 @@ graph TB
 | `Cmd+Shift+F`  | 搜索规则 | Mac       |
 | `Ctrl+Shift+G` | 生成配置 | Win/Linux |
 | `Cmd+Shift+G`  | 生成配置 | Mac       |
+
+**实施文档**: [07-ui-phase1-implementation.md](./07-ui-phase1-implementation.md)
+
+---
+
+### ✅ Phase 2: Webview 组件开发 (完成)
+
+#### 已实现组件
+
+| 组件                           | 状态 | 设计文档                                                                                | HTML 原型                                |
+| ------------------------------ | ---- | --------------------------------------------------------------------------------------- | ---------------------------------------- |
+| **BaseWebviewProvider**        | ✅   | 基础架构文档                                                                            | -                                        |
+| **WelcomeWebviewProvider**     | ✅   | [01-welcome-page.md](../../.superdesign/design_docs/01-welcome-page.md)                 | `design_iterations/welcome-page_v1.html` |
+| **StatisticsWebviewProvider**  | ✅   | [02-statistics-dashboard.md](../../.superdesign/design_docs/02-statistics-dashboard.md) | `design_iterations/statistics_v1.html`   |
+| **RuleDetailsWebviewProvider** | ✅   | [03-rule-details-panel.md](../../.superdesign/design_docs/03-rule-details-panel.md)     | `design_iterations/rule-details_v1.html` |
+| **SearchWebviewProvider**      | ✅   | [04-advanced-search.md](../../.superdesign/design_docs/04-advanced-search.md)           | `design_iterations/search_v1.html`       |
+
+**核心成果**:
+
+- 🎨 完整的 Webview 基础架构
+- 📊 数据可视化能力（统计视图）
+- 🔍 高级搜索功能
+- 📋 规则详情展示
+- 🎯 新用户引导流程
+
+**实施文档**: [07-ui-phase2-implementation.md](./07-ui-phase2-implementation.md)
+
+---
+
+### 🔄 Phase 3: 高级交互优化 (部分完成)
+
+#### 已实现功能
+
+- ✅ **高级搜索 Webview** - 多条件搜索、历史记录
+- ✅ **批量操作命令** - 批量启用/禁用/导出/删除
+
+#### 待实现功能
+
+- ⏳ **树视图多选支持** - Ctrl/Cmd+Click 多选
+- ⏳ **配置管理 Webview** - 可视化配置界面
+- ⏳ **拖放排序** - 源和规则拖放重排
+
+**设计文档**: [07-ui-phase3-design.md](./07-ui-phase3-design.md)  
+**实施文档**: [07-ui-phase3-implementation.md](./07-ui-phase3-implementation.md)
+
+---
+
+### 🆕 SuperDesign 协作模式 (Version 3.0)
+
+#### 新增资源
+
+**设计规范**:
+
+- `.superdesign/rules.md` - SuperDesign AI 设计规范
+
+**设计文档** (`.superdesign/design_docs/`):
+
+- `README.md` - 设计系统总览
+- `01-welcome-page.md` - 欢迎页面设计
+- `02-statistics-dashboard.md` - 统计仪表板设计
+- `03-rule-details-panel.md` - 规则详情面板设计
+- `04-advanced-search.md` - 高级搜索界面设计
+- `05-tree-view.md` - 树视图界面设计
+- `06-status-bar.md` - 状态栏界面设计
+
+**HTML 原型** (`.superdesign/design_iterations/`):
+
+- 由 SuperDesign AI 根据设计文档生成
+- 支持快速迭代和版本管理
+- 可直接在浏览器预览
+
+#### 协作优势
+
+| 传统方式              | SuperDesign 协作          | 提升             |
+| --------------------- | ------------------------- | ---------------- |
+| 设计 + 实现 8-12 小时 | 设计 2 小时 + 集成 1 小时 | **75%**          |
+| 迭代调整 1-2 小时     | 迭代调整 15 分钟          | **87%**          |
+| 设计一致性低          | 设计一致性高              | **质量提升**     |
+| 文档滞后              | 文档先行                  | **可维护性提升** |
+
+---
+
+## 📚 相关文档
+
+### 开发流程
+
+- **[07-ui-development-process.md](./07-ui-development-process.md)** ⭐ 新开发流程（必读）
+  - AI 三角协作模式
+  - 详细工作流程
+  - 角色职责划分
+  - 快速开始示例
+
+### 实施文档
+
+- [07-ui-phase1-implementation.md](./07-ui-phase1-implementation.md) - Phase 1 技术实现
+- [07-ui-phase2-implementation.md](./07-ui-phase2-implementation.md) - Phase 2 技术实现
+- [07-ui-phase3-implementation.md](./07-ui-phase3-implementation.md) - Phase 3 技术实现
+
+### 设计文档
+
+- [.superdesign/design_docs/README.md](../../.superdesign/design_docs/README.md) - 设计系统总览
+- [.superdesign/rules.md](../../.superdesign/rules.md) - SuperDesign 设计规范
+
+---
+
+## 总结
+
+### 核心价值
+
+```
+┌─────────────────────────────────────────────────┐
+│  🎯 用户价值                                    │
+├─────────────────────────────────────────────────┤
+│  • 新用户: 降低上手难度，快速开始              │
+│  • 现有用户: 提升操作效率，丰富功能            │
+│  • 开发者: 易于维护，便于扩展                  │
+│  • AI 协作: 设计专业，迭代快速                 │
+└─────────────────────────────────────────────────┘
+```
+
+### 下一步行动
+
+📋 **Phase 3 完成**:
+
+1. ⏳ 树视图多选支持
+2. ⏳ 配置管理 Webview（SuperDesign 协作模式）
+3. ⏳ 拖放排序功能
+4. ⏳ 性能优化（虚拟滚动）
+
+📋 **Phase 4 计划**:
+
+1. 🆕 自定义主题支持
+2. 🆕 规则推荐系统
+3. 🆕 协作分享功能
+4. 🆕 更多 AI 工具适配器
+
+---
+
+_设计版本: 3.0_  
+_开发模式: SuperDesign 协作_  
+_当前状态: Phase 3 部分完成_  
+_最后更新: 2025-10-27_
+
+````
+| `Cmd+Shift+G`  | 生成配置 | Mac       |
 | `Ctrl+Shift+M` | 显示菜单 | Win/Linux |
 | `Cmd+Shift+M`  | 显示菜单 | Mac       |
 
@@ -887,10 +1057,11 @@ graph TB
 4. ⏳ 配置管理 Webview - 待实现
 5. ⏳ 拖拽功能（源排序）- 待实现
 
-详细设计见 [09-ui-phase3-design.md](./09-ui-phase3-design.md)  
+详细设计见 [09-ui-phase3-design.md](./09-ui-phase3-design.md)
 实现文档见 [10-ui-phase3-implementation.md](./10-ui-phase3-implementation.md)
 
 ---
 
-_设计版本: 2.2_  
+_设计版本: 2.2_
 _当前状态: Phase 3 部分完成（2/5 任务）_
+````
