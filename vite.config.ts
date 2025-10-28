@@ -1,10 +1,11 @@
 /// <reference types="vitest" />
 import path from 'path';
 
+import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 export default defineConfig(({ mode }) => ({
-  plugins: [],
+  plugins: mode === 'webview' ? [react()] : [],
   resolve: {
     alias: [
       {

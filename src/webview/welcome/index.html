@@ -8,81 +8,9 @@
       content="default-src 'none'; style-src {{cspSource}} 'unsafe-inline'; script-src {{cspSource}}; img-src {{cspSource}} https:;"
     />
     <title>Welcome to Turbo AI Rules</title>
-    <link rel="stylesheet" href="{{stylesUri}}" />
-    <link rel="stylesheet" href="./welcome.css" />
   </head>
   <body>
-    <div class="container">
-      <div class="hero">
-        <h1>🚀 Welcome to Turbo AI Rules</h1>
-        <p class="subtitle">
-          Sync AI coding rules from Git repositories and automatically generate configuration files
-        </p>
-      </div>
-
-      <div class="steps">
-        <div class="step-card">
-          <div class="step-number">1</div>
-          <div class="step-content">
-            <h2>Add a Rule Source</h2>
-            <p>Configure your first Git repository to sync rules from</p>
-            <button class="button" id="addSourceBtn">➕ Add Source</button>
-          </div>
-        </div>
-
-        <div class="step-card">
-          <div class="step-number">2</div>
-          <div class="step-content">
-            <h2>Sync Rules</h2>
-            <p>Fetch and update AI rules from your configured sources</p>
-            <button class="button" id="syncRulesBtn">🔄 Sync Now</button>
-          </div>
-        </div>
-
-        <div class="step-card">
-          <div class="step-number">3</div>
-          <div class="step-content">
-            <h2>Generate Configs</h2>
-            <p>Create configuration files for your AI coding tools</p>
-            <button class="button button-secondary" id="generateConfigsBtn">
-              📝 Generate Configs
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="templates">
-        <h2>📚 Quick Start Templates</h2>
-        <p class="section-desc">Popular rule repositories to get you started</p>
-
-        <div class="template-grid">
-          <div class="template-card" data-template="typescript">
-            <div class="template-icon">TS</div>
-            <h3>TypeScript Best Practices</h3>
-            <p>Coding standards and style guide for TypeScript projects</p>
-          </div>
-
-          <div class="template-card" data-template="react">
-            <div class="template-icon">⚛️</div>
-            <h3>React Development Rules</h3>
-            <p>Component patterns and React hooks best practices</p>
-          </div>
-
-          <div class="template-card" data-template="python">
-            <div class="template-icon">🐍</div>
-            <h3>Python Style Guide</h3>
-            <p>PEP 8 compliant coding standards for Python</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="footer">
-        <button class="button button-secondary" id="viewDocsBtn">📖 Documentation</button>
-        <button class="button button-secondary" id="getHelpBtn">💬 Get Help</button>
-        <button class="button button-secondary" id="dismissBtn">✓ Don't Show Again</button>
-      </div>
-    </div>
-
-    <script type="module" src="./welcome.ts"></script>
+    <div id="root"></div>
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>

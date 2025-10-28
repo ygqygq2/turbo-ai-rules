@@ -28,7 +28,7 @@
   "activationEvents": [
     "onStartupFinished"
   ],
-  "main": "./out/extension.js",
+  "main": "./out/extension/extension.js",
   "l10n": "./l10n",
   "contributes": {
     "viewsContainers": {
@@ -36,7 +36,8 @@
         {
           "id": "turbo-ai-rules",
           "title": "Turbo AI Rules",
-          "icon": "resources/images/logo.svg"
+          "icon": "resources/images/logo-icon.svg",
+          "order": 1000
         }
       ]
     },
@@ -493,8 +494,8 @@
     "build:webview": "vite build --mode webview",
     "watch:webview": "vite build --mode webview --watch",
     "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension/extension.js --external:vscode --format=cjs --platform=node",
-    "esbuild": "npm run esbuild-base -- --sourcemap",
-    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "esbuild": "npm run build:webview && npm run esbuild-base -- --sourcemap",
+    "esbuild-watch": "npm run build:webview && npm run esbuild-base -- --sourcemap --watch",
     "watch": "npm run esbuild-watch",
     "dev": "concurrently \"npm run watch:webview\" \"npm run esbuild-watch\"",
     "pretest": "npm run lint",

@@ -91,6 +91,11 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+.template-card.selected {
+  border-color: var(--vscode-button-background);
+  background-color: var(--vscode-list-activeSelectionBackground);
+}
+
 .template-icon {
   font-size: 2em;
   margin-bottom: var(--spacing-sm);

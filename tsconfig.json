@@ -3,7 +3,8 @@
     "module": "CommonJS",
     "target": "ES2022",
     "outDir": "out",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
     "sourceMap": true,
     "rootDir": "src",
     "baseUrl": "./",
@@ -21,6 +22,7 @@
   },
   "include": [
     "./src/**/*.ts",
+    "./src/**/*.tsx",
     "./src/**/*.d.ts",
     "./node_modules/vscode/vscode.d.ts",
     "./node_modules/vscode/lib/*"

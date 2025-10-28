@@ -51,6 +51,8 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
       this.context.extensionPath,
       'out',
       'webview',
+      'src',
+      'webview',
       'welcome',
       'index.html',
     );
@@ -58,13 +60,18 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
     // 读取 HTML 文件
     let html = fs.readFileSync(htmlPath, 'utf-8');
 
-    // 替换占位符
-    const stylesUri = this.getResourceUri(webview, 'out', 'webview', 'shared', 'base.css');
+    // 替换 CSP 占位符
     const cspSource = this.getCspSource(webview);
+    html = html.replace(/\{\{cspSource\}\}/g, cspSource);
 
-    html = html
-      .replace(/\{\{cspSource\}\}/g, cspSource)
-      .replace(/\{\{stylesUri\}\}/g, stylesUri.toString());
+    // 转换资源路径为 webview URI
+    // 处理 /welcome/welcome.js 和 /welcome/welcome.css
+    html = html.replace(/(?:src|href)="\/([^"]+)"/g, (match, resourcePath) => {
+      const assetUri = webview.asWebviewUri(
+        vscode.Uri.joinPath(this.context.extensionUri, 'out', 'webview', resourcePath),
+      );
+      return match.replace(`/${resourcePath}`, assetUri.toString());
+    });
 
     return html;
   }
