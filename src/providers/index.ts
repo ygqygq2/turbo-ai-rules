@@ -1,11 +1,12 @@
 /**
- * UI 提供者统一导出
+ * Providers 导出
  */
 
 export { BaseWebviewProvider } from './BaseWebviewProvider';
 export { RuleDetailsWebviewProvider } from './RuleDetailsWebviewProvider';
 export { RulesTreeProvider } from './RulesTreeProvider';
 export { SearchWebviewProvider } from './SearchWebviewProvider';
+export { SourceDetailWebviewProvider } from './SourceDetailWebviewProvider';
 export { StatisticsWebviewProvider } from './StatisticsWebviewProvider';
-export { StatusBarProvider, SyncStatus } from './StatusBarProvider';
+export { StatusBarProvider } from './StatusBarProvider';
 export { WelcomeWebviewProvider } from './WelcomeWebviewProvider';

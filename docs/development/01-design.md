@@ -25,7 +25,7 @@
 1. **格式不统一**: 每个工具有自己的配置文件格式
 
    - Cursor: `.cursorrules` (Markdown)
-   - GitHub Copilot: `.github/.copilot-instructions.md` (Markdown)
+   - GitHub Copilot: `.github/copilot-instructions.md` (Markdown)
    - Continue: `.continuerules` (Markdown)
 
 2. **规则分散**: 团队规则分散在多个仓库、文档中，难以统一管理
@@ -96,7 +96,7 @@ Git 规则仓库 ──→ [Turbo AI Rules] ──→ AI 工具配置文件
 
 ### 2️⃣ **GitHub Copilot**
 
-- **配置文件**: `.github/.copilot-instructions.md` 或 `.github/copilot-instructions.md`
+- **配置文件**: `.github/copilot-instructions.md` 或 `.github/copilot-instructions.md`
 - **格式**: Markdown
 - **外部引用**: ❌ **不支持** 外部引用
 - **机制**: 只读取仓库内的文件
@@ -197,7 +197,7 @@ Git 规则仓库 ──→ [Turbo AI Rules] ──→ AI 工具配置文件
 │ │ │ │
 │ │ AI Tool Configs: │ │
 │ │ • .cursorrules │ │
-│ │ • .github/.copilot-instructions.md │ │
+│ │ • .github/copilot-instructions.md │ │
 │ │ • .continuerules │ │
 │ └──────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
@@ -258,7 +258,7 @@ interface GeneratedFile {
 6. 自动更新 .gitignore (添加 .ai-rules/)
     ↓
 7. 根据用户配置生成 AI 工具配置文件:
-       • .github/.copilot-instructions.md (Copilot, 默认启用)
+       • .github/copilot-instructions.md (Copilot, 默认启用)
        • .cursorrules (Cursor, 需手动启用)
        • .continuerules (Continue, 需手动启用)
     ↓
@@ -336,7 +336,7 @@ interface GeneratedFile {
 - 可配置项：是否自动写入、是否包含元数据注释、是否开启按标签分组输出。
 - 常见适配目标举例（行为说明，不含实现代码）：
   - Cursor：输出为清晰的 Markdown 文档（`.cursorrules`），建议展现标题、优先级、标签及正文；
-  - GitHub Copilot：输出到 `.github/.copilot-instructions.md`，按段分隔规则以便 Copilot 读取；
+  - GitHub Copilot：输出到 `.github/copilot-instructions.md`，按段分隔规则以便 Copilot 读取；
   - Continue：输出为 `.continuerules` 或匹配其配置规范的文件。
 
   // 生成配置文件
@@ -392,7 +392,7 @@ ${rule.content}
 
 class CopilotAdapter implements AIToolAdapter {
   name = 'GitHub Copilot';
-  configFile = '.github/.copilot-instructions.md';
+  configFile = '.github/copilot-instructions.md';
   format = 'markdown';
 
   generate(rules: ParsedRule[]): string {
@@ -593,7 +593,7 @@ B. 预览与差异展示（Preview & Diff）
 
 - 目标：在写入项目文件前向用户展示将被修改/生成的配置文件差异，降低误操作风险。
 - 交互要点：
-  - 提供逐文件预览（例如 `.cursorrules`、`.github/.copilot-instructions.md`）。
+  - 提供逐文件预览（例如 `.cursorrules`、`.github/copilot-instructions.md`）。
   - 高亮新增/修改/删除的段落（文本 diff）。
   - 提供“应用更改”与“取消”的操作。
 
@@ -668,7 +668,7 @@ C. 选择性启用（Selective Enable）
 
 1. ✅ **全局缓存**: `~/.turbo-ai-rules/sources/` - 所有项目共享，节省空间
 2. ✅ **项目生成**: `.ai-rules/` - 项目内缓存和元数据，自动 .gitignore
-3. ✅ **多 AI 适配**: 自动生成 `.cursorrules`、`.github/.copilot-instructions.md` 等
+3. ✅ **多 AI 适配**: 自动生成 `.cursorrules`、`.github/copilot-instructions.md` 等
 4. ✅ **智能同步**: 后台自动同步，无需手动干预
 5. ✅ **选择性启用**: 可以只启用某些 rules，不是全部
 6. ✅ **冲突解决**: 多源相同 ID 的 rules 智能合并

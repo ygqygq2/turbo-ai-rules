@@ -1,6 +1,6 @@
 /**
  * GitHub Copilot 适配器
- * 生成 .github/.copilot-instructions.md 文件
+ * 生成 .github/copilot-instructions.md 文件
  */
 
 import type { ParsedRule } from '../types/rules';
@@ -11,7 +11,7 @@ import { BaseAdapter } from './AIToolAdapter';
 /**
  * GitHub Copilot 适配器
  *
- * GitHub Copilot 使用 .github/.copilot-instructions.md 文件
+ * GitHub Copilot 使用 .github/copilot-instructions.md 文件
  * 支持更结构化的 Markdown 格式，可以包含代码示例
  */
 export class CopilotAdapter extends BaseAdapter {
@@ -24,7 +24,7 @@ export class CopilotAdapter extends BaseAdapter {
   }
 
   /**
-   * 生成 .github/.copilot-instructions.md 文件内容
+   * 生成 .github/copilot-instructions.md 文件内容
    */
   async generate(rules: ParsedRule[]): Promise<GeneratedConfig> {
     Logger.info('Generating GitHub Copilot configuration', { ruleCount: rules.length });
@@ -192,6 +192,6 @@ export class CopilotAdapter extends BaseAdapter {
    * 获取文件路径
    */
   getFilePath(): string {
-    return '.github/.copilot-instructions.md';
+    return '.github/copilot-instructions.md';
   }
 }

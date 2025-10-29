@@ -208,7 +208,17 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
    * 获取根节点
    */
   private async getRootItems(): Promise<RuleTreeItem[]> {
-    const sources = await this.configManager.getSources();
+    // 获取当前活动的 workspace folder
+    let workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    const activeEditor = vscode.window.activeTextEditor;
+    if (activeEditor) {
+      const activeWorkspaceFolder = vscode.workspace.getWorkspaceFolder(activeEditor.document.uri);
+      if (activeWorkspaceFolder) {
+        workspaceFolder = activeWorkspaceFolder;
+      }
+    }
+
+    const sources = this.configManager.getSources(workspaceFolder?.uri);
 
     if (sources.length === 0) {
       return [

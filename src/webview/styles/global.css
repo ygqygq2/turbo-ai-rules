@@ -1,6 +1,6 @@
 /**
- * VS Code Webview 共享样式
- * 提供统一的设计系统
+ * VS Code Webview 全局/共用样式
+ * 合并 base.css + styles.css，统一设计系统
  */
 
 :root {
@@ -45,39 +45,41 @@ body {
   font-family: inherit;
   transition: background-color 0.2s;
 }
-
-.button:hover {
+.button:hover:not(:disabled) {
   background-color: var(--vscode-button-hoverBackground);
 }
-
+.button:active:not(:disabled) {
+  opacity: 0.9;
+}
 .button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
-
 .button-secondary {
   background-color: var(--vscode-button-secondaryBackground);
   color: var(--vscode-button-secondaryForeground);
 }
-
-.button-secondary:hover {
+.button-secondary:hover:not(:disabled) {
   background-color: var(--vscode-button-secondaryHoverBackground);
 }
 
 /* 输入框样式 */
 .input {
+  width: 100%;
+  padding: 6px 12px;
   background-color: var(--vscode-input-background);
   color: var(--vscode-input-foreground);
   border: 1px solid var(--vscode-input-border);
   border-radius: var(--border-radius);
-  padding: 6px 10px;
   font-size: inherit;
   font-family: inherit;
-  width: 100%;
 }
-
 .input:focus {
-  outline: 1px solid var(--vscode-focusBorder);
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+}
+.input::placeholder {
+  color: var(--vscode-input-placeholderForeground);
 }
 
 /* 卡片样式 */
@@ -89,17 +91,55 @@ body {
   margin-bottom: var(--spacing-md);
 }
 
+/* 表单元素 */
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+.form-label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.9em;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+/* 工具栏 */
+.toolbar {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--vscode-descriptionForeground);
+}
+.empty-icon {
+  font-size: 3em;
+  margin-bottom: var(--spacing-md);
+  opacity: 0.5;
+}
+
+/* Section */
 .section {
   margin-bottom: var(--spacing-lg);
 }
-
 .section-title {
-  font-size: 14px;
+  font-size: 1.1em;
   font-weight: 600;
   margin-bottom: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-/* 徽章样式 */
+/* Badge 徽章 */
 .badge {
   display: inline-block;
   padding: 2px 8px;
@@ -110,40 +150,16 @@ body {
   color: var(--vscode-badge-foreground);
 }
 
-/* 空状态 */
-.empty-state {
+/* Utility classes */
+.text-center {
   text-align: center;
-  padding: var(--spacing-xl);
-  color: var(--vscode-descriptionForeground);
 }
-
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: var(--spacing-md);
-  opacity: 0.5;
+.mb-sm {
+  margin-bottom: var(--spacing-sm);
 }
-
-/* 表单样式 */
-.form-group {
+.mb-md {
   margin-bottom: var(--spacing-md);
 }
-
-.form-label {
-  display: block;
-  font-size: 13px;
-  margin-bottom: var(--spacing-xs);
-  color: var(--vscode-descriptionForeground);
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-md);
-}
-
-/* 工具栏 */
-.toolbar {
-  display: flex;
-  gap: var(--spacing-sm);
-  flex-wrap: wrap;
+.mb-lg {
+  margin-bottom: var(--spacing-lg);
 }

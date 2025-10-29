@@ -78,19 +78,24 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
 
   /**
    * 处理来自 Webview 的消息
+   * 注意：这里直接处理业务逻辑，而不是调用命令
+   * VSCode 命令只用于打开 webview，不用于 webview 内部交互
    */
   protected async handleMessage(message: WebviewMessage): Promise<void> {
     try {
       switch (message.type) {
         case 'addSource':
+          // 直接调用命令（这是例外，因为需要复杂的用户输入流程）
           await vscode.commands.executeCommand('turbo-ai-rules.addSource');
           break;
 
         case 'syncRules':
+          // 直接调用命令（这是例外，因为需要访问服务层）
           await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
           break;
 
         case 'generateConfigs':
+          // 直接调用命令（这是例外，因为需要访问服务层）
           await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
           break;
 
@@ -99,6 +104,7 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
           break;
 
         case 'viewDocs':
+          // 直接在这里处理，不需要命令
           await vscode.env.openExternal(
             vscode.Uri.parse(
               'https://github.com/ygqygq2/turbo-ai-rules/blob/main/docs/user-guide/README.md',
@@ -107,6 +113,7 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
           break;
 
         case 'getHelp':
+          // 直接在这里处理，不需要命令
           await vscode.env.openExternal(
             vscode.Uri.parse('https://github.com/ygqygq2/turbo-ai-rules/discussions'),
           );

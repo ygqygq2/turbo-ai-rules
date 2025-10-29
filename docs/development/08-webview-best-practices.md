@@ -1,7 +1,7 @@
 # Webview 开发最佳实践
 
 > **创建日期**: 2025-10-27  
-> **最后更新**: 2025-10-27  
+> **最后更新**: 2025-10-29  
 > **状态**: 正式文档
 
 ---
@@ -27,6 +27,7 @@
 - ✅ 使用 Vite 构建工具链，开发体验现代化
 - ✅ 模块化设计，单个文件 80-300 行，职责单一
 - ✅ 共享组件和样式，提高复用性
+- ✅ 支持 React 等现代前端框架
 
 ---
 
@@ -121,6 +122,254 @@ protected getHtmlContent(webview: vscode.Webview): string {
 - `search.html`：只负责结构（~80 行）
 - `search.css`：只负责样式（~100 行）
 
+## 🧩 React 集成最佳实践
+
+### 1. 项目结构
+
+对于使用 React 的 Webview 页面，推荐以下结构：
+
+```
+src/webview/source-detail/
+├── index.html           # HTML 入口
+├── index.tsx            # React 渲染入口
+├── App.tsx              # 主应用组件
+├── source-detail.css    # 样式文件
+└── source-detail.ts     # Vite 构建入口
+```
+
+### 2. React 组件设计
+
+**状态管理：**
+
+使用 React 的 useState 和 useEffect 进行状态管理，避免全局状态：
+
+```tsx
+// ✅ 正确示例
+export const App: React.FC = () => {
+  const [data, setData] = useState<SourceDetailData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 监听来自扩展的消息
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data;
+
+      switch (message.type) {
+        case 'sourceData':
+          setData(message.payload);
+          setLoading(false);
+          break;
+        case 'error':
+          setError(message.payload.message);
+          setLoading(false);
+          break;
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  // ...
+};
+```
+
+### 3. 组件拆分
+
+将复杂组件拆分为更小的可复用组件：
+
+```tsx
+// 优先级图标组件
+const PriorityIcon: React.FC<{ priority: 'high' | 'medium' | 'low' }> = ({ priority }) => {
+  const icons = {
+    high: '🔥',
+    medium: '⚠️',
+    low: 'ℹ️',
+  };
+  return <span className={`priority-icon priority-${priority}`}>{icons[priority]}</span>;
+};
+
+// 状态点组件
+const StatusDot: React.FC<{ status: 'enabled' | 'disabled' | 'syncing' | 'error' }> = ({
+  status,
+}) => {
+  const colors = {
+    enabled: 'green',
+    disabled: 'gray',
+    syncing: 'orange',
+    error: 'red',
+  };
+  return <span className={`status-dot status-${colors[status]}`}></span>;
+};
+```
+
+## 📨 消息通信最佳实践
+
+### 1. 避免盲目注册大量命令
+
+❌ **错误做法**：为每个 UI 操作注册一个 VS Code 命令
+
+```typescript
+// ❌ 错误示例 - 为每个按钮注册命令
+vscode.commands.registerCommand('turbo-ai-rules.syncSource', () => {...});
+vscode.commands.registerCommand('turbo-ai-rules.editSource', () => {...});
+vscode.commands.registerCommand('turbo-ai-rules.deleteSource', () => {...});
+vscode.commands.registerCommand('turbo-ai-rules.toggleSource', () => {...});
+```
+
+✅ **正确做法**：使用消息通信机制
+
+```typescript
+// ✅ 正确示例 - 使用消息通信
+// Webview 前端
+vscodeApi.postMessage('syncSource', { sourceId: data.source.id });
+vscodeApi.postMessage('editSource', { sourceId: data.source.id });
+vscodeApi.postMessage('deleteSource', { sourceId: data.source.id });
+vscodeApi.postMessage('toggleSource', { sourceId: data.source.id });
+
+// Provider 后端
+protected async handleMessage(message: WebviewMessage): Promise<void> {
+  switch (message.type) {
+    case 'syncSource':
+      await this.syncSource(message.payload.sourceId);
+      break;
+    case 'editSource':
+      await this.editSource(message.payload.sourceId);
+      break;
+    case 'deleteSource':
+      await this.deleteSource(message.payload.sourceId);
+      break;
+    case 'toggleSource':
+      await this.toggleSource(message.payload.sourceId);
+      break;
+  }
+}
+```
+
+### 2. 消息类型定义
+
+定义清晰的消息接口以确保类型安全：
+
+```typescript
+// Webview 前端
+interface WebviewMessage {
+  type: 'syncSource' | 'editSource' | 'deleteSource' | 'toggleSource' | 'viewRule';
+  payload?: any;
+}
+
+// Provider 后端
+interface WebviewMessage {
+  type: string;
+  payload?: any;
+}
+```
+
+### 3. VS Code API 封装
+
+创建统一的 API 封装以简化使用：
+
+```typescript
+// src/webview/shared/vscode-api.ts
+class VSCodeAPIWrapper {
+  private readonly vscode = acquireVsCodeApi();
+
+  /**
+   * 发送消息到扩展
+   */
+  public postMessage(type: string, payload?: any): void {
+    this.vscode.postMessage({ type, payload });
+  }
+
+  /**
+   * 获取状态
+   */
+  public getState(): any {
+    return this.vscode.getState();
+  }
+
+  /**
+   * 设置状态
+   */
+  public setState(state: any): void {
+    this.vscode.setState(state);
+  }
+}
+
+// 导出单例
+export const vscodeApi = new VSCodeAPIWrapper();
+```
+
+### 4. 双向通信模式
+
+建立清晰的双向通信模式：
+
+```typescript
+// Webview -> Extension 消息
+type WebviewToExtensionMessage =
+  | { type: 'syncSource'; payload: { sourceId: string } }
+  | { type: 'editSource'; payload: { sourceId: string } }
+  | { type: 'deleteSource'; payload: { sourceId: string } }
+  | { type: 'toggleSource'; payload: { sourceId: string } }
+  | { type: 'viewRule'; payload: { rulePath: string } };
+
+// Extension -> Webview 消息
+type ExtensionToWebviewMessage =
+  | { type: 'sourceData'; payload: SourceDetailData }
+  | { type: 'syncStatus'; payload: { status: 'syncing' | 'success' | 'error'; message?: string } }
+  | { type: 'error'; payload: { message: string } };
+```
+
+### 5. 错误处理
+
+确保在通信中包含适当的错误处理：
+
+```typescript
+// Webview 前端
+useEffect(() => {
+  const handleMessage = (event: MessageEvent) => {
+    const message = event.data;
+
+    switch (message.type) {
+      case 'sourceData':
+        setData(message.payload);
+        setLoading(false);
+        break;
+      case 'syncStatus':
+        setSyncStatus(message.payload.status);
+        break;
+      case 'error':
+        setError(message.payload.message);
+        setLoading(false);
+        break;
+    }
+  };
+
+  window.addEventListener('message', handleMessage);
+  return () => window.removeEventListener('message', handleMessage);
+}, []);
+
+// Provider 后端
+protected async handleMessage(message: WebviewMessage): Promise<void> {
+  try {
+    switch (message.type) {
+      case 'syncSource':
+        await this.syncSource(message.payload.sourceId);
+        break;
+      // ... 其他消息处理
+    }
+  } catch (error) {
+    // 发送错误信息到前端
+    this.postMessage({
+      type: 'error',
+      payload: {
+        message: error instanceof Error ? error.message : 'Unknown error occurred'
+      }
+    });
+  }
+}
+```
+
 ## 🛠️ 开发流程
 
 ### 1. 开发模式
@@ -134,106 +383,33 @@ npm run watch:webview   # 监听 Webview 前端
 npm run esbuild-watch   # 监听扩展后端
 ```
 
-### 2. 构建生产版本
+### 1. React 页面开发与调试
 
 ```bash
-npm run compile
-# 会自动：
-# 1. 使用 Vite 构建 Webview -> out/webview/
-# 2. 使用 esbuild 构建扩展 -> out/extension/
-```
-
-### 3. 添加新页面
-
-#### Step 1: 创建 HTML
-
-```html
-<!-- src/webview/my-page/index.html -->
-<!DOCTYPE html>
-<html>
-  <head>
-    <link rel="stylesheet" href="{{stylesUri}}" />
-    <link rel="stylesheet" href="./my-page.css" />
-  </head>
-  <body>
-    <div class="container">
-      <!-- 你的页面内容 -->
-    </div>
-    <script type="module" src="./my-page.ts"></script>
-  </body>
-</html>
-```
-
-#### Step 2: 创建 TypeScript
-
-```typescript
-// src/webview/my-page/my-page.ts
-import { vscodeApi } from '../shared/vscode-api';
-
-// DOM 操作
-const button = document.getElementById('myButton');
-button?.addEventListener('click', () => {
-  vscodeApi.postMessage('buttonClicked', { data: 'test' });
-});
-
-// 接收消息
-window.addEventListener('message', (event) => {
-  const { type, payload } = event.data;
-  // 处理消息
-});
-```
-
-#### Step 3: 创建 CSS
-
-```css
-/* src/webview/my-page/my-page.css */
-.my-custom-class {
-  /* 样式 */
-}
-```
-
-#### Step 4: 创建 Provider
-
-```typescript
-// src/providers/MyPageWebviewProvider.ts
-export class MyPageWebviewProvider extends BaseWebviewProvider {
-  protected getHtmlContent(webview: vscode.Webview): string {
-    const htmlPath = path.join(this.context.extensionPath, 'out/webview/my-page/index.html');
-    let html = fs.readFileSync(htmlPath, 'utf-8');
-    // 替换 URI...
-    return html;
-  }
-}
-```
-
-#### Step 5: 更新 Vite 配置
-
-```typescript
-// vite.config.ts
-input: {
-  search: path.resolve(__dirname, 'src/webview/search/index.html'),
-  welcome: path.resolve(__dirname, 'src/webview/welcome/index.html'),
-  myPage: path.resolve(__dirname, 'src/webview/my-page/index.html'), // 新增
-}
-```
-
-## 💡 最佳实践
-
-### 1. **使用共享样式**
-
-```css
-/* 在 shared/styles.css 中定义通用组件 */
-.button,
-.card,
-.input,
+# 推荐开发模式：前后端分离，支持热更新
+npm run dev           # 同时监听扩展后端与 Webview 前端（Vite + esbuild）
+# 或分别监听
+npm run watch:webview # 只监听 Webview 前端（React/Vite 热更新）
 .badge; /* 在页面 CSS 中只写特定样式 */
+```
+
+### 2. 新建 React Webview 页面流程
+
+#### Step 1: 创建页面文件夹
+
+```
+
 ```
 
 ### 2. **类型安全的消息通信**
 
-```typescript
+````typescript
 // 定义消息类型
 interface MyMessage {
+
+#### Step 2: 编写 React 组件
+
+```tsx
   type: 'search' | 'export' | 'view';
   payload: SearchCriteria | ExportOptions | ViewOptions;
 }
@@ -245,34 +421,46 @@ this.postMessage({ type: 'searchResults', payload: { results } });
 window.addEventListener('message', (event: MessageEvent<MyMessage>) => {
   // TypeScript 会提供类型检查
 });
-```
+````
 
 ### 3. **状态管理**
 
-```typescript
+````typescript
 // 使用 VS Code 的状态 API
 vscodeApi.setState({ lastSearch: criteria });
 const state = vscodeApi.getState();
-```
+
+#### Step 3: 渲染入口
+
+```tsx
+````
 
 ### 4. **安全性**
 
-```html
+````html
 <!-- 使用 CSP -->
 <meta
   http-equiv="Content-Security-Policy"
   content="default-src 'none'; 
                style-src {{cspSource}} 'unsafe-inline'; 
+
+#### Step 4: Provider 集成
+
+```typescript
                script-src {{cspSource}};"
 />
 
 <!-- HTML 转义 -->
 <div>${escapeHtml(userInput)}</div>
-```
+````
 
 ## 📊 对比
 
-| 维度     | 旧方案（字符串）  | 新方案（文件分离） |
+| 维度 | 旧方案（字符串） | 新方案（文件分离） |
+
+#### Step 5: Vite 配置
+
+````typescript
 | -------- | ----------------- | ------------------ |
 | 代码行数 | 800+ 行/文件      | ~200 行/文件       |
 | 开发体验 | ❌ 无高亮、无提示 | ✅ 完整 IDE 支持   |
@@ -280,13 +468,35 @@ const state = vscodeApi.getState();
 | 复用性   | ❌ 难以复用       | ✅ 共享组件/样式   |
 | 构建速度 | ✅ 直接字符串     | ⚠️ 需要编译（快）  |
 | 调试     | ❌ 困难           | ✅ Source Map      |
-| 团队协作 | ❌ 冲突多         | ✅ 文件独立        |
+
+### 3. 构建与发布
+
+```bash
+npm run compile
+# 自动：
+# 1. Vite 构建所有 Webview 页面（React/TSX）到 out/webview/
+# 2. esbuild 构建扩展后端到 out/extension/
+````
+
+### 4. 调试与测试
+
+- 推荐在 VSCode Extension Development Host 中调试 Webview 页面
+- React 组件建议用 Vitest + React Testing Library 做单元测试
+- Provider 端建议用 Vitest/Mocha 做集成测试
+
+### 5. 迁移与重构建议
+
+- 旧页面迁移时，优先将 HTML/CSS/JS 拆分为独立文件，再逐步用 React 重构 UI 逻辑
+- Provider 只负责消息通信和数据下发，UI 交互全部交给 React 前端
+- 所有资源路径必须用 `webview.asWebviewUri()` 转换，CSP 配置需同步更新
+  | 团队协作 | ❌ 冲突多 | ✅ 文件独立 |
 
 ## 🎓 学习资源
 
 - [VS Code Webview API](https://code.visualstudio.com/api/extension-guides/webview)
 - [Vite 文档](https://vitejs.dev/)
 - [TypeScript DOM 类型](https://github.com/microsoft/TypeScript/blob/main/lib/lib.dom.d.ts)
+- [React 官方文档](https://reactjs.org/)
 
 ## ⚠️ 注意事项
 
@@ -388,5 +598,5 @@ const state = vscodeApi.getState();
 
 ---
 
-**最后更新**: 2025-10-27  
+**最后更新**: 2025-10-29  
 **维护者**: ygqygq2

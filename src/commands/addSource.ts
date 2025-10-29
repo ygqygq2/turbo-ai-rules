@@ -12,6 +12,7 @@ import { PROJECT_CONFIG_DIR } from '../utils/constants';
 import { ensureIgnored } from '../utils/gitignore';
 import { Logger } from '../utils/logger';
 import { validateBranchName, validateGitUrl } from '../utils/validator';
+import { SourceDetailWebviewProvider } from '../providers/SourceDetailWebviewProvider';
 
 /**
  * 添加规则源命令处理器
@@ -231,7 +232,10 @@ export async function addSourceCommand(): Promise<void> {
     };
 
     // 10. 添加到配置
-    await configManager.addSource(source);
+    // 打开规则源详细页面（新增源模式）
+    const context = (global as any).extensionContext as import('vscode').ExtensionContext;
+    const provider = SourceDetailWebviewProvider.getInstance(context);
+    await provider.showSourceDetail('new');
 
     // 11. 保存认证配置
     if (authentication && authentication.type !== 'none') {

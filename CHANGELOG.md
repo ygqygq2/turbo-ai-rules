@@ -71,7 +71,7 @@ All notable changes to the "turbo-ai-rules" extension will be documented in this
 - **docs: 更新配置文档** - `docs/user-guide/02-configuration*.md`
   - 添加解析器配置说明
   - 说明 `scope: "resource"` 的含义和使用场景
-- **docs: 添加文档规范** - `.github/.copilot-instructions.md`
+- **docs: 添加文档规范** - `.github/copilot-instructions.md`
   - 制定强制文档规范：设计文档不包含代码实现
   - 所有 docs/ 子目录文件必须有序号（01-_.md, 02-_.md）
   - 设计-代码-文档统一要求

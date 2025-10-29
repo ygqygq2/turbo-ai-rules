@@ -71,7 +71,7 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
     // 替换资源 URI
     const stylesUri = webview.asWebviewUri(
       vscode.Uri.file(
-        path.join(this.context.extensionPath, 'out', 'webview', 'shared', 'styles.css'),
+        path.join(this.context.extensionPath, 'out', 'webview', 'styles', 'global.css'),
       ),
     );
     const scriptUri = webview.asWebviewUri(

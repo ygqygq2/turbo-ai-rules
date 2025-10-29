@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import '../shared/base.css';
+
+import { Button } from '../components/Button';
+import { Card } from '../components/Card';
+import { Toolbar } from '../components/Toolbar';
+import { vscodeApi } from '../shared/vscode-api';
+import '../styles/global.css';
 import './welcome.css';
 
 // VS Code API 类型定义
@@ -39,7 +44,7 @@ export const App: React.FC = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
   const handleAddSource = () => {
-    vscode.postMessage({ command: 'addSource' });
+    vscodeApi.postMessage('addSource');
   };
 
   const handleSyncRules = () => {
@@ -77,70 +82,68 @@ export const App: React.FC = () => {
       </div>
 
       <div className="steps">
-        <div className="step-card">
+        <Card className="step-card">
           <div className="step-number">1</div>
           <div className="step-content">
             <h2>Add a Rule Source</h2>
             <p>Configure your first Git repository to sync rules from</p>
-            <button className="button" onClick={handleAddSource}>
+            <Button type="primary" onClick={handleAddSource}>
               ➕ Add Source
-            </button>
+            </Button>
           </div>
-        </div>
-
-        <div className="step-card">
+        </Card>
+        <Card className="step-card">
           <div className="step-number">2</div>
           <div className="step-content">
             <h2>Sync Rules</h2>
             <p>Fetch and update AI rules from your configured sources</p>
-            <button className="button" onClick={handleSyncRules}>
+            <Button type="primary" onClick={handleSyncRules}>
               🔄 Sync Now
-            </button>
+            </Button>
           </div>
-        </div>
-
-        <div className="step-card">
+        </Card>
+        <Card className="step-card">
           <div className="step-number">3</div>
           <div className="step-content">
             <h2>Generate Configs</h2>
             <p>Create configuration files for your AI coding tools</p>
-            <button className="button button-secondary" onClick={handleGenerateConfigs}>
+            <Button type="secondary" onClick={handleGenerateConfigs}>
               📝 Generate Configs
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
 
       <div className="templates">
         <h2>📚 Quick Start Templates</h2>
         <p className="section-desc">Popular rule repositories to get you started</p>
-
         <div className="template-grid">
           {templates.map((template) => (
-            <div
+            <Card
               key={template.id}
               className={`template-card ${selectedTemplate === template.id ? 'selected' : ''}`}
-              onClick={() => handleTemplateClick(template.id)}
             >
-              <div className="template-icon">{template.icon}</div>
-              <h3>{template.name}</h3>
-              <p>{template.description}</p>
-            </div>
+              <div onClick={() => handleTemplateClick(template.id)} style={{ cursor: 'pointer' }}>
+                <div className="template-icon">{template.icon}</div>
+                <h3>{template.name}</h3>
+                <p>{template.description}</p>
+              </div>
+            </Card>
           ))}
         </div>
       </div>
 
-      <div className="footer">
-        <button className="button button-secondary" onClick={handleViewDocs}>
+      <Toolbar className="footer">
+        <Button type="secondary" onClick={handleViewDocs}>
           📖 Documentation
-        </button>
-        <button className="button button-secondary" onClick={handleGetHelp}>
+        </Button>
+        <Button type="secondary" onClick={handleGetHelp}>
           💬 Get Help
-        </button>
-        <button className="button button-secondary" onClick={handleDismiss}>
+        </Button>
+        <Button type="secondary" onClick={handleDismiss}>
           ✓ Don't Show Again
-        </button>
-      </div>
+        </Button>
+      </Toolbar>
     </div>
   );
 };

@@ -613,7 +613,7 @@ function extractUserContent(content: string): string {
 
 ```bash
 # 打开配置文件
-code .github/.copilot-instructions.md
+code .github/copilot-instructions.md
 
 # 或 code .cursorrules
 ```

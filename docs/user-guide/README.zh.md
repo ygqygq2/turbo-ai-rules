@@ -37,7 +37,7 @@
 检查工作区根目录：
 
 - `.cursorrules` (Cursor AI)
-- `.github/.copilot-instructions.md` (GitHub Copilot)
+- `.github/copilot-instructions.md` (GitHub Copilot)
 - `rules/` (通用规则目录)
 
 ## 📚 详细文档

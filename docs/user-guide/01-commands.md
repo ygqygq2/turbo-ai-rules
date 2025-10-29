@@ -122,7 +122,7 @@ Token:    ghp_xxxxxxxxxxxx (private repo)
 [Turbo AI Rules] Total: 65 rules synced
 [Turbo AI Rules] Generating config files...
 [Turbo AI Rules] ✓ Generated: .cursorrules
-[Turbo AI Rules] ✓ Generated: .github/.copilot-instructions.md
+[Turbo AI Rules] ✓ Generated: .github/copilot-instructions.md
 [Turbo AI Rules] ✓ Generated: rules/index.md
 [Turbo AI Rules] Sync completed successfully!
 ```
@@ -208,7 +208,7 @@ Results:
 
 ```
 ✅ Cursor:       .cursorrules
-✅ Copilot:      .github/.copilot-instructions.md
+✅ Copilot:      .github/copilot-instructions.md
 ⚙️ Continue:     .continuerules (if enabled)
 ✅ Custom:       Generated based on custom adapter config
 ```

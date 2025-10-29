@@ -8,6 +8,7 @@ export { manageSourceCommand } from './manageSource';
 export { removeSourceCommand } from './removeSource';
 export { searchRulesCommand } from './searchRules';
 export { syncRulesCommand } from './syncRules';
+export { viewSourceDetailCommand } from './viewSourceDetail';
 
 // Context menu commands
 export {

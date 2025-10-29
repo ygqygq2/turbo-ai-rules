@@ -122,7 +122,7 @@ Token:    ghp_xxxxxxxxxxxx (私有仓库)
 [Turbo AI Rules] Total: 65 rules synced
 [Turbo AI Rules] Generating config files...
 [Turbo AI Rules] ✓ Generated: .cursorrules
-[Turbo AI Rules] ✓ Generated: .github/.copilot-instructions.md
+[Turbo AI Rules] ✓ Generated: .github/copilot-instructions.md
 [Turbo AI Rules] ✓ Generated: rules/index.md
 [Turbo AI Rules] Sync completed successfully!
 ```
@@ -208,7 +208,7 @@ Token:    ghp_xxxxxxxxxxxx (私有仓库)
 
 ```
 ✅ Cursor:       .cursorrules
-✅ Copilot:      .github/.copilot-instructions.md
+✅ Copilot:      .github/copilot-instructions.md
 ⚙️ Continue:     .continuerules (如果启用)
 ✅ Custom:       根据自定义适配器配置生成
 ```

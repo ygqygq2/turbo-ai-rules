@@ -366,7 +366,7 @@ Our team uses snake_case for database field-related variables...
 
 ---
 
-**Method 2: Single File Mode (e.g., `.copilot-instructions.md`) - Block Marker Protection**
+**Method 2: Single File Mode (e.g., `copilot-instructions.md`) - Block Marker Protection**
 
 Single file configuration uses **block markers** to separate auto-generated and user-defined areas.
 

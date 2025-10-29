@@ -8,7 +8,7 @@
 
 ## 文件位置与作用域
 
-- 路径：.github/.copilot-instructions.md（Copilot 默认读取）
+- 路径：.github/copilot-instructions.md（Copilot 默认读取）
 - 作用：仅约束 Turbo AI Rules 的开发；其他扩展的实现细节不在本文档内
 - 风格来源：提炼自团队统一的 VSCode 扩展工程风格（作为规范参考而非实现清单）
 
@@ -56,7 +56,7 @@
 
 - **全局缓存**：`~/.turbo-ai-rules/sources/` (所有项目共享)
 - **项目本地**：`<workspace>/.ai-rules/` (自动添加到 .gitignore)
-- **AI 配置**：`.cursorrules`, `.github/.copilot-instructions.md` 等
+- **AI 配置**：`.cursorrules`, `.github/copilot-instructions.md` 等
 
 ### 模块分层（详见 docs/02architecture.md）
 
@@ -446,6 +446,7 @@ src/
 **Phase 2 UI 页面实施文档**必须与设计文档序号对应：
 
 - 设计文档路径：`.superdesign/design_docs/`
+- ui 设计路径：`.superdesign/design_iterations/`
 - 实施文档路径：`docs/development/`
 - **命名规则**：
 

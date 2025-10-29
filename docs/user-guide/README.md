@@ -37,7 +37,7 @@ Command: Turbo AI Rules: Sync Rules
 Check workspace root directory for:
 
 - `.cursorrules` (Cursor AI)
-- `.github/.copilot-instructions.md` (GitHub Copilot)
+- `.github/copilot-instructions.md` (GitHub Copilot)
 - `rules/` (Generic rules directory)
 
 ## 📚 Detailed Documentation

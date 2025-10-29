@@ -58,11 +58,8 @@ export class ConfigManager {
     try {
       const vscodeConfig = this.getVscodeConfig(resource);
 
-      // 从 workspace state 获取 sources（不是 VSCode 配置）
-      const sources = this.context.workspaceState.get<RuleSource[]>(
-        'sources',
-        DEFAULT_CONFIG.sources,
-      );
+      // 使用 getSources 方法获取规则源（支持从 workspace state 或配置文件读取）
+      const sources = this.getSources(resource);
 
       const config: ExtensionConfig = {
         sources,
@@ -131,21 +128,35 @@ export class ConfigManager {
 
   /**
    * 获取所有规则源
-   * 优先从 workspace state 读取（运行时添加的），如果为空则从配置读取（预配置的）
+   * 优先从 workspace state 读取（运行时添加的），如果未设置则从配置读取（预配置的）
    * @param resource 资源 URI（用于指定 workspace folder）
    */
   public getSources(resource?: vscode.Uri): RuleSource[] {
     // 1. 先尝试从 workspace state 读取（运行时添加的源）
     const stateSources = this.context.workspaceState.get<RuleSource[]>('sources');
 
-    // 2. 如果 workspace state 有源，返回它
-    if (stateSources && stateSources.length > 0) {
+    Logger.info('getSources called', {
+      hasResource: !!resource,
+      resourcePath: resource?.fsPath,
+      stateSourcesType: typeof stateSources,
+      stateSourcesLength: Array.isArray(stateSources) ? stateSources.length : 'not-array',
+    });
+
+    // 2. 如果 workspace state 明确设置了值（包括空数组），使用它
+    // undefined 表示从未设置，应该回退到配置文件
+    if (stateSources !== undefined) {
+      Logger.info('Using sources from workspace state', { count: stateSources.length });
       return stateSources;
     }
 
     // 3. 否则从 VSCode 配置读取（预配置的源）
     const vscodeConfig = this.getVscodeConfig(resource);
     const configSources = vscodeConfig.get<RuleSource[]>('sources', []);
+
+    Logger.info('Using sources from VSCode config', {
+      count: configSources.length,
+      sources: configSources.map((s) => ({ id: s.id, name: s.name, enabled: s.enabled })),
+    });
 
     return configSources;
   }

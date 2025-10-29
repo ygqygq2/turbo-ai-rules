@@ -150,11 +150,11 @@ Add to `.vscode/settings.json` or VS Code settings:
 
 #### 3. Built-in Adapters Configuration (`adapters`)
 
-| Adapter  | Config Key         | Default | Output File                        |
-| -------- | ------------------ | ------- | ---------------------------------- |
-| Copilot  | `copilot.enabled`  | `true`  | `.github/.copilot-instructions.md` |
-| Cursor   | `cursor.enabled`   | `false` | `.cursorrules`                     |
-| Continue | `continue.enabled` | `false` | `.continuerules`                   |
+| Adapter  | Config Key         | Default | Output File                       |
+| -------- | ------------------ | ------- | --------------------------------- |
+| Copilot  | `copilot.enabled`  | `true`  | `.github/copilot-instructions.md` |
+| Cursor   | `cursor.enabled`   | `false` | `.cursorrules`                    |
+| Continue | `continue.enabled` | `false` | `.continuerules`                  |
 
 **Example**:
 

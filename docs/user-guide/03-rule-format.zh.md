@@ -298,11 +298,11 @@ Turbo AI Rules 支持多层级配置，优先级从高到低：
 
 #### 3. 内置适配器配置 (`adapters`)
 
-| 适配器   | 配置项             | 默认值  | 输出文件                           |
-| -------- | ------------------ | ------- | ---------------------------------- |
-| Cursor   | `cursor.enabled`   | `true`  | `.cursorrules`                     |
-| Copilot  | `copilot.enabled`  | `true`  | `.github/.copilot-instructions.md` |
-| Continue | `continue.enabled` | `false` | `.continuerules`                   |
+| 适配器   | 配置项             | 默认值  | 输出文件                          |
+| -------- | ------------------ | ------- | --------------------------------- |
+| Cursor   | `cursor.enabled`   | `true`  | `.cursorrules`                    |
+| Copilot  | `copilot.enabled`  | `true`  | `.github/copilot-instructions.md` |
+| Continue | `continue.enabled` | `false` | `.continuerules`                  |
 
 **示例**:
 

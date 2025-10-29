@@ -137,6 +137,12 @@
         "title": "Advanced Rule Search",
         "category": "Turbo AI Rules",
         "icon": "$(search)"
+      },
+      {
+        "command": "turbo-ai-rules.viewSourceDetail",
+        "title": "View Source Details",
+        "category": "Turbo AI Rules",
+        "icon": "$(info)"
       }
     ],
     "views": {
@@ -212,6 +218,11 @@
           "command": "turbo-ai-rules.toggleSource",
           "when": "view == turboAiRulesExplorer && viewItem == source",
           "group": "1_actions@3"
+        },
+        {
+          "command": "turbo-ai-rules.viewSourceDetail",
+          "when": "view == turboAiRulesExplorer && viewItem == source",
+          "group": "1_actions@4"
         },
         {
           "command": "turbo-ai-rules.copyRuleContent",

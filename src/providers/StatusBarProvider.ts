@@ -310,7 +310,7 @@ export class StatusBarProvider {
         {
           label: '$(file-code) Generate Configs',
           description: 'Generate AI tool config files',
-          detail: 'Create .cursorrules, .copilot-instructions.md, etc.',
+          detail: 'Create .cursorrules, copilot-instructions.md, etc.',
         },
       );
     }

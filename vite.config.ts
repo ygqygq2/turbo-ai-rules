@@ -29,6 +29,7 @@ export default defineConfig(({ mode }) => ({
               search: path.resolve(__dirname, 'src/webview/search/index.html'),
               welcome: path.resolve(__dirname, 'src/webview/welcome/index.html'),
               statistics: path.resolve(__dirname, 'src/webview/statistics/index.html'),
+              'source-detail': path.resolve(__dirname, 'src/webview/source-detail/index.html'),
             },
             output: {
               entryFileNames: '[name]/[name].js',

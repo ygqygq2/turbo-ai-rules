@@ -366,7 +366,7 @@ priority: critical # 最高优先级
 
 ---
 
-**方法 2: 单文件模式（如 `.copilot-instructions.md`）- 块标记保护**
+**方法 2: 单文件模式（如 `copilot-instructions.md`）- 块标记保护**
 
 单文件配置使用**块标记**分隔自动生成和用户自定义区域。
 

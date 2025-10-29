@@ -79,7 +79,7 @@
 
 ```
 workspace/
-├── .github/.copilot-instructions.md  # ✅ GitHub Copilot 配置 (默认生成)
+├── .github/copilot-instructions.md  # ✅ GitHub Copilot 配置 (默认生成)
 ```
 
 > **注意**: 默认只启用 GitHub Copilot 适配器。如需使用其他 AI 工具,请在设置中启用对应适配器。
@@ -108,12 +108,12 @@ workspace/
 
 ### 支持的 AI 工具
 
-| 工具           | 配置文件                           | 默认状态  |
-| -------------- | ---------------------------------- | --------- |
-| GitHub Copilot | `.github/.copilot-instructions.md` | ✅ 已启用 |
-| Cursor         | `.cursorrules`                     | ⚙️ 已禁用 |
-| Continue       | `.continuerules`                   | ⚙️ 已禁用 |
-| 自定义适配器   | 可配置                             | ⚙️ 按需   |
+| 工具           | 配置文件                          | 默认状态  |
+| -------------- | --------------------------------- | --------- |
+| GitHub Copilot | `.github/copilot-instructions.md` | ✅ 已启用 |
+| Cursor         | `.cursorrules`                    | ⚙️ 已禁用 |
+| Continue       | `.continuerules`                  | ⚙️ 已禁用 |
+| 自定义适配器   | 可配置                            | ⚙️ 按需   |
 
 ### 规则文件格式
 

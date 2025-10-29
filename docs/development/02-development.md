@@ -147,7 +147,7 @@ turbo-ai-rules/
 1. **内置适配器** (固定格式)
 
    - `CursorAdapter`: 生成 `.cursorrules`
-   - `CopilotAdapter`: 生成 `.github/.copilot-instructions.md`
+   - `CopilotAdapter`: 生成 `.github/copilot-instructions.md`
    - `ContinueAdapter`: 生成 `.continuerules`
 
 2. **自定义适配器** (用户可配置)
