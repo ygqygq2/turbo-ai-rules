@@ -65,12 +65,33 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
     html = html.replace(/\{\{cspSource\}\}/g, cspSource);
 
     // 转换资源路径为 webview URI
-    // 处理 /welcome/welcome.js 和 /welcome/welcome.css
-    html = html.replace(/(?:src|href)="\/([^"]+)"/g, (match, resourcePath) => {
-      const assetUri = webview.asWebviewUri(
-        vscode.Uri.joinPath(this.context.extensionUri, 'out', 'webview', resourcePath),
-      );
-      return match.replace(`/${resourcePath}`, assetUri.toString());
+    // 处理绝对路径和相对路径（相对于 HTML 文件）
+    const htmlDir = path.dirname(htmlPath);
+    html = html.replace(/(?:src|href)="([^"]+)"/g, (match, resourcePath) => {
+      try {
+        // 如果是绝对路径以 / 开头，则将其视为相对于 out/webview 根目录
+        let absPath: string;
+        if (resourcePath.startsWith('/')) {
+          absPath = path.join(
+            this.context.extensionPath,
+            'out',
+            'webview',
+            resourcePath.replace(/^\//, ''),
+          );
+        } else {
+          // 相对路径相对于 HTML 文件所在目录
+          absPath = path.resolve(htmlDir, resourcePath);
+        }
+
+        if (!fs.existsSync(absPath)) {
+          return match; // 文件不存在则保留原引用
+        }
+
+        const assetUri = webview.asWebviewUri(vscode.Uri.file(absPath));
+        return match.replace(resourcePath, assetUri.toString());
+      } catch (e) {
+        return match;
+      }
     });
 
     return html;
@@ -85,6 +106,10 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
     try {
       switch (message.type) {
         case 'addSource':
+          Logger.debug('Webview message received: addSource', {
+            type: message.type,
+            payload: message.payload,
+          });
           // 直接调用命令（这是例外，因为需要复杂的用户输入流程）
           await vscode.commands.executeCommand('turbo-ai-rules.addSource');
           break;

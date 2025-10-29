@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' ${webview.cspSource}; script-src 'nonce-${nonce}' https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;">
+    <title>Add New Rule Source</title>
+    <script nonce="${nonce}" src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style nonce="${nonce}">
+        :root {
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --border-radius: 4px;
+        }
+
+        body {
+            background-color: var(--vscode-editor-background);
+            color: var(--vscode-foreground);
+            font-family: 'Inter', var(--vscode-font-family);
+            padding: var(--spacing-md);
+        }
+
+        .card {
+            background-color: var(--vscode-editorWidget-background);
+            border: 1px solid var(--vscode-editorWidget-border, transparent);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: var(--spacing-sm);
+            font-size: 0.875rem;
+        }
+
+        .form-input {
+            width: 100%;
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-sm);
+            font-size: 0.875rem;
+        }
+        .form-input:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        .form-input::placeholder {
+            color: var(--vscode-input-placeholderForeground);
+        }
+
+        .description {
+            color: var(--vscode-descriptionForeground);
+            font-size: 0.8rem;
+            margin-top: var(--spacing-xs);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--border-radius);
+            border: 1px solid transparent;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+        }
+        .btn-primary:hover {
+            background-color: var(--vscode-button-hoverBackground);
+        }
+        .btn-primary:disabled {
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-disabledForeground);
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+        }
+        .btn-secondary:hover {
+            background-color: var(--vscode-button-secondaryHoverBackground);
+        }
+
+        .auth-options label {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+        }
+        .auth-options input[type="radio"]:checked + label {
+            background-color: var(--vscode-list-activeSelectionBackground);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error-box {
+            background-color: rgba(244, 67, 54, 0.1);
+            border: 1px solid var(--vscode-errorForeground);
+            color: var(--vscode-errorForeground);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-sm) var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+    </style>
+</head>
+<body>
+    <div style="max-width: 800px; margin: auto;">
+        <header style="margin-bottom: var(--spacing-lg); display: flex; align-items: center; gap: var(--spacing-md);">
+             <i data-lucide="plus-circle" style="width: 28px; height: 28px;" class="description"></i>
+             <h1 style="font-size: 1.5rem; font-weight: 600;">Add New Rule Source</h1>
+        </header>
+
+        <div id="error-box" class="error-box hidden">
+            <p>Please fix the errors below.</p>
+        </div>
+
+        <form id="add-source-form">
+            <div class="card">
+                <div class="form-group">
+                    <label for="name" class="form-label">Source Name</label>
+                    <input type="text" id="name" name="name" class="form-input" placeholder="e.g., My Team's Rules" required>
+                    <p class="description">A friendly name for this rule source.</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="gitUrl" class="form-label">Git Repository URL</label>
+                    <input type="url" id="gitUrl" name="gitUrl" class="form-input" placeholder="https://github.com/user/repo.git" required>
+                    <p class="description">The full HTTPS or SSH URL of the Git repository.</p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
+                    <div class="form-group">
+                        <label for="branch" class="form-label">Branch</label>
+                        <input type="text" id="branch" name="branch" class="form-input" value="main">
+                        <p class="description">The branch to sync rules from.</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="subPath" class="form-label">Sub Path</label>
+                        <input type="text" id="subPath" name="subPath" class="form-input" value="/">
+                        <p class="description">A specific folder within the repository.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="form-group">
+                    <label class="form-label">Authentication</label>
+                    <div id="auth-type" class="auth-options" style="display: flex; gap: var(--spacing-sm);">
+                        <input type="radio" id="auth-none" name="authType" value="none" checked style="display: none;">
+                        <label for="auth-none">None (Public Repo)</label>
+                        
+                        <input type="radio" id="auth-token" name="authType" value="token" style="display: none;">
+                        <label for="auth-token">Personal Access Token</label>
+                        
+                        <input type="radio" id="auth-ssh" name="authType" value="ssh" style="display: none;">
+                        <label for="auth-ssh">SSH Key</label>
+                    </div>
+                </div>
+
+                <div id="auth-token-fields" class="hidden">
+                    <div class="form-group">
+                        <label for="token" class="form-label">Token</label>
+                        <input type="password" id="token" name="token" class="form-input" placeholder="ghp_... or similar">
+                    </div>
+                </div>
+
+                <div id="auth-ssh-fields" class="hidden">
+                    <div class="form-group">
+                        <label for="sshKeyPath" class="form-label">SSH Private Key Path</label>
+                        <input type="text" id="sshKeyPath" name="sshKeyPath" class="form-input" placeholder="~/.ssh/id_rsa">
+                        <p class="description">Absolute path to your private SSH key file.</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="sshPassphrase" class="form-label">SSH Key Passphrase (Optional)</label>
+                        <input type="password" id="sshPassphrase" name="sshPassphrase" class="form-input">
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; align-items: center; gap: var(--spacing-md);">
+                <button type="button" id="cancel-btn" class="btn btn-secondary">Cancel</button>
+                <button type="submit" id="submit-btn" class="btn btn-primary">Add Source</button>
+            </div>
+        </form>
+    </div>
+
+    <script nonce="${nonce}">
+        lucide.createIcons();
+
+        const vscode = acquireVsCodeApi();
+        const form = document.getElementById('add-source-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const errorBox = document.getElementById('error-box');
+
+        const authType = document.getElementById('auth-type');
+        const tokenFields = document.getElementById('auth-token-fields');
+        const sshFields = document.getElementById('auth-ssh-fields');
+
+        authType.addEventListener('change', (event) => {
+            const selected = event.target.value;
+            tokenFields.classList.toggle('hidden', selected !== 'token');
+            sshFields.classList.toggle('hidden', selected !== 'ssh');
+        });
+
+        form.addEventListener('input', () => {
+            const isValid = form.checkValidity();
+            submitBtn.disabled = !isValid;
+        });
+
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (!form.checkValidity()) {
+                errorBox.classList.remove('hidden');
+                submitBtn.disabled = true;
+                return;
+            }
+            errorBox.classList.add('hidden');
+            
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            vscode.postMessage({ type: 'addSource', payload: data });
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            vscode.postMessage({ type: 'cancel' });
+        });
+
+        // Initial state
+        submitBtn.disabled = !form.checkValidity();
+
+    </script>
+</body>
+</html>

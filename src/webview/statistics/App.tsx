@@ -5,7 +5,7 @@ import { Toolbar } from '../components/Toolbar';
 import { Badge } from '../components/Badge';
 import { PriorityIcon } from '../components/PriorityIcon';
 import { vscodeApi } from '../utils/vscode-api';
-import '../styles/global.css';
+import '../global.css';
 import './statistics.css';
 
 interface StatisticsData {

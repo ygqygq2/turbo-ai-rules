@@ -1,10 +1,11 @@
 /// <reference types="vitest" />
-import path from 'path';
 
-import react from '@vitejs/plugin-react';
+import path from 'path';
 import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => ({
+  base: './',
   plugins: mode === 'webview' ? [react()] : [],
   resolve: {
     alias: [
@@ -21,23 +22,59 @@ export default defineConfig(({ mode }) => ({
   // Webview 构建配置
   build:
     mode === 'webview'
-      ? {
-          outDir: 'out/webview',
-          emptyOutDir: true,
-          rollupOptions: {
-            input: {
-              search: path.resolve(__dirname, 'src/webview/search/index.html'),
-              welcome: path.resolve(__dirname, 'src/webview/welcome/index.html'),
-              statistics: path.resolve(__dirname, 'src/webview/statistics/index.html'),
-              'source-detail': path.resolve(__dirname, 'src/webview/source-detail/index.html'),
+      ? (() => {
+          const fs = require('fs');
+          const webviewDir = path.resolve(__dirname, 'src/webview');
+          const globalCss = path.resolve(webviewDir, 'global.css');
+          const excludeDirs = ['components', 'utils'];
+          const input: Record<string, string> = {};
+
+          // 自动检测页面入口
+          fs.readdirSync(webviewDir, { withFileTypes: true })
+            .filter(
+              (dirent: { isDirectory: () => boolean; name: string }) =>
+                dirent.isDirectory() && !excludeDirs.includes(dirent.name),
+            )
+            .forEach((dirent: { name: string }) => {
+              const htmlPath = path.join(webviewDir, dirent.name, 'index.html');
+              if (fs.existsSync(htmlPath)) {
+                // 入口 key 只用页面名，确保输出目录简洁
+                input[dirent.name] = htmlPath;
+              }
+            });
+
+          // 全局样式入口
+          if (fs.existsSync(globalCss)) {
+            input['global'] = globalCss;
+          }
+
+          return {
+            outDir: 'out/webview',
+            emptyOutDir: true,
+            rollupOptions: {
+              input,
+              output: {
+                // 关键修改：移除多余的目录层级
+                entryFileNames: '[name].js',
+                chunkFileNames: 'chunks/[name]-[hash].js',
+                assetFileNames: (assetInfo: { name?: string }) => {
+                  if (assetInfo.name === 'global.css') {
+                    return 'global.css';
+                  }
+                  // CSS文件输出到对应页面目录
+                  if (assetInfo.name && assetInfo.name.endsWith('.css')) {
+                    return '[name].css';
+                  }
+                  // 图片等资源统一管理
+                  if (assetInfo.name && /\.(png|jpe?g|gif|svg|webp)$/i.test(assetInfo.name)) {
+                    return 'assets/[name]-[hash].[ext]';
+                  }
+                  return 'assets/[name]-[hash].[ext]';
+                },
+              },
             },
-            output: {
-              entryFileNames: '[name]/[name].js',
-              chunkFileNames: 'shared/[name]-[hash].js',
-              assetFileNames: '[name]/[name].[ext]',
-            },
-          },
-        }
+          };
+        })()
       : undefined,
   test: {
     include: ['src/test/unit/**/*.spec.ts'],

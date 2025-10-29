@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Toolbar } from '../components/Toolbar';
-import { vscodeApi } from '../shared/vscode-api';
-import '../styles/global.css';
+import { vscodeApi } from '../utils/vscode-api';
+import '../global.css';
 import './welcome.css';
 
 // VS Code API 类型定义

@@ -36,7 +36,7 @@
 ```
 src/
 ├── webview/                    # Webview 前端代码（独立）
-│   ├── shared/                # 共享资源
+│   ├── styles/                # 样式目录
 │   │   ├── styles.css         # 通用样式
 │   │   ├── vscode-api.ts     # VS Code API 封装
 │   │   └── utils.ts          # 工具函数
@@ -90,7 +90,7 @@ protected getHtmlContent(webview: vscode.Webview): string {
 - Emmet 支持
 - HTML 验证
 
-**CSS**（`search/search.css` + `shared/styles.css`）：
+**CSS**（`search/search.css` + `styles/global.css`）：
 
 - CSS 代码高亮和智能提示
 - 样式复用
@@ -270,7 +270,7 @@ interface WebviewMessage {
 创建统一的 API 封装以简化使用：
 
 ```typescript
-// src/webview/shared/vscode-api.ts
+// src/webview/utils/vscode-api.ts
 class VSCodeAPIWrapper {
   private readonly vscode = acquireVsCodeApi();
 
@@ -556,8 +556,8 @@ npm run compile
 ### 短期（已完成）
 
 - ✅ 创建 `src/webview` 目录结构
-- ✅ 实现共享样式 (`shared/styles.css`)
-- ✅ 实现 VS Code API 封装 (`shared/vscode-api.ts`)
+- ✅ 实现共享样式 (`styles/global.css`)
+- ✅ 实现 VS Code API 封装 (`utils/vscode-api.ts`)
 - ✅ 重构 SearchWebviewProvider 作为示例
 - ✅ 配置 Vite 构建流程
 - ✅ 更新 package.json 脚本
@@ -583,7 +583,7 @@ npm run compile
 如果你要添加新的 Webview 页面或修改现有页面：
 
 1. **遵循目录结构**: 每个页面在 `src/webview/` 下有独立文件夹
-2. **使用共享样式**: 优先使用 `shared/styles.css` 中的样式
+2. **使用共享样式**: 优先使用 `styles/global.css` 中的样式
 3. **类型安全**: 定义清晰的消息接口
 4. **测试验证**: 在 Extension Development Host 中测试
 5. **文档更新**: 如有新功能，更新相关文档

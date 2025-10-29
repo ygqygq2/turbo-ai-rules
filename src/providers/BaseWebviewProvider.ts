@@ -23,6 +23,8 @@ export interface WebviewOptions {
   title: string;
   /** Webview 类型标识 */
   viewType: string;
+  /** 可选的初始脚本注入（会在 head 结束前注入） */
+  initialScript?: string;
   /** 是否启用脚本 */
   enableScripts?: boolean;
   /** 是否保留上下文 */
@@ -46,26 +48,23 @@ export abstract class BaseWebviewProvider {
   public async show(options: WebviewOptions): Promise<void> {
     const column = options.viewColumn || vscode.ViewColumn.One;
 
-    // 如果面板已存在，直接显示
+    // 如果面板已存在，直接显示并刷新内容（确保模式切换如“Add Source”生效）
     if (this.panel) {
       this.panel.reveal(column);
+      // 刷新 HTML 内容以注入最新的模式或数据
+      this.panel.webview.html = await this.getHtmlContent(this.panel.webview);
       return;
     }
 
     // 创建新面板
-    this.panel = vscode.window.createWebviewPanel(
-      options.viewType,
-      options.title,
-      column,
-      {
-        enableScripts: options.enableScripts ?? true,
-        retainContextWhenHidden: options.retainContextWhenHidden ?? true,
-        localResourceRoots: [
-          vscode.Uri.joinPath(this.context.extensionUri, 'resources'),
-          vscode.Uri.joinPath(this.context.extensionUri, 'out'),
-        ],
-      },
-    );
+    this.panel = vscode.window.createWebviewPanel(options.viewType, options.title, column, {
+      enableScripts: options.enableScripts ?? true,
+      retainContextWhenHidden: options.retainContextWhenHidden ?? true,
+      localResourceRoots: [
+        vscode.Uri.joinPath(this.context.extensionUri, 'resources'),
+        vscode.Uri.joinPath(this.context.extensionUri, 'out'),
+      ],
+    });
 
     // 设置 HTML 内容
     this.panel.webview.html = await this.getHtmlContent(this.panel.webview);
@@ -107,8 +106,9 @@ export abstract class BaseWebviewProvider {
       type: 'themeChanged',
       payload: {
         kind: theme.kind,
-        isDark: theme.kind === vscode.ColorThemeKind.Dark ||
-                theme.kind === vscode.ColorThemeKind.HighContrast,
+        isDark:
+          theme.kind === vscode.ColorThemeKind.Dark ||
+          theme.kind === vscode.ColorThemeKind.HighContrast,
       },
     });
   }

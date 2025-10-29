@@ -6,7 +6,7 @@ import { Toolbar } from '../components/Toolbar';
 import { PriorityIcon } from '../components/PriorityIcon';
 import { EmptyState } from '../components/EmptyState';
 import { vscodeApi } from '../utils/vscode-api';
-import '../styles/global.css';
+import '../global.css';
 import './search.css';
 
 interface SearchCriteria {

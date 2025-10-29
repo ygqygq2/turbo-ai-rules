@@ -1,0 +1,27 @@
+/* 全局样式与主题变量，供所有 webview 页面引用 */
+:root {
+  --vscode-foreground: #222;
+  --vscode-background: #fff;
+  --vscode-primary: #0078d4;
+  --vscode-error: #e51400;
+  /* ...更多 VSCode 主题变量 */
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--vscode-font-family, 'Segoe UI', Arial, sans-serif);
+  background: var(--vscode-background);
+  color: var(--vscode-foreground);
+}
+
+.button {
+  background: var(--vscode-primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 16px;
+  cursor: pointer;
+}
+
+/* ...更多全局样式 */

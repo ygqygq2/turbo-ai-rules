@@ -77,12 +77,23 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
   public async showSourceDetail(sourceId: string): Promise<void> {
     this.currentSourceId = sourceId;
 
+    // 新增模式特殊处理
+    if (sourceId === 'new') {
+      await this.show({
+        viewType: 'turboAiRules.sourceDetail',
+        title: 'Add New Rule Source',
+        viewColumn: vscode.ViewColumn.One,
+        initialScript: 'window.initialMode = "new";',
+      });
+      // 不发送数据，前端渲染空表单
+      return;
+    }
+
     await this.show({
       viewType: 'turboAiRules.sourceDetail',
       title: 'Source Details',
       viewColumn: vscode.ViewColumn.One,
     });
-
     // 加载并发送数据
     await this.loadAndSendData();
   }
@@ -287,13 +298,62 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
     const cspSource = this.getCspSource(webview);
     html = html.replace(/\{\{cspSource\}\}/g, cspSource);
 
-    // 转换资源路径为 webview URI
-    html = html.replace(/(?:src|href)="\/([^"]+)"/g, (match, resourcePath) => {
-      const assetUri = webview.asWebviewUri(
-        vscode.Uri.joinPath(this.context.extensionUri, 'out', 'webview', resourcePath),
-      );
-      return match.replace(`/${resourcePath}`, assetUri.toString());
+    // 转换资源路径为 webview URI（支持绝对和相对路径）
+    const htmlDir = path.dirname(htmlPath);
+    html = html.replace(/(?:src|href)="([^\"]+)"/g, (match, resourcePath) => {
+      try {
+        let absPath: string;
+        if (resourcePath.startsWith('/')) {
+          absPath = path.join(
+            this.context.extensionPath,
+            'out',
+            'webview',
+            resourcePath.replace(/^\//, ''),
+          );
+        } else {
+          absPath = path.resolve(htmlDir, resourcePath);
+        }
+
+        if (!fs.existsSync(absPath)) return match;
+
+        const assetUri = webview.asWebviewUri(vscode.Uri.file(absPath));
+        return match.replace(resourcePath, assetUri.toString());
+      } catch (e) {
+        return match;
+      }
     });
+
+    // 注入资源前缀重写脚本，处理运行时通过"/..."路径预加载的 CSS/JS
+    try {
+      const assetPrefix = webview
+        .asWebviewUri(
+          vscode.Uri.joinPath(this.context.extensionUri, 'out', 'webview', 'global.css'),
+        )
+        .toString()
+        .replace(/global\.css$/, '');
+
+      const patchScript = `<script>(function(){
+        try {
+          var prefix = '${assetPrefix}';
+          var origSetAttribute = Element.prototype.setAttribute;
+          Element.prototype.setAttribute = function(name, value){
+            try {
+              if (name === 'href' && typeof value === 'string' && value.startsWith('/')) {
+                value = prefix + value.slice(1);
+              }
+            } catch(e) {}
+            return origSetAttribute.call(this, name, value);
+          };
+        } catch (e) {}
+      })();</script>`;
+
+      html = html.replace('</head>', `${patchScript}</head>`);
+    } catch {}
+
+    // 新增模式注入 window.initialMode
+    if (this.currentSourceId === 'new') {
+      html = html.replace('</head>', '<script>window.initialMode = "new";</script></head>');
+    }
 
     return html;
   }
