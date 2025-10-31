@@ -156,7 +156,8 @@ export const App: React.FC = () => {
               <Card key={result.rule.id} className={`result-item priority-${result.rule.priority}`}>
                 <div className="result-header">
                   <div className="result-title">
-                    <PriorityIcon priority={result.rule.priority as any} /> {result.rule.title}
+                    <PriorityIcon priority={result.rule.priority as 'high' | 'medium' | 'low'} />{' '}
+                    {result.rule.title}
                   </div>
                   <Button type="secondary">View</Button>
                 </div>

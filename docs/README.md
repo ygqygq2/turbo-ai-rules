@@ -18,12 +18,22 @@ docs/
 │   └── faq.md          # FAQ
 │
 └── development/         # 🛠️ Developer documentation (Chinese only)
-    ├── 01-design.md     # Architecture design
-    ├── 02-development.md # Development guide
-    ├── 03-maintaining.md # Maintenance guide
-    ├── 04-custom-adapters-design.md
-    ├── 05-sync-summary.md # Sync summary
-    └── 06-test-coverage.md # Test coverage
+    ├── 01-design.md                              # Architecture design
+    ├── 02-custom-adapters-design.md              # Custom adapter design
+    ├── 03-documentation-system.md                # Documentation system
+    ├── 04-test-coverage.md                       # Test coverage
+    ├── 05-development.md                         # Development guide
+    ├── 06-maintaining.md                         # Maintenance guide
+    ├── 07-webview-best-practices.md              # Webview best practices
+    ├── 08-webview-css-guide.md                   # Webview CSS guide
+    ├── 09-ui-design.md                           # UI design
+    ├── 10-ui-development-process.md              # UI development process
+    ├── 11-ui-phase1-implementation.md            # UI Phase 1 implementation
+    ├── 12-ui-phase2-implementation.md            # UI Phase 2 implementation
+    ├── 13-ui-phase2-01-welcome-page-implementation.md
+    ├── 14-ui-phase3-design.md                    # UI Phase 3 design
+    ├── 15-ui-phase3-implementation.md            # UI Phase 3 implementation
+    └── 16-source-detail-implementation.md        # Source detail implementation
 ```
 
 ---
@@ -52,22 +62,43 @@ docs/
 
 ### Development Guides
 
-| Document                                                       | Description                                              |
-| -------------------------------------------------------------- | -------------------------------------------------------- |
-| [架构设计](./development/01-design.md)                         | Architecture, design patterns, and technical decisions   |
-| [开发指南](./development/02-development.md)                    | Development environment setup, coding standards, testing |
-| [维护指南](./development/03-maintaining.md)                    | Maintenance workflows and best practices                 |
-| [自定义适配器设计](./development/04-custom-adapters-design.md) | Custom adapter design documentation                      |
-| [文档系统说明](./development/05-documentation-system.md)       | Documentation system and synchronization                 |
-| [测试覆盖率](./development/06-test-coverage.md)                | Test coverage reports and analysis                       |
-| [UI 开发流程](./development/07-ui-development-process.md)      | UI design and development workflow                       |
-| [Webview 最佳实践](./development/08-webview-best-practices.md) | Webview development best practices and architecture      |
+#### 📐 基础层：架构和设计规范
+
+| Document                                                       | Description                                      |
+| -------------------------------------------------------------- | ------------------------------------------------ |
+| [架构设计](./development/01-design.md)                         | System architecture, design patterns, data flows |
+| [自定义适配器设计](./development/02-custom-adapters-design.md) | Custom adapter design and implementation         |
+| [文档同步规范](./development/03-documentation-system.md)       | Documentation system and synchronization         |
+| [测试覆盖规范](./development/04-test-coverage.md)              | Test coverage requirements and reports           |
+
+#### 🛠️ 开发层：开发指南和最佳实践
+
+| Document                                                       | Description                                   |
+| -------------------------------------------------------------- | --------------------------------------------- |
+| [开发指南](./development/05-development.md)                    | Environment setup, coding standards, testing  |
+| [维护指南](./development/06-maintaining.md)                    | Maintenance workflows and best practices      |
+| [Webview 最佳实践](./development/07-webview-best-practices.md) | Webview development architecture and patterns |
+| [Webview CSS 规范](./development/08-webview-css-guide.md)      | CSS organization and styling guidelines       |
+
+#### 🎨 实施层：UI 实施文档
+
+| Document                                                                     | Description                                  |
+| ---------------------------------------------------------------------------- | -------------------------------------------- |
+| [UI 设计方案](./development/09-ui-design.md)                                 | Complete UI design specification             |
+| [UI 开发流程](./development/10-ui-development-process.md)                    | UI development workflow and standards        |
+| [UI Phase 1 实施](./development/11-ui-phase1-implementation.md)              | Phase 1: Basic UI implementation             |
+| [UI Phase 2 实施](./development/12-ui-phase2-implementation.md)              | Phase 2: Enhanced UI implementation overview |
+| [欢迎页面实施](./development/13-ui-phase2-01-welcome-page-implementation.md) | Welcome page implementation details          |
+| [UI Phase 3 设计](./development/14-ui-phase3-design.md)                      | Phase 3: Advanced interaction design         |
+| [UI Phase 3 实施](./development/15-ui-phase3-implementation.md)              | Phase 3: Advanced search implementation      |
+| [规则源详情实施](./development/16-source-detail-implementation.md)           | Source detail page implementation            |
 
 ### Quick Start for Contributors
 
-1. Read [架构设计](./development/01-design.md) to understand the system architecture
-2. Follow [开发指南](./development/02-development.md) to set up your development environment
-3. Check [维护指南](./development/03-maintaining.md) for contribution workflow
+1. **理解架构**：阅读 [架构设计](./development/01-design.md) 了解系统架构
+2. **搭建环境**：按照 [开发指南](./development/05-development.md) 设置开发环境
+3. **学习规范**：查看 [维护指南](./development/06-maintaining.md) 了解贡献流程
+4. **Webview 开发**：参考 [Webview 最佳实践](./development/07-webview-best-practices.md) 和 [CSS 规范](./development/08-webview-css-guide.md)
 
 ### Other Resources
 
@@ -80,15 +111,17 @@ docs/
 ### New to the Project?
 
 1. **Users**: Start with [User Guide](./user-guide/README.md) or [用户指南](./user-guide/README.zh.md)
-2. **Contributors**: Read [开发指南](./development/02-development.md)
+2. **Contributors**: Read [开发指南](./development/05-development.md)
 3. **Architecture**: Check [架构设计](./development/01-design.md)
+4. **UI Development**: See [UI 开发流程](./development/10-ui-development-process.md)
 
 ### Common Tasks
 
 - **Installing**: See [User Guide - Quick Start](./user-guide/README.md#-quick-start)
 - **Configuring**: See [02. Configuration Guide](./user-guide/02-configuration.md)
 - **Troubleshooting**: See [04. FAQ](./user-guide/04-faq.md)
-- **Contributing**: See [维护指南](./development/03-maintaining.md)
+- **Contributing**: See [维护指南](./development/06-maintaining.md)
+- **UI Development**: See [Webview 最佳实践](./development/07-webview-best-practices.md)
 
 ---
 

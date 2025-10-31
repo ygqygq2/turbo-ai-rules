@@ -22,10 +22,10 @@ export {
 
 // Batch operations
 export {
+  batchDeleteRulesCommand,
   batchDisableRulesCommand,
   batchEnableRulesCommand,
   batchExportRulesCommand,
-  batchDeleteRulesCommand,
   deselectAllRulesCommand,
   selectAllRulesCommand,
 } from './batchOperations';

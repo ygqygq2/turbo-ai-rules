@@ -31,6 +31,7 @@ import {
   StatusBarProvider,
   WelcomeWebviewProvider,
 } from './providers';
+import { RuleSelectorWebviewProvider } from './providers/RuleSelectorWebviewProvider';
 // Services
 import { ConfigManager } from './services/ConfigManager';
 import { FileGenerator } from './services/FileGenerator';
@@ -43,6 +44,11 @@ import { Logger } from './utils/logger';
  * 扩展激活入口
  */
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  // 注册 RuleSelectorWebviewProvider 命令
+  const ruleSelectorProvider = RuleSelectorWebviewProvider.getInstance(context);
+  vscode.commands.registerCommand('turbo-ai-rules.selectRules', async () => {
+    await ruleSelectorProvider.showRuleSelector();
+  });
   try {
     // 初始化 Logger
     Logger.init();
@@ -179,8 +185,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             typeof sourceId === 'object' && sourceId?.data?.source?.id
               ? sourceId.data.source.id
               : typeof sourceId === 'string'
-              ? sourceId
-              : undefined;
+                ? sourceId
+                : undefined;
           await viewSourceDetailCommand(actualSourceId);
         },
       ),

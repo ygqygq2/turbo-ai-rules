@@ -1,4 +1,3 @@
-/// <reference path="./loadSourceDetailData.d.ts" />
 import { Logger } from '../../utils/logger';
 import { loadSourceDetailData } from './loadSourceDetailData.js';
 

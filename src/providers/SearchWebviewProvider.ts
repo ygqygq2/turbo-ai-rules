@@ -3,14 +3,14 @@
  * 使用独立的 HTML/CSS/JS 文件
  */
 
-import * as vscode from 'vscode';
-import * as path from 'path';
 import * as fs from 'fs';
+import * as path from 'path';
+import * as vscode from 'vscode';
 
+import { RulesManager } from '../services/RulesManager';
 import type { ParsedRule, RulePriority } from '../types/rules';
 import { Logger } from '../utils/logger';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
-import { RulesManager } from '../services/RulesManager';
 
 interface SearchCriteria {
   namePattern?: string;
@@ -31,7 +31,10 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
   private lastSearchResults: SearchResult[] = [];
   private readonly MAX_HISTORY = 10;
 
-  private constructor(context: vscode.ExtensionContext, private rulesManager: RulesManager) {
+  private constructor(
+    context: vscode.ExtensionContext,
+    private rulesManager: RulesManager,
+  ) {
     super(context);
     this.loadSearchHistory();
   }

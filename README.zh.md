@@ -99,8 +99,8 @@ workspace/
 ### 🛠️ 开发者指南
 
 - [📐 架构设计](./docs/development/01-design.md)
-- [🔧 开发指南](./docs/development/02-development.md)
-- [📦 维护指南](./docs/development/03-maintaining.md)
+- [🔧 开发指南](./docs/development/05-development.md)
+- [📦 维护指南](./docs/development/06-maintaining.md)
 
 ---
 

@@ -60,7 +60,7 @@ export const NewSourceForm: React.FC<NewSourceFormProps> = ({ onCancel }) => {
         sshKeyPath: form.authType === 'ssh' ? form.sshKeyPath.trim() : undefined,
         sshPassphrase: form.authType === 'ssh' ? form.sshPassphrase.trim() : undefined,
       });
-    } catch (e) {
+    } catch {
       setError('Failed to submit. Please try again.');
     } finally {
       setSubmitting(false);
@@ -182,7 +182,13 @@ export const NewSourceForm: React.FC<NewSourceFormProps> = ({ onCancel }) => {
         )}
       </Card>
       <div
-        style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '16px' }}
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          gap: '16px',
+          marginTop: '16px',
+        }}
       >
         <Button type="secondary" onClick={onCancel} disabled={submitting}>
           Cancel

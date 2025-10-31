@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' ${webview.cspSource}; script-src 'nonce-${nonce}' https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;">
+    <title>Rule Selector</title>
+    <script nonce="${nonce}" src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style nonce="${nonce}">
+        :root {
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --border-radius: 4px;
+            --tree-node-height: 32px;
+            --tree-indent: 24px;
+        }
+
+        body {
+            background-color: var(--vscode-editor-background);
+            color: var(--vscode-foreground);
+            font-family: 'Inter', var(--vscode-font-family);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .card {
+            background-color: var(--vscode-editorWidget-background);
+            border-bottom: 1px solid var(--vscode-editorWidget-border, var(--vscode-panel-border));
+            flex-shrink: 0;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-md);
+            height: 48px;
+        }
+        .header h1 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        .header .description {
+             color: var(--vscode-descriptionForeground);
+             margin-left: var(--spacing-sm);
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: 0 var(--spacing-md);
+            height: 40px;
+        }
+        .search-wrapper {
+            position: relative;
+            flex-grow: 1;
+        }
+        .search-wrapper i {
+            position: absolute;
+            left: var(--spacing-sm);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            color: var(--vscode-descriptionForeground);
+        }
+        .search-input {
+            width: 100%;
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-xs) var(--spacing-sm) var(--spacing-xs) 30px;
+        }
+
+        .stats-bar {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: 0 var(--spacing-md);
+            height: 32px;
+            font-size: 0.8rem;
+            color: var(--vscode-descriptionForeground);
+        }
+        .stats-bar strong {
+            color: var(--vscode-foreground);
+            font-weight: 600;
+        }
+
+        .tree-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: var(--spacing-sm);
+        }
+        .tree-node {
+            display: flex;
+            align-items: center;
+            height: var(--tree-node-height);
+            padding-left: calc(var(--indent-level, 0) * var(--tree-indent));
+            border-radius: var(--border-radius);
+            cursor: pointer;
+        }
+        .tree-node:hover {
+            background-color: var(--vscode-list-hoverBackground);
+        }
+        .tree-node .chevron, .tree-node .spacer {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            margin-right: var(--spacing-xs);
+            transition: transform 0.1s ease-in-out;
+        }
+        .tree-node.collapsed .chevron {
+            transform: rotate(-90deg);
+        }
+        .tree-node .checkbox {
+            width: 16px;
+            height: 16px;
+            border: 1px solid var(--vscode-input-border);
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: var(--spacing-sm);
+            background-color: var(--vscode-input-background);
+        }
+        .tree-node .checkbox i {
+            width: 14px;
+            height: 14px;
+            color: var(--vscode-button-foreground);
+        }
+        .tree-node.checked .checkbox, .tree-node.indeterminate .checkbox {
+             background-color: var(--vscode-button-background);
+             border-color: var(--vscode-button-background);
+        }
+        .tree-node .node-icon {
+            margin-right: var(--spacing-sm);
+            color: var(--vscode-descriptionForeground);
+        }
+        .tree-node .node-label {
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .tree-node .rule-count {
+            font-size: 0.8rem;
+            color: var(--vscode-descriptionForeground);
+            margin-left: var(--spacing-sm);
+            padding-right: var(--spacing-sm);
+        }
+
+        .footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-md);
+            height: 48px;
+            border-top: 1px solid var(--vscode-editorWidget-border, var(--vscode-panel-border));
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--border-radius);
+            border: 1px solid transparent;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        .btn-primary {
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+        }
+        .btn-secondary {
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            border-color: var(--vscode-input-border);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card header">
+        <h1>Select Rules <span class="description">for "Company Coding Rules"</span></h1>
+        <button class="btn" style="background: transparent;"><i data-lucide="x"></i></button>
+    </div>
+
+    <div class="card toolbar">
+        <div class="search-wrapper">
+            <i data-lucide="search"></i>
+            <input type="text" class="search-input" placeholder="Filter by name or path...">
+        </div>
+        <button class="btn btn-secondary" title="Select All"><i data-lucide="check-square"></i></button>
+        <button class="btn btn-secondary" title="Deselect All"><i data-lucide="square"></i></button>
+        <button class="btn btn-secondary" title="Invert Selection"><i data-lucide="flip-horizontal"></i></button>
+        <button class="btn btn-secondary" title="Reset"><i data-lucide="rotate-ccw"></i></button>
+    </div>
+
+    <div class="card stats-bar">
+        <span>Total: <strong>156</strong></span>
+        <span>Selected: <strong>123</strong></span>
+        <span>Excluded: <strong>33</strong></span>
+    </div>
+
+    <div class="tree-container">
+        <!-- Root Directory (Partially selected) -->
+        <div class="tree-node indeterminate" style="--indent-level: 0;">
+            <i data-lucide="chevron-down" class="chevron"></i>
+            <div class="checkbox"><i data-lucide="minus-square"></i></div>
+            <i data-lucide="folder" class="node-icon"></i>
+            <span class="node-label">company-coding-rules.git</span>
+        </div>
+
+        <!-- Directory 1 (Fully selected) -->
+        <div class="tree-node checked" style="--indent-level: 1;">
+            <i data-lucide="chevron-down" class="chevron"></i>
+            <div class="checkbox"><i data-lucide="check"></i></div>
+            <i data-lucide="folder" class="node-icon"></i>
+            <span class="node-label">best-practices</span>
+        </div>
+        <div class="tree-node checked" style="--indent-level: 2;">
+            <span class="spacer"></span>
+            <div class="checkbox"><i data-lucide="check"></i></div>
+            <i data-lucide="file-text" class="node-icon"></i>
+            <span class="node-label">react-hooks.mdc</span>
+            <span class="rule-count">5 rules</span>
+        </div>
+        <div class="tree-node checked" style="--indent-level: 2;">
+            <span class="spacer"></span>
+            <div class="checkbox"><i data-lucide="check"></i></div>
+            <i data-lucide="file-text" class="node-icon"></i>
+            <span class="node-label">typescript-types.mdc</span>
+            <span class="rule-count">12 rules</span>
+        </div>
+
+        <!-- Directory 2 (Partially selected) -->
+        <div class="tree-node indeterminate collapsed" style="--indent-level: 1;">
+            <i data-lucide="chevron-down" class="chevron"></i>
+            <div class="checkbox"><i data-lucide="minus-square"></i></div>
+            <i data-lucide="folder" class="node-icon"></i>
+            <span class="node-label">style-guides</span>
+        </div>
+        <!-- Children of Directory 2 would be hidden because of 'collapsed' class -->
+
+        <!-- Directory 3 (Unselected) -->
+        <div class="tree-node" style="--indent-level: 1;">
+            <i data-lucide="chevron-down" class="chevron"></i>
+            <div class="checkbox"></div>
+            <i data-lucide="folder" class="node-icon"></i>
+            <span class="node-label">deprecated</span>
+        </div>
+        <div class="tree-node" style="--indent-level: 2;">
+            <span class="spacer"></span>
+            <div class="checkbox"></div>
+            <i data-lucide="file-text" class="node-icon"></i>
+            <span class="node-label">old-rules.mdc</span>
+            <span class="rule-count">21 rules</span>
+        </div>
+
+        <!-- Root file -->
+        <div class="tree-node checked" style="--indent-level: 1;">
+            <span class="spacer"></span>
+            <div class="checkbox"><i data-lucide="check"></i></div>
+            <i data-lucide="file-text" class="node-icon"></i>
+            <span class="node-label">README.md</span>
+            <span class="rule-count">1 rule</span>
+        </div>
+    </div>
+
+    <div class="footer">
+        <button class="btn btn-secondary">Cancel</button>
+        <button class="btn btn-primary">Save Selection</button>
+    </div>
+
+    <script nonce="${nonce}">
+        lucide.createIcons();
+
+        const vscode = acquireVsCodeApi();
+
+        // --- Event Listeners ---
+        document.querySelectorAll('.tree-node').forEach(node => {
+            const chevron = node.querySelector('.chevron');
+            if (chevron) {
+                chevron.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    node.classList.toggle('collapsed');
+                });
+            }
+        });
+        
+        document.querySelector('.footer .btn-primary').addEventListener('click', () => {
+            vscode.postMessage({ command: 'saveRuleSelection', selection: { paths: ['...'] } });
+        });
+
+        document.querySelector('.footer .btn-secondary').addEventListener('click', () => {
+            vscode.postMessage({ command: 'cancel' });
+        });
+
+        // --- Initial Load ---
+        window.addEventListener('load', () => {
+            vscode.postMessage({ command: 'loadRuleTree', sourceId: 'source-abc123' });
+        });
+
+        window.addEventListener('message', event => {
+            const message = event.data;
+            switch (message.type) {
+                case 'treeData':
+                    // Logic to render the tree dynamically would go here
+                    console.log('Received tree data:', message.data);
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>

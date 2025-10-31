@@ -1,3 +1,4 @@
+export { RuleSelectorWebviewProvider } from './RuleSelectorWebviewProvider';
 /**
  * Providers 导出
  */

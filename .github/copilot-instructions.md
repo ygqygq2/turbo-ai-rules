@@ -58,7 +58,7 @@
 - **项目本地**：`<workspace>/.ai-rules/` (自动添加到 .gitignore)
 - **AI 配置**：`.cursorrules`, `.github/copilot-instructions.md` 等
 
-### 模块分层（详见 docs/02architecture.md）
+### 模块分层（详见 docs/development/01-design.md）
 
 - **Service 层**：GitManager、RulesParser、FileGenerator、ConfigManager、SyncScheduler
 - **Orchestrator 层**：RulesOrchestrator（串联端到端流程）
@@ -452,19 +452,19 @@ src/
 
   ```
   设计文档: .superdesign/design_docs/01-welcome-page.md
-  实施文档: docs/development/07-ui-phase2-01-welcome-page-implementation.md
+  实施文档: docs/development/13-ui-phase2-01-welcome-page-implementation.md
 
   设计文档: .superdesign/design_docs/02-statistics-dashboard.md
-  实施文档: docs/development/07-ui-phase2-02-statistics-implementation.md
+  实施文档: docs/development/13-ui-phase2-02-statistics-implementation.md
 
   设计文档: .superdesign/design_docs/03-rule-details-panel.md
-  实施文档: docs/development/07-ui-phase2-03-rule-details-implementation.md
+  实施文档: docs/development/13-ui-phase2-03-rule-details-implementation.md
 
   设计文档: .superdesign/design_docs/04-advanced-search.md
-  实施文档: docs/development/07-ui-phase2-04-search-implementation.md
+  实施文档: docs/development/13-ui-phase2-04-search-implementation.md
   ```
 
-- **格式模板**：`07-ui-phase2-{序号}-{简短名称}-implementation.md`
+- **格式模板**：`13-ui-phase2-{序号}-{简短名称}-implementation.md`
 - **作用**：记录 SuperDesign 生成的 HTML 如何集成到 VSCode 扩展，包括：
   - HTML 原型版本（`design_iterations/{page}_v{n}.html`）
   - Provider 类实现要点
@@ -495,7 +495,7 @@ src/
 
 #### 其他文档
 
-- **开发文档**（02-development.md 等）：可包含代码示例和操作指南
+- **开发文档**（05-development.md 等）：可包含代码示例和操作指南
 - **用户文档**（user-guide/）：可包含配置示例和使用示例
 - **规则格式**（00-rule-format.md）：可包含 Markdown 和 YAML 示例
 
@@ -536,14 +536,6 @@ types 类型修改
 ### 添加新依赖
 
 使用 pnpm 添加新依赖前需确认必要性，更新 package.json。
-
----
-
-## 开发阶段说明
-
-项目分阶段开发，当前已完成 Phase 1-7（基础设施、Git 集成、规则解析、文件生成、命令与 UI、自动同步、集成测试）。
-
-详细的开发路线图和当前进度见 `docs/03development.md`。
 
 ---
 

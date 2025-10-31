@@ -2,6 +2,22 @@
  * Source Detail page specific styles
  */
 
+/* 淡入动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.container {
+  animation: fadeIn 0.3s ease-out;
+}
+
 .source-detail-container {
   max-width: 1400px;
   margin: 0 auto;
@@ -10,7 +26,7 @@
 
 /* Header */
 .header {
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md); /* 从 lg 改为 md */
 }
 
 .header-top {
@@ -78,7 +94,7 @@
 .main-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-md); /* 从 lg 改为 md */
 }
 
 @media (min-width: 768px) {
@@ -94,7 +110,7 @@
 /* Configuration */
 .config-grid {
   display: grid;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm); /* 从 md 改为 sm，更紧凑 */
   font-size: 0.875rem;
 }
 

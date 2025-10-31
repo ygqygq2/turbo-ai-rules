@@ -1,352 +1,662 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' ${webview.cspSource}; script-src 'nonce-${nonce}' https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline' ${webview.cspSource}; script-src 'nonce-${nonce}' https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;"
+    />
     <title>Source Details</title>
     <script nonce="${nonce}" src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
 
     <style nonce="${nonce}">
-        :root {
-            --spacing-xs: 4px;
-            --spacing-sm: 8px;
-            --spacing-md: 16px;
-            --spacing-lg: 24px;
-            --border-radius: 4px;
+      :root {
+        --spacing-xs: 4px;
+        --spacing-sm: 8px;
+        --spacing-md: 12px;
+        --spacing-lg: 16px;
+        --border-radius: 4px;
 
-            /* Priority Colors Mapping */
-            --prio-high-color: var(--vscode-errorForeground);
-            --prio-medium-color: var(--vscode-warningForeground);
-            --prio-low-color: var(--vscode-charts-blue);
-            --status-success-color: var(--vscode-charts-green);
-        }
+        /* Priority Colors Mapping */
+        --prio-high-color: var(--vscode-errorForeground);
+        --prio-medium-color: var(--vscode-warningForeground);
+        --prio-low-color: var(--vscode-charts-blue);
+        --status-success-color: var(--vscode-charts-green);
+      }
 
+      body {
+        background-color: var(--vscode-editor-background);
+        color: var(--vscode-foreground);
+        font-family: 'Inter', var(--vscode-font-family);
+        padding: var(--spacing-sm);
+      }
+
+      @media (min-width: 768px) {
         body {
-            background-color: var(--vscode-editor-background);
-            color: var(--vscode-foreground);
-            font-family: 'Inter', var(--vscode-font-family);
-            padding: var(--spacing-md);
+          padding: var(--spacing-md);
         }
+      }
 
-        @media (min-width: 768px) {
-            body {
-                padding: var(--spacing-lg);
-            }
-        }
+      .card {
+        background-color: var(--vscode-editorWidget-background);
+        border: 1px solid var(--vscode-editorWidget-border, transparent);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md);
+      }
 
-        .card {
-            background-color: var(--vscode-editorWidget-background);
-            border: 1px solid var(--vscode-editorWidget-border, transparent);
-            border-radius: var(--border-radius);
-            padding: var(--spacing-md);
-        }
+      .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        padding-bottom: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+        border-bottom: 1px solid var(--vscode-panel-border);
+      }
 
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            padding-bottom: var(--spacing-sm);
-            margin-bottom: var(--spacing-md);
-            border-bottom: 1px solid var(--vscode-panel-border);
-        }
+      .description {
+        color: var(--vscode-descriptionForeground);
+      }
 
-        .description {
-            color: var(--vscode-descriptionForeground);
-        }
+      .link {
+        color: var(--vscode-textLink-foreground);
+        text-decoration: none;
+      }
+      .link:hover {
+        text-decoration: underline;
+      }
 
-        .link {
-            color: var(--vscode-textLink-foreground);
-            text-decoration: none;
-        }
-        .link:hover {
-            text-decoration: underline;
-        }
+      .font-mono {
+        font-family: var(--vscode-editor-font-family);
+      }
 
-        .font-mono {
-            font-family: var(--vscode-editor-font-family);
-        }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-xs) var(--spacing-sm);
+        border-radius: var(--border-radius);
+        border: 1px solid transparent;
+        cursor: pointer;
+        font-size: 0.875rem;
+        transition: background-color 0.2s ease;
+      }
 
-        .btn {
-            display: inline-flex;
+      .btn-primary {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+      }
+      .btn-primary:hover {
+        background-color: var(--vscode-button-hoverBackground);
+      }
+
+      .btn-secondary {
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+        border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+      }
+      .btn-secondary:hover {
+        background-color: var(--vscode-button-secondaryHoverBackground);
+      }
+
+      .btn-delete {
+        color: var(--prio-high-color);
+      }
+      .btn-delete:hover {
+        background-color: rgba(255, 0, 0, 0.1);
+      }
+
+      .tag {
+        background-color: var(--vscode-badge-background);
+        color: var(--vscode-badge-foreground);
+        padding: 2px 8px;
+        border-radius: 9999px;
+        font-size: 11px;
+      }
+
+      .status-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
+      .status-green {
+        background-color: var(--status-success-color);
+      }
+      .status-orange {
+        background-color: var(--prio-medium-color);
+      }
+      .status-red {
+        background-color: var(--prio-high-color);
+      }
+      .status-gray {
+        background-color: var(--vscode-disabledForeground);
+      }
+
+      .progress-bar-bg {
+        background-color: var(--vscode-input-background);
+        border-radius: 9999px;
+        height: 0.5rem;
+        overflow: hidden;
+      }
+      .progress-bar {
+        height: 100%;
+      }
+      .bg-prio-high {
+        background-color: var(--prio-high-color);
+      }
+      .bg-prio-medium {
+        background-color: var(--prio-medium-color);
+      }
+      .bg-prio-low {
+        background-color: var(--prio-low-color);
+      }
+
+      .rule-item {
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-sm);
+        background: var(--vscode-editor-background);
+        transition: background-color 0.2s ease;
+      }
+      .rule-item:hover {
+        background: var(--vscode-list-hoverBackground);
+        cursor: pointer;
+      }
+
+      .filter-btn {
+        background-color: var(--vscode-button-secondaryBackground);
+        border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+        color: var(--vscode-button-secondaryForeground);
+        border-radius: 9999px;
+        padding: 4px 12px;
+        font-size: 0.8rem;
+        cursor: pointer;
+      }
+      .filter-btn.active {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border-color: var(--vscode-button-background);
+      }
+
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--spacing-lg);
+      }
+      @media (min-width: 1024px) {
+        .main-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      .top-grid {
+        grid-column: span 3 / span 3;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--spacing-lg);
+      }
+      @media (min-width: 768px) {
+        .top-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      .rules-section {
+        grid-column: span 3 / span 3;
+      }
+    </style>
+  </head>
+  <body>
+    <div style="max-width: 1400px; margin: auto">
+      <!-- Header -->
+      <header style="margin-bottom: var(--spacing-lg)">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <div style="display: flex; align-items: center; gap: var(--spacing-sm)">
+            <i data-lucide="box" style="width: 28px; height: 28px" class="description"></i>
+            <h1 style="font-size: 1.5rem; font-weight: 600">Company Coding Rules</h1>
+            <div class="status-dot status-green"></div>
+          </div>
+          <button class="btn btn-secondary" style="padding: var(--spacing-xs); border: none">
+            <i data-lucide="x" style="width: 20px; height: 20px"></i>
+          </button>
+        </div>
+        <a
+          href="#"
+          class="link"
+          style="
+            display: flex;
             align-items: center;
             gap: var(--spacing-sm);
-            padding: var(--spacing-xs) var(--spacing-sm);
-            border-radius: var(--border-radius);
-            border: 1px solid transparent;
-            cursor: pointer;
+            margin-top: var(--spacing-sm);
             font-size: 0.875rem;
-            transition: background-color 0.2s ease;
-        }
+          "
+        >
+          <i data-lucide="link-2" style="width: 14px; height: 14px"></i>
+          https://github.com/company/coding-rules.git
+        </a>
+        <div
+          style="
+            margin-top: var(--spacing-md);
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+          "
+        >
+          <button class="btn btn-primary">
+            <i data-lucide="refresh-cw" style="width: 14px; height: 14px"></i>Sync Now
+          </button>
+          <button class="btn btn-secondary">
+            <i data-lucide="pencil" style="width: 14px; height: 14px"></i>Edit
+          </button>
+          <button class="btn btn-secondary">
+            <i data-lucide="toggle-right" style="width: 14px; height: 14px"></i>Toggle
+          </button>
+          <button class="btn btn-secondary btn-delete">
+            <i data-lucide="trash-2" style="width: 14px; height: 14px"></i>Delete
+          </button>
+        </div>
+      </header>
 
-        .btn-primary {
-            background-color: var(--vscode-button-background);
-            color: var(--vscode-button-foreground);
-        }
-        .btn-primary:hover {
-            background-color: var(--vscode-button-hoverBackground);
-        }
-
-        .btn-secondary {
-            background-color: var(--vscode-button-secondaryBackground);
-            color: var(--vscode-button-secondaryForeground);
-            border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
-        }
-        .btn-secondary:hover {
-            background-color: var(--vscode-button-secondaryHoverBackground);
-        }
-        
-        .btn-delete {
-            color: var(--prio-high-color);
-        }
-        .btn-delete:hover {
-            background-color: rgba(255, 0, 0, 0.1);
-        }
-
-        .tag {
-            background-color: var(--vscode-badge-background);
-            color: var(--vscode-badge-foreground);
-            padding: 2px 8px;
-            border-radius: 9999px;
-            font-size: 11px;
-        }
-
-        .status-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-        .status-green { background-color: var(--status-success-color); }
-        .status-orange { background-color: var(--prio-medium-color); }
-        .status-red { background-color: var(--prio-high-color); }
-        .status-gray { background-color: var(--vscode-disabledForeground); }
-
-        .progress-bar-bg {
-            background-color: var(--vscode-input-background);
-            border-radius: 9999px;
-            height: 0.5rem;
-            overflow: hidden;
-        }
-        .progress-bar {
-            height: 100%;
-        }
-        .bg-prio-high { background-color: var(--prio-high-color); }
-        .bg-prio-medium { background-color: var(--prio-medium-color); }
-        .bg-prio-low { background-color: var(--prio-low-color); }
-
-        .rule-item {
-            border: 1px solid var(--vscode-panel-border);
-            border-radius: var(--border-radius);
-            padding: var(--spacing-md);
-            margin-bottom: var(--spacing-sm);
-            background: var(--vscode-editor-background);
-            transition: background-color 0.2s ease;
-        }
-        .rule-item:hover {
-            background: var(--vscode-list-hoverBackground);
-            cursor: pointer;
-        }
-
-        .filter-btn {
-            background-color: var(--vscode-button-secondaryBackground);
-            border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
-            color: var(--vscode-button-secondaryForeground);
-            border-radius: 9999px;
-            padding: 4px 12px;
-            font-size: 0.8rem;
-            cursor: pointer;
-        }
-        .filter-btn.active {
-            background-color: var(--vscode-button-background);
-            color: var(--vscode-button-foreground);
-            border-color: var(--vscode-button-background);
-        }
-        
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: var(--spacing-lg);
-        }
-        @media (min-width: 1024px) {
-            .main-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-        
-        .top-grid {
-            grid-column: span 3 / span 3;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: var(--spacing-lg);
-        }
-        @media (min-width: 768px) {
-            .top-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        
-        .rules-section {
-            grid-column: span 3 / span 3;
-        }
-
-    </style>
-</head>
-<body>
-    <div style="max-width: 1400px; margin: auto;">
-        <!-- Header -->
-        <header style="margin-bottom: var(--spacing-lg);">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
-                    <i data-lucide="box" style="width: 28px; height: 28px;" class="description"></i>
-                    <h1 style="font-size: 1.5rem; font-weight: 600;">Company Coding Rules</h1>
-                    <div class="status-dot status-green"></div>
-                </div>
-                <button class="btn btn-secondary" style="padding: var(--spacing-xs); border: none;">
-                    <i data-lucide="x" style="width: 20px; height: 20px;"></i>
-                </button>
+      <main class="main-grid">
+        <div class="top-grid">
+          <!-- Configuration -->
+          <section class="card">
+            <h2 class="section-title">Configuration Details</h2>
+            <div style="display: grid; gap: var(--spacing-md); font-size: 0.875rem">
+              <div style="display: flex; align-items: center; gap: var(--spacing-sm)">
+                <i data-lucide="fingerprint" class="description" style="width: 16px"></i
+                ><span class="description" style="width: 110px">Source ID:</span>
+                <span class="font-mono">source-abc123</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: var(--spacing-sm)">
+                <i data-lucide="git-branch" class="description" style="width: 16px"></i
+                ><span class="description" style="width: 110px">Branch:</span>
+                <span class="font-mono">main</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: var(--spacing-sm)">
+                <i data-lucide="folder-git-2" class="description" style="width: 16px"></i
+                ><span class="description" style="width: 110px">Sub Path:</span>
+                <span class="font-mono">/best-practices</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: var(--spacing-sm)">
+                <i data-lucide="key-round" class="description" style="width: 16px"></i
+                ><span class="description" style="width: 110px">Authentication:</span>
+                <span>Private (Token)</span>
+              </div>
             </div>
-            <a href="#" class="link" style="display: flex; align-items: center; gap: var(--spacing-sm); margin-top: var(--spacing-sm); font-size: 0.875rem;">
-                <i data-lucide="link-2" style="width: 14px; height: 14px;"></i>
-                https://github.com/company/coding-rules.git
-            </a>
-            <div style="margin-top: var(--spacing-md); display: flex; flex-wrap: wrap; gap: var(--spacing-sm);">
-                <button class="btn btn-primary"><i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>Sync Now</button>
-                <button class="btn btn-secondary"><i data-lucide="pencil" style="width: 14px; height: 14px;"></i>Edit</button>
-                <button class="btn btn-secondary"><i data-lucide="toggle-right" style="width: 14px; height: 14px;"></i>Toggle</button>
-                <button class="btn btn-secondary btn-delete"><i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>Delete</button>
+            <h3 class="section-title" style="margin-top: var(--spacing-lg); font-size: 1rem">
+              Sync Status
+            </h3>
+            <div style="display: grid; gap: var(--spacing-md); font-size: 0.875rem">
+              <div style="display: flex; align-items: center; gap: var(--spacing-sm)">
+                <i data-lucide="clock" class="description" style="width: 16px"></i
+                ><span class="description" style="width: 110px">Last Synced:</span>
+                <span>2025-10-29 14:30</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: var(--spacing-sm)">
+                <i
+                  data-lucide="check-circle"
+                  style="width: 16px; color: var(--status-success-color)"
+                ></i
+                ><span class="description" style="width: 110px">Status:</span>
+                <span style="color: var(--status-success-color)">Success (156 rules)</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: var(--spacing-sm)">
+                <i data-lucide="database" class="description" style="width: 16px"></i
+                ><span class="description" style="width: 110px">Cache Size:</span>
+                <span>2.3 MB</span>
+              </div>
             </div>
-        </header>
+          </section>
 
-        <main class="main-grid">
-            <div class="top-grid">
-                <!-- Configuration -->
-                <section class="card">
-                    <h2 class="section-title">Configuration Details</h2>
-                    <div style="display: grid; gap: var(--spacing-md); font-size: 0.875rem;">
-                        <div style="display: flex; align-items: center; gap: var(--spacing-sm);"><i data-lucide="fingerprint" class="description" style="width: 16px;"></i><span class="description" style="width: 110px;">Source ID:</span> <span class="font-mono">source-abc123</span></div>
-                        <div style="display: flex; align-items: center; gap: var(--spacing-sm);"><i data-lucide="git-branch" class="description" style="width: 16px;"></i><span class="description" style="width: 110px;">Branch:</span> <span class="font-mono">main</span></div>
-                        <div style="display: flex; align-items: center; gap: var(--spacing-sm);"><i data-lucide="folder-git-2" class="description" style="width: 16px;"></i><span class="description" style="width: 110px;">Sub Path:</span> <span class="font-mono">/best-practices</span></div>
-                        <div style="display: flex; align-items: center; gap: var(--spacing-sm);"><i data-lucide="key-round" class="description" style="width: 16px;"></i><span class="description" style="width: 110px;">Authentication:</span> <span>Private (Token)</span></div>
-                    </div>
-                    <h3 class="section-title" style="margin-top: var(--spacing-lg); font-size: 1rem;">Sync Status</h3>
-                    <div style="display: grid; gap: var(--spacing-md); font-size: 0.875rem;">
-                        <div style="display: flex; align-items: center; gap: var(--spacing-sm);"><i data-lucide="clock" class="description" style="width: 16px;"></i><span class="description" style="width: 110px;">Last Synced:</span> <span>2025-10-29 14:30</span></div>
-                        <div style="display: flex; align-items: center; gap: var(--spacing-sm);"><i data-lucide="check-circle" style="width: 16px; color: var(--status-success-color);"></i><span class="description" style="width: 110px;">Status:</span> <span style="color: var(--status-success-color);">Success (156 rules)</span></div>
-                        <div style="display: flex; align-items: center; gap: var(--spacing-sm);"><i data-lucide="database" class="description" style="width: 16px;"></i><span class="description" style="width: 110px;">Cache Size:</span> <span>2.3 MB</span></div>
-                    </div>
-                </section>
-
-                <!-- Statistics -->
-                <section class="card">
-                    <h2 class="section-title">Statistics Overview</h2>
-                    <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-md);">
-                        <i data-lucide="bar-chart-3" class="description" style="width: 20px; height: 20px;"></i>
-                        <span style="font-weight: 600;">Total Rules:</span>
-                        <span style="font-weight: 700; font-size: 1.1rem;">156</span>
-                    </div>
-                    <h3 style="font-weight: 600; margin-bottom: var(--spacing-sm);">Rules by Priority</h3>
-                    <div style="display: grid; gap: var(--spacing-sm); font-size: 0.875rem;">
-                        <div style="display: grid; grid-template-columns: 70px 1fr 80px; align-items: center; gap: var(--spacing-sm);">
-                            <div style="display: flex; align-items: center; gap: var(--spacing-sm);"><i data-lucide="flame" style="width: 14px; color: var(--prio-high-color);"></i>High</div>
-                            <div class="progress-bar-bg"><div class="progress-bar bg-prio-high" style="width: 15%;"></div></div>
-                            <div class="font-mono description">23 <span style="font-size: 0.9em;">(15%)</span></div>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 70px 1fr 80px; align-items: center; gap: var(--spacing-sm);">
-                            <div style="display: flex; align-items: center; gap: var(--spacing-sm);"><i data-lucide="alert-triangle" style="width: 14px; color: var(--prio-medium-color);"></i>Medium</div>
-                            <div class="progress-bar-bg"><div class="progress-bar bg-prio-medium" style="width: 43%;"></div></div>
-                            <div class="font-mono description">67 <span style="font-size: 0.9em;">(43%)</span></div>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 70px 1fr 80px; align-items: center; gap: var(--spacing-sm);">
-                            <div style="display: flex; align-items: center; gap: var(--spacing-sm);"><i data-lucide="info" style="width: 14px; color: var(--prio-low-color);"></i>Low</div>
-                            <div class="progress-bar-bg"><div class="progress-bar bg-prio-low" style="width: 42%;"></div></div>
-                            <div class="font-mono description">66 <span style="font-size: 0.9em;">(42%)</span></div>
-                        </div>
-                    </div>
-                    <h3 style="font-weight: 600; margin-top: var(--spacing-lg); margin-bottom: var(--spacing-sm);">Top Tags</h3>
-                    <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-sm);">
-                        <span class="tag">typescript (45)</span><span class="tag">react (32)</span><span class="tag">eslint (28)</span>
-                        <span class="tag">naming (24)</span><span class="tag">security (18)</span><span class="tag">testing (15)</span>
-                    </div>
-                </section>
+          <!-- Statistics -->
+          <section class="card">
+            <h2 class="section-title">Statistics Overview</h2>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: var(--spacing-sm);
+                margin-bottom: var(--spacing-md);
+              "
+            >
+              <i
+                data-lucide="bar-chart-3"
+                class="description"
+                style="width: 20px; height: 20px"
+              ></i>
+              <span style="font-weight: 600">Total Rules:</span>
+              <span style="font-weight: 700; font-size: 1.1rem">156</span>
             </div>
+            <h3 style="font-weight: 600; margin-bottom: var(--spacing-sm)">Rules by Priority</h3>
+            <div style="display: grid; gap: var(--spacing-sm); font-size: 0.875rem">
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: 70px 1fr 80px;
+                  align-items: center;
+                  gap: var(--spacing-sm);
+                "
+              >
+                <div style="display: flex; align-items: center; gap: var(--spacing-sm)">
+                  <i data-lucide="flame" style="width: 14px; color: var(--prio-high-color)"></i>High
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar bg-prio-high" style="width: 15%"></div>
+                </div>
+                <div class="font-mono description">
+                  23 <span style="font-size: 0.9em">(15%)</span>
+                </div>
+              </div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: 70px 1fr 80px;
+                  align-items: center;
+                  gap: var(--spacing-sm);
+                "
+              >
+                <div style="display: flex; align-items: center; gap: var(--spacing-sm)">
+                  <i
+                    data-lucide="alert-triangle"
+                    style="width: 14px; color: var(--prio-medium-color)"
+                  ></i
+                  >Medium
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar bg-prio-medium" style="width: 43%"></div>
+                </div>
+                <div class="font-mono description">
+                  67 <span style="font-size: 0.9em">(43%)</span>
+                </div>
+              </div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: 70px 1fr 80px;
+                  align-items: center;
+                  gap: var(--spacing-sm);
+                "
+              >
+                <div style="display: flex; align-items: center; gap: var(--spacing-sm)">
+                  <i data-lucide="info" style="width: 14px; color: var(--prio-low-color)"></i>Low
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar bg-prio-low" style="width: 42%"></div>
+                </div>
+                <div class="font-mono description">
+                  66 <span style="font-size: 0.9em">(42%)</span>
+                </div>
+              </div>
+            </div>
+            <h3
+              style="
+                font-weight: 600;
+                margin-top: var(--spacing-lg);
+                margin-bottom: var(--spacing-sm);
+              "
+            >
+              Top Tags
+            </h3>
+            <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-sm)">
+              <span class="tag">typescript (45)</span><span class="tag">react (32)</span
+              ><span class="tag">eslint (28)</span> <span class="tag">naming (24)</span
+              ><span class="tag">security (18)</span><span class="tag">testing (15)</span>
+            </div>
+          </section>
+        </div>
 
-            <!-- Rules List -->
-            <section class="card rules-section">
-                <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--spacing-md); padding-bottom: var(--spacing-md); margin-bottom: var(--spacing-md); border-bottom: 1px solid var(--vscode-panel-border);">
-                    <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0;">Rules List (156)</h2>
-                    <div style="position: relative;">
-                        <i data-lucide="search" class="description" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 16px;"></i>
-                        <input type="text" placeholder="Search rules..." style="background-color: var(--vscode-input-background); border: 1px solid var(--vscode-input-border); border-radius: var(--border-radius); padding: 6px 10px 6px 32px; width: 250px; color: var(--vscode-input-foreground);">
-                    </div>
-                </div>
-                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-md);">
-                    <span class="description" style="font-size: 0.875rem;">Filters:</span>
-                    <button class="filter-btn active">All</button>
-                    <button class="filter-btn" style="display: inline-flex; align-items: center; gap: 4px;"><i data-lucide="flame" style="width: 12px; color: var(--prio-high-color);"></i>High</button>
-                    <button class="filter-btn" style="display: inline-flex; align-items: center; gap: 4px;"><i data-lucide="alert-triangle" style="width: 12px; color: var(--prio-medium-color);"></i>Medium</button>
-                    <button class="filter-btn" style="display: inline-flex; align-items: center; gap: 4px;"><i data-lucide="info" style="width: 12px; color: var(--prio-low-color);"></i>Low</button>
-                    <button class="link" style="font-size: 0.8rem; margin-left: var(--spacing-sm);">Clear</button>
-                </div>
+        <!-- Rules List -->
+        <section class="card rules-section">
+          <div
+            style="
+              display: flex;
+              flex-wrap: wrap;
+              justify-content: space-between;
+              align-items: center;
+              gap: var(--spacing-md);
+              padding-bottom: var(--spacing-md);
+              margin-bottom: var(--spacing-md);
+              border-bottom: 1px solid var(--vscode-panel-border);
+            "
+          >
+            <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0">Rules List (156)</h2>
+            <div style="position: relative">
+              <i
+                data-lucide="search"
+                class="description"
+                style="
+                  position: absolute;
+                  left: 10px;
+                  top: 50%;
+                  transform: translateY(-50%);
+                  width: 16px;
+                "
+              ></i>
+              <input
+                type="text"
+                placeholder="Search rules..."
+                style="
+                  background-color: var(--vscode-input-background);
+                  border: 1px solid var(--vscode-input-border);
+                  border-radius: var(--border-radius);
+                  padding: 6px 10px 6px 32px;
+                  width: 250px;
+                  color: var(--vscode-input-foreground);
+                "
+              />
+            </div>
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-wrap: wrap;
+              align-items: center;
+              gap: var(--spacing-sm);
+              margin-bottom: var(--spacing-md);
+            "
+          >
+            <span class="description" style="font-size: 0.875rem">Filters:</span>
+            <button class="filter-btn active">All</button>
+            <button class="filter-btn" style="display: inline-flex; align-items: center; gap: 4px">
+              <i data-lucide="flame" style="width: 12px; color: var(--prio-high-color)"></i>High
+            </button>
+            <button class="filter-btn" style="display: inline-flex; align-items: center; gap: 4px">
+              <i
+                data-lucide="alert-triangle"
+                style="width: 12px; color: var(--prio-medium-color)"
+              ></i
+              >Medium
+            </button>
+            <button class="filter-btn" style="display: inline-flex; align-items: center; gap: 4px">
+              <i data-lucide="info" style="width: 12px; color: var(--prio-low-color)"></i>Low
+            </button>
+            <button class="link" style="font-size: 0.8rem; margin-left: var(--spacing-sm)">
+              Clear
+            </button>
+          </div>
 
-                <div style="display: grid; gap: var(--spacing-sm);">
-                    <div class="rule-item">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: var(--spacing-md);">
-                            <div>
-                                <h4 style="font-weight: 600; display: flex; align-items: center; gap: var(--spacing-sm);"><i data-lucide="flame" style="width: 16px; color: var(--prio-high-color);"></i>TypeScript Naming Conventions</h4>
-                                <p class="description" style="font-size: 0.75rem; margin-top: var(--spacing-xs); display: flex; align-items: center; gap: var(--spacing-xs);"><i data-lucide="folder" style="width: 12px;"></i>rules/typescript/naming.mdc</p>
-                                <div style="margin-top: var(--spacing-sm); display: flex; flex-wrap: wrap; gap: var(--spacing-sm);"><span class="tag">typescript</span><span class="tag">naming</span><span class="tag">style</span></div>
-                            </div>
-                            <button class="btn btn-secondary" style="flex-shrink: 0;">View</button>
-                        </div>
-                    </div>
-                    <div class="rule-item">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: var(--spacing-md);">
-                            <div>
-                                <h4 style="font-weight: 600; display: flex; align-items: center; gap: var(--spacing-sm);"><i data-lucide="alert-triangle" style="width: 16px; color: var(--prio-medium-color);"></i>React Hooks Best Practices</h4>
-                                <p class="description" style="font-size: 0.75rem; margin-top: var(--spacing-xs); display: flex; align-items: center; gap: var(--spacing-xs);"><i data-lucide="folder" style="width: 12px;"></i>rules/react/hooks.mdc</p>
-                                <div style="margin-top: var(--spacing-sm); display: flex; flex-wrap: wrap; gap: var(--spacing-sm);"><span class="tag">react</span><span class="tag">hooks</span><span class="tag">patterns</span></div>
-                            </div>
-                            <button class="btn btn-secondary" style="flex-shrink: 0;">View</button>
-                        </div>
-                    </div>
-                    <div class="rule-item">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: var(--spacing-md);">
-                            <div>
-                                <h4 style="font-weight: 600; display: flex; align-items: center; gap: var(--spacing-sm);"><i data-lucide="info" style="width: 16px; color: var(--prio-low-color);"></i>ESLint Configuration Guide</h4>
-                                <p class="description" style="font-size: 0.75rem; margin-top: var(--spacing-xs); display: flex; align-items: center; gap: var(--spacing-xs);"><i data-lucide="folder" style="width: 12px;"></i>rules/tools/eslint.mdc</p>
-                                <div style="margin-top: var(--spacing-sm); display: flex; flex-wrap: wrap; gap: var(--spacing-sm);"><span class="tag">eslint</span><span class="tag">tools</span></div>
-                            </div>
-                            <button class="btn btn-secondary" style="flex-shrink: 0;">View</button>
-                        </div>
-                    </div>
+          <div style="display: grid; gap: var(--spacing-sm)">
+            <div class="rule-item">
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: flex-start;
+                  gap: var(--spacing-md);
+                "
+              >
+                <div>
+                  <h4
+                    style="
+                      font-weight: 600;
+                      display: flex;
+                      align-items: center;
+                      gap: var(--spacing-sm);
+                    "
+                  >
+                    <i data-lucide="flame" style="width: 16px; color: var(--prio-high-color)"></i
+                    >TypeScript Naming Conventions
+                  </h4>
+                  <p
+                    class="description"
+                    style="
+                      font-size: 0.75rem;
+                      margin-top: var(--spacing-xs);
+                      display: flex;
+                      align-items: center;
+                      gap: var(--spacing-xs);
+                    "
+                  >
+                    <i data-lucide="folder" style="width: 12px"></i>rules/typescript/naming.mdc
+                  </p>
+                  <div
+                    style="
+                      margin-top: var(--spacing-sm);
+                      display: flex;
+                      flex-wrap: wrap;
+                      gap: var(--spacing-sm);
+                    "
+                  >
+                    <span class="tag">typescript</span><span class="tag">naming</span
+                    ><span class="tag">style</span>
+                  </div>
                 </div>
-                <div style="text-align: center; margin-top: var(--spacing-md);">
-                    <button class="btn btn-secondary">Load More</button>
+                <button class="btn btn-secondary" style="flex-shrink: 0">View</button>
+              </div>
+            </div>
+            <div class="rule-item">
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: flex-start;
+                  gap: var(--spacing-md);
+                "
+              >
+                <div>
+                  <h4
+                    style="
+                      font-weight: 600;
+                      display: flex;
+                      align-items: center;
+                      gap: var(--spacing-sm);
+                    "
+                  >
+                    <i
+                      data-lucide="alert-triangle"
+                      style="width: 16px; color: var(--prio-medium-color)"
+                    ></i
+                    >React Hooks Best Practices
+                  </h4>
+                  <p
+                    class="description"
+                    style="
+                      font-size: 0.75rem;
+                      margin-top: var(--spacing-xs);
+                      display: flex;
+                      align-items: center;
+                      gap: var(--spacing-xs);
+                    "
+                  >
+                    <i data-lucide="folder" style="width: 12px"></i>rules/react/hooks.mdc
+                  </p>
+                  <div
+                    style="
+                      margin-top: var(--spacing-sm);
+                      display: flex;
+                      flex-wrap: wrap;
+                      gap: var(--spacing-sm);
+                    "
+                  >
+                    <span class="tag">react</span><span class="tag">hooks</span
+                    ><span class="tag">patterns</span>
+                  </div>
                 </div>
-            </section>
-        </main>
+                <button class="btn btn-secondary" style="flex-shrink: 0">View</button>
+              </div>
+            </div>
+            <div class="rule-item">
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: flex-start;
+                  gap: var(--spacing-md);
+                "
+              >
+                <div>
+                  <h4
+                    style="
+                      font-weight: 600;
+                      display: flex;
+                      align-items: center;
+                      gap: var(--spacing-sm);
+                    "
+                  >
+                    <i data-lucide="info" style="width: 16px; color: var(--prio-low-color)"></i
+                    >ESLint Configuration Guide
+                  </h4>
+                  <p
+                    class="description"
+                    style="
+                      font-size: 0.75rem;
+                      margin-top: var(--spacing-xs);
+                      display: flex;
+                      align-items: center;
+                      gap: var(--spacing-xs);
+                    "
+                  >
+                    <i data-lucide="folder" style="width: 12px"></i>rules/tools/eslint.mdc
+                  </p>
+                  <div
+                    style="
+                      margin-top: var(--spacing-sm);
+                      display: flex;
+                      flex-wrap: wrap;
+                      gap: var(--spacing-sm);
+                    "
+                  >
+                    <span class="tag">eslint</span><span class="tag">tools</span>
+                  </div>
+                </div>
+                <button class="btn btn-secondary" style="flex-shrink: 0">View</button>
+              </div>
+            </div>
+          </div>
+          <div style="text-align: center; margin-top: var(--spacing-md)">
+            <button class="btn btn-secondary">Load More</button>
+          </div>
+        </section>
+      </main>
     </div>
 
     <script nonce="${nonce}">
-        // Initialize Lucide Icons
-        lucide.createIcons();
+      // Initialize Lucide Icons
+      lucide.createIcons();
 
-        // VS Code Webview API
-        const vscode = acquireVsCodeApi();
+      // VS Code Webview API
+      const vscode = acquireVsCodeApi();
 
-        function sendMessage(type, payload) {
-            vscode.postMessage({ type, payload });
+      function sendMessage(type, payload) {
+        vscode.postMessage({ type, payload });
+      }
+
+      window.addEventListener('message', (event) => {
+        const message = event.data;
+        // Handle messages from the extension
+        switch (
+          message.type
+          // e.g., case 'updateData':
+        ) {
         }
-
-        window.addEventListener('message', (event) => {
-            const message = event.data;
-            // Handle messages from the extension
-            switch (message.type) {
-                // e.g., case 'updateData':
-            }
-        });
+      });
     </script>
-</body>
+  </body>
 </html>

@@ -5,11 +5,14 @@ interface ErrorBoundaryState {
   errorInfo: React.ErrorInfo | null;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface ErrorBoundaryProps {}
+
 export class ErrorBoundary extends React.Component<
-  React.PropsWithChildren<{}>,
+  React.PropsWithChildren<ErrorBoundaryProps>,
   ErrorBoundaryState
 > {
-  constructor(props: React.PropsWithChildren<{}>) {
+  constructor(props: React.PropsWithChildren<ErrorBoundaryProps>) {
     super(props);
     this.state = { error: null, errorInfo: null };
   }

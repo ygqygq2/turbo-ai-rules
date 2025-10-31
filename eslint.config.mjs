@@ -4,17 +4,15 @@ import simpleImportSortPlugin from 'eslint-plugin-simple-import-sort';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  {
-    files: ['**/*.ts'],
-    plugins: {
-      ['simple-import-sort']: simpleImportSortPlugin,
-    },
-  },
   { ignores: ['sampleWorkspace', 'out', 'dist', '**/*.d.ts'] },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   eslintPluginPrettierRecommended,
   {
+    files: ['**/*.ts'],
+    plugins: {
+      'simple-import-sort': simpleImportSortPlugin,
+    },
     rules: {
       '@typescript-eslint/no-unused-vars': [
         'warn',

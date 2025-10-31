@@ -99,8 +99,8 @@ workspace/
 ### 🛠️ Developer Guide (Chinese)
 
 - [📐 Architecture Design](./docs/development/01-design.md)
-- [🔧 Development Guide](./docs/development/02-development.md)
-- [📦 Maintenance Guide](./docs/development/03-maintaining.md)
+- [🔧 Development Guide](./docs/development/05-development.md)
+- [📦 Maintenance Guide](./docs/development/06-maintaining.md)
 
 ---
 

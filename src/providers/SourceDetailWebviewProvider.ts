@@ -300,7 +300,7 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
 
     // 转换资源路径为 webview URI（支持绝对和相对路径）
     const htmlDir = path.dirname(htmlPath);
-    html = html.replace(/(?:src|href)="([^\"]+)"/g, (match, resourcePath) => {
+    html = html.replace(/(?:src|href)="([^"]+)"/g, (match, resourcePath) => {
       try {
         let absPath: string;
         if (resourcePath.startsWith('/')) {
@@ -344,11 +344,15 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
             } catch(e) {}
             return origSetAttribute.call(this, name, value);
           };
-        } catch (e) {}
+        } catch (e) {
+          // 静默处理补丁失败
+        }
       })();</script>`;
 
       html = html.replace('</head>', `${patchScript}</head>`);
-    } catch {}
+    } catch {
+      // 静默处理补丁失败
+    }
 
     // 新增模式注入 window.initialMode
     if (this.currentSourceId === 'new') {

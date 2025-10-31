@@ -2,7 +2,7 @@
  * 搜索页面脚本
  */
 
-import { vscodeApi, escapeHtml } from '../utils/vscode-api';
+import { escapeHtml, vscodeApi } from '../utils/vscode-api';
 
 interface SearchCriteria {
   namePattern?: string;

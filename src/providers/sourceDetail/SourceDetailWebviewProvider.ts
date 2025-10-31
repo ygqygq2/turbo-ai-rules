@@ -1,10 +1,9 @@
-/// <reference path="./getSourceDetailHtmlContent.d.ts" />
-/// <reference path="./handleSourceDetailMessage.d.ts" />
 /**
  * 规则源详情页面 Webview 提供者（已拆分为多文件结构）
  * 只负责主入口和路由，具体逻辑分散到 sourceDetail 目录下各模块
  */
 import * as vscode from 'vscode';
+
 import { BaseWebviewProvider, type WebviewMessage } from '../BaseWebviewProvider';
 import { getSourceDetailHtmlContent } from './getSourceDetailHtmlContent.js';
 import { handleSourceDetailMessage } from './handleSourceDetailMessage.js';

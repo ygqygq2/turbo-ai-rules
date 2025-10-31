@@ -46,7 +46,7 @@ class RuleTreeItem extends vscode.TreeItem {
 
   private getTooltip(): string {
     switch (this.data.type) {
-      case 'source':
+      case 'source': {
         if (!this.data.source) return '';
         const source = this.data.source;
         const lines = [
@@ -60,7 +60,8 @@ class RuleTreeItem extends vscode.TreeItem {
           lines.push('🔑 Private repository');
         }
         return lines.join('\n');
-      case 'rule':
+      }
+      case 'rule': {
         if (!this.data.rule) return '';
         const rule = this.data.rule;
         const ruleTip = [
@@ -75,6 +76,7 @@ class RuleTreeItem extends vscode.TreeItem {
           ruleTip.push(`📄 ${rule.metadata.description}`);
         }
         return ruleTip.join('\n');
+      }
       case 'tag':
         return `🏷️ Tag: ${this.data.tag}`;
       case 'empty':
@@ -117,11 +119,12 @@ class RuleTreeItem extends vscode.TreeItem {
 
   private getDescription(): string | undefined {
     switch (this.data.type) {
-      case 'source':
+      case 'source': {
         if (!this.data.source) return undefined;
         const status = this.data.source.enabled ? '✓' : '✗';
         return `${status} ${this.data.source.branch || 'main'}`;
-      case 'rule':
+      }
+      case 'rule': {
         if (!this.data.rule) return undefined;
         const priority = this.data.rule.metadata.priority;
         const tags = this.data.rule.metadata.tags;
@@ -136,6 +139,7 @@ class RuleTreeItem extends vscode.TreeItem {
           }
         }
         return parts.length > 0 ? parts.join(' • ') : undefined;
+      }
       case 'tag':
         return undefined;
       default:
@@ -162,7 +166,10 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
   private _onDidChangeTreeData = new vscode.EventEmitter<RuleTreeItem | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  constructor(private configManager: ConfigManager, private rulesManager: RulesManager) {}
+  constructor(
+    private configManager: ConfigManager,
+    private rulesManager: RulesManager,
+  ) {}
 
   /**
    * 刷新树视图

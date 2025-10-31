@@ -1,257 +1,337 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' https://microsoft.github.io; font-src https://microsoft.github.io; script-src 'nonce-{{nonce}}';">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline' https://microsoft.github.io; font-src https://microsoft.github.io; script-src 'nonce-{{nonce}}';"
+    />
     <title>Statistics Dashboard</title>
-    <link rel="stylesheet" href="https://microsoft.github.io/vscode-codicons/dist/codicon.css">
+    <link rel="stylesheet" href="https://microsoft.github.io/vscode-codicons/dist/codicon.css" />
     <style>
-        :root {
-            --spacing-xs: 4px;
-            --spacing-sm: 8px;
-            --spacing-md: 16px;
-            --spacing-lg: 24px;
-            --spacing-xl: 32px;
-            --border-radius: 4px;
-        }
+      :root {
+        --spacing-xs: 4px;
+        --spacing-sm: 8px;
+        --spacing-md: 12px;
+        --spacing-lg: 16px;
+        --spacing-xl: 20px;
+        --border-radius: 4px;
+      }
 
-        body {
-            font-family: var(--vscode-font-family);
-            font-weight: var(--vscode-font-weight);
-            font-size: var(--vscode-font-size);
-            color: var(--vscode-foreground);
-            background-color: var(--vscode-editor-background);
-            padding: var(--spacing-lg);
-            box-sizing: border-box;
-        }
+      body {
+        font-family: var(--vscode-font-family);
+        font-weight: var(--vscode-font-weight);
+        font-size: var(--vscode-font-size);
+        color: var(--vscode-foreground);
+        background-color: var(--vscode-editor-background);
+        padding: var(--spacing-md);
+        box-sizing: border-box;
+      }
 
-        .container {
-            width: 100%;
-            animation: fadeIn 0.3s ease-out;
-        }
+      .container {
+        width: 100%;
+        animation: fadeIn 0.3s ease-out;
+      }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: var(--spacing-xl);
-        }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-lg);
+      }
 
-        .header h1 {
-            font-size: 20px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-        }
+      .header h1 {
+        font-size: 20px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+      }
 
-        .header .actions .button {
-            background: none;
-            border: none;
-            color: var(--vscode-foreground);
-            padding: var(--spacing-xs);
-        }
+      .header .actions .button {
+        background: none;
+        border: none;
+        color: var(--vscode-foreground);
+        padding: var(--spacing-xs);
+      }
 
-        .section {
-            margin-bottom: var(--spacing-xl);
-        }
+      .section {
+        margin-bottom: var(--spacing-xl);
+      }
 
-        .section-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: var(--spacing-md);
-        }
+      .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: var(--spacing-md);
+      }
 
-        .overview-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: var(--spacing-md);
-        }
+      .overview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: var(--spacing-md);
+      }
 
-        .stat-card {
-            background-color: var(--vscode-editorWidget-background);
-            border: 1px solid var(--vscode-editorWidget-border, transparent);
-            border-radius: var(--border-radius);
-            padding: var(--spacing-md);
-            text-align: center;
-            opacity: 0;
-            transform: translateY(20px);
-            animation: fadeInUp 0.3s ease-out forwards;
-        }
+      .stat-card {
+        background-color: var(--vscode-editorWidget-background);
+        border: 1px solid var(--vscode-editorWidget-border, transparent);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md);
+        text-align: center;
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeInUp 0.3s ease-out forwards;
+      }
 
-        .stat-card .value {
-            font-size: 28px;
-            font-weight: 600;
-        }
+      .stat-card .value {
+        font-size: 28px;
+        font-weight: 600;
+      }
 
-        .stat-card .label {
-            font-size: 12px;
-            color: var(--vscode-descriptionForeground);
-            margin-top: var(--spacing-xs);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--spacing-xs);
-        }
+      .stat-card .label {
+        font-size: 12px;
+        color: var(--vscode-descriptionForeground);
+        margin-top: var(--spacing-xs);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--spacing-xs);
+      }
 
-        .priority-grid .priority-item {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            margin-bottom: var(--spacing-sm);
-        }
+      .priority-grid .priority-item {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-sm);
+      }
 
-        .priority-grid .label {
-            width: 100px;
-            font-size: 14px;
-        }
+      .priority-grid .label {
+        width: 100px;
+        font-size: 14px;
+      }
 
-        .priority-grid .bar-container {
-            flex-grow: 1;
-            background-color: var(--vscode-progressBar-background);
-            border-radius: var(--border-radius);
-            height: 24px;
-            overflow: hidden;
-        }
+      .priority-grid .bar-container {
+        flex-grow: 1;
+        background-color: var(--vscode-progressBar-background);
+        border-radius: var(--border-radius);
+        height: 24px;
+        overflow: hidden;
+      }
 
-        .priority-grid .bar-fill {
-            height: 100%;
-            animation: progressBar 0.6s ease-out forwards;
-        }
-        .priority-high { background-color: var(--vscode-errorForeground); }
-        .priority-medium { background-color: var(--vscode-editorWarning-foreground); }
-        .priority-low { background-color: var(--vscode-charts-blue); }
+      .priority-grid .bar-fill {
+        height: 100%;
+        animation: progressBar 0.6s ease-out forwards;
+      }
+      .priority-high {
+        background-color: var(--vscode-errorForeground);
+      }
+      .priority-medium {
+        background-color: var(--vscode-editorWarning-foreground);
+      }
+      .priority-low {
+        background-color: var(--vscode-charts-blue);
+      }
 
-        .source-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+      .source-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
 
-        .source-table th, .source-table td {
-            padding: var(--spacing-sm) var(--spacing-md);
-            text-align: left;
-            border-bottom: 1px solid var(--vscode-editorWidget-border);
-        }
+      .source-table th,
+      .source-table td {
+        padding: var(--spacing-sm) var(--spacing-md);
+        text-align: left;
+        border-bottom: 1px solid var(--vscode-editorWidget-border);
+      }
 
-        .source-table th {
-            color: var(--vscode-descriptionForeground);
-            font-weight: 600;
-        }
+      .source-table th {
+        color: var(--vscode-descriptionForeground);
+        font-weight: 600;
+      }
 
-        .tag-cloud {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--spacing-sm);
-        }
+      .tag-cloud {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+      }
 
-        .tag {
-            display: inline-block;
-            background-color: var(--vscode-badge-background);
-            color: var(--vscode-badge-foreground);
-            padding: var(--spacing-xs) var(--spacing-sm);
-            border-radius: 12px;
-            font-size: 13px;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-        .tag:hover { transform: scale(1.1); }
+      .tag {
+        display: inline-block;
+        background-color: var(--vscode-badge-background);
+        color: var(--vscode-badge-foreground);
+        padding: var(--spacing-xs) var(--spacing-sm);
+        border-radius: 12px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+      }
+      .tag:hover {
+        transform: scale(1.1);
+      }
 
-        @keyframes fadeIn {
-            to { opacity: 1; }
+      @keyframes fadeIn {
+        to {
+          opacity: 1;
         }
-        @keyframes fadeInUp {
-            to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes fadeInUp {
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        @keyframes progressBar {
-            from { width: 0; }
+      }
+      @keyframes progressBar {
+        from {
+          width: 0;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
         }
-        .refreshing .codicon-refresh {
-            animation: spin 1s linear infinite;
-        }
-
+      }
+      .refreshing .codicon-refresh {
+        animation: spin 1s linear infinite;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <header class="header">
-            <h1><i class="codicon codicon-dashboard"></i> Statistics Dashboard</h1>
-            <div class="actions">
-                <button class="button" onclick="sendMessage('refresh')" aria-label="Refresh Data"><i class="codicon codicon-refresh"></i></button>
-                <button class="button" onclick="sendMessage('export', {format: 'json'})" aria-label="Export Data"><i class="codicon codicon-export"></i></button>
+      <header class="header">
+        <h1><i class="codicon codicon-dashboard"></i> Statistics Dashboard</h1>
+        <div class="actions">
+          <button class="button" onclick="sendMessage('refresh')" aria-label="Refresh Data">
+            <i class="codicon codicon-refresh"></i>
+          </button>
+          <button
+            class="button"
+            onclick="sendMessage('export', {format: 'json'})"
+            aria-label="Export Data"
+          >
+            <i class="codicon codicon-export"></i>
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section class="section">
+          <h2 class="section-title">📚 Overview</h2>
+          <div class="overview-grid">
+            <div class="stat-card" style="animation-delay: 0s">
+              <div class="value">156</div>
+              <div class="label"><i class="codicon codicon-file-code"></i> Total Rules</div>
             </div>
-        </header>
+            <div class="stat-card" style="animation-delay: 0.1s">
+              <div class="value">2/3</div>
+              <div class="label"><i class="codicon codicon-package"></i> Sources</div>
+            </div>
+            <div class="stat-card" style="animation-delay: 0.2s">
+              <div class="value">2</div>
+              <div class="label"><i class="codicon codicon-warning"></i> Conflicts</div>
+            </div>
+            <div class="stat-card" style="animation-delay: 0.3s">
+              <div class="value">2.3 MB</div>
+              <div class="label"><i class="codicon codicon-database"></i> Cache Size</div>
+            </div>
+          </div>
+        </section>
 
-        <main>
-            <section class="section">
-                <h2 class="section-title">📚 Overview</h2>
-                <div class="overview-grid">
-                    <div class="stat-card" style="animation-delay: 0s;"><div class="value">156</div><div class="label"><i class="codicon codicon-file-code"></i> Total Rules</div></div>
-                    <div class="stat-card" style="animation-delay: 0.1s;"><div class="value">2/3</div><div class="label"><i class="codicon codicon-package"></i> Sources</div></div>
-                    <div class="stat-card" style="animation-delay: 0.2s;"><div class="value">2</div><div class="label"><i class="codicon codicon-warning"></i> Conflicts</div></div>
-                    <div class="stat-card" style="animation-delay: 0.3s;"><div class="value">2.3 MB</div><div class="label"><i class="codicon codicon-database"></i> Cache Size</div></div>
-                </div>
-            </section>
+        <section class="section">
+          <h2 class="section-title">📈 Priority Distribution</h2>
+          <div class="priority-grid">
+            <div class="priority-item">
+              <div class="label">🔥 High</div>
+              <div class="bar-container">
+                <div class="bar-fill priority-high" style="width: 15%; --target-width: 15%"></div>
+              </div>
+              <div>23</div>
+            </div>
+            <div class="priority-item">
+              <div class="label">⚠️ Medium</div>
+              <div class="bar-container">
+                <div class="bar-fill priority-medium" style="width: 43%; --target-width: 43%"></div>
+              </div>
+              <div>67</div>
+            </div>
+            <div class="priority-item">
+              <div class="label">ℹ️ Low</div>
+              <div class="bar-container">
+                <div class="bar-fill priority-low" style="width: 42%; --target-width: 42%"></div>
+              </div>
+              <div>66</div>
+            </div>
+          </div>
+        </section>
 
-            <section class="section">
-                <h2 class="section-title">📈 Priority Distribution</h2>
-                <div class="priority-grid">
-                    <div class="priority-item"><div class="label">🔥 High</div><div class="bar-container"><div class="bar-fill priority-high" style="width: 15%; --target-width: 15%;"></div></div><div>23</div></div>
-                    <div class="priority-item"><div class="label">⚠️ Medium</div><div class="bar-container"><div class="bar-fill priority-medium" style="width: 43%; --target-width: 43%;"></div></div><div>67</div></div>
-                    <div class="priority-item"><div class="label">ℹ️ Low</div><div class="bar-container"><div class="bar-fill priority-low" style="width: 42%; --target-width: 42%;"></div></div><div>66</div></div>
-                </div>
-            </section>
+        <section class="section">
+          <h2 class="section-title">📋 Source Statistics</h2>
+          <table class="source-table">
+            <thead>
+              <tr>
+                <th>Source Name</th>
+                <th>Rules</th>
+                <th>Status</th>
+                <th>Last Sync</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>company-rules</td>
+                <td>89</td>
+                <td>✅</td>
+                <td>2m ago</td>
+              </tr>
+              <tr>
+                <td>personal-rules</td>
+                <td>67</td>
+                <td>✅</td>
+                <td>5m ago</td>
+              </tr>
+              <tr>
+                <td>archived-rules</td>
+                <td>0</td>
+                <td>❌</td>
+                <td>-</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
 
-            <section class="section">
-                <h2 class="section-title">📋 Source Statistics</h2>
-                <table class="source-table">
-                    <thead><tr><th>Source Name</th><th>Rules</th><th>Status</th><th>Last Sync</th></tr></thead>
-                    <tbody>
-                        <tr><td>company-rules</td><td>89</td><td>✅</td><td>2m ago</td></tr>
-                        <tr><td>personal-rules</td><td>67</td><td>✅</td><td>5m ago</td></tr>
-                        <tr><td>archived-rules</td><td>0</td><td>❌</td><td>-</td></tr>
-                    </tbody>
-                </table>
-            </section>
-
-            <section class="section">
-                <h2 class="section-title">🏷️ Top Tags</h2>
-                <div class="tag-cloud">
-                    <span class="tag">#typescript (45)</span>
-                    <span class="tag">#react (32)</span>
-                    <span class="tag">#eslint (28)</span>
-                    <span class="tag">#naming (24)</span>
-                    <span class="tag">#security (18)</span>
-                    <span class="tag">#testing (15)</span>
-                </div>
-            </section>
-        </main>
+        <section class="section">
+          <h2 class="section-title">🏷️ Top Tags</h2>
+          <div class="tag-cloud">
+            <span class="tag">#typescript (45)</span>
+            <span class="tag">#react (32)</span>
+            <span class="tag">#eslint (28)</span>
+            <span class="tag">#naming (24)</span>
+            <span class="tag">#security (18)</span>
+            <span class="tag">#testing (15)</span>
+          </div>
+        </section>
+      </main>
     </div>
 
     <script nonce="{{nonce}}">
-        const vscode = acquireVsCodeApi();
+      const vscode = acquireVsCodeApi();
 
-        function sendMessage(type, payload) {
-            vscode.postMessage({ type, payload });
+      function sendMessage(type, payload) {
+        vscode.postMessage({ type, payload });
+      }
+
+      window.addEventListener('message', (event) => {
+        const message = event.data;
+        const header = document.querySelector('.header');
+
+        switch (message.type) {
+          case 'updateData':
+            // Here you would dynamically update the DOM with the new data
+            header.classList.remove('refreshing');
+            break;
+          case 'refreshStart':
+            header.classList.add('refreshing');
+            break;
         }
-
-        window.addEventListener('message', event => {
-            const message = event.data;
-            const header = document.querySelector('.header');
-
-            switch (message.type) {
-                case 'updateData':
-                    // Here you would dynamically update the DOM with the new data
-                    header.classList.remove('refreshing');
-                    break;
-                case 'refreshStart':
-                    header.classList.add('refreshing');
-                    break;
-            }
-        });
+      });
     </script>
-</body>
+  </body>
 </html>

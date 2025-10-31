@@ -1,4 +1,5 @@
 import React from 'react';
+import { Icon } from './Icon';
 
 export interface ButtonProps {
   children: React.ReactNode;
@@ -6,6 +7,8 @@ export interface ButtonProps {
   onClick?: () => void;
   disabled?: boolean;
   className?: string;
+  icon?: string; // Codicon name (without 'codicon-' prefix)
+  iconSize?: number;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -14,12 +17,15 @@ export const Button: React.FC<ButtonProps> = ({
   onClick,
   disabled,
   className,
+  icon,
+  iconSize = 16,
 }) => (
   <button
     className={`button button-${type} ${className ?? ''}`}
     onClick={onClick}
     disabled={disabled}
   >
+    {icon && <Icon icon={icon} size={iconSize} />}
     {children}
   </button>
 );

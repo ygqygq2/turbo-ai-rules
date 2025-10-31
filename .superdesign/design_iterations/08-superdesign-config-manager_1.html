@@ -1,45 +1,106 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' https://microsoft.github.io; font-src https://microsoft.github.io; script-src 'nonce-{{nonce}}';">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline' https://microsoft.github.io; font-src https://microsoft.github.io; script-src 'nonce-{{nonce}}';"
+    />
     <title>Configuration Manager</title>
-    <link rel="stylesheet" href="https://microsoft.github.io/vscode-codicons/dist/codicon.css">
+    <link rel="stylesheet" href="https://microsoft.github.io/vscode-codicons/dist/codicon.css" />
     <style>
-        :root { --spacing-sm: 8px; --spacing-md: 16px; --border-radius: 4px; }
-        body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); background-color: var(--vscode-editor-background); padding: var(--spacing-md); }
-        .section { margin-bottom: 24px; }
-        .section-title { font-size: 16px; font-weight: 600; margin-bottom: var(--spacing-md); }
-        .source-card { background-color: var(--vscode-editorWidget-background); border: 1px solid var(--vscode-editorWidget-border); border-radius: var(--border-radius); padding: var(--spacing-md); margin-bottom: var(--spacing-md); border-left-width: 3px; }
-        .source-card.enabled { border-left-color: var(--vscode-testing-iconPassed); }
-        .source-card.disabled { opacity: 0.6; border-left-color: var(--vscode-descriptionForeground); }
-        .adapter-toggle { display: flex; align-items: center; padding: var(--spacing-sm); background-color: var(--vscode-input-background); border: 1px solid var(--vscode-input-border); border-radius: var(--border-radius); margin-bottom: var(--spacing-sm); }
-        .form-input { width: 100%; padding: var(--spacing-sm); background-color: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); border-radius: var(--border-radius); }
-        .button { background-color: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--border-radius); cursor: pointer; }
+      :root {
+        --spacing-sm: 8px;
+        --spacing-md: 12px;
+        --border-radius: 4px;
+      }
+      body {
+        font-family: var(--vscode-font-family);
+        color: var(--vscode-foreground);
+        background-color: var(--vscode-editor-background);
+        padding: var(--spacing-sm);
+      }
+      .section {
+        margin-bottom: 16px;
+      }
+      .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: var(--spacing-md);
+      }
+      .source-card {
+        background-color: var(--vscode-editorWidget-background);
+        border: 1px solid var(--vscode-editorWidget-border);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+        border-left-width: 3px;
+      }
+      .source-card.enabled {
+        border-left-color: var(--vscode-testing-iconPassed);
+      }
+      .source-card.disabled {
+        opacity: 0.6;
+        border-left-color: var(--vscode-descriptionForeground);
+      }
+      .adapter-toggle {
+        display: flex;
+        align-items: center;
+        padding: var(--spacing-sm);
+        background-color: var(--vscode-input-background);
+        border: 1px solid var(--vscode-input-border);
+        border-radius: var(--border-radius);
+        margin-bottom: var(--spacing-sm);
+      }
+      .form-input {
+        width: 100%;
+        padding: var(--spacing-sm);
+        background-color: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border: 1px solid var(--vscode-input-border);
+        border-radius: var(--border-radius);
+      }
+      .button {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-radius: var(--border-radius);
+        cursor: pointer;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="section">
-        <h2 class="section-title">📦 规则源管理</h2>
-        <div class="source-card enabled">My Team Rules</div>
-        <div class="source-card disabled">Public Best Practices</div>
-        <button class="button">➕ 添加新源</button>
+      <h2 class="section-title">📦 规则源管理</h2>
+      <div class="source-card enabled">My Team Rules</div>
+      <div class="source-card disabled">Public Best Practices</div>
+      <button class="button">➕ 添加新源</button>
     </div>
     <div class="section">
-        <h2 class="section-title">🎯 AI 工具适配器</h2>
-        <div class="adapter-toggle">☑ GitHub Copilot</div>
-        <div class="adapter-toggle">☑ Cursor</div>
-        <div class="adapter-toggle">☐ Continue</div>
+      <h2 class="section-title">🎯 AI 工具适配器</h2>
+      <div class="adapter-toggle">☑ GitHub Copilot</div>
+      <div class="adapter-toggle">☑ Cursor</div>
+      <div class="adapter-toggle">☐ Continue</div>
     </div>
     <div class="section">
-        <h2 class="section-title">🔄 同步设置</h2>
-        <div><input type="checkbox" checked> 启动时自动同步</div>
-        <div><input type="checkbox" checked> 后台自动同步</div>
-        <div>同步间隔: <input type="number" value="60" class="form-input" style="width:80px; display:inline-block;"> 分钟</div>
+      <h2 class="section-title">🔄 同步设置</h2>
+      <div><input type="checkbox" checked /> 启动时自动同步</div>
+      <div><input type="checkbox" checked /> 后台自动同步</div>
+      <div>
+        同步间隔:
+        <input
+          type="number"
+          value="60"
+          class="form-input"
+          style="width: 80px; display: inline-block"
+        />
+        分钟
+      </div>
     </div>
     <script nonce="{{nonce}}">
-        const vscode = acquireVsCodeApi();
+      const vscode = acquireVsCodeApi();
     </script>
-</body>
+  </body>
 </html>

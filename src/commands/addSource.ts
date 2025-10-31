@@ -4,6 +4,7 @@
 
 import * as vscode from 'vscode';
 
+import { SourceDetailWebviewProvider } from '../providers/SourceDetailWebviewProvider';
 import { ConfigManager } from '../services/ConfigManager';
 import { LocalConfigManager } from '../services/LocalConfigManager';
 import type { GitAuthentication, RuleSource } from '../types/config';
@@ -12,7 +13,6 @@ import { PROJECT_CONFIG_DIR } from '../utils/constants';
 import { ensureIgnored } from '../utils/gitignore';
 import { Logger } from '../utils/logger';
 import { validateBranchName, validateGitUrl } from '../utils/validator';
-import { SourceDetailWebviewProvider } from '../providers/SourceDetailWebviewProvider';
 
 /**
  * 添加规则源命令处理器

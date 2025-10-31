@@ -1,14 +1,14 @@
 # Webview 开发最佳实践
 
 > **创建日期**: 2025-10-27  
-> **最后更新**: 2025-10-29  
+> **最后更新**: 2025-10-30  
 > **状态**: 正式文档
 
 ---
 
 ## 📋 概述
 
-本文档说明 Turbo AI Rules 项目中 Webview 的开发规范和最佳实践。
+本文档说明 Turbo AI Rules 项目中 Webview 的开发规范和最佳实践，包括架构设计、代码组织和用户体验优化。
 
 ### 为什么要重构？
 
@@ -90,7 +90,7 @@ protected getHtmlContent(webview: vscode.Webview): string {
 - Emmet 支持
 - HTML 验证
 
-**CSS**（`search/search.css` + `styles/global.css`）：
+**CSS**（`search/search.css` + `global.css`）：
 
 - CSS 代码高亮和智能提示
 - 样式复用
@@ -505,6 +505,197 @@ npm run compile
 3. **构建顺序**：发布前必须先构建 Webview（`npm run build:webview`）
 4. **缓存问题**：开发时可能需要重新加载扩展查看更改
 
+---
+
+## 🎨 用户体验优化最佳实践
+
+### 1. 避免页面闪烁
+
+**问题描述**：
+页面加载时如果状态初始化不当，会导致短暂的状态切换闪烁，影响用户体验。
+
+**❌ 错误示例**：
+
+```typescript
+// 异步检查导致 loading → new 的状态切换闪烁
+const [mode, setMode] = useState<'loading' | 'new' | 'view'>('loading');
+
+useEffect(() => {
+  if ((window as any).initialMode === 'new') {
+    setMode('new'); // 触发重新渲染，产生闪烁
+  }
+}, []);
+```
+
+**✅ 正确做法**：
+
+```typescript
+// 同步初始化，避免不必要的状态切换
+const initialMode = (window as any).initialMode === 'new' ? 'new' : 'loading';
+const [mode, setMode] = useState<'loading' | 'new' | 'view'>(initialMode);
+
+useEffect(() => {
+  // 如果已经是新增模式，不需要监听消息
+  if (mode === 'new') {
+    return;
+  }
+  // ... 其他逻辑
+}, [mode]);
+```
+
+**关键原则**：
+
+- 在组件初始化时就确定正确的初始状态
+- 避免在 `useEffect` 中修改初始状态
+- 检查 `window` 上的标志应该在 `useState` 初始化时进行
+
+### 2. 平滑的页面过渡动画
+
+**添加淡入动画**：
+
+```css
+/* global.css 或页面专属 CSS */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.container {
+  animation: fadeIn 0.3s ease-out;
+}
+```
+
+**效果**：
+
+- 页面从下方淡入，自然流畅
+- 0.3 秒动画时长，不会太快或太慢
+- 配合 `transform` 增加深度感
+
+### 3. 优化 Suspense 加载状态
+
+**❌ 简单做法**：
+
+```tsx
+<Suspense fallback={<div>Loading...</div>}>
+  <LazyComponent />
+</Suspense>
+```
+
+**✅ 用户友好的做法**：
+
+```tsx
+<Suspense
+  fallback={
+    <div className="loading-spinner">
+      <div className="spinner">⏳</div>
+      <p>Loading form...</p>
+    </div>
+  }
+>
+  <LazyComponent />
+</Suspense>
+```
+
+**配套 CSS**：
+
+```css
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  min-height: 200px;
+  text-align: center;
+}
+
+.loading-spinner .spinner {
+  font-size: 48px;
+  margin-bottom: var(--spacing-md);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.loading-spinner p {
+  color: var(--vscode-descriptionForeground);
+  margin: 0;
+}
+```
+
+### 4. 完整的用户体验优化检查清单
+
+在开发 Webview 页面时，确保满足以下要求：
+
+- [ ] **初始状态同步检查**：避免异步状态切换导致闪烁
+- [ ] **淡入动画**：所有容器添加 `fadeIn` 动画（0.3s）
+- [ ] **加载提示**：Suspense fallback 使用友好的 UI（图标 + 文字 + 动画）
+- [ ] **空状态处理**：使用 `EmptyState` 组件，提供清晰的图标和说明
+- [ ] **错误状态**：错误信息友好，提供可能的解决建议
+- [ ] **响应式设计**：适配不同宽度的 Webview
+- [ ] **主题适配**：使用 CSS 变量，自动适配明暗主题
+
+### 5. 实际案例：Add Source 页面优化
+
+**问题**：
+打开 "Add Source" 页面时出现短暂的闪烁和白屏。
+
+**原因分析**：
+
+1. 初始状态设置为 `loading`，然后在 `useEffect` 中异步切换到 `new`
+2. 懒加载表单时没有友好的加载提示
+3. 缺少页面过渡动画
+
+**解决方案**：
+
+```typescript
+// 1. 同步初始化状态
+const initialMode = (window as any).initialMode === 'new' ? 'new' : 'loading';
+const [mode, setMode] = useState<'loading' | 'new' | 'view'>(initialMode);
+
+// 2. 优化 Suspense fallback
+<Suspense
+  fallback={
+    <div className="loading-spinner">
+      <div className="spinner">⏳</div>
+      <p>Loading form...</p>
+    </div>
+  }
+>
+  <LazyNewSourceForm />
+</Suspense>
+
+// 3. 添加淡入动画（CSS）
+.container {
+  animation: fadeIn 0.3s ease-out;
+}
+```
+
+**效果对比**：
+
+| 优化项            | 之前                  | 之后             |
+| ----------------- | --------------------- | ---------------- |
+| 页面切换          | 闪烁（loading → new） | 平滑（直接显示） |
+| 加载动画          | 无                    | 0.3s 淡入        |
+| Suspense fallback | 纯文本                | 脉冲图标 + 文本  |
+| 整体体验          | ⭐⭐⭐                | ⭐⭐⭐⭐⭐       |
+
+---
+
 ## 🔄 迁移指南
 
 对于现有的 Provider：
@@ -598,5 +789,11 @@ npm run compile
 
 ---
 
-**最后更新**: 2025-10-29  
+**最后更新**: 2025-10-30  
 **维护者**: ygqygq2
+
+**更新日志**：
+
+- 2025-10-30: 添加用户体验优化最佳实践章节
+- 2025-10-29: 完善构建流程和迁移指南
+- 2025-10-27: 初始版本，架构说明

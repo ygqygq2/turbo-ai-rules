@@ -1,282 +1,308 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' https://microsoft.github.io; font-src https://microsoft.github.io; script-src 'nonce-{{nonce}}';">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline' https://microsoft.github.io; font-src https://microsoft.github.io; script-src 'nonce-{{nonce}}';"
+    />
     <title>Welcome to Turbo AI Rules</title>
-    <link rel="stylesheet" href="https://microsoft.github.io/vscode-codicons/dist/codicon.css">
+    <link rel="stylesheet" href="https://microsoft.github.io/vscode-codicons/dist/codicon.css" />
     <style>
-        :root {
-            --spacing-xs: 4px;
-            --spacing-sm: 8px;
-            --spacing-md: 16px;
-            --spacing-lg: 24px;
-            --spacing-xl: 32px;
-            --border-radius: 4px;
-        }
+      :root {
+        --spacing-xs: 4px;
+        --spacing-sm: 8px;
+        --spacing-md: 12px;
+        --spacing-lg: 16px;
+        --spacing-xl: 20px;
+        --border-radius: 4px;
+      }
 
+      body {
+        font-family: var(--vscode-font-family);
+        font-weight: var(--vscode-font-weight);
+        font-size: var(--vscode-font-size);
+        color: var(--vscode-foreground);
+        background-color: var(--vscode-editor-background);
+        padding: var(--spacing-md);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+        box-sizing: border-box;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 800px;
+        animation: fadeIn 0.4s ease-out forwards;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: var(--spacing-lg);
+      }
+
+      .header h1 {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: var(--spacing-sm);
+      }
+
+      .header .subtitle {
+        color: var(--vscode-descriptionForeground);
+        font-size: 14px;
+      }
+
+      .card {
+        background-color: var(--vscode-editorWidget-background);
+        border: 1px solid var(--vscode-editorWidget-border, transparent);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md) var(--spacing-lg);
+        margin-bottom: var(--spacing-md);
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeIn 0.4s ease-out forwards;
+      }
+
+      .step-card:nth-child(1) {
+        animation-delay: 0.1s;
+      }
+      .step-card:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .step-card:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+      .templates-card {
+        animation-delay: 0.4s;
+      }
+      .footer {
+        animation-delay: 0.5s;
+      }
+
+      .step-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .step-info h2 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 var(--spacing-xs) 0;
+      }
+
+      .step-info p {
+        color: var(--vscode-descriptionForeground);
+        margin: 0;
+      }
+
+      .button {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: 1px solid var(--vscode-button-border, transparent);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: 14px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        text-decoration: none;
+        transition: transform 0.2s ease, background-color 0.2s ease;
+      }
+
+      .button:hover {
+        background-color: var(--vscode-button-hoverBackground);
+        transform: scale(1.05);
+      }
+
+      .button:active {
+        transform: scale(0.98);
+      }
+
+      .templates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: var(--spacing-md);
+      }
+
+      .template-button {
+        background-color: var(--vscode-input-background);
+        color: var(--vscode-foreground);
+        border: 1px solid var(--vscode-editorWidget-border);
+        text-align: left;
+      }
+
+      .footer {
+        text-align: center;
+        margin-top: var(--spacing-xl);
+        color: var(--vscode-descriptionForeground);
+        font-size: 12px;
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeIn 0.4s ease-out forwards;
+      }
+
+      .footer-links {
+        margin-bottom: var(--spacing-md);
+      }
+
+      .footer-links .button {
+        background: none;
+        border: none;
+        color: var(--vscode-textLink-foreground);
+      }
+      .footer-links .button:hover {
+        background: none;
+        text-decoration: underline;
+      }
+
+      .checkbox-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--spacing-sm);
+      }
+
+      @media (max-width: 600px) {
         body {
-            font-family: var(--vscode-font-family);
-            font-weight: var(--vscode-font-weight);
-            font-size: var(--vscode-font-size);
-            color: var(--vscode-foreground);
-            background-color: var(--vscode-editor-background);
-            padding: var(--spacing-lg);
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            box-sizing: border-box;
+          padding: var(--spacing-md);
         }
-
-        .container {
-            width: 100%;
-            max-width: 800px;
-            animation: fadeIn 0.4s ease-out forwards;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .header h1 {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .header .subtitle {
-            color: var(--vscode-descriptionForeground);
-            font-size: 14px;
-        }
-
-        .card {
-            background-color: var(--vscode-editorWidget-background);
-            border: 1px solid var(--vscode-editorWidget-border, transparent);
-            border-radius: var(--border-radius);
-            padding: var(--spacing-md) var(--spacing-lg);
-            margin-bottom: var(--spacing-md);
-            opacity: 0;
-            transform: translateY(20px);
-            animation: fadeIn 0.4s ease-out forwards;
-        }
-
-        .step-card:nth-child(1) { animation-delay: 0.1s; }
-        .step-card:nth-child(2) { animation-delay: 0.2s; }
-        .step-card:nth-child(3) { animation-delay: 0.3s; }
-        .templates-card { animation-delay: 0.4s; }
-        .footer { animation-delay: 0.5s; }
-
-
         .step-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: var(--spacing-md);
         }
+      }
 
-        .step-info h2 {
-            font-size: 16px;
-            font-weight: 600;
-            margin: 0 0 var(--spacing-xs) 0;
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
         }
-
-        .step-info p {
-            color: var(--vscode-descriptionForeground);
-            margin: 0;
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-
-        .button {
-            background-color: var(--vscode-button-background);
-            color: var(--vscode-button-foreground);
-            border: 1px solid var(--vscode-button-border, transparent);
-            border-radius: var(--border-radius);
-            padding: var(--spacing-sm) var(--spacing-md);
-            font-size: 14px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            text-decoration: none;
-            transition: transform 0.2s ease, background-color 0.2s ease;
-        }
-
-        .button:hover {
-            background-color: var(--vscode-button-hoverBackground);
-            transform: scale(1.05);
-        }
-
-        .button:active {
-            transform: scale(0.98);
-        }
-        
-        .templates-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: var(--spacing-md);
-        }
-
-        .template-button {
-            background-color: var(--vscode-input-background);
-            color: var(--vscode-foreground);
-            border: 1px solid var(--vscode-editorWidget-border);
-            text-align: left;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: var(--spacing-xl);
-            color: var(--vscode-descriptionForeground);
-            font-size: 12px;
-            opacity: 0;
-            transform: translateY(20px);
-            animation: fadeIn 0.4s ease-out forwards;
-        }
-
-        .footer-links {
-            margin-bottom: var(--spacing-md);
-        }
-
-        .footer-links .button {
-            background: none;
-            border: none;
-            color: var(--vscode-textLink-foreground);
-        }
-        .footer-links .button:hover {
-            background: none;
-            text-decoration: underline;
-        }
-
-        .checkbox-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--spacing-sm);
-        }
-
-        @media (max-width: 600px) {
-            body {
-                padding: var(--spacing-md);
-            }
-            .step-content {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: var(--spacing-md);
-            }
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <div class="container">
-        <header class="header">
-            <h1>🚀 Welcome to Turbo AI Rules</h1>
-            <p class="subtitle">Sync AI coding rules from Git repositories and automatically generate configuration files</p>
-        </header>
+      <header class="header">
+        <h1>🚀 Welcome to Turbo AI Rules</h1>
+        <p class="subtitle">
+          Sync AI coding rules from Git repositories and automatically generate configuration files
+        </p>
+      </header>
 
-        <main>
-            <div class="card step-card">
-                <div class="step-content">
-                    <div class="step-info">
-                        <h2>1. Add a Rule Source</h2>
-                        <p>Configure your first Git repository to sync rules from</p>
-                    </div>
-                    <button class="button" onclick="sendMessage('addSource')">
-                        <i class="codicon codicon-add"></i>
-                        <span>Add Source</span>
-                    </button>
-                </div>
+      <main>
+        <div class="card step-card">
+          <div class="step-content">
+            <div class="step-info">
+              <h2>1. Add a Rule Source</h2>
+              <p>Configure your first Git repository to sync rules from</p>
             </div>
+            <button class="button" onclick="sendMessage('addSource')">
+              <i class="codicon codicon-add"></i>
+              <span>Add Source</span>
+            </button>
+          </div>
+        </div>
 
-            <div class="card step-card">
-                <div class="step-content">
-                    <div class="step-info">
-                        <h2>2. Sync Rules</h2>
-                        <p>Fetch and update AI rules from your configured sources</p>
-                    </div>
-                    <button class="button" onclick="sendMessage('syncRules')">
-                        <i class="codicon codicon-sync"></i>
-                        <span>Sync Now</span>
-                    </button>
-                </div>
+        <div class="card step-card">
+          <div class="step-content">
+            <div class="step-info">
+              <h2>2. Sync Rules</h2>
+              <p>Fetch and update AI rules from your configured sources</p>
             </div>
+            <button class="button" onclick="sendMessage('syncRules')">
+              <i class="codicon codicon-sync"></i>
+              <span>Sync Now</span>
+            </button>
+          </div>
+        </div>
 
-            <div class="card step-card">
-                <div class="step-content">
-                    <div class="step-info">
-                        <h2>3. Generate Configs</h2>
-                        <p>Create configuration files for your AI coding tools</p>
-                    </div>
-                    <button class="button" onclick="sendMessage('generateConfigs')">
-                        <i class="codicon codicon-file-code"></i>
-                        <span>Generate</span>
-                    </button>
-                </div>
+        <div class="card step-card">
+          <div class="step-content">
+            <div class="step-info">
+              <h2>3. Generate Configs</h2>
+              <p>Create configuration files for your AI coding tools</p>
             </div>
+            <button class="button" onclick="sendMessage('generateConfigs')">
+              <i class="codicon codicon-file-code"></i>
+              <span>Generate</span>
+            </button>
+          </div>
+        </div>
 
-            <div class="card templates-card">
-                <div class="step-info" style="margin-bottom: var(--spacing-md);">
-                    <h2>📚 Quick Start Templates</h2>
-                </div>
-                <div class="templates-grid">
-                    <button class="button template-button" onclick="sendMessage('useTemplate', { template: 'typescript' })">
-                        <i class="codicon codicon-file-code"></i>
-                        <span>TypeScript Best Practices</span>
-                    </button>
-                    <button class="button template-button" onclick="sendMessage('useTemplate', { template: 'react' })">
-                        <i class="codicon codicon-file-code"></i>
-                        <span>React Development Rules</span>
-                    </button>
-                    <button class="button template-button" onclick="sendMessage('useTemplate', { template: 'python' })">
-                        <i class="codicon codicon-file-code"></i>
-                        <span>Python Style Guide</span>
-                    </button>
-                </div>
-            </div>
-        </main>
+        <div class="card templates-card">
+          <div class="step-info" style="margin-bottom: var(--spacing-md)">
+            <h2>📚 Quick Start Templates</h2>
+          </div>
+          <div class="templates-grid">
+            <button
+              class="button template-button"
+              onclick="sendMessage('useTemplate', { template: 'typescript' })"
+            >
+              <i class="codicon codicon-file-code"></i>
+              <span>TypeScript Best Practices</span>
+            </button>
+            <button
+              class="button template-button"
+              onclick="sendMessage('useTemplate', { template: 'react' })"
+            >
+              <i class="codicon codicon-file-code"></i>
+              <span>React Development Rules</span>
+            </button>
+            <button
+              class="button template-button"
+              onclick="sendMessage('useTemplate', { template: 'python' })"
+            >
+              <i class="codicon codicon-file-code"></i>
+              <span>Python Style Guide</span>
+            </button>
+          </div>
+        </div>
+      </main>
 
-        <footer class="footer">
-            <div class="footer-links">
-                <button class="button" onclick="sendMessage('viewDocs')">
-                    <i class="codicon codicon-book"></i>
-                    <span>Documentation</span>
-                </button>
-                <button class="button" onclick="sendMessage('getHelp')">
-                    <i class="codicon codicon-comment-discussion"></i>
-                    <span>Get Help</span>
-                </button>
-            </div>
-            <div class="checkbox-container">
-                <input type="checkbox" id="dont-show-again" onclick="sendMessage('dismiss', { checked: this.checked })">
-                <label for="dont-show-again">Don't show this again</label>
-            </div>
-        </footer>
+      <footer class="footer">
+        <div class="footer-links">
+          <button class="button" onclick="sendMessage('viewDocs')">
+            <i class="codicon codicon-book"></i>
+            <span>Documentation</span>
+          </button>
+          <button class="button" onclick="sendMessage('getHelp')">
+            <i class="codicon codicon-comment-discussion"></i>
+            <span>Get Help</span>
+          </button>
+        </div>
+        <div class="checkbox-container">
+          <input
+            type="checkbox"
+            id="dont-show-again"
+            onclick="sendMessage('dismiss', { checked: this.checked })"
+          />
+          <label for="dont-show-again">Don't show this again</label>
+        </div>
+      </footer>
     </div>
 
     <script nonce="{{nonce}}">
-        const vscode = acquireVsCodeApi();
+      const vscode = acquireVsCodeApi();
 
-        function sendMessage(type, payload) {
-            vscode.postMessage({ type, payload });
-        }
+      function sendMessage(type, payload) {
+        vscode.postMessage({ type, payload });
+      }
 
-        window.addEventListener('message', (event) => {
-            const message = event.data;
-            // Handle messages from the extension if needed
-            // e.g., switch(message.type) { ... }
-        });
+      window.addEventListener('message', (event) => {
+        const message = event.data;
+        // Handle messages from the extension if needed
+        // e.g., switch(message.type) { ... }
+      });
     </script>
-</body>
+  </body>
 </html>

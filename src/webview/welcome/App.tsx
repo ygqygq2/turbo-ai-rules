@@ -8,8 +8,13 @@ import '../global.css';
 import './welcome.css';
 
 // VS Code API 类型定义
+interface VscodeMessage {
+  command: string;
+  [key: string]: unknown;
+}
+
 declare const vscode: {
-  postMessage: (message: any) => void;
+  postMessage: (message: VscodeMessage) => void;
 };
 
 interface Template {
@@ -87,9 +92,18 @@ export const App: React.FC = () => {
           <div className="step-content">
             <h2>Add a Rule Source</h2>
             <p>Configure your first Git repository to sync rules from</p>
-            <Button type="primary" onClick={handleAddSource}>
-              ➕ Add Source
-            </Button>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <Button type="primary" icon="add" onClick={handleAddSource}>
+                Add Source
+              </Button>
+              <Button
+                type="secondary"
+                icon="list-tree"
+                onClick={() => vscode.postMessage({ command: 'selectRules' })}
+              >
+                Select Rules
+              </Button>
+            </div>
           </div>
         </Card>
         <Card className="step-card">
@@ -97,8 +111,8 @@ export const App: React.FC = () => {
           <div className="step-content">
             <h2>Sync Rules</h2>
             <p>Fetch and update AI rules from your configured sources</p>
-            <Button type="primary" onClick={handleSyncRules}>
-              🔄 Sync Now
+            <Button type="primary" icon="sync" onClick={handleSyncRules}>
+              Sync Now
             </Button>
           </div>
         </Card>
@@ -107,8 +121,8 @@ export const App: React.FC = () => {
           <div className="step-content">
             <h2>Generate Configs</h2>
             <p>Create configuration files for your AI coding tools</p>
-            <Button type="secondary" onClick={handleGenerateConfigs}>
-              📝 Generate Configs
+            <Button type="secondary" icon="file-code" onClick={handleGenerateConfigs}>
+              Generate Configs
             </Button>
           </div>
         </Card>
@@ -134,14 +148,14 @@ export const App: React.FC = () => {
       </div>
 
       <Toolbar className="footer">
-        <Button type="secondary" onClick={handleViewDocs}>
-          📖 Documentation
+        <Button type="secondary" icon="book" onClick={handleViewDocs}>
+          Documentation
         </Button>
-        <Button type="secondary" onClick={handleGetHelp}>
-          💬 Get Help
+        <Button type="secondary" icon="question" onClick={handleGetHelp}>
+          Get Help
         </Button>
-        <Button type="secondary" onClick={handleDismiss}>
-          ✓ Don't Show Again
+        <Button type="secondary" icon="check" onClick={handleDismiss}>
+          Don't Show Again
         </Button>
       </Toolbar>
     </div>
