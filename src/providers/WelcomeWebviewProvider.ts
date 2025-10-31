@@ -104,14 +104,25 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
    */
   protected async handleMessage(message: WebviewMessage): Promise<void> {
     try {
-      switch (message.type) {
+      // 兼容旧版消息格式：支持 command 字段（用于向后兼容）
+      const messageType = message.type || (message as any).command;
+
+      switch (messageType) {
         case 'addSource':
           Logger.debug('Webview message received: addSource', {
-            type: message.type,
+            type: messageType,
             payload: message.payload,
           });
           // 直接调用命令（这是例外，因为需要复杂的用户输入流程）
           await vscode.commands.executeCommand('turbo-ai-rules.addSource');
+          break;
+
+        case 'selectRules':
+          Logger.debug('Webview message received: selectRules', {
+            type: messageType,
+          });
+          // 调用规则选择器命令
+          await vscode.commands.executeCommand('turbo-ai-rules.selectRules');
           break;
 
         case 'syncRules':
@@ -125,10 +136,11 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
           break;
 
         case 'useTemplate':
-          await this.handleUseTemplate(message.payload?.type);
+          await this.handleUseTemplate(message.payload?.type || (message as any).template);
           break;
 
         case 'viewDocs':
+        case 'openDocs':
           // 直接在这里处理，不需要命令
           await vscode.env.openExternal(
             vscode.Uri.parse(
@@ -145,11 +157,12 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
           break;
 
         case 'dismiss':
+        case 'dismissWelcome':
           await this.handleDismiss();
           break;
 
         default:
-          Logger.warn(`Unknown message type: ${message.type}`);
+          Logger.warn(`Unknown message type: ${messageType}`);
       }
     } catch (error) {
       Logger.error('Failed to handle webview message', error instanceof Error ? error : undefined);

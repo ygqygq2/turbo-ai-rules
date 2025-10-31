@@ -7,16 +7,6 @@ import { vscodeApi } from '../utils/vscode-api';
 import '../global.css';
 import './welcome.css';
 
-// VS Code API 类型定义
-interface VscodeMessage {
-  command: string;
-  [key: string]: unknown;
-}
-
-declare const vscode: {
-  postMessage: (message: VscodeMessage) => void;
-};
-
 interface Template {
   id: string;
   name: string;
@@ -53,28 +43,28 @@ export const App: React.FC = () => {
   };
 
   const handleSyncRules = () => {
-    vscode.postMessage({ command: 'syncRules' });
+    vscodeApi.postMessage('syncRules');
   };
 
   const handleGenerateConfigs = () => {
-    vscode.postMessage({ command: 'generateConfigs' });
+    vscodeApi.postMessage('generateConfigs');
   };
 
   const handleViewDocs = () => {
-    vscode.postMessage({ command: 'openDocs' });
+    vscodeApi.postMessage('viewDocs');
   };
 
   const handleGetHelp = () => {
-    vscode.postMessage({ command: 'getHelp' });
+    vscodeApi.postMessage('getHelp');
   };
 
   const handleDismiss = () => {
-    vscode.postMessage({ command: 'dismissWelcome' });
+    vscodeApi.postMessage('dismiss');
   };
 
   const handleTemplateClick = (templateId: string) => {
     setSelectedTemplate(templateId);
-    vscode.postMessage({ command: 'useTemplate', template: templateId });
+    vscodeApi.postMessage('useTemplate', { type: templateId });
   };
 
   return (
@@ -99,7 +89,7 @@ export const App: React.FC = () => {
               <Button
                 type="secondary"
                 icon="list-tree"
-                onClick={() => vscode.postMessage({ command: 'selectRules' })}
+                onClick={() => vscodeApi.postMessage('selectRules')}
               >
                 Select Rules
               </Button>

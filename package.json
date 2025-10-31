@@ -139,6 +139,12 @@
         "icon": "$(search)"
       },
       {
+        "command": "turbo-ai-rules.selectRules",
+        "title": "Select Rules",
+        "category": "Turbo AI Rules",
+        "icon": "$(list-tree)"
+      },
+      {
         "command": "turbo-ai-rules.viewSourceDetail",
         "title": "View Source Details",
         "category": "Turbo AI Rules",

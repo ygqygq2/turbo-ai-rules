@@ -44,11 +44,6 @@ import { Logger } from './utils/logger';
  * 扩展激活入口
  */
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  // 注册 RuleSelectorWebviewProvider 命令
-  const ruleSelectorProvider = RuleSelectorWebviewProvider.getInstance(context);
-  vscode.commands.registerCommand('turbo-ai-rules.selectRules', async () => {
-    await ruleSelectorProvider.showRuleSelector();
-  });
   try {
     // 初始化 Logger
     Logger.init();
@@ -176,6 +171,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       vscode.commands.registerCommand('turbo-ai-rules.advancedSearch', async () => {
         const searchProvider = SearchWebviewProvider.getInstance(context, rulesManager);
         await searchProvider.showSearch();
+      }),
+
+      vscode.commands.registerCommand('turbo-ai-rules.selectRules', async () => {
+        const ruleSelectorProvider = RuleSelectorWebviewProvider.getInstance(context);
+        await ruleSelectorProvider.showRuleSelector();
       }),
 
       vscode.commands.registerCommand(

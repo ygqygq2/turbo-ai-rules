@@ -13,7 +13,7 @@ Turbo AI Rules 采用三层存储策略，平衡性能、安全和用户体验�
 ```
 ┌───────────────────────────────────────────────────────┐
 │          Layer 1: 全局缓存 (Global Cache)             │
-│  位置: ~/.cache/.turbo-ai-rules/sources/                    │
+│  位置: ~/.cache/.turbo-ai-rules/sources/              │
 │  作用: 多项目共享规则源                              │
 │  生命周期: 手动清理                                 │
 └───────────────────────────────────────────────────────┘
@@ -27,7 +27,7 @@ Turbo AI Rules 采用三层存储策略，平衡性能、安全和用户体验�
                           ↓
 ┌───────────────────────────────────────────────────────┐
 │        Layer 3: AI 工具配置 (AI Configs)              │
-│  位置: .cursorrules, .github/copilot-*.md 等        │
+│  位置: .cursorrules, .github/copilot-instructions.md 等        │
 │  作用: 各 AI 工具直接读取的配置                     │
 │  生命周期: 自动生成和更新                          │
 └───────────────────────────────────────────────────────┘
@@ -39,24 +39,18 @@ Turbo AI Rules 采用三层存储策略，平衡性能、安全和用户体验�
 
 ### 2.1 目录结构
 
-```
+````
 ~/.cache/.turbo-ai-rules/
-├── sources/                          # 规则源缓存根目录
-│   ├── source-id-1/                 # 规则源 1 (目录名为 sourceId)
-│   │   ├── .git/                    # Git 仓库元数据
-│   │   ├── rules/                   # 规则文件目录
-│   │   │   ├── typescript.mdc       # 规则文件
-│   │   │   └── react.mdc
-│   │   └── .source-meta.json        # 规则源元数据
-│   ├── source-id-2/
-│   └── ...
-├── logs/                             # 日志文件
-│   └── turbo-ai-rules.log
-└── cache/                            # 临时缓存
-    └── parsed-rules.cache           # 解析结果缓存
-```
-
-### 2.2 设计原理
+└── sources/                          # 规则源缓存根目录
+    ├── source-id-1/                  # 规则源 1 (目录名为 sourceId)
+    │   ├── .git/                     # Git 仓库元数据
+    │   ├── rules/                    # 规则文件目录（按源仓库结构）
+    │   │   ├── typescript.mdc
+    │   │   └── react.mdc
+    │   └── meta.json                 # 规则源元数据（gitUrl/branch/subPath/lastSyncedAt/schemaVersion）
+    ├── source-id-2/
+    └── ...
+```### 2.2 设计原理
 
 - **共享性**: 多项目共享规则源，避免重复克隆
 - **持久性**: 用户手动清理，扩展卸载后保留
@@ -74,42 +68,73 @@ Turbo AI Rules 采用三层存储策略，平衡性能、安全和用户体验�
 
 ### 3.1 目录结构
 
-```
+````
+
 <workspace>/
-├── .ai-rules/                       # 项目本地规则目录
-│   ├── index.json                   # 规则索引文件
-│   ├── active-rules/                # 当前激活的规则
-│   │   ├── typescript.mdc          # 从全局缓存链接或复制
-│   │   └── react.mdc
-│   ├── user-rules/                  # 用户自定义规则
-│   │   └── custom.mdc
-│   └── config.json                  # 项目特定配置
-└── .gitignore                       # 自动添加 .ai-rules/
-```
+├── .ai-rules/ # 项目本地规则目录
+│ ├── registry.json # 启用的规则源登记（源引用与策略）
+│ ├── index/ # 解析索引（扩展内部使用）
+│ │ ├── rules.index.json # 扁平化规则索引（ParsedRule[] 摘要）
+│ │ └── search.index.json # 快速搜索索引
+│ ├── generated/ # 生成物清单（可见产物的指纹与策略）
+│ │ └── manifest.json # 目标文件校验和、生成时间、策略
+│ └── cache/ # 扩展内部缓存（LRU 等）
+└── .gitignore # 自动添加 .ai-rules/
+
+````
 
 ### 3.2 设计原理
 
 - **项目隔离**: 每个项目独立配置，互不影响
-- **按需同步**: 只同步激活的规则，减少文件数量
-- **用户扩展**: 支持添加项目特定的自定义规则
-- **版本控制**: 自动添加到 .gitignore，不提交到 Git
+- **内部使用**: `.ai-rules/` 为扩展内部目录，默认不供用户编辑；用户可通过命令清理
+- **按需同步**: 解析索引与生成清单按需增量更新，减少 IO
+- **版本控制**: 自动添加到 .gitignore，不提交到 Git（仅保留可见生成物在仓库根目录）
 
-### 3.3 索引文件格式
+### 3.3 索引文件（示意）
 
-`index.json` 格式：
+- `registry.json`
 
 ```json
 {
-  "version": "1.0.0",
+  "schemaVersion": 1,
   "sources": [
-    {
-      "sourceId": "typescript-rules",
-      "enabled": true,
-      "selectedRules": ["rules/typescript.mdc", "rules/eslint.mdc"]
-    }
+    { "sourceId": "typescript-rules", "enabled": true, "branch": "main", "priority": 10 }
   ],
-  "lastSync": "2025-01-23T10:00:00Z",
-  "conflictResolution": "priority"
+  "conflictResolution": "priority",
+  "lastSync": "2025-01-23T10:00:00Z"
+}
+````
+
+- `index/rules.index.json`
+
+```json
+{
+  "schemaVersion": 1,
+  "count": 128,
+  "rules": [
+    {
+      "id": "ts-best-practices",
+      "title": "TypeScript 最佳实践",
+      "sourceId": "typescript-rules",
+      "hash": "..."
+    }
+  ]
+}
+```
+
+- `generated/manifest.json`
+
+```json
+{
+  "schemaVersion": 1,
+  "artifacts": [
+    {
+      "path": ".github/copilot-instructions.md",
+      "sha256": "...",
+      "policy": "overwrite",
+      "generatedAt": "2025-01-23T10:00:00Z"
+    }
+  ]
 }
 ```
 
@@ -132,6 +157,7 @@ Turbo AI Rules 采用三层存储策略，平衡性能、安全和用户体验�
 - **备份机制**: 覆盖前备份原有文件（`.bak` 后缀）
 - **元数据注释**: 文件头部添加生成信息和时间戳
 - **冲突处理**: 检测用户手动修改，提示是否覆盖
+- **指纹与清单**: 采用 `.ai-rules/generated/manifest.json` 记录生成物及其校验和与策略
 
 ### 4.3 元数据注释示例
 
@@ -220,8 +246,10 @@ Turbo AI Rules 采用三层存储策略，平衡性能、安全和用户体验�
 
 ### 7.3 敏感数据保护
 
-- **凭据加密**: Git Token 存储在 VSCode Secret Storage
-- **日志脱敏**: 日志中不输出完整路径和凭据
+- **首选 Secret**: Git Token 建议存储在 VS Code Secret Storage（`context.secrets`）
+- **用户设置可选**: 如用户明确选择将 Token 存于用户配置（Settings），需在 UI 明示安全风险
+- **项目文件检测**: 检测到项目内配置文件出现 Token 或可疑凭据字段时，展示安全提醒并给出迁移到 Secret 的指引（不自动读取/上报内容）
+- **日志脱敏**: 日志中不输出凭据与敏感路径
 - **临时文件清理**: 异常退出时清理临时文件
 
 ---
@@ -249,3 +277,63 @@ Turbo AI Rules 采用三层存储策略，平衡性能、安全和用户体验�
 ---
 
 > **返回**: [01-design.md](./01-design.md) - 产品整体设计
+
+---
+
+## 9. Webview 与扩展通信（指引）
+
+> 详见《07-webview-best-practices》，此处给出与存储/同步相关的通信约定（设计指引层面）。
+
+### 9.1 消息信封（Envelope）
+
+- 基本结构：
+
+```json
+{
+  "id": "uuid",
+  "type": "sources.sync",
+  "payload": { "sourceId": "..." },
+  "meta": { "schemaVersion": 1, "panelId": "search" }
+}
+```
+
+- 类型命名：`domain.action`（如 `sources.add`、`rules.search`、`sync.start`）
+- 兼容性：`meta.schemaVersion` 用于协议升级兼容
+
+### 9.2 请求/响应与错误
+
+- 响应结构：
+
+```json
+{ "id": "uuid", "ok": true, "data": {} }
+```
+
+- 错误结构（统一错误码）：
+
+```json
+{
+  "id": "uuid",
+  "ok": false,
+  "error": { "code": "TAI-2002", "message": "克隆失败", "hint": "请检查网络或访问凭据" }
+}
+```
+
+### 9.3 长任务进度与取消
+
+- 进度事件：`type: "progress"`，`payload: { id, phase, percent, message }`
+- 取消机制：`type: "cancel"` + `payload: { id }`，扩展端应支持可取消的同步/解析
+
+### 9.4 订阅模式（快照 + 变更）
+
+- `getAndSubscribe`：首次返回快照（如当前索引/状态），随后通过 `rules.updated`、`sync.status` 推送变更
+- 用途：搜索结果、同步状态、当前源详情等需要实时刷新的 UI
+
+### 9.5 安全约束
+
+- 严禁在消息中传递 Token/敏感信息
+- 对用户输入做转义/校验，前端遵循 CSP，资源 URI 必须通过 `webview.asWebviewUri` 转换
+
+### 9.6 与存储的一致性
+
+- Webview 只通过消息访问数据；一切持久化变更由扩展端落盘到 `.ai-rules/` 与可见生成物
+- 可见生成物的更新以 `manifest.json` 为准，更新完成后广播状态事件以驱动 UI 刷新
