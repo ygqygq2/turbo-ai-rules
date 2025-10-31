@@ -464,7 +464,189 @@ sequenceDiagram
 - 运行时：EventEmitter
 - 持久化：vscode.Memento
 
-### 2. 组件架构
+### 2. CSS 变量使用规范 ⚠️
+
+#### 2.1 核心原则
+
+**禁止硬编码颜色**：生产代码中不允许使用 `#000000`、`rgb(0,0,0)` 等硬编码颜色值。
+
+**必须使用 VS Code CSS 变量**：
+
+```css
+/* ✅ 正确示例 */
+.element {
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+}
+
+/* ❌ 错误示例 */
+.element {
+  color: #cccccc;
+  background-color: #1e1e1e;
+  border: 1px solid #454545;
+}
+```
+
+#### 2.2 设计迭代 vs 生产代码
+
+| 场景                             | CSS 变量策略           | 说明                          |
+| -------------------------------- | ---------------------- | ----------------------------- |
+| **设计迭代 HTML**                | `:root` 定义完整默认值 | 支持浏览器独立预览            |
+| `.superdesign/design_iterations` |                        |                               |
+| **生产 Webview**                 | 依赖 VS Code 注入      | 自动适配用户主题（明亮/暗黑） |
+| `src/webview/*/index.html`       |                        |                               |
+| **推荐方式**                     | 依赖注入 + 后备值      | 兼顾主题适配和健壮性          |
+
+#### 2.3 设计迭代 HTML 模板
+
+**用于浏览器独立预览**（`.superdesign/design_iterations/*.html`）：
+
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      :root {
+        /* 暗色主题默认值 - 仅用于设计预览 */
+        --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --vscode-font-size: 13px;
+        --vscode-foreground: #cccccc;
+        --vscode-descriptionForeground: #8c8c8c;
+        --vscode-editor-background: #1e1e1e;
+        --vscode-editorWidget-background: #252526;
+        --vscode-sideBar-background: #252526;
+        --vscode-editorWidget-border: #454545;
+        --vscode-focusBorder: #007fd4;
+        --vscode-button-background: #0e639c;
+        --vscode-button-foreground: #ffffff;
+        --vscode-list-hoverBackground: #2a2d2e;
+        --vscode-charts-green: #89d185;
+        --vscode-charts-blue: #75beff;
+        --vscode-charts-yellow: #cca700;
+        --vscode-charts-red: #f48771;
+        /* ... 更多变量 */
+      }
+
+      body {
+        font-family: var(--vscode-font-family);
+        color: var(--vscode-foreground);
+        background-color: var(--vscode-editor-background);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 设计内容 -->
+  </body>
+</html>
+```
+
+#### 2.4 生产 Webview 模板
+
+**用于 VS Code 扩展**（`src/webview/*/index.html`）：
+
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';"
+    />
+    <style>
+      /* 不定义 :root 变量，依赖 VS Code 注入 */
+
+      body {
+        font-family: var(--vscode-font-family);
+        color: var(--vscode-foreground);
+        /* 推荐：使用后备值确保健壮性 */
+        background-color: var(--vscode-editor-background, #1e1e1e);
+      }
+
+      .card {
+        background: var(--vscode-editorWidget-background);
+        border: 1px solid var(--vscode-editorWidget-border);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 生产内容 -->
+    <script nonce="${nonce}">
+      const vscode = acquireVsCodeApi();
+    </script>
+  </body>
+</html>
+```
+
+#### 2.5 常用 CSS 变量速查表
+
+**文本颜色**：
+
+```css
+--vscode-foreground                  /* 主要文本 */
+--vscode-descriptionForeground       /* 次要文本/灰色文本 */
+--vscode-errorForeground             /* 错误文本 */
+--vscode-editorWarning-foreground    /* 警告文本 */
+--vscode-textLink-foreground         /* 链接文本 */
+```
+
+**背景颜色**：
+
+```css
+--vscode-editor-background           /* 编辑器主背景 */
+--vscode-editorWidget-background     /* 组件背景（卡片、面板）*/
+--vscode-sideBar-background          /* 侧边栏背景 */
+--vscode-input-background            /* 输入框背景 */
+```
+
+**边框颜色**：
+
+```css
+--vscode-editorWidget-border         /* 组件边框 */
+--vscode-sideBar-border              /* 侧边栏边框 */
+--vscode-focusBorder                 /* 焦点边框（蓝色）*/
+```
+
+**交互状态**：
+
+```css
+--vscode-list-hoverBackground        /* 列表悬停背景 */
+--vscode-list-activeSelectionBackground    /* 列表选中背景 */
+--vscode-list-inactiveSelectionBackground  /* 列表非激活选中背景 */
+```
+
+**图表/状态颜色**：
+
+```css
+--vscode-charts-green    /* 成功/正常 #89d185 */
+--vscode-charts-blue     /* 信息 #75beff */
+--vscode-charts-yellow   /* 警告 #cca700 */
+--vscode-charts-red      /* 错误 #f48771 */
+--vscode-charts-purple   /* 特殊 #b180d7 */
+```
+
+完整变量列表：[VS Code Theme Colors](https://code.visualstudio.com/api/references/theme-color)
+
+#### 2.6 开发检查清单
+
+**设计迭代阶段**（SuperDesign 生成 HTML）：
+
+- [ ] ✅ 在 `:root` 中定义完整的 CSS 变量默认值
+- [ ] ✅ 可以在浏览器中独立预览（无白色背景问题）
+- [ ] ✅ 适配明亮和暗黑两种主题
+
+**集成到生产代码**（开发者实现 Webview Provider）：
+
+- [ ] ✅ 移除 `:root` 中的硬编码颜色值
+- [ ] ✅ 所有样式使用 `var(--vscode-*)` 变量
+- [ ] ✅ 关键样式添加后备值（可选但推荐）
+- [ ] ✅ 在 VS Code 的明亮/暗黑主题下测试
+- [ ] ✅ 配置正确的 CSP 策略
+
+### 3. 组件架构
 
 ```
 src/

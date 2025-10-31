@@ -30,14 +30,14 @@
 
 ```css
 /* 文本颜色 */
-color: var(--vscode-foreground);              /* 主要文本 */
-color: var(--vscode-descriptionForeground);   /* 次要文本 */
-color: var(--vscode-errorForeground);         /* 错误文本 */
+color: var(--vscode-foreground); /* 主要文本 */
+color: var(--vscode-descriptionForeground); /* 次要文本 */
+color: var(--vscode-errorForeground); /* 错误文本 */
 
 /* 背景颜色 */
-background-color: var(--vscode-editor-background);       /* 编辑器背景 */
+background-color: var(--vscode-editor-background); /* 编辑器背景 */
 background-color: var(--vscode-editorWidget-background); /* 组件背景 */
-background-color: var(--vscode-input-background);        /* 输入框背景 */
+background-color: var(--vscode-input-background); /* 输入框背景 */
 
 /* 边框 */
 border: 1px solid var(--vscode-editorWidget-border);
@@ -51,6 +51,94 @@ color: var(--vscode-button-foreground);
 background-color: var(--vscode-badge-background);
 color: var(--vscode-badge-foreground);
 ```
+
+### ⚠️ 设计迭代 HTML 特殊要求
+
+**问题场景**：
+
+- 设计迭代文件（`.superdesign/design_iterations/*.html`）需要在**浏览器中独立预览**
+- VS Code CSS 变量（`var(--vscode-*)`）在浏览器中**未定义**，导致白色背景问题
+
+**解决方案**：为设计迭代 HTML 提供完整的 CSS 变量定义
+
+**模板示例**：
+
+```css
+:root {
+  /* VS Code 主题变量 - 暗色主题默认值 */
+  --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  --vscode-font-size: 13px;
+  --vscode-foreground: #cccccc;
+  --vscode-descriptionForeground: #8c8c8c;
+  --vscode-errorForeground: #f48771;
+  --vscode-editorWarning-foreground: #cca700;
+
+  /* 背景色 */
+  --vscode-editor-background: #1e1e1e;
+  --vscode-editorWidget-background: #252526;
+  --vscode-sideBar-background: #252526;
+  --vscode-input-background: #3c3c3c;
+
+  /* 边框 */
+  --vscode-editorWidget-border: #454545;
+  --vscode-sideBar-border: #333333;
+  --vscode-focusBorder: #007fd4;
+
+  /* 按钮 */
+  --vscode-button-background: #0e639c;
+  --vscode-button-foreground: #ffffff;
+  --vscode-button-secondaryBackground: #3a3d41;
+  --vscode-button-secondaryForeground: #ffffff;
+
+  /* 列表 */
+  --vscode-list-hoverBackground: #2a2d2e;
+  --vscode-list-activeSelectionBackground: #094771;
+  --vscode-list-activeSelectionForeground: #ffffff;
+  --vscode-list-inactiveSelectionBackground: #37373d;
+
+  /* 图表颜色 */
+  --vscode-charts-green: #89d185;
+  --vscode-charts-blue: #75beff;
+  --vscode-charts-yellow: #cca700;
+  --vscode-charts-red: #f48771;
+  --vscode-charts-purple: #b180d7;
+
+  /* 其他 */
+  --vscode-badge-background: #4d4d4d;
+  --vscode-badge-foreground: #ffffff;
+  --vscode-checkbox-background: #3c3c3c;
+  --vscode-checkbox-border: #6c6c6c;
+  --vscode-checkbox-foreground: #f0f0f0;
+  --vscode-icon-foreground: #c5c5c5;
+}
+
+body {
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-editor-background);
+  margin: 0;
+  padding: 0;
+}
+```
+
+**重要说明**：
+
+1. **仅用于设计迭代**：这些硬编码的颜色值**仅用于** `.superdesign/design_iterations/` 目录下的 HTML 文件
+2. **生产代码禁止**：`src/webview/` 目录下的实际 Webview 实现**必须依赖** VS Code 注入的 CSS 变量
+3. **后备值推荐**：生产代码可以使用后备值确保健壮性：
+   ```css
+   background-color: var(--vscode-editor-background, #1e1e1e);
+   ```
+
+**对比说明**：
+
+| 文件类型                 | CSS 变量策略         | 原因                 |
+| ------------------------ | -------------------- | -------------------- |
+| 设计迭代 HTML            | `:root` 中定义完整值 | 支持浏览器独立预览   |
+| 生产 Webview (`src/`)    | 依赖 VS Code 注入    | 自动适配用户主题     |
+| 生产 Webview（推荐方式） | 依赖注入 + 后备值    | 兼顾主题适配和健壮性 |
 
 ### 响应式设计
 
@@ -94,8 +182,7 @@ color: var(--vscode-badge-foreground);
 - ✅ **备选**: [Lucide Icons](https://lucide.dev/)（通过 CDN）
 
 ```html
-<i class="codicon codicon-sync"></i>
-<i class="codicon codicon-add"></i>
+<i class="codicon codicon-sync"></i> <i class="codicon codicon-add"></i>
 ```
 
 ---
@@ -183,7 +270,8 @@ color: var(--vscode-badge-foreground);
 ---
 
 ## 🔨 设计工作流程
-强制：从 design_docs 目录读取设计文档，生成的 HTML 文件名和 design_docs 文件名一致（去掉 .md 后缀），并且加上 `_页面数字序号`。
+
+强制：从 design*docs 目录读取设计文档，生成的 HTML 文件名和 design_docs 文件名一致（去掉 .md 后缀），并且加上 `*页面数字序号`。
 这是因为一个页面可能有弹窗、按钮等不能同效，这样一个页面可能有多个页面，所以需要一个序号来区分。
 
 ### Step 1: 布局设计
@@ -257,7 +345,7 @@ color: var(--vscode-badge-foreground);
 1. 集成 VS Code Webview API
 2. 实现消息通信
 3. 配置 CSP 策略
-4. 文件路径：\`.superdesign/design_iterations/{页面名}_1.html\`
+4. 文件路径：\`.superdesign/design_iterations/{页面名}\_1.html\`
 
 **基本结构**：
 
@@ -302,7 +390,7 @@ color: var(--vscode-badge-foreground);
 1. **工具调用**：使用 \`write()\` 或 \`edit()\` 工具，不要只输出文本
 2. **逐步确认**：每个步骤等待用户确认
 3. **主题变量**：禁止硬编码颜色（如 \`#000\`, \`rgb(0,0,0)\`）
-4. **文件路径**：\`.superdesign/design_iterations/{页面名}_版本.html\`
+4. **文件路径**：\`.superdesign/design*iterations/{页面名}*版本.html\`
 
 ### 成功检查清单
 
