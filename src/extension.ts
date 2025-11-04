@@ -37,6 +37,8 @@ import { ConfigManager } from './services/ConfigManager';
 import { FileGenerator } from './services/FileGenerator';
 import { GitManager } from './services/GitManager';
 import { RulesManager } from './services/RulesManager';
+import { WorkspaceDataManager } from './services/WorkspaceDataManager';
+import { WorkspaceStateManager } from './services/WorkspaceStateManager';
 import { EXTENSION_NAME } from './utils/constants';
 import { Logger } from './utils/logger';
 
@@ -54,9 +56,25 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     // 1. 初始化服务
     const configManager = ConfigManager.getInstance(context);
+    const workspaceStateManager = WorkspaceStateManager.getInstance(context);
+    const workspaceDataManager = WorkspaceDataManager.getInstance();
     const _gitManager = GitManager.getInstance();
     const rulesManager = RulesManager.getInstance();
     const _fileGenerator = FileGenerator.getInstance();
+
+    // 初始化工作区数据目录（如果有工作区）
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (workspaceFolders && workspaceFolders.length > 0) {
+      await workspaceDataManager.initWorkspace(workspaceFolders[0].uri.fsPath);
+      Logger.info('Workspace data directory initialized', {
+        workspaceHash: workspaceDataManager.getWorkspaceHash(),
+      });
+    }
+
+    // 清理已删除源的 workspaceState 元数据
+    const sources = configManager.getSources();
+    const validSourceIds = sources.map((s) => s.id);
+    await workspaceStateManager.cleanupDeletedSources(validSourceIds);
 
     Logger.info('Services initialized');
 
@@ -85,8 +103,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         treeProvider.refresh();
       }),
 
-      vscode.commands.registerCommand('turbo-ai-rules.syncRules', async (sourceId?: string) => {
-        await syncRulesCommand(sourceId);
+      vscode.commands.registerCommand('turbo-ai-rules.syncRules', async (sourceId?: any) => {
+        // 兼容从 TreeView 上下文菜单触发的调用（会传入 TreeItem 对象）或直接传入字符串 ID
+        const actualSourceId =
+          typeof sourceId === 'object' && sourceId?.data?.source?.id
+            ? sourceId.data.source.id
+            : typeof sourceId === 'string'
+              ? sourceId
+              : undefined;
+
+        await syncRulesCommand(actualSourceId);
         treeProvider.refresh();
       }),
 

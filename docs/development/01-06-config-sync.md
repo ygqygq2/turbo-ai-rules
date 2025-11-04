@@ -1,6 +1,8 @@
 # 配置与同步策略
 
 > 本文档描述 Turbo AI Rules 的配置管理、同步调度和冲突解决策略。
+>
+> **设计原则**：遵循 VSCode 标准配置规范，用户可见可控，工作区隔离
 
 ---
 
@@ -8,95 +10,180 @@
 
 ### 1.1 配置层级
 
-Turbo AI Rules 支持多层级配置，优先级从高到低：
+Turbo AI Rules 遵循 VSCode 标准配置体系，支持两层配置：
 
 ```
-1. 工作区配置 (Workspace Settings)
-   • 项目特定配置
-   • 存储在 .vscode/settings.json
-   • 优先级最高
+1. Workspace Settings (工作区配置)
+   • 位置：<workspace>/.vscode/settings.json
+   • 优先级：最高
+   • 作用域：当前工作区
+   • 用途：项目特定的规则源配置
+   • 版本控制：可提交到 git，团队共享
 
-2. 用户配置 (User Settings)
-   • 跨项目的全局配置
-   • 存储在用户设置文件
-   • 作为默认值
+2. User Settings (用户配置)
+   • 位置：VSCode 用户设置
+   • 优先级：次之
+   • 作用域：全局所有工作区
+   • 用途：个人默认规则源配置
+   • 版本控制：不纳入版本控制
 
-3. 默认配置 (Default Settings)
-   • 扩展内置的默认值
-   • 代码中定义
-   • 兜底配置
+优先级规则：Workspace > User > Default
 ```
 
-### 1.2 配置结构
+### 1.2 存储策略
+
+#### Settings.json (配置存储)
+
+- **sources**: 规则源列表（User/Workspace 两层）
+- **storage**: 存储策略配置
+- **adapters**: AI 工具适配器配置
+- **sync**: 同步策略配置
+
+#### workspaceState (状态存储)
+
+**用途**：存储运行时临时状态，提升用户体验
+
+- ✅ `lastSyncTime`: 各规则源的上次同步时间
+- ✅ `sourceHashes`: 各规则源的内容哈希（用于增量检测）
+- ✅ `uiState`: UI 状态（如 TreeView 展开/折叠状态）
+- ✅ `cacheMetadata`: 缓存元数据（LRU 队列、过期时间）
+
+**不存储**：
+
+- ❌ sources 配置（改用 settings.json）
+- ❌ 用户可见配置（改用 settings.json）
+
+**数据结构示例**：
+
+```typescript
+// workspaceState 存储的临时状态
+{
+  "lastSyncTime": {
+    "source-id-1": "2024-01-20T10:00:00Z",
+    "source-id-2": "2024-01-20T10:05:00Z"
+  },
+  "sourceHashes": {
+    "source-id-1": "abc123def456",
+    "source-id-2": "789ghi012jkl"
+  },
+  "uiState": {
+    "expandedNodes": ["source-id-1", "category-typescript"]
+  }
+}
+```
+
+### 1.3 配置读取策略
+
+#### 配置合并规则
+
+伪代码逻辑：
+
+```
+function getSources():
+  # 1. 读取两层配置
+  workspaceSources = readConfig('turboAiRules.sources', WORKSPACE)
+  userSources = readConfig('turboAiRules.sources', USER)
+
+  # 2. 合并（工作区优先，ID 去重）
+  result = []
+  usedIds = Set()
+
+  for source in workspaceSources:
+    result.add(source with origin='Workspace')
+    usedIds.add(source.id)
+
+  for source in userSources:
+    if source.id not in usedIds:
+      result.add(source with origin='User')
+
+  return result
+```
+
+#### 配置来源追踪
+
+每个规则源需标注来源，用于 UI 显示和冲突提示：
+
+```
+RuleSourceWithOrigin {
+  ...RuleSource,
+  origin: 'Workspace' | 'User'
+}
+```
+
+### 1.4 配置结构
+
+### 1.4 配置结构
 
 完整的配置结构包含四大部分：
 
 ```
-ExtensionConfig
-├── sources           # 规则源配置
-│   ├── id            # 唯一标识 (kebab-case)
-│   ├── name          # 显示名称
-│   ├── gitUrl        # Git 仓库 URL
-│   ├── branch        # 分支名 (默认 main)
-│   ├── subPath       # 子目录路径 (可选)
-│   ├── enabled       # 是否启用
-│   ├── syncInterval  # 同步间隔 (秒)
-│   └── auth          # 认证配置
-│       ├── type      # none | token | ssh
-│       └── token     # Token (存储在 Secret Storage)
+ExtensionConfig (存储在 settings.json)
+├── sources[]           # 规则源配置列表
+│   ├── id             # 唯一标识 (kebab-case)
+│   ├── name           # 显示名称
+│   ├── gitUrl         # Git 仓库 URL
+│   ├── branch         # 分支名 (默认 main)
+│   ├── subPath        # 子目录路径 (可选)
+│   ├── enabled        # 是否启用
+│   ├── syncInterval   # 同步间隔 (秒)
+│   └── auth           # 认证配置
+│       ├── type       # none | token | ssh
+│       └── tokenKey   # Token 引用 (存于 Secret Storage)
 │
-├── storage           # 存储策略
-│   ├── useGlobalCache   # 是否使用全局缓存
-│   ├── projectLocalDir  # 项目本地目录
-│   └── autoGitignore    # 自动添加 .gitignore
+├── storage            # 存储策略
+│   └── globalCacheDir    # 全局缓存目录（默认 ~/.cache/.turbo-ai-rules）
 │
-├── adapters          # 适配器配置
-│   ├── cursor        # Cursor 适配器
-│   ├── copilot       # GitHub Copilot 适配器
-│   ├── continue      # Continue.dev 适配器
-│   └── custom        # 自定义适配器
+├── adapters           # 适配器配置
+│   ├── cursor         # Cursor 适配器
+│   ├── copilot        # GitHub Copilot 适配器
+│   ├── continue       # Continue.dev 适配器
+│   └── custom[]       # 自定义适配器列表
 │
-└── sync              # 同步策略
-    ├── auto          # 是否自动同步
-    ├── interval      # 自动同步间隔 (秒)
-    └── onStartup     # 启动时同步
+└── sync               # 同步策略
+    ├── auto           # 是否自动同步
+    ├── interval       # 自动同步间隔 (秒)
+    └── onStartup      # 启动时同步
 ```
 
-### 1.3 配置示例
+### 1.5 配置示例
 
-```json
+**Workspace Settings** (.vscode/settings.json):
+
+```jsonc
 {
   "turboAiRules.sources": [
     {
-      "id": "typescript-rules",
-      "name": "TypeScript Best Practices",
-      "gitUrl": "https://github.com/example/ts-rules.git",
+      "id": "company-standards",
+      "name": "Company Coding Standards",
+      "gitUrl": "https://github.com/company/coding-standards.git",
       "branch": "main",
-      "subPath": "rules",
       "enabled": true,
-      "syncInterval": 3600,
-      "auth": {
-        "type": "token"
-      }
+      "syncInterval": 7200,
+      "auth": { "type": "token" }
+    }
+  ],
+  "turboAiRules.adapters": {
+    "cursor": { "enabled": true, "autoUpdate": true },
+    "copilot": { "enabled": true, "autoUpdate": true }
+  }
+}
+```
+
+**User Settings**:
+
+```jsonc
+{
+  "turboAiRules.sources": [
+    {
+      "id": "personal-snippets",
+      "name": "My Personal Rules",
+      "gitUrl": "https://github.com/user/ai-rules.git",
+      "enabled": true,
+      "auth": { "type": "none" }
     }
   ],
   "turboAiRules.storage": {
-    "useGlobalCache": true,
-    "projectLocalDir": ".ai-rules",
-    "autoGitignore": true
-  },
-  "turboAiRules.adapters": {
-    "cursor": {
-      "enabled": true,
-      "autoUpdate": true
-    },
-    "copilot": {
-      "enabled": true,
-      "autoUpdate": true
-    },
-    "continue": {
-      "enabled": false
-    }
+    "globalCacheDir": "~/.cache/.turbo-ai-rules"
   },
   "turboAiRules.sync": {
     "auto": true,
@@ -104,6 +191,78 @@ ExtensionConfig
     "onStartup": true
   }
 }
+```
+
+**最终合并结果**：
+
+```
+显示的规则源列表：
+1. company-standards (Workspace) - enabled
+2. personal-snippets (User) - enabled
+
+TreeView 显示格式：
+├─ Company Coding Standards (Workspace)
+└─ My Personal Rules (User)
+```
+
+### 1.6 UI 交互设计
+
+#### 添加规则源流程
+
+```
+1. 用户触发命令 "Add Rule Source"
+   ↓
+2. 提示选择存储目标
+   • Workspace Settings (.vscode/settings.json)
+   • User Settings (全局配置)
+   ↓
+3. 输入 Git URL 和其他配置
+   ↓
+4. 写入对应的 settings.json
+   通过 vscode.workspace.getConfiguration().update(...)
+   ↓
+5. 刷新 TreeView 显示
+```
+
+#### TreeView 显示策略
+
+```
+规则源列表
+├─ [Workspace] Company Standards ⚡ (enabled)
+│  ├─ 规则统计：15 条
+│  ├─ 上次同步：2 小时前
+│  └─ 来源分支：main
+│
+└─ [User] Personal Rules (disabled)
+   ├─ 规则统计：8 条
+   └─ 未启用
+```
+
+**设计要点**：
+
+- ✅ 标注来源：[Workspace] 或 [User]
+- ✅ 状态图标：⚡ 启用 / 🚫 禁用
+- ✅ 右键菜单：提供"移动到 Workspace/User"操作
+
+### 1.7 配置迁移策略
+
+如果检测到旧版本的 workspaceState 中存有 sources 数据：
+
+```
+迁移流程：
+1. 检测 workspaceState.get('sources')
+   ↓
+2. 如果存在且非空
+   ↓
+3. 提示用户：
+   "检测到旧版本配置，是否迁移到 Workspace Settings？"
+   [迁移到 Workspace] [迁移到 User] [取消]
+   ↓
+4. 根据用户选择写入 settings.json
+   ↓
+5. 清除 workspaceState 中的 sources
+   ↓
+6. 刷新 UI
 ```
 
 ---
@@ -315,6 +474,296 @@ ExtensionConfig
 - **内存限制**: 监控内存使用，避免内存溢出
 - **磁盘空间**: 检查磁盘空间，不足时提示清理
 - **进程管理**: 使用子进程执行 Git 操作，避免阻塞主进程
+
+---
+
+## 9. workspaceState 使用规范
+
+### 9.1 存储原则
+
+**✅ 适合存储的数据**：
+
+- 运行时临时状态
+- UI 状态（展开/折叠/选中）
+- 性能优化数据（缓存元数据）
+- 用户不需要直接编辑的数据
+
+**❌ 不适合存储的数据**：
+
+- 用户配置（使用 settings.json）
+- 业务核心数据（使用 settings.json 或文件）
+- 需要版本控制的数据
+- 需要跨工作区共享的数据
+
+### 9.2 存储内容定义
+
+```
+workspaceState 存储内容（轻量级，< 10KB）：
+
+├── syncMetadata          # 同步元数据
+│   ├── lastSyncTime     # Map<sourceId, timestamp>
+│   └── sourceHashes     # Map<sourceId, contentHash>
+│
+├── uiState              # UI 状态
+│   ├── expandedNodes    # TreeView 展开的节点 ID[]
+│   ├── selectedSource   # 当前选中的源 ID
+│   └── sortOrder        # 排序方式
+│
+└── cacheMetadata        # 缓存元数据
+    ├── lruQueue         # LRU 缓存队列（规则 ID 列表）
+    └── lastCleanup      # 上次缓存清理时间
+```
+
+**较大数据存储在全局缓存**（按工作区路径哈希隔离）：
+
+```
+~/.cache/.turbo-ai-rules/workspaces/<workspace-hash>/
+├── rules.index.json          # 规则索引（完整）
+├── search.index.json         # 搜索索引（倒排）
+└── generation.manifest.json  # 生成清单
+```
+
+**数据分配原则**：
+
+| 数据类型          | 存储位置          | 判断依据           |
+| ----------------- | ----------------- | ------------------ |
+| 频繁读写 + 小数据 | workspaceState    | 同步时间、UI 状态  |
+| 大数据 + 按需读取 | 全局缓存          | 规则索引、搜索索引 |
+| 共享数据          | 全局缓存 sources/ | Git 仓库、规则全文 |
+
+### 9.3 工作区哈希策略
+
+**哈希计算**：
+
+```
+function getWorkspaceHash(workspacePath: string): string {
+  // 使用 SHA256 前 16 位作为目录名
+  return sha256(normalize(workspacePath)).substring(0, 16);
+}
+```
+
+**路径规范化**：
+
+- 统一路径分隔符（`/`）
+- 解析软链接到真实路径
+- 转换为绝对路径
+- 确保跨平台一致性
+
+**冲突处理**：
+
+- SHA256 前 16 位碰撞概率极低（2^64 种可能）
+- 如发生碰撞，通过 `workspacePath` 字段验证
+- 不匹配时警告用户并重新生成
+
+### 9.4 数据生命周期
+
+```
+生命周期管理：
+1. 创建：首次激活时初始化
+2. 更新：运行时按需更新
+3. 清理：
+   • 用户卸载扩展时自动清理
+   • 提供手动清理命令（调试用）
+4. 迁移：版本升级时迁移旧数据
+```
+
+### 9.4 数据生命周期
+
+```
+生命周期管理：
+
+workspaceState（轻量级）:
+  1. 创建：首次激活工作区时初始化
+  2. 更新：同步完成、UI 交互时更新
+  3. 清理：VSCode 关闭工作区时自动保存
+  4. 删除：工作区删除时自动清理
+
+全局缓存索引（按工作区隔离）:
+  1. 创建：首次同步规则时创建工作区哈希目录
+  2. 更新：规则变化时增量更新索引文件
+  3. 验证：启动时验证 workspacePath 是否匹配
+  4. 清理：
+     • 自动：检测到工作区不存在时标记待删
+     • 手动：提供命令清理孤立工作区数据
+     • 定期：超过 N 天未访问的工作区数据
+```
+
+### 9.5 性能考虑
+
+**workspaceState 读写**：
+
+- 读取频率：TreeView 刷新、同步检查
+- 写入频率：同步完成、UI 交互
+- 数据大小：< 10KB（元数据级别）
+- 读写性能：内存操作，毫秒级
+
+**全局缓存索引读写**：
+
+- 读取频率：启动、搜索、规则详情查看
+- 写入频率：同步完成、规则更新
+- 数据大小：无限制（磁盘文件）
+- 读写性能：文件 IO，需缓存优化
+
+**优化策略**：
+
+- 索引文件使用 LRU 缓存（内存）
+- 增量更新，避免全量重写
+- 异步写入，不阻塞 UI
+- 批量操作，减少 IO 次数
+
+### 9.6 数据迁移策略
+
+如果检测到旧版本数据需要迁移：
+
+```
+迁移流程：
+1. 检测旧数据格式（version 字段）
+   ↓
+2. 读取旧数据并转换为新格式
+   ↓
+3. 验证新数据完整性
+   ↓
+4. 写入新格式数据
+   ↓
+5. 清理旧格式数据
+   ↓
+6. 记录迁移日志
+```
+
+---
+
+## 10. 配置冲突场景与处理
+
+### 10.1 ID 冲突
+
+**场景**：Workspace 和 User settings 配置了相同 ID 的源
+
+```jsonc
+// User Settings
+{ "id": "common-rules", "gitUrl": "https://user-repo.git" }
+
+// Workspace Settings
+{ "id": "common-rules", "gitUrl": "https://workspace-repo.git" }
+```
+
+**处理策略**：
+
+```
+1. Workspace 优先（标准 VSCode 行为）
+2. UI 显示：
+   ├─ [Workspace] Common Rules (active) ⚡
+   └─ [User] Common Rules (overridden) 🚫
+3. Tooltip 提示：
+   "此源被 Workspace 配置覆盖，点击查看详情"
+```
+
+### 10.2 多工作区文件夹场景
+
+**场景**：多根工作区（Multi-root Workspace）
+
+```
+workspace.code-workspace
+├─ folder-A/.vscode/settings.json
+│  └─ sources: [source-A]
+│
+└─ folder-B/.vscode/settings.json
+   └─ sources: [source-B]
+```
+
+**处理策略**：
+
+```
+聚合显示策略：
+1. 读取所有 WorkspaceFolder 的配置
+2. 合并显示，标注来源 Folder
+3. TreeView 结构：
+   ├─ [Folder A] Source A
+   ├─ [Folder B] Source B
+   └─ [User] Source C
+```
+
+### 10.3 配置变更检测
+
+**监听机制**：
+
+```
+vscode.workspace.onDidChangeConfiguration((e) => {
+  if (e.affectsConfiguration('turboAiRules')) {
+    // 1. 重新读取配置
+    // 2. 比对变化
+    // 3. 刷新 TreeView
+    // 4. 如果 sources 变化 → 触发增量同步
+  }
+})
+```
+
+---
+
+## 11. 最佳实践建议
+
+### 11.1 团队协作场景
+
+**推荐做法**：
+
+```jsonc
+// .vscode/settings.json（提交到 git）
+{
+  "turboAiRules.sources": [
+    {
+      "id": "team-standards",
+      "gitUrl": "https://github.com/company/standards.git",
+      "enabled": true
+    }
+  ]
+}
+
+// 个人 User Settings（不提交）
+{
+  "turboAiRules.sources": [
+    {
+      "id": "personal-preferences",
+      "gitUrl": "https://github.com/me/preferences.git",
+      "enabled": true
+    }
+  ]
+}
+```
+
+**效果**：
+
+- ✅ 团队成员共享统一规范（team-standards）
+- ✅ 个人保留自定义规则（personal-preferences）
+- ✅ 配置透明可审查
+
+### 11.2 个人项目场景
+
+**推荐做法**：
+
+- 将常用规则源配置在 User Settings
+- 项目特定规则配置在 Workspace Settings
+- 善用 `enabled` 字段临时禁用某些源
+
+### 11.3 CI/CD 集成场景
+
+**场景**：在 CI 环境中使用扩展
+
+```bash
+# .github/workflows/lint.yml
+steps:
+  - name: Install VSCode Extension
+    run: code --install-extension ygqygq2.turbo-ai-rules
+
+  - name: Configure via settings.json
+    run: |
+      mkdir -p .vscode
+      echo '{
+        "turboAiRules.sources": [{
+          "id": "ci-rules",
+          "gitUrl": "${{ secrets.RULES_REPO }}",
+          "enabled": true
+        }]
+      }' > .vscode/settings.json
+```
 
 ---
 

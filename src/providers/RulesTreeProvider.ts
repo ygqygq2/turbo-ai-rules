@@ -225,6 +225,10 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
       }
     }
 
+    Logger.debug('RulesTreeProvider getting sources', {
+      workspaceFolder: workspaceFolder?.name,
+    });
+
     const sources = this.configManager.getSources(workspaceFolder?.uri);
 
     if (sources.length === 0) {

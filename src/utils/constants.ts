@@ -21,27 +21,36 @@ export const CONFIG_PREFIX = 'turbo-ai-rules';
 
 /**
  * 全局缓存目录
- * 使用 XDG 规范：优先 XDG_CACHE_HOME，否则 ~/.cache/turbo-ai-rules
+ * Linux: ~/.cache/.turbo-ai-rules/
+ * macOS: ~/Library/Caches/.turbo-ai-rules/
+ * Windows: %LOCALAPPDATA%\.turbo-ai-rules\
  */
-export const GLOBAL_CACHE_DIR = resolveCachePath();
+export const GLOBAL_CACHE_DIR = resolveCachePath(undefined, '.turbo-ai-rules');
 
 /**
  * 全局配置目录
  * 用于存储本地配置文件（不同步到 VSCode Settings Sync）
- * 使用 XDG 规范：优先 XDG_CONFIG_HOME，否则 ~/.config/turbo-ai-rules (Linux/macOS)
- * 或 %LOCALAPPDATA%/turbo-ai-rules (Windows)
+ * Linux/macOS: ~/.config/.turbo-ai-rules/ (XDG 规范)
+ * Windows: %LOCALAPPDATA%\.turbo-ai-rules\
  */
-export const GLOBAL_CONFIG_DIR = resolveConfigPath();
+export const GLOBAL_CONFIG_DIR = resolveConfigPath(undefined, '.turbo-ai-rules');
 
 /**
- * 项目级配置目录
+ * 项目级配置目录（已废弃，不再使用）
+ * 新存储策略：项目目录零污染
+ * @deprecated
  */
 export const PROJECT_CONFIG_DIR = '.turbo-ai-rules';
 
 /**
- * 源缓存目录（相对于 GLOBAL_CACHE_DIR）
+ * 规则源缓存目录（相对于 GLOBAL_CACHE_DIR）
  */
 export const SOURCES_CACHE_DIR = 'sources';
+
+/**
+ * 工作区数据目录（相对于 GLOBAL_CACHE_DIR）
+ */
+export const WORKSPACES_DATA_DIR = 'workspaces';
 
 /**
  * 默认分支

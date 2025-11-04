@@ -7,10 +7,17 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { MdcParser } from '../parsers/MdcParser';
+import { RulesValidator } from '../parsers/RulesValidator';
 import { ConfigManager } from '../services/ConfigManager';
+import { FileGenerator } from '../services/FileGenerator';
+import { GitManager } from '../services/GitManager';
 import { RulesManager } from '../services/RulesManager';
-import type { ParsedRule, RuleSource } from '../types';
+import type { GitAuthentication, ParsedRule, RuleSource } from '../types';
+import { PROJECT_CONFIG_DIR } from '../utils/constants';
+import { ensureIgnored } from '../utils/gitignore';
 import { Logger } from '../utils/logger';
+import { validateBranchName, validateGitUrl } from '../utils/validator';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 
 /**
@@ -368,6 +375,10 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
   protected async handleMessage(message: WebviewMessage): Promise<void> {
     try {
       switch (message.type) {
+        case 'addSource':
+          await this.handleAddSource(message.payload);
+          break;
+
         case 'refresh':
           await this.loadAndSendData();
           break;
@@ -412,6 +423,238 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
         },
       });
     }
+  }
+
+  /**
+   * @description 处理添加规则源
+   * @return default {Promise<void>}
+   * @param payload {any}
+   */
+  private async handleAddSource(payload: any): Promise<void> {
+    try {
+      // 1. 验证输入
+      if (!payload || !payload.name || !payload.gitUrl) {
+        throw new Error('Source name and Git URL are required');
+      }
+
+      // 验证 Git URL
+      if (!validateGitUrl(payload.gitUrl)) {
+        throw new Error('Invalid Git URL format');
+      }
+
+      // 验证分支名
+      if (payload.branch && !validateBranchName(payload.branch)) {
+        throw new Error('Invalid branch name');
+      }
+
+      // 2. 生成源 ID
+      const sourceId = this.generateSourceId(payload.gitUrl);
+
+      // 3. 检查是否已存在
+      const configManager = ConfigManager.getInstance(this.context);
+      const existingSource = configManager.getSourceById(sourceId);
+      if (existingSource) {
+        throw new Error('A source with this repository URL already exists');
+      }
+
+      // 4. 构建认证配置
+      let authentication: GitAuthentication | undefined;
+      if (payload.authType === 'token' && payload.token) {
+        authentication = {
+          type: 'token',
+          token: payload.token,
+        };
+      } else if (payload.authType === 'ssh' && payload.sshKeyPath) {
+        authentication = {
+          type: 'ssh',
+          sshKeyPath: payload.sshKeyPath,
+          sshPassphrase: payload.sshPassphrase,
+        };
+      }
+
+      // 5. 构建规则源对象
+      const source: RuleSource = {
+        id: sourceId,
+        name: payload.name,
+        gitUrl: payload.gitUrl,
+        branch: payload.branch || 'main',
+        subPath: payload.subPath || '/',
+        enabled: true,
+        syncInterval: 0, // 默认不自动同步
+      };
+
+      // 6. 发送进度状态
+      this.postMessage({
+        type: 'addSourceStatus',
+        payload: {
+          status: 'cloning',
+          message: 'Cloning repository...',
+        },
+      });
+
+      // 7. 克隆仓库
+      const gitManager = GitManager.getInstance();
+
+      // 如果有认证信息，保存到 secrets
+      if (authentication) {
+        await this.context.secrets.store(
+          `turboAiRules.auth.${sourceId}`,
+          JSON.stringify(authentication),
+        );
+      }
+
+      await gitManager.cloneRepository(source);
+
+      // 8. 解析规则
+      this.postMessage({
+        type: 'addSourceStatus',
+        payload: {
+          status: 'parsing',
+          message: 'Parsing rules...',
+        },
+      });
+
+      const localPath = gitManager.getSourcePath(sourceId);
+      let subPath = source.subPath || '/';
+      if (!subPath.startsWith('/')) {
+        subPath = '/' + subPath;
+      }
+      const rulesPath = subPath === '/' ? localPath : path.join(localPath, subPath.substring(1));
+
+      const parser = new MdcParser();
+      const validator = new RulesValidator();
+      const parsedRules = await parser.parseDirectory(rulesPath, sourceId, {
+        recursive: true,
+        maxDepth: 6,
+        maxFiles: 500,
+      });
+
+      const rulesWithSource = parsedRules.map((rule) => ({
+        ...rule,
+        sourceId,
+      }));
+
+      const validRules = validator.getValidRules(rulesWithSource);
+
+      // 9. 添加规则到管理器
+      const rulesManager = RulesManager.getInstance();
+      rulesManager.addRules(sourceId, validRules);
+
+      // 10. 保存源到配置
+      source.lastSync = new Date().toISOString();
+      await configManager.addSource(source);
+
+      // 11. 生成配置文件
+      this.postMessage({
+        type: 'addSourceStatus',
+        payload: {
+          status: 'generating',
+          message: 'Generating config files...',
+        },
+      });
+
+      // 获取工作区根目录
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      if (workspaceFolder) {
+        const workspaceRoot = workspaceFolder.uri.fsPath;
+        const config = await configManager.getConfig(workspaceFolder.uri);
+
+        const fileGenerator = FileGenerator.getInstance();
+        fileGenerator.initializeAdapters(config.adapters);
+
+        const mergedRules = rulesManager.mergeRules(config.sync.conflictStrategy || 'priority');
+        await fileGenerator.generateAll(
+          mergedRules,
+          workspaceRoot,
+          config.sync.conflictStrategy || 'priority',
+        );
+
+        // 12. 更新 .gitignore
+        await ensureIgnored(workspaceRoot, [PROJECT_CONFIG_DIR]);
+      }
+
+      // 13. 发送成功状态
+      this.postMessage({
+        type: 'addSourceStatus',
+        payload: {
+          status: 'success',
+          message: 'Source added successfully',
+          sourceId,
+        },
+      });
+
+      // 14. 显示成功通知
+      vscode.window.showInformationMessage(
+        `Successfully added source: ${source.name} (${validRules.length} rules)`,
+      );
+
+      // 15. 刷新 TreeView
+      await vscode.commands.executeCommand('turbo-ai-rules.refresh');
+
+      // 16. 切换到详情模式
+      this.currentSourceId = sourceId;
+      await this.loadAndSendData();
+
+      Logger.info('Source added successfully', {
+        sourceId,
+        name: source.name,
+        ruleCount: validRules.length,
+      });
+    } catch (error) {
+      Logger.error('Failed to add source', error instanceof Error ? error : undefined);
+
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      // 发送错误状态到前端
+      this.postMessage({
+        type: 'addSourceStatus',
+        payload: {
+          status: 'error',
+          message: errorMessage,
+        },
+      });
+
+      // 显示错误通知
+      vscode.window.showErrorMessage(`Failed to add source: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * @description 生成源 ID（基于 Git URL）
+   * @return default {string}
+   * @param gitUrl {string}
+   */
+  private generateSourceId(gitUrl: string): string {
+    // 标准化 URL（移除 .git 后缀、尾部斜杠）
+    const normalizedUrl = gitUrl
+      .toLowerCase()
+      .replace(/\.git$/, '')
+      .replace(/\/$/, '');
+
+    // 从 URL 中提取仓库名
+    const match = normalizedUrl.match(/\/([^/]+?)$/);
+    const repoName = match ? match[1] : 'source';
+
+    // 使用简单的哈希函数生成稳定的 ID
+    const hash = this.hashCode(normalizedUrl);
+
+    return `${repoName}-${hash}`;
+  }
+
+  /**
+   * @description 简单的字符串哈希函数（Java hashCode 算法）
+   * @return default {string} 8 位的十六进制字符串
+   * @param str {string}
+   */
+  private hashCode(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    // 转换为无符号 32 位整数并转为 16 进制，填充到 8 位
+    return (hash >>> 0).toString(16).padStart(8, '0');
   }
 
   /**

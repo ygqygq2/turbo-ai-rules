@@ -58,9 +58,9 @@ Git 规则仓库 ──→ [Turbo AI Rules] ──→ AI 工具配置文件
 
 **默认行为**:
 
-- 全局缓存路径: `~/.turbo-ai-rules/sources/`
-- 项目本地路径: `.ai-rules/`
-- 自动添加到 `.gitignore`
+- 全局缓存路径: `~/.cache/.turbo-ai-rules/`
+- 所有数据存储在全局缓存（不在项目目录创建文件）
+- 生成的 AI 配置文件可提交到 git
 - 默认启用 GitHub Copilot 适配器
 
 **可配置项**:

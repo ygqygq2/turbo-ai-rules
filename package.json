@@ -149,6 +149,12 @@
         "title": "View Source Details",
         "category": "Turbo AI Rules",
         "icon": "$(info)"
+      },
+      {
+        "command": "turbo-ai-rules.clearWorkspaceState",
+        "title": "Clear Workspace State (Debug)",
+        "category": "Turbo AI Rules",
+        "icon": "$(trash)"
       }
     ],
     "views": {
@@ -250,6 +256,69 @@
     "configuration": {
       "title": "%configuration.title%",
       "properties": {
+        "turbo-ai-rules.sources": {
+          "type": "array",
+          "default": [],
+          "scope": "resource",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "gitUrl"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9-]+$",
+                "description": "Unique identifier for the rule source"
+              },
+              "name": {
+                "type": "string",
+                "description": "Display name of the rule source"
+              },
+              "gitUrl": {
+                "type": "string",
+                "description": "Git repository URL (HTTPS or SSH)"
+              },
+              "branch": {
+                "type": "string",
+                "default": "main",
+                "description": "Git branch to use"
+              },
+              "subPath": {
+                "type": "string",
+                "default": "/",
+                "description": "Subdirectory path within the repository"
+              },
+              "enabled": {
+                "type": "boolean",
+                "default": true,
+                "description": "Whether this source is enabled"
+              },
+              "authentication": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "token",
+                      "ssh"
+                    ],
+                    "default": "none",
+                    "description": "Authentication type"
+                  },
+                  "token": {
+                    "type": "string",
+                    "description": "Git token (stored in secret storage)"
+                  }
+                },
+                "description": "Authentication configuration"
+              }
+            }
+          },
+          "description": "Rule sources configuration"
+        },
         "turbo-ai-rules.storage.useLocalConfig": {
           "type": "boolean",
           "default": false,
@@ -543,6 +612,7 @@
     "@types/node": "~24.9.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
+    "@types/sinon": "^17.0.4",
     "@types/tmp": "^0.2.6",
     "@types/vscode": "^1.105.0",
     "@vitejs/plugin-react": "^5.1.0",
@@ -565,6 +635,7 @@
     "react-dom": "^19.2.0",
     "rimraf": "^6.0.1",
     "simple-git-hooks": "^2.13.1",
+    "sinon": "^21.0.0",
     "tmp": "^0.2.5",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",

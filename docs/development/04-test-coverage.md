@@ -1,158 +1,460 @@
-# 集成测试完整性说明
+# 测试规范与指引
 
-## 测试覆盖范围
+## 测试策略
 
-### 1. 核心功能测试
+Turbo AI Rules 采用**分层测试策略**，确保代码质量和功能稳定性：
 
-#### 同步功能 (syncRules.test.ts)
+- **单元测试（Vitest）**：快速、隔离、高覆盖率，测试单个模块的逻辑正确性
+- **集成测试（Mocha）**：真实环境、端到端验证，测试模块间协作和实际功能
 
-- ✅ 从预配置源同步规则
-- ✅ 同步过程错误处理
-- ✅ 生成适配器输出文件
-- ✅ 验证配置文件存在
+## 测试原则
 
-#### 源管理 (addSource.test.ts, removeSource.test.ts, manageSource.test.ts)
+### 1. 必须通过原则
 
-- ✅ 添加新规则源
-- ✅ 删除已有规则源
-- ✅ 管理多个规则源
-- ✅ 启用/禁用规则源
+**所有新增测试必须 100% 通过**，不允许提交失败的测试用例。如果测试失败：
 
-#### 配置生成 (generateConfigs.test.ts)
+- 修复代码使测试通过
+- 或修改测试使其符合实际代码行为
+- 或删除不合理的测试
 
-- ✅ 重新生成配置文件（不重新同步）
-- ✅ 多适配器同时生成
-- ✅ 验证输出格式正确
+### 2. 真实性原则
 
-### 2. 适配器测试
+测试必须基于**实际代码实现**，而不是理想化的假设：
 
-#### 单适配器测试
+- 验证逻辑符合代码实际行为
+- Mock 数据符合实际数据结构
+- 正则表达式、验证规则与代码一致
 
-每个测试工作区测试一个主要适配器：
+### 3. 隔离性原则
 
-- **rules-for-cursor**: Cursor `.cursorrules` 目录输出
-- **rules-for-copilot**: Copilot `.github/copilot-instructions.md` 单文件输出
-- **rules-for-continue**: Continue `.continue/config.json` JSON 配置输出
-- **rules-for-default**: 自定义适配器 `rules/` 目录输出
+- 每个测试独立运行，不依赖执行顺序
+- 测试间不共享状态
+- 使用 `beforeEach` 初始化，`afterEach` 清理
 
-#### 多适配器测试 (multiSource.test.ts)
+### 4. 可读性原则
 
-- ✅ 同时启用多个适配器
-- ✅ 验证每个适配器独立工作
-- ✅ 验证不同输出格式兼容性
+- 测试名称清晰描述测试内容
+- 一个测试只验证一个行为
+- 使用 `describe` 分组相关测试
 
-### 3. 高级功能测试
+## 测试分类与职责
 
-#### 多源冲突解决 (multiSource.test.ts)
+### 单元测试 (`src/test/unit/**/*.spec.ts`)
 
-- ✅ 多个规则源配置
-- ✅ 冲突策略 (`priority`) 测试
-- ✅ 规则合并逻辑验证
-- ✅ 重复 ID 处理
+**适用场景**：
 
-#### 用户规则保护 (userRulesProtection.test.ts)
+- 工具函数（validator、fileSystem、path）
+- 解析器（MdcParser、RulesValidator）
+- 服务类的单个方法（GitManager、ConfigManager）
+- 适配器的格式转换（CursorAdapter、CopilotAdapter）
 
-- ✅ 用户手动创建的规则文件保护
-- ✅ 同步后用户规则保持不变
-- ✅ `.gitignore` 正确配置
-- ✅ 混合规则管理
+**编写规范**：
 
-### 4. Git 功能测试
+```typescript
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-#### 认证类型
+describe('模块名 单元测试', () => {
+  beforeEach(() => {
+    // 初始化
+  });
 
-虽然集成测试只使用公开仓库（无需认证），但代码支持：
+  describe('方法名', () => {
+    it('应该返回预期结果', () => {
+      // Arrange: 准备数据
+      const input = 'test';
 
-- 公开仓库（type: "none"）✅ 测试覆盖
-- HTTPS Token 认证 ⚠️ 单元测试覆盖
-- SSH Key 认证 ⚠️ 单元测试覆盖
+      // Act: 执行操作
+      const result = functionUnderTest(input);
 
-#### Git 操作
+      // Assert: 验证结果
+      expect(result).toBe('expected');
+    });
+  });
+});
+```
 
-- ✅ 克隆公开仓库
-- ✅ 拉取更新 (git pull)
-- ✅ 分支切换
-- ✅ SubPath 过滤
+**命名规范**：
 
-### 5. 配置管理测试
+- 文件名：`ModuleName.spec.ts`（如 `GitManager.spec.ts`）
+- 测试组：`describe('模块名 单元测试', ...)`
+- 测试用例：`it('应该...', ...)` 或 `it('应该在...时...', ...)`
 
-#### 配置读取
+### 集成测试 (`src/test/suite/**/*.test.ts`)
 
-- ✅ 工作区级别配置
-- ✅ 多根工作区支持
-- ✅ 配置合并策略
+**适用场景**：
 
-#### 配置存储
+- 命令执行流程（addSource、syncRules）
+- 多模块协作（同步 + 解析 + 生成）
+- 文件系统操作（读写配置文件）
+- VSCode API 交互（工作区、配置、通知）
 
-- ✅ 项目级配置 (`.turbo-ai-rules/`)
-- ⚠️ 全局配置 (`~/.config/turbo-ai-rules/`) - 单元测试覆盖
+**测试工作区**：
+每个场景在 `sampleWorkspace/` 下有独立目录，包含：
 
-### 6. 文件系统测试
+- `.vscode/settings.json` - 测试配置
+- `README.md` - 场景说明
+- 可选的测试数据
 
-#### 文件生成
+**命名规范**：
 
-- ✅ 适配器输出文件生成
-- ✅ 目录结构创建
-- ✅ 索引文件生成（自定义适配器）
+- 文件名：`featureName.test.ts`（如 `syncRules.test.ts`）
+- 测试组：`describe('Feature Tests', ...)`
 
-#### 文件保护
+## 关键模块测试要求
 
-- ✅ 用户规则不被覆盖
-- ✅ `.gitignore` 自动更新
-- ✅ 缓存目录管理
+### GitManager 测试要点
+
+- ✅ URL 验证（支持的格式和不支持的格式）
+- ✅ 分支名验证（符合实际正则表达式）
+- ✅ 路径安全性（防目录遍历）
+- ✅ 仓库存在性检测
+- ✅ 错误处理（网络失败、权限不足）
+
+### RulesValidator 测试要点
+
+- ✅ 必填字段验证（id、title、content）
+- ✅ ID 格式验证（kebab-case）
+- ✅ 内容长度检查（过短/过长警告）
+- ✅ 元数据验证（version、tags、priority）
+- ✅ 批量验证和过滤
+
+### 适配器测试要点
+
+- ✅ 格式转换正确性
+- ✅ 输出路径计算
+- ✅ 空规则处理
+- ✅ 特殊字符转义
+- ✅ 多文件输出（CustomAdapter）
+
+### 命令测试要点
+
+- ✅ 正常流程验证
+- ✅ 错误处理（无工作区、无源、网络失败）
+- ✅ 用户提示（信息、警告、错误）
+- ✅ 配置状态变更
+
+## Mock 使用指南
+
+### Mock VSCode API
+
+```typescript
+// 在 setup.ts 中统一 mock
+vi.mock('vscode', () => ({
+  window: {
+    showInformationMessage: vi.fn(),
+    showErrorMessage: vi.fn(),
+    withProgress: vi.fn(async (_options, task) => {
+      return task({ report: vi.fn() }, { checkCancellation: vi.fn() });
+    }),
+  },
+  workspace: {
+    getConfiguration: vi.fn(() => ({
+      get: vi.fn(),
+      update: vi.fn(),
+    })),
+    workspaceFolders: [],
+  },
+}));
+```
+
+### Mock 外部依赖
+
+```typescript
+// Mock simple-git
+vi.mock('simple-git', () => ({
+  default: vi.fn(() => ({
+    clone: vi.fn(),
+    pull: vi.fn(),
+    checkout: vi.fn(),
+  })),
+}));
+
+// Mock 文件系统
+vi.mock('@/utils/fileSystem', () => ({
+  pathExists: vi.fn(),
+  ensureDir: vi.fn(),
+  safeRemove: vi.fn(),
+}));
+```
+
+## 测试场景覆盖
+
+### 核心功能（必须覆盖）
+
+- 规则源管理（增删改查）
+- 规则同步（克隆、拉取、解析）
+- 配置生成（单适配器、多适配器）
+- 冲突解决（priority 策略）
+- 用户规则保护
 
 ## 测试方法
 
-### 单元测试 (Vitest)
+### 高级功能（推荐覆盖）
 
-**位置**: `src/test/unit/**/*.spec.ts`
+- Git 认证（Token、SSH）
+- 错误恢复机制
+- 性能优化（大仓库、深目录）
+- 边缘情况（网络失败、权限不足）
 
-**覆盖范围**:
+### 手动测试场景
 
-- 工具函数 (utils/)
-- 解析器 (parsers/)
-- 服务类 (services/)
-- 适配器 (adapters/)
-- 类型验证 (types/)
+某些场景难以自动化，需要手动验证：
 
-**优势**:
+- **交互式输入**：用户输入 URL、认证信息
+- **网络异常**：断网、超时、代理
+- **系统资源**：磁盘满、内存不足
+- **权限问题**：只读文件、受保护目录
 
-- 快速执行
-- 无需 VSCode 环境
-- 高覆盖率
-- 隔离测试
+## 运行测试
 
-**运行**:
+### 单元测试
 
 ```bash
+# 运行所有单元测试
 pnpm test:unit
+
+# 运行特定文件
+pnpm test:unit GitManager
+
+# 查看覆盖率
+pnpm test:coverage
 ```
 
-### 集成测试 (Mocha + @vscode/test-electron)
-
-**位置**: `src/test/suite/**/*.test.ts`
-
-**覆盖范围**:
-
-- 扩展激活
-- 命令执行
-- 配置读写
-- 工作区交互
-- 文件系统操作
-- Git 操作
-
-**优势**:
-
-- 真实 VSCode 环境
-- 端到端测试
-- 实际 Git 操作
-- 完整流程验证
-
-**运行**:
+### 集成测试
 
 ```bash
+# 运行所有集成测试
 pnpm test:suite:mocha
+
+# Linux 需要 xvfb
+xvfb-run -a pnpm test:suite:mocha
 ```
+
+### 测试开发模式
+
+```bash
+# 监听模式（单元测试）
+pnpm test:unit -- --watch
+
+# 调试模式
+pnpm test:unit -- --inspect-brk
+```
+
+## 测试文件组织
+
+```
+src/test/
+├── unit/                          # 单元测试
+│   ├── adapters/
+│   │   └── *.spec.ts             # 适配器测试
+│   ├── commands/
+│   │   └── *.spec.ts             # 命令测试
+│   ├── parsers/
+│   │   └── *.spec.ts             # 解析器测试
+│   ├── services/
+│   │   └── *.spec.ts             # 服务测试
+│   ├── setup.ts                   # 测试环境设置
+│   └── *.spec.ts                  # 其他单元测试
+├── suite/                         # 集成测试
+│   └── *.test.ts                  # VSCode 集成测试
+└── runTests.ts                    # 测试运行器
+
+sampleWorkspace/                   # 测试工作区
+├── test.code-workspace           # 多工作区配置
+├── rules-for-cursor/             # Cursor 测试场景
+├── rules-for-copilot/            # Copilot 测试场景
+├── rules-for-continue/           # Continue 测试场景
+├── rules-for-default/            # 自定义适配器测试
+├── rules-multi-source/           # 多源测试
+└── rules-with-user-rules/        # 用户规则保护测试
+```
+
+## 编写新测试的步骤
+
+### 1. 确定测试类型
+
+- **单元测试**：测试单个函数/类的逻辑
+- **集成测试**：测试完整功能流程
+
+### 2. 创建测试文件
+
+```bash
+# 单元测试
+touch src/test/unit/services/NewService.spec.ts
+
+# 集成测试
+touch src/test/suite/newFeature.test.ts
+```
+
+### 3. 编写测试框架
+
+```typescript
+import { describe, it, expect, beforeEach } from 'vitest';
+
+describe('NewService 单元测试', () => {
+  beforeEach(() => {
+    // 初始化
+  });
+
+  describe('methodName', () => {
+    it('应该处理正常情况', () => {
+      // 测试逻辑
+    });
+
+    it('应该处理错误情况', () => {
+      // 测试逻辑
+    });
+  });
+});
+```
+
+### 4. 运行并调试
+
+```bash
+# 运行新测试
+pnpm test:unit NewService
+
+# 如果失败，检查：
+# 1. Mock 是否正确
+# 2. 数据结构是否匹配
+# 3. 验证逻辑是否符合实际代码
+```
+
+### 5. 确保通过
+
+- 所有断言都通过
+- 没有警告或错误
+- 覆盖了主要分支逻辑
+
+## 常见问题与解决方案
+
+### Mock 不生效
+
+**问题**：vi.mock() 没有生效，仍然调用真实模块
+
+**解决**：
+
+- 确保 mock 在 import 之前
+- 检查模块路径是否正确
+- 使用 `vi.mocked()` 获取类型安全的 mock
+
+### 异步测试超时
+
+**问题**：测试超时失败
+
+**解决**：
+
+```typescript
+it('async operation', async () => {
+  // 增加超时时间
+  vi.setConfig({ testTimeout: 10000 });
+  await longRunningOperation();
+});
+```
+
+### VSCode API Mock 问题
+
+**问题**：vscode 模块 mock 不完整
+
+**解决**：在 `setup.ts` 中补充 mock：
+
+```typescript
+vi.mock('vscode', () => ({
+  window: {
+    showInformationMessage: vi.fn(),
+    // 添加需要的 API
+  },
+}));
+```
+
+### 测试间状态污染
+
+**问题**：测试 A 影响测试 B 的结果
+
+**解决**：
+
+```typescript
+afterEach(() => {
+  vi.clearAllMocks(); // 清除 mock 调用记录
+  vi.restoreAllMocks(); // 恢复原始实现
+});
+```
+
+## 测试覆盖率目标
+
+### 单元测试
+
+- **目标**：80% 代码覆盖率
+- **优先级**：
+  1. 核心逻辑（GitManager、RulesValidator）
+  2. 工具函数（validator、fileSystem）
+  3. 适配器（格式转换）
+
+### 集成测试
+
+- **目标**：覆盖主要用户流程
+- **场景**：
+  1. 添加源并同步
+  2. 多源冲突解决
+  3. 用户规则保护
+  4. 错误恢复
+
+## CI/CD 集成
+
+### GitHub Actions 配置
+
+```yaml
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install
+        run: pnpm install
+
+      - name: Unit Tests
+        run: pnpm test:unit
+
+      - name: Integration Tests
+        run: xvfb-run -a pnpm test:suite:mocha
+
+      - name: Coverage
+        run: pnpm test:coverage
+```
+
+## 最佳实践总结
+
+### ✅ DO（应该做）
+
+1. **测试必须通过** - 100% 通过率
+2. **基于实际代码** - 不测试理想情况
+3. **独立隔离** - 每个测试可独立运行
+4. **清晰命名** - 测试名称描述行为
+5. **适当 Mock** - 只 mock 外部依赖
+6. **边界测试** - 测试边界和异常情况
+
+### ❌ DON'T（不应该做）
+
+1. **不提交失败测试** - 修复或删除
+2. **不过度 Mock** - 避免测试 mock 而不是代码
+3. **不依赖顺序** - 测试间不应有依赖
+4. **不忽略警告** - 警告可能是潜在问题
+5. **不测试实现细节** - 测试行为而非实现
+6. **不写脆弱测试** - 代码小改动不应导致测试失败
+
+---
+
+**记住**：测试的目的是保证代码质量和功能稳定性，而不是追求覆盖率数字。编写有价值的测试，而不是无意义的测试。
 
 ## 测试场景矩阵
 

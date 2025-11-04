@@ -257,8 +257,8 @@ export class FileGenerator {
       return customConfig.outputType === 'directory';
     }
 
-    // 对于内置适配器，Cursor 是目录模式
-    return adapter.name === 'Cursor Rules';
+    // 对于内置适配器，都是单文件模式
+    return false;
   }
 
   /**

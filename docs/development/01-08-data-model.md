@@ -98,14 +98,12 @@
 
 **字段**:
 
-- `useGlobalCache`: 是否使用全局缓存（默认 true）
-- `projectLocalDir`: 项目本地目录名（默认 `.ai-rules`）
-- `autoGitignore`: 是否自动添加 .gitignore（默认 true）
+- `globalCacheDir`: 全局缓存目录路径（默认 `~/.cache/.turbo-ai-rules`）
 
 **设计考量**:
 
-- 全局缓存减少磁盘占用，项目本地提供隔离
-- `.gitignore` 自动管理避免提交临时文件
+- 所有数据存储在全局缓存，不在项目目录创建文件
+- 支持自定义缓存路径（高级用户）
 
 ---
 

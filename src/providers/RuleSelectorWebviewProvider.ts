@@ -65,7 +65,7 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
     return html;
   }
 
-  protected handleMessage(message: WebviewMessage): void {
+  protected handleMessage(_message: WebviewMessage): void {
     // TODO: 处理规则选择器消息
   }
 }

@@ -39,15 +39,16 @@ export interface RuleSource {
   enabled: boolean;
   /** 自动同步间隔(分钟)，0 表示禁用自动同步 */
   syncInterval?: number;
-  /** 上次同步时间 (ISO 8601) */
+  /** 上次同步时间 (ISO 8601) - 存储在 workspaceState */
   lastSync?: string;
-  /** 认证配置 */
+  /** 认证配置 - Token 存储在 Secret Storage */
   authentication?: GitAuthentication;
 }
 
 /**
  * 本地存储的源配置（包含敏感信息）
- * 存储在 ~/.turbo-ai-rules/config 或 .turbo-ai-rules/config
+ * 存储在 Secret Storage 或本地配置文件
+ * @deprecated 优先使用 Secret Storage，此配置仅用于向后兼容
  */
 export interface LocalSourceConfig {
   /** 源 ID */
@@ -60,11 +61,11 @@ export interface LocalSourceConfig {
  * 存储策略配置
  */
 export interface StorageConfig {
-  /** 使用全局缓存 */
+  /** 使用全局缓存（强制启用，项目目录零污染） */
   useGlobalCache: boolean;
-  /** 项目本地目录，默认 '.ai-rules' */
+  /** 项目本地目录（已废弃，不再使用） @deprecated */
   projectLocalDir: string;
-  /** 自动更新 .gitignore */
+  /** 自动更新 .gitignore（添加生成的 AI 配置文件） */
   autoGitignore: boolean;
 }
 
@@ -167,8 +168,8 @@ export interface ExtensionConfig {
 export const DEFAULT_CONFIG: ExtensionConfig = {
   sources: [],
   storage: {
-    useGlobalCache: true,
-    projectLocalDir: '.ai-rules',
+    useGlobalCache: true, // 强制启用，项目目录零污染
+    projectLocalDir: '.ai-rules', // 废弃，保留以兼容旧版本
     autoGitignore: true,
   },
   adapters: {

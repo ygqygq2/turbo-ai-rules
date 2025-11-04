@@ -34,14 +34,17 @@ export function expandHome(filePath: string): string {
 
 /**
  * 解析缓存路径
- * 优先使用 XDG_CACHE_HOME，其次使用 ~/.cache
+ * 优先使用 XDG_CACHE_HOME，其次使用平台默认缓存目录
+ * Linux: ~/.cache/.turbo-ai-rules/
+ * macOS: ~/Library/Caches/.turbo-ai-rules/
+ * Windows: %LOCALAPPDATA%\.turbo-ai-rules\
  * @param configPath 用户配置的路径（可能包含 ~）
- * @param defaultSubPath 默认子路径（如 'turbo-ai-rules'）
+ * @param defaultSubPath 默认子路径（如 '.turbo-ai-rules'）
  * @returns 展开后的绝对路径
  */
 export function resolveCachePath(
   configPath?: string,
-  defaultSubPath: string = 'turbo-ai-rules',
+  defaultSubPath: string = '.turbo-ai-rules',
 ): string {
   // 如果用户提供了路径，优先使用
   if (configPath) {
@@ -49,27 +52,42 @@ export function resolveCachePath(
     return path.resolve(expanded);
   }
 
-  // 使用 XDG 规范
+  // 使用 XDG 规范（优先级最高）
   const xdgCacheHome = process.env.XDG_CACHE_HOME;
   if (xdgCacheHome) {
     return path.join(xdgCacheHome, defaultSubPath);
   }
 
-  // 默认使用 ~/.cache/turbo-ai-rules
   const homeDir = os.homedir();
+
+  // macOS: 使用 ~/Library/Caches
+  if (process.platform === 'darwin') {
+    return path.join(homeDir, 'Library', 'Caches', defaultSubPath);
+  }
+
+  // Windows: 使用 %LOCALAPPDATA%
+  if (process.platform === 'win32') {
+    const appData = process.env.LOCALAPPDATA || path.join(homeDir, 'AppData', 'Local');
+    return path.join(appData, defaultSubPath);
+  }
+
+  // Linux/其他: 使用 ~/.cache
   return path.join(homeDir, '.cache', defaultSubPath);
 }
 
 /**
  * 解析配置文件路径
- * 优先使用 XDG_CONFIG_HOME，其次使用 ~/.config 或 Windows AppData
+ * 优先使用 XDG_CONFIG_HOME，其次使用平台默认配置目录
+ * Linux: ~/.config/.turbo-ai-rules/
+ * macOS: ~/Library/Application Support/.turbo-ai-rules/
+ * Windows: %LOCALAPPDATA%\.turbo-ai-rules\
  * @param configPath 用户配置的路径（可能包含 ~）
- * @param defaultSubPath 默认子路径（如 'turbo-ai-rules'）
+ * @param defaultSubPath 默认子路径（如 '.turbo-ai-rules'）
  * @returns 展开后的绝对路径
  */
 export function resolveConfigPath(
   configPath?: string,
-  defaultSubPath: string = 'turbo-ai-rules',
+  defaultSubPath: string = '.turbo-ai-rules',
 ): string {
   // 如果用户提供了路径，优先使用
   if (configPath) {
@@ -77,7 +95,7 @@ export function resolveConfigPath(
     return path.resolve(expanded);
   }
 
-  // 使用 XDG 规范（Linux/Unix）
+  // 使用 XDG 规范（Linux/Unix，优先级最高）
   const xdgConfigHome = process.env.XDG_CONFIG_HOME;
   if (xdgConfigHome) {
     return path.join(xdgConfigHome, defaultSubPath);
@@ -85,13 +103,18 @@ export function resolveConfigPath(
 
   const homeDir = os.homedir();
 
-  // Windows：使用 AppData/Local
+  // macOS：使用 ~/Library/Application Support
+  if (process.platform === 'darwin') {
+    return path.join(homeDir, 'Library', 'Application Support', defaultSubPath);
+  }
+
+  // Windows：使用 %LOCALAPPDATA%
   if (process.platform === 'win32') {
     const appData = process.env.LOCALAPPDATA || path.join(homeDir, 'AppData', 'Local');
     return path.join(appData, defaultSubPath);
   }
 
-  // macOS 和 Linux：使用 ~/.config
+  // Linux/其他：使用 ~/.config
   return path.join(homeDir, '.config', defaultSubPath);
 }
 

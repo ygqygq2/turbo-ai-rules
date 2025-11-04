@@ -49,8 +49,7 @@
 │                              ↓                               │
 │  ┌────────────────────────────────────────────────────────┐ │
 │  │              Storage Layer (存储)                       │ │
-│  │  • 全局缓存: ~/.turbo-ai-rules/sources/                │ │
-│  │  • 项目本地: <workspace>/.ai-rules/                    │ │
+│  │  • 全局缓存: ~/.cache/.turbo-ai-rules/                 │ │
 │  │  • AI 配置: .cursorrules, .github/copilot-*.md 等     │ │
 │  └────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
@@ -100,11 +99,27 @@
 
 ### 2.5 Storage Layer (存储层)
 
-负责文件系统操作和数据持久化：
+负责数据持久化和状态管理：
 
-- **全局缓存**: 所有项目共享的 Git 仓库缓存
-- **项目本地**: 项目特定的规则元数据和缓存
-- **AI 配置**: 各 AI 工具的配置文件
+**全局缓存** (`~/.cache/.turbo-ai-rules/`):
+
+- `sources/`: Git 仓库完整数据（多工作区共享）
+- `workspaces/<hash>/`: 工作区索引数据（按路径哈希隔离）
+  - `rules.index.json`: 规则索引
+  - `search.index.json`: 搜索索引
+  - `generation.manifest.json`: 生成清单
+
+**workspaceState** (VSCode 提供):
+
+- 同步元数据（lastSyncTime、sourceHashes）
+- UI 状态（expandedNodes、selectedSource）
+- 缓存元数据（lruQueue、lastCleanup）
+- 轻量级（< 10KB），自动按工作区隔离
+
+**项目根目录**:
+
+- AI 工具配置文件（`.cursorrules` 等）
+- 可提交到版本控制
 
 ---
 

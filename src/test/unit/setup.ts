@@ -6,6 +6,10 @@ vi.mock('vscode', () => ({
     showInformationMessage: vi.fn(),
     showErrorMessage: vi.fn(),
     showWarningMessage: vi.fn(),
+    withProgress: vi.fn(async (_options, task) => {
+      return task({ report: vi.fn() }, { checkCancellation: vi.fn() });
+    }),
+    activeTextEditor: undefined,
     createOutputChannel: vi.fn(() => ({
       appendLine: vi.fn(),
       append: vi.fn(),
@@ -23,6 +27,7 @@ vi.mock('vscode', () => ({
       update: vi.fn(),
     })),
     workspaceFolders: [],
+    getWorkspaceFolder: vi.fn(),
   },
   Uri: {
     file: vi.fn((path) => ({ fsPath: path, scheme: 'file', path })),

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -6,9 +6,10 @@ import { vscodeApi } from '../utils/vscode-api';
 
 interface NewSourceFormProps {
   onCancel?: () => void;
+  onSuccess?: (sourceId: string) => void;
 }
 
-export const NewSourceForm: React.FC<NewSourceFormProps> = ({ onCancel }) => {
+export const NewSourceForm: React.FC<NewSourceFormProps> = ({ onCancel, onSuccess }) => {
   const [form, setForm] = useState({
     name: '',
     gitUrl: '',
@@ -21,6 +22,44 @@ export const NewSourceForm: React.FC<NewSourceFormProps> = ({ onCancel }) => {
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [progress, setProgress] = useState<string | null>(null);
+
+  useEffect(() => {
+    // 监听来自后端的状态消息
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data;
+
+      if (message.type === 'addSourceStatus') {
+        const { status, message: msg, sourceId } = message.payload;
+
+        switch (status) {
+          case 'cloning':
+          case 'parsing':
+          case 'generating':
+            setProgress(msg);
+            break;
+
+          case 'success':
+            setProgress(null);
+            setSubmitting(false);
+            setError(null);
+            if (onSuccess && sourceId) {
+              onSuccess(sourceId);
+            }
+            break;
+
+          case 'error':
+            setProgress(null);
+            setSubmitting(false);
+            setError(msg || 'Failed to add source');
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [onSuccess]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -49,22 +88,18 @@ export const NewSourceForm: React.FC<NewSourceFormProps> = ({ onCancel }) => {
     }
     setSubmitting(true);
     setError(null);
-    try {
-      vscodeApi.postMessage('addSource', {
-        name: form.name.trim(),
-        gitUrl: form.gitUrl.trim(),
-        branch: form.branch.trim(),
-        subPath: form.subPath.trim(),
-        authType: form.authType,
-        token: form.authType === 'token' ? form.token.trim() : undefined,
-        sshKeyPath: form.authType === 'ssh' ? form.sshKeyPath.trim() : undefined,
-        sshPassphrase: form.authType === 'ssh' ? form.sshPassphrase.trim() : undefined,
-      });
-    } catch {
-      setError('Failed to submit. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
+    setProgress('Submitting...');
+
+    vscodeApi.postMessage('addSource', {
+      name: form.name.trim(),
+      gitUrl: form.gitUrl.trim(),
+      branch: form.branch.trim(),
+      subPath: form.subPath.trim(),
+      authType: form.authType,
+      token: form.authType === 'token' ? form.token.trim() : undefined,
+      sshKeyPath: form.authType === 'ssh' ? form.sshKeyPath.trim() : undefined,
+      sshPassphrase: form.authType === 'ssh' ? form.sshPassphrase.trim() : undefined,
+    });
   };
 
   return (
@@ -72,6 +107,23 @@ export const NewSourceForm: React.FC<NewSourceFormProps> = ({ onCancel }) => {
       <Card>
         <h2>Add New Rule Source</h2>
         {error && <div className="error-box">{error}</div>}
+        {progress && (
+          <div
+            className="progress-box"
+            style={{
+              padding: '12px',
+              marginBottom: '16px',
+              backgroundColor: 'var(--vscode-editor-inactiveSelectionBackground)',
+              borderRadius: '4px',
+              color: 'var(--vscode-foreground)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="spinner">⏳</div>
+              <span>{progress}</span>
+            </div>
+          </div>
+        )}
         <div className="form-group">
           <label className="form-label" htmlFor="name">
             Source Name

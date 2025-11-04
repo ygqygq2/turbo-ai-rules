@@ -17,8 +17,8 @@ export async function run() {
     color: true,
   });
 
-  // 获取所有测试文件
-  const tsFiles = await glob('**/*.test.js', { cwd: testsRoot });
+  // 获取所有测试文件（只匹配 suite/ 目录，排除 unit/ 目录）
+  const tsFiles = await glob('suite/**/*.test.js', { cwd: testsRoot });
   console.log('获取到以下测试文件:');
   console.log('🚀 ~ file: index.ts:21 ~ tsFiles:', tsFiles);
 

@@ -92,7 +92,7 @@ export class ConfigManager {
 
   /**
    * 更新配置
-   * sources 使用 workspace state，其他配置使用 VSCode 配置
+   * 所有配置都写入 VSCode settings（workspace 或 global）
    */
   public async updateConfig(
     section: keyof ExtensionConfig,
@@ -100,20 +100,13 @@ export class ConfigManager {
     global = false,
   ): Promise<void> {
     try {
-      if (section === 'sources') {
-        // sources 存储在 workspace state 中
-        await this.context.workspaceState.update('sources', value);
-        Logger.info('Sources updated in workspace state');
-      } else {
-        // 其他配置存储在 VSCode 配置中
-        const vscodeConfig = this.getVscodeConfig();
-        const target = global
-          ? vscode.ConfigurationTarget.Global
-          : vscode.ConfigurationTarget.Workspace;
+      const vscodeConfig = this.getVscodeConfig();
+      const target = global
+        ? vscode.ConfigurationTarget.Global
+        : vscode.ConfigurationTarget.Workspace;
 
-        await vscodeConfig.update(section, value, target);
-        Logger.info('Configuration updated', { section, global });
-      }
+      await vscodeConfig.update(section, value, target);
+      Logger.info('Configuration updated', { section, global });
     } catch (error) {
       Logger.error('Failed to update configuration', error as Error, {
         section,
@@ -128,37 +121,34 @@ export class ConfigManager {
 
   /**
    * 获取所有规则源
-   * 优先从 workspace state 读取（运行时添加的），如果未设置则从配置读取（预配置的）
+   * 合并工作区配置和用户配置的规则源，工作区配置优先
    * @param resource 资源 URI（用于指定 workspace folder）
    */
   public getSources(resource?: vscode.Uri): RuleSource[] {
-    // 1. 先尝试从 workspace state 读取（运行时添加的源）
-    const stateSources = this.context.workspaceState.get<RuleSource[]>('sources');
+    const vscodeConfig = this.getVscodeConfig(resource);
 
-    Logger.info('getSources called', {
-      hasResource: !!resource,
-      resourcePath: resource?.fsPath,
-      stateSourcesType: typeof stateSources,
-      stateSourcesLength: Array.isArray(stateSources) ? stateSources.length : 'not-array',
+    // 1. 读取工作区配置（优先级最高）
+    const workspaceSources = vscodeConfig.inspect<RuleSource[]>('sources');
+    const workspaceValue = workspaceSources?.workspaceValue || [];
+    const globalValue = workspaceSources?.globalValue || [];
+
+    Logger.debug('getSources', {
+      workspace: workspaceValue.length,
+      global: globalValue.length,
     });
 
-    // 2. 如果 workspace state 明确设置了值（包括空数组），使用它
-    // undefined 表示从未设置，应该回退到配置文件
-    if (stateSources !== undefined) {
-      Logger.info('Using sources from workspace state', { count: stateSources.length });
-      return stateSources;
+    // 2. 合并配置：工作区 + 全局（去重，工作区优先）
+    const mergedSources = [...workspaceValue];
+    const workspaceIds = new Set(workspaceValue.map((s) => s.id));
+
+    // 添加全局配置中不冲突的源
+    for (const globalSource of globalValue) {
+      if (!workspaceIds.has(globalSource.id)) {
+        mergedSources.push(globalSource);
+      }
     }
 
-    // 3. 否则从 VSCode 配置读取（预配置的源）
-    const vscodeConfig = this.getVscodeConfig(resource);
-    const configSources = vscodeConfig.get<RuleSource[]>('sources', []);
-
-    Logger.info('Using sources from VSCode config', {
-      count: configSources.length,
-      sources: configSources.map((s) => ({ id: s.id, name: s.name, enabled: s.enabled })),
-    });
-
-    return configSources;
+    return mergedSources;
   }
 
   /**
@@ -255,6 +245,9 @@ export class ConfigManager {
       }
 
       await this.updateConfig('sources', newSources);
+
+      // 同时删除 Secret Storage 中的 token
+      await this.deleteToken(id);
 
       Logger.info('Source removed', { sourceId: id });
     } catch (error) {
