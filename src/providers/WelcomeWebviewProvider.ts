@@ -126,8 +126,8 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
           break;
 
         case 'syncRules':
-          // 直接调用命令（这是例外，因为需要访问服务层）
-          await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+          // 页面上的同步按钮：先刷新源再同步
+          await vscode.commands.executeCommand('turbo-ai-rules.syncRulesReload');
           break;
 
         case 'generateConfigs':

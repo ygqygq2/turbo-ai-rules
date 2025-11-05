@@ -116,6 +116,28 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         treeProvider.refresh();
       }),
 
+      // 仅供“页面上的同步按钮/欢迎页按钮”使用：先刷新源（重新读取配置）再执行同步
+      vscode.commands.registerCommand('turbo-ai-rules.syncRulesReload', async (sourceId?: any) => {
+        const actualSourceId =
+          typeof sourceId === 'object' && sourceId?.data?.source?.id
+            ? sourceId.data.source.id
+            : typeof sourceId === 'string'
+              ? sourceId
+              : undefined;
+
+        // 强制读取一次配置并刷新树（确保最新源立即可见）
+        try {
+          configManager.getConfig();
+        } catch (e) {
+          // 读取失败不阻断同步，仍继续执行
+          Logger.warn('Reading config before sync failed, continue syncing');
+        }
+        treeProvider.refresh();
+
+        await syncRulesCommand(actualSourceId);
+        treeProvider.refresh();
+      }),
+
       vscode.commands.registerCommand('turbo-ai-rules.searchRules', async () => {
         await searchRulesCommand();
       }),

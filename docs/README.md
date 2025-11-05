@@ -8,33 +8,8 @@
 
 This directory contains all project documentation, organized into user guides and developer guides.
 
-```
-docs/
-├── user-guide/          # 📘 User documentation (English & Chinese)
-│   ├── README.md        # User guide home
-│   ├── commands.md      # Commands reference
-│   ├── configuration.md # Configuration guide
-│   ├── rule-format.md   # Rule file format
-│   └── faq.md          # FAQ
-│
-└── development/         # 🛠️ Developer documentation (Chinese only)
-    ├── 01-design.md                              # Architecture design
-    ├── 02-custom-adapters-design.md              # Custom adapter design
-    ├── 03-documentation-system.md                # Documentation system
-    ├── 04-test-coverage.md                       # Test coverage
-    ├── 05-development.md                         # Development guide
-    ├── 06-maintaining.md                         # Maintenance guide
-    ├── 07-webview-best-practices.md              # Webview best practices
-    ├── 08-webview-css-guide.md                   # Webview CSS guide
-    ├── 09-ui-design.md                           # UI design
-    ├── 10-ui-development-process.md              # UI development process
-    ├── 11-ui-phase1-implementation.md            # UI Phase 1 implementation
-    ├── 12-ui-phase2-implementation.md            # UI Phase 2 implementation
-    ├── 13-ui-phase2-01-welcome-page-implementation.md
-    ├── 14-ui-phase3-design.md                    # UI Phase 3 design
-    ├── 15-ui-phase3-implementation.md            # UI Phase 3 implementation
-    └── 16-source-detail-implementation.md        # Source detail implementation
-```
+- Start here: [文档导航（必读）](./00-documentation-system.md)
+- Overview: [01-overall-design.md](./01-overall-design.md)
 
 ---
 
@@ -68,7 +43,7 @@ docs/
 | -------------------------------------------------------------- | ------------------------------------------------ |
 | [架构设计](./development/01-design.md)                         | System architecture, design patterns, data flows |
 | [自定义适配器设计](./development/02-custom-adapters-design.md) | Custom adapter design and implementation         |
-| [文档同步规范](./development/03-documentation-system.md)       | Documentation system and synchronization         |
+| [文档导航（必读）](./00-documentation-system.md)               | How to read docs and navigate quickly            |
 | [测试覆盖规范](./development/04-test-coverage.md)              | Test coverage requirements and reports           |
 
 #### 🛠️ 开发层：开发指南和最佳实践

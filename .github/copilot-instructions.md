@@ -48,9 +48,9 @@
 
 ### 存储策略
 
-- **全局缓存**：`~/.turbo-ai-rules/sources/` (所有项目共享)
-- **项目本地**：`<workspace>/.ai-rules/` (自动添加到 .gitignore)
-- **AI 配置**：`.cursorrules`, `.github/copilot-instructions.md` 等
+- **全局缓存**：`~/.turbo-ai-rules/sources/`（所有项目共享）
+- **项目本地**：不再创建任何隐藏目录（如 `.ai-rules/`）；仅在项目根生成最终 AI 配置文件
+- **AI 配置**：`.cursorrules`, `.github/copilot-instructions.md` 等（必要文件可纳入版本控制）
 
 ### 模块分层
 
@@ -325,45 +325,51 @@ private generateFileContent(rules: ParsedRule[]): string {
 
 ### 文档规范（强制）
 
-#### 文档组织
+#### 文档组织结构（必须遵守）
+
+**完整规范详见 `docs/00-documentation-system.md`**（开发前必读）
 
 - **docs/** 目录结构：
   - `README.md` - 文档索引（无序号）
-  - `development/` - 开发文档（所有文件都有序号: 01-_.md, 02-_.md 等）
+  - `00-documentation-system.md` - 文档组织规范（必读第一个）
+  - `01-overall-design.md` - 整体架构设计（设计总览）
+  - `development/` - 开发文档目录
+    - 子目录**必须**与 `src/` 目录对应：`adapters/`、`commands/`、`parsers/`、`providers/`、`services/`、`utils/`、`webview/`
+    - `implementation/` - 实施文档（跨模块的实现记录）
   - `user-guide/` - 用户文档（所有文件都有序号: 01-_.md, 02-_.md 等）
 
 #### UI 实施文档命名规范（强制）
 
-**Phase 2 UI 页面实施文档**必须与设计文档序号对应：
+**UI 页面实施文档**必须与设计文档序号对应：
 
 - 设计文档路径：`.superdesign/design_docs/`
 - ui 设计路径：`.superdesign/design_iterations/`
-- 实施文档路径：`docs/development/`
+- 实施文档路径：`docs/development/webview/`
 - **命名规则**：
 
   ```
   设计文档: .superdesign/design_docs/01-welcome-page.md
-  实施文档: docs/development/13-ui-phase2-01-welcome-page-implementation.md
+  实施文档: docs/development/webview/01-welcome-page-implementation.md
 
   设计文档: .superdesign/design_docs/02-statistics-dashboard.md
-  实施文档: docs/development/13-ui-phase2-02-statistics-implementation.md
+  实施文档: docs/development/webview/02-statistics-implementation.md
 
   设计文档: .superdesign/design_docs/03-rule-details-panel.md
-  实施文档: docs/development/13-ui-phase2-03-rule-details-implementation.md
+  实施文档: docs/development/webview/03-rule-details-implementation.md
 
   设计文档: .superdesign/design_docs/04-advanced-search.md
-  实施文档: docs/development/13-ui-phase2-04-search-implementation.md
+  实施文档: docs/development/webview/04-advanced-search-implementation.md
   ```
 
-- **格式模板**：`13-ui-phase2-{序号}-{简短名称}-implementation.md`
+- **格式模板**：`{序号}-{简短名称}-implementation.md`
 - **作用**：记录 SuperDesign 生成的 HTML 如何集成到 VSCode 扩展，包括：
-  - HTML 原型版本（`design_iterations/{page}_v{n}.html`）
+  - HTML 原型版本（`design_iterations/{page}_{n}.html`）
   - Provider 类实现要点
   - 消息协议实现
   - 测试要点
   - 遇到的问题和解决方案
 
-**创建时机**：完成每个页面的 Provider 实现后立即创建对应的实施文档
+**创建时机**：完成每个页面的实现后立即创建对应的实施文档
 
 #### 设计文档规范（docs/development/01-design.md）
 

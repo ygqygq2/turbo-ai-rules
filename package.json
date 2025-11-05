@@ -61,6 +61,12 @@
         "icon": "$(sync)"
       },
       {
+        "command": "turbo-ai-rules.syncRulesReload",
+        "title": "%turboAiRules.syncRules.title%",
+        "category": "Turbo AI Rules",
+        "icon": "$(sync)"
+      },
+      {
         "command": "turbo-ai-rules.searchRules",
         "title": "%turboAiRules.searchRules.title%",
         "category": "Turbo AI Rules",
@@ -185,7 +191,7 @@
           "group": "navigation@1"
         },
         {
-          "command": "turbo-ai-rules.syncRules",
+          "command": "turbo-ai-rules.syncRulesReload",
           "when": "view == turboAiRulesExplorer",
           "group": "navigation@2"
         },
