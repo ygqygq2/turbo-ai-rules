@@ -8,6 +8,7 @@ import { ConfigManager } from '../services/ConfigManager';
 import { FileGenerator } from '../services/FileGenerator';
 import { RulesManager } from '../services/RulesManager';
 import { Logger } from '../utils/logger';
+import { notify } from '../utils/notifications';
 
 /**
  * 生成配置文件命令处理器
@@ -23,7 +24,7 @@ export async function generateConfigsCommand(): Promise<void> {
     // 1. 获取工作区根目录
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (!workspaceFolder) {
-      vscode.window.showErrorMessage('No workspace folder opened');
+      notify('No workspace folder opened', 'error');
       return;
     }
 
@@ -36,7 +37,7 @@ export async function generateConfigsCommand(): Promise<void> {
     const allRules = rulesManager.getAllRules();
 
     if (allRules.length === 0) {
-      vscode.window.showInformationMessage('No rules available. Please sync rules first.');
+      notify('No rules available. Please sync rules first.', 'info');
       return;
     }
 
@@ -78,6 +79,6 @@ export async function generateConfigsCommand(): Promise<void> {
     Logger.error('Failed to generate configs', error instanceof Error ? error : undefined);
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    vscode.window.showErrorMessage(`Failed to generate configs: ${errorMessage}`);
+    notify(`Failed to generate configs: ${errorMessage}`, 'error');
   }
 }

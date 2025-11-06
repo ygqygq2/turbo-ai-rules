@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 import { GITIGNORE_MARKER } from './constants';
 import { pathExists, safeReadFile, safeWriteFile } from './fileSystem';
 import { Logger } from './logger';
+import { notify } from './notifications';
 
 /**
  * 确保指定的模式已添加到 .gitignore
@@ -57,16 +58,18 @@ export async function ensureIgnored(workspacePath: string, patterns: string[]): 
       patternsAdded: linesToAdd.length,
     });
 
-    // 显示通知
-    vscode.window.showInformationMessage(
-      `✓ Updated .gitignore to exclude AI rules cache (${linesToAdd.length} patterns added)`,
+    // 显示瞬时通知（自动消失）
+    notify(
+      `Updated .gitignore to exclude AI rules cache (${linesToAdd.length} patterns added)`,
+      'info',
     );
   } catch (error) {
     Logger.error('Failed to update .gitignore', error as Error, {
       workspacePath,
     });
-    vscode.window.showWarningMessage(
+    notify(
       'Failed to update .gitignore. Please manually add the AI rules cache directory to your .gitignore file.',
+      'warning',
     );
   }
 }

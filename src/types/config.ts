@@ -61,10 +61,6 @@ export interface LocalSourceConfig {
  * 存储策略配置
  */
 export interface StorageConfig {
-  /** 使用全局缓存（强制启用，项目目录零污染） */
-  useGlobalCache: boolean;
-  /** 项目本地目录（已废弃，不再使用） @deprecated */
-  projectLocalDir: string;
   /** 自动更新 .gitignore（添加生成的 AI 配置文件） */
   autoGitignore: boolean;
 }
@@ -168,8 +164,6 @@ export interface ExtensionConfig {
 export const DEFAULT_CONFIG: ExtensionConfig = {
   sources: [],
   storage: {
-    useGlobalCache: true, // 强制启用，项目目录零污染
-    projectLocalDir: '.ai-rules', // 废弃，保留以兼容旧版本
     autoGitignore: true,
   },
   adapters: {

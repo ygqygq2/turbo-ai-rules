@@ -382,29 +382,19 @@ export class FileGenerator {
    * @param result 生成结果
    */
   public async showGenerationNotification(result: GenerateResult): Promise<void> {
+    const { notify } = await import('../utils/notifications');
     if (result.success.length > 0 && result.failures.length === 0) {
-      // 全部成功
-      vscode.window.showInformationMessage(
-        `Successfully generated ${result.success.length} config file(s)`,
-      );
+      // 全部成功（瞬时提示）
+      notify(`Generated ${result.success.length} config file(s)`, 'info');
     } else if (result.success.length > 0 && result.failures.length > 0) {
-      // 部分成功
-      const message = `Generated ${result.success.length} config file(s), ${result.failures.length} failed`;
-      const action = await vscode.window.showWarningMessage(message, 'Show Details');
-
-      if (action === 'Show Details') {
-        this.showGenerationDetails(result);
-      }
+      // 部分成功（瞬时提示 + 日志详情）
+      const message = `Generated ${result.success.length} file(s), ${result.failures.length} failed`;
+      notify(message, 'warning');
+      this.showGenerationDetails(result);
     } else if (result.failures.length > 0) {
-      // 全部失败
-      const action = await vscode.window.showErrorMessage(
-        `Failed to generate config files`,
-        'Show Details',
-      );
-
-      if (action === 'Show Details') {
-        this.showGenerationDetails(result);
-      }
+      // 全部失败（瞬时提示 + 日志详情）
+      notify('Failed to generate config files', 'error');
+      this.showGenerationDetails(result);
     }
   }
 

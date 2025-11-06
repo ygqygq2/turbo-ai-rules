@@ -14,9 +14,8 @@ import { FileGenerator } from '../services/FileGenerator';
 import { GitManager } from '../services/GitManager';
 import { RulesManager } from '../services/RulesManager';
 import type { GitAuthentication, ParsedRule, RuleSource } from '../types';
-import { PROJECT_CONFIG_DIR } from '../utils/constants';
-import { ensureIgnored } from '../utils/gitignore';
 import { Logger } from '../utils/logger';
+import { formatBytes } from '../utils/format';
 import { validateBranchName, validateGitUrl } from '../utils/validator';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 
@@ -66,6 +65,17 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
 
   private constructor(context: vscode.ExtensionContext) {
     super(context);
+  }
+
+  /**
+   * 显示会自动消失的状态栏消息（默认 5s）
+   */
+  private showTransientStatus(message: string, icon: string = '$(error)', timeoutMs = 5000): void {
+    try {
+      vscode.window.setStatusBarMessage(`${icon} ${message}`, timeoutMs);
+    } catch {
+      // ignore status bar failures silently
+    }
   }
 
   /**
@@ -210,20 +220,12 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
 
     // 计算缓存大小
     try {
-      const configManager = ConfigManager.getInstance(this.context);
-      const config = configManager.getConfig();
-      const cacheDir = config.storage.useGlobalCache
-        ? path.join(this.context.globalStorageUri.fsPath, 'sources', source.id)
-        : path.join(
-            vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '',
-            config.storage.projectLocalDir,
-            'sources',
-            source.id,
-          );
+      // 始终使用全局缓存目录
+      const cacheDir = path.join(this.context.globalStorageUri.fsPath, 'sources', source.id);
 
       if (fs.existsSync(cacheDir)) {
         const size = await this.getDirectorySize(cacheDir);
-        syncInfo.cacheSize = this.formatBytes(size);
+        syncInfo.cacheSize = formatBytes(size);
       }
     } catch (error) {
       Logger.warn('Failed to calculate cache size');
@@ -268,19 +270,6 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
     }
 
     return totalSize;
-  }
-
-  /**
-   * 格式化字节数
-   */
-  private formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 Bytes';
-
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   }
 
   /**
@@ -378,6 +367,9 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
         case 'addSource':
           await this.handleAddSource(message.payload);
           break;
+        case 'testConnection':
+          await this.handleTestConnection(message.payload);
+          break;
 
         case 'refresh':
           await this.loadAndSendData();
@@ -430,6 +422,55 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
    * @return default {Promise<void>}
    * @param payload {any}
    */
+
+  /**
+   * 测试 Git 连接（不进行克隆）
+   */
+  private async handleTestConnection(payload: any): Promise<void> {
+    try {
+      // 基础校验
+      if (!payload?.gitUrl || !validateGitUrl(payload.gitUrl)) {
+        this.postMessage({
+          type: 'testConnectionResult',
+          payload: { success: false, error: 'Invalid Git URL' },
+        });
+        return;
+      }
+
+      // 构建认证配置
+      let authentication: GitAuthentication | undefined;
+      if (payload.authType === 'token' && payload.token) {
+        authentication = { type: 'token', token: payload.token };
+      } else if (payload.authType === 'ssh' && payload.sshKeyPath) {
+        authentication = {
+          type: 'ssh',
+          sshKeyPath: payload.sshKeyPath,
+          sshPassphrase: payload.sshPassphrase,
+        };
+      }
+
+      const gitManager = GitManager.getInstance();
+
+      // 发送测试开始提示（可选）
+      this.postMessage({
+        type: 'addSourceStatus',
+        payload: { status: 'testing', message: 'Testing Git connection...' },
+      });
+
+      const result = await gitManager.testConnection(payload.gitUrl, authentication, 10000);
+
+      this.postMessage({
+        type: 'testConnectionResult',
+        payload: { success: result.success, error: result.error },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.postMessage({
+        type: 'testConnectionResult',
+        payload: { success: false, error: message },
+      });
+    }
+  }
   private async handleAddSource(payload: any): Promise<void> {
     try {
       // 1. 验证输入
@@ -454,7 +495,10 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
       const configManager = ConfigManager.getInstance(this.context);
       const existingSource = configManager.getSourceById(sourceId);
       if (existingSource) {
-        throw new Error('A source with this repository URL already exists');
+        throw new Error(
+          `A source with this repository URL already exists: "${existingSource.name}" (ID: ${sourceId}). ` +
+            `Please use a different repository or edit the existing source.`,
+        );
       }
 
       // 4. 构建认证配置
@@ -492,8 +536,32 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
         },
       });
 
-      // 7. 克隆仓库
+      // 7. 测试 Git 连接
+      this.postMessage({
+        type: 'addSourceStatus',
+        payload: {
+          status: 'testing',
+          message: 'Testing Git connection...',
+        },
+      });
+
       const gitManager = GitManager.getInstance();
+
+      // 先测试连接（10秒超时）
+      const testResult = await gitManager.testConnection(source.gitUrl, authentication, 10000);
+
+      if (!testResult.success) {
+        throw new Error(`Connection test failed: ${testResult.error || 'Unknown error'}`);
+      }
+
+      // 8. 克隆仓库
+      this.postMessage({
+        type: 'addSourceStatus',
+        payload: {
+          status: 'cloning',
+          message: 'Cloning repository...',
+        },
+      });
 
       // 如果有认证信息，保存到 secrets
       if (authentication) {
@@ -505,7 +573,7 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
 
       await gitManager.cloneRepository(source);
 
-      // 8. 解析规则
+      // 9. 解析规则
       this.postMessage({
         type: 'addSourceStatus',
         payload: {
@@ -568,9 +636,6 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
           workspaceRoot,
           config.sync.conflictStrategy || 'priority',
         );
-
-        // 12. 更新 .gitignore
-        await ensureIgnored(workspaceRoot, [PROJECT_CONFIG_DIR]);
       }
 
       // 13. 发送成功状态
@@ -583,10 +648,13 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
         },
       });
 
-      // 14. 显示成功通知
-      vscode.window.showInformationMessage(
-        `Successfully added source: ${source.name} (${validRules.length} rules)`,
-      );
+      // 14. 显示成功通知（瞬时）
+      try {
+        const { notify } = await import('../utils/notifications');
+        notify(`Successfully added source: ${source.name} (${validRules.length} rules)`, 'info');
+      } catch {
+        // 兜底：不影响主流程
+      }
 
       // 15. 刷新 TreeView
       await vscode.commands.executeCommand('turbo-ai-rules.refresh');
@@ -605,7 +673,7 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
 
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      // 发送错误状态到前端
+      // 发送错误状态到前端（前端 webview 会显示错误框，不需要状态栏重复通知）
       this.postMessage({
         type: 'addSourceStatus',
         payload: {
@@ -614,8 +682,8 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
         },
       });
 
-      // 显示错误通知
-      vscode.window.showErrorMessage(`Failed to add source: ${errorMessage}`);
+      // 移除状态栏通知：前端已有错误显示框，避免重复通知造成"闪"的体验问题
+      // this.showTransientStatus(`Failed to add source: ${errorMessage}`);
     }
   }
 

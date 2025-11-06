@@ -10,6 +10,7 @@ import * as vscode from 'vscode';
 import { ConfigManager } from '../services/ConfigManager';
 import { Logger } from '../utils/logger';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
+import { notify } from '../utils/notifications';
 
 /**
  * 欢迎页面提供者
@@ -126,8 +127,8 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
           break;
 
         case 'syncRules':
-          // 页面上的同步按钮：先刷新源再同步
-          await vscode.commands.executeCommand('turbo-ai-rules.syncRulesReload');
+          // 页面上的同步按钮：同步所有规则
+          await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
           break;
 
         case 'generateConfigs':
@@ -166,8 +167,9 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
       }
     } catch (error) {
       Logger.error('Failed to handle webview message', error instanceof Error ? error : undefined);
-      vscode.window.showErrorMessage(
+      notify(
         `Failed to handle action: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'error',
       );
     }
   }
@@ -193,22 +195,22 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
 
     const template = templates[type];
     if (!template) {
-      vscode.window.showErrorMessage('Unknown template type');
+      notify('Unknown template type', 'error');
       return;
     }
 
-    // 这里可以实现自动添加模板源的逻辑
-    const confirm = await vscode.window.showInformationMessage(
+    // 这里可以实现自动添加模板源的逻辑（使用统一 notify 确认）
+    const confirmed = await (notify(
       `Add "${template.name}" template as a rule source?`,
+      'info',
+      undefined,
       'Add Source',
-      'Cancel',
-    );
+      true,
+    ) as Promise<boolean>);
 
-    if (confirm === 'Add Source') {
+    if (confirmed) {
       // TODO: 实现添加预配置源的逻辑
-      vscode.window.showInformationMessage(
-        `Template feature coming soon! You can manually add: ${template.url}`,
-      );
+      notify(`Template feature coming soon! You can manually add: ${template.url}`, 'info');
     }
   }
 
@@ -219,8 +221,9 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
     const configManager = ConfigManager.getInstance(this.context);
     await this.context.globalState.update('welcomeShown', true);
     this.dispose();
-    vscode.window.showInformationMessage(
+    notify(
       "Welcome page dismissed. You can always access it from the command palette ('Turbo AI Rules: Show Welcome').",
+      'info',
     );
   }
 }

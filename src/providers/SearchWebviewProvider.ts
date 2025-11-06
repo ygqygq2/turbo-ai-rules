@@ -7,9 +7,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { ConfigManager } from '../services/ConfigManager';
 import { RulesManager } from '../services/RulesManager';
 import type { ParsedRule, RulePriority } from '../types/rules';
 import { Logger } from '../utils/logger';
+import { notify } from '../utils/notifications';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 
 interface SearchCriteria {
@@ -214,7 +216,7 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
 
   private async exportResults(format: 'json' | 'csv'): Promise<void> {
     if (this.lastSearchResults.length === 0) {
-      vscode.window.showWarningMessage('No search results to export');
+      notify('No search results to export', 'warning');
       return;
     }
 
@@ -264,13 +266,9 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
       }
 
       await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf-8'));
-      vscode.window.showInformationMessage(
-        `Exported ${this.lastSearchResults.length} results to ${uri.fsPath}`,
-      );
+      notify(`Exported ${this.lastSearchResults.length} results to ${uri.fsPath}`, 'info');
     } catch (error) {
-      vscode.window.showErrorMessage(
-        `Export failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      notify(`Export failed: ${error instanceof Error ? error.message : String(error)}`, 'error');
     }
   }
 
@@ -324,7 +322,7 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
     this.searchHistory = [];
     this.saveSearchHistory();
     this.sendSearchHistory();
-    vscode.window.showInformationMessage('Search history cleared');
+    notify('Search history cleared', 'info');
   }
 
   private loadSearchHistory(): void {

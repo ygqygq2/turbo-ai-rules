@@ -10,13 +10,46 @@
 
 ### 📚 Configuration Hierarchy
 
-Turbo AI Rules supports multi-level configuration, priority from high to low:
+Turbo AI Rules **fully follows VS Code's native configuration system**, with priority from high to low:
 
-1. **Workspace Settings** (`.vscode/settings.json`) - Project-level config
+1. **Workspace Settings** (`.vscode/settings.json`) - Project-level config (highest priority)
 2. **User Settings** (VS Code User Settings) - Global config
 3. **Default Values** - Extension built-in defaults
 
-Recommendation: Use workspace settings for team projects, user settings for personal use.
+**Important: Array Configuration Merge Rules**
+
+- ✅ The extension explicitly merges array settings for:
+  - `turbo-ai-rules.sources`
+  - `turbo-ai-rules.adapters.custom`
+- 🔀 Merge order and precedence: **Workspace Folder > Workspace (.code-workspace) > User (Global)**
+- 🧩 De-duplication by `id` while preserving scope order (Folder first, then Workspace, then Global)
+
+**Example**:
+
+```jsonc
+// User Global Settings (Global)
+{
+  "turbo-ai-rules.sources": [
+    { "id": "common-1", "name": "Company Standards" }
+  ]
+}
+
+// Project Settings (Workspace)
+{
+  "turbo-ai-rules.sources": [
+    { "id": "project-1", "name": "Project-Specific Rules" }
+  ]
+}
+
+// ✅ Final Result (merged by the extension): common-1 + project-1
+// - Precedence by id: if both define the same id, project-level wins
+```
+
+**Recommended Configuration Strategies**:
+
+- **Global + Project Combined**: Keep your common sources in Global, add project-specific in Workspace; the extension will merge them automatically
+- **Project Only**: For teams, put all sources in the project (still works fine)
+- **Global Only**: For personal use across all projects
 
 **Configuration Scope**:
 
@@ -35,9 +68,6 @@ Add to `.vscode/settings.json` or VS Code settings:
 
 ```json
 {
-  // ========== Storage Configuration ==========
-  "turbo-ai-rules.storage.useGlobalCache": true,
-
   // ========== Sync Configuration ==========
   "turbo-ai-rules.sync.onStartup": true,
   "turbo-ai-rules.sync.interval": 60,
@@ -61,20 +91,7 @@ Add to `.vscode/settings.json` or VS Code settings:
 
 ### 📊 Configuration Options Details
 
-#### 1. Storage Configuration (`storage`)
-
-| Option           | Type    | Default | Description                                            |
-| ---------------- | ------- | ------- | ------------------------------------------------------ |
-| `useGlobalCache` | boolean | `true`  | Use global cache (`~/.turbo-ai-rules/`) to store rules |
-
-**Recommendations**:
-
-- ✅ Keep default `true`, multiple workspaces share rule cache
-- ❌ Setting to `false` stores independently in each workspace, consuming more space
-
----
-
-#### 2. Sync Configuration (`sync`)
+#### 1. Sync Configuration (`sync`)
 
 | Option             | Type    | Default    | Description                                                  |
 | ------------------ | ------- | ---------- | ------------------------------------------------------------ |
@@ -103,7 +120,7 @@ Add to `.vscode/settings.json` or VS Code settings:
 
 ---
 
-#### 2.1 Parser Configuration (`parser`)
+#### 1.1 Parser Configuration (`parser`)
 
 | Option               | Type    | Default | Description                                                             |
 | -------------------- | ------- | ------- | ----------------------------------------------------------------------- |
@@ -148,9 +165,9 @@ Add to `.vscode/settings.json` or VS Code settings:
 
 ---
 
-#### 3. Built-in Adapters Configuration (`adapters`)
+#### 2. Built-in Adapters Configuration (`adapters`)
 
-| Adapter  | Config Key         | Default | Output File                       |
+| Adapter  | Config Option      | Default | Output File                       |
 | -------- | ------------------ | ------- | --------------------------------- |
 | Copilot  | `copilot.enabled`  | `true`  | `.github/copilot-instructions.md` |
 | Cursor   | `cursor.enabled`   | `false` | `.cursorrules`                    |
@@ -174,9 +191,11 @@ Add to `.vscode/settings.json` or VS Code settings:
 
 ---
 
-#### 4. Custom Adapter Configuration (`adapters.custom`)
+---
 
-Custom adapters are Turbo AI Rules' most powerful feature, supporting output format configuration for **any AI tool**.
+#### 3. Custom Adapters Configuration (`adapters.custom`)
+
+Custom adapters are one of the core features of Turbo AI Rules,
 
 ##### Configuration Structure
 

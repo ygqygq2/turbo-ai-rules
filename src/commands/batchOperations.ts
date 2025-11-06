@@ -2,23 +2,26 @@ import * as vscode from 'vscode';
 
 import { ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
+import { notify } from '../utils/notifications';
 
 /**
  * 批量禁用规则
  */
 export async function batchDisableRulesCommand(rules: ParsedRule[]): Promise<void> {
   if (!rules || rules.length === 0) {
-    vscode.window.showWarningMessage('No rules selected');
+    notify('No rules selected', 'warning');
     return;
   }
 
-  const confirmed = await vscode.window.showWarningMessage(
+  const confirmed = await notify(
     `Disable ${rules.length} rule(s)?`,
-    { modal: true },
+    'warning',
+    undefined,
     'Disable',
+    true,
   );
 
-  if (confirmed !== 'Disable') {
+  if (!confirmed) {
     return;
   }
 
@@ -41,13 +44,13 @@ export async function batchDisableRulesCommand(rules: ParsedRule[]): Promise<voi
       vscode.ConfigurationTarget.Workspace,
     );
 
-    vscode.window.showInformationMessage(`Successfully disabled ${rules.length} rule(s)`);
+    notify(`Successfully disabled ${rules.length} rule(s)`, 'info');
     Logger.info(`Batch disabled ${rules.length} rules`);
   } catch (error) {
     const message = `Failed to disable rules: ${
       error instanceof Error ? error.message : String(error)
     }`;
-    vscode.window.showErrorMessage(message);
+    notify(message, 'error');
     Logger.error(message);
   }
 }
@@ -57,17 +60,19 @@ export async function batchDisableRulesCommand(rules: ParsedRule[]): Promise<voi
  */
 export async function batchEnableRulesCommand(rules: ParsedRule[]): Promise<void> {
   if (!rules || rules.length === 0) {
-    vscode.window.showWarningMessage('No rules selected');
+    notify('No rules selected', 'warning');
     return;
   }
 
-  const confirmed = await vscode.window.showWarningMessage(
+  const confirmed = await notify(
     `Enable ${rules.length} rule(s)?`,
-    { modal: true },
+    'warning',
+    undefined,
     'Enable',
+    true,
   );
 
-  if (confirmed !== 'Enable') {
+  if (!confirmed) {
     return;
   }
 
@@ -89,13 +94,13 @@ export async function batchEnableRulesCommand(rules: ParsedRule[]): Promise<void
       vscode.ConfigurationTarget.Workspace,
     );
 
-    vscode.window.showInformationMessage(`Successfully enabled ${rules.length} rule(s)`);
+    notify(`Successfully enabled ${rules.length} rule(s)`, 'info');
     Logger.info(`Batch enabled ${rules.length} rules`);
   } catch (error) {
     const message = `Failed to enable rules: ${
       error instanceof Error ? error.message : String(error)
     }`;
-    vscode.window.showErrorMessage(message);
+    notify(message, 'error');
     Logger.error(message);
   }
 }
@@ -105,7 +110,7 @@ export async function batchEnableRulesCommand(rules: ParsedRule[]): Promise<void
  */
 export async function batchExportRulesCommand(rules: ParsedRule[]): Promise<void> {
   if (!rules || rules.length === 0) {
-    vscode.window.showWarningMessage('No rules selected');
+    notify('No rules selected', 'warning');
     return;
   }
 
@@ -134,13 +139,13 @@ export async function batchExportRulesCommand(rules: ParsedRule[]): Promise<void
       Buffer.from(JSON.stringify(exportData, null, 2), 'utf-8'),
     );
 
-    vscode.window.showInformationMessage(`Exported ${rules.length} rule(s) to ${uri.fsPath}`);
+    notify(`Exported ${rules.length} rule(s) to ${uri.fsPath}`, 'info');
     Logger.info(`Batch exported ${rules.length} rules to ${uri.fsPath}`);
   } catch (error) {
     const message = `Failed to export rules: ${
       error instanceof Error ? error.message : String(error)
     }`;
-    vscode.window.showErrorMessage(message);
+    notify(message, 'error');
     Logger.error(message);
   }
 }
@@ -150,17 +155,19 @@ export async function batchExportRulesCommand(rules: ParsedRule[]): Promise<void
  */
 export async function batchDeleteRulesCommand(rules: ParsedRule[]): Promise<void> {
   if (!rules || rules.length === 0) {
-    vscode.window.showWarningMessage('No rules selected');
+    notify('No rules selected', 'warning');
     return;
   }
 
-  const confirmed = await vscode.window.showWarningMessage(
+  const confirmed = await notify(
     `Delete ${rules.length} rule(s) from disk? This action cannot be undone.`,
-    { modal: true },
+    'warning',
+    undefined,
     'Delete',
+    true,
   );
 
-  if (confirmed !== 'Delete') {
+  if (!confirmed) {
     return;
   }
 
@@ -180,16 +187,16 @@ export async function batchDeleteRulesCommand(rules: ParsedRule[]): Promise<void
     }
 
     if (deletedCount > 0) {
-      vscode.window.showInformationMessage(`Successfully deleted ${deletedCount} rule(s)`);
+      notify(`Successfully deleted ${deletedCount} rule(s)`, 'info');
       Logger.info(`Batch deleted ${deletedCount} rules`);
     } else {
-      vscode.window.showWarningMessage('No rules were deleted');
+      notify('No rules were deleted', 'warning');
     }
   } catch (error) {
     const message = `Failed to delete rules: ${
       error instanceof Error ? error.message : String(error)
     }`;
-    vscode.window.showErrorMessage(message);
+    notify(message, 'error');
     Logger.error(message);
   }
 }

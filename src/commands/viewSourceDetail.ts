@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 
 import { SourceDetailWebviewProvider } from '../providers/SourceDetailWebviewProvider';
 import { Logger } from '../utils/logger';
+import { notify } from '../utils/notifications';
 
 /**
  * 查看规则源详情命令处理器
@@ -21,7 +22,7 @@ export async function viewSourceDetailCommand(sourceId?: string): Promise<void> 
       const sources = await configManager.getSources();
 
       if (sources.length === 0) {
-        vscode.window.showInformationMessage('No sources configured.');
+        notify('No sources configured.', 'info');
         return;
       }
 
@@ -53,6 +54,6 @@ export async function viewSourceDetailCommand(sourceId?: string): Promise<void> 
     Logger.error('Failed to view source detail', error instanceof Error ? error : undefined);
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    vscode.window.showErrorMessage(`Failed to view source detail: ${errorMessage}`);
+    notify(`Failed to view source detail: ${errorMessage}`, 'error');
   }
 }

@@ -58,13 +58,13 @@
         "command": "turbo-ai-rules.syncRules",
         "title": "%turboAiRules.syncRules.title%",
         "category": "Turbo AI Rules",
-        "icon": "$(sync)"
+        "icon": "$(cloud-download)"
       },
       {
-        "command": "turbo-ai-rules.syncRulesReload",
-        "title": "%turboAiRules.syncRules.title%",
+        "command": "turbo-ai-rules.reloadSettings",
+        "title": "%turboAiRules.reloadSettings.title%",
         "category": "Turbo AI Rules",
-        "icon": "$(sync)"
+        "icon": "$(refresh)"
       },
       {
         "command": "turbo-ai-rules.searchRules",
@@ -89,6 +89,12 @@
         "title": "%turboAiRules.refresh.title%",
         "category": "Turbo AI Rules",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "turbo-ai-rules.refreshGitCache",
+        "title": "%turboAiRules.refreshGitCache.title%",
+        "category": "Turbo AI Rules",
+        "icon": "$(sync)"
       },
       {
         "command": "turbo-ai-rules.editSource",
@@ -191,24 +197,29 @@
           "group": "navigation@1"
         },
         {
-          "command": "turbo-ai-rules.syncRulesReload",
+          "command": "turbo-ai-rules.reloadSettings",
           "when": "view == turboAiRulesExplorer",
           "group": "navigation@2"
         },
         {
-          "command": "turbo-ai-rules.refresh",
+          "command": "turbo-ai-rules.refreshGitCache",
           "when": "view == turboAiRulesExplorer",
           "group": "navigation@3"
         },
         {
-          "command": "turbo-ai-rules.showStatistics",
+          "command": "turbo-ai-rules.generateConfigs",
           "when": "view == turboAiRulesExplorer",
           "group": "navigation@4"
         },
         {
-          "command": "turbo-ai-rules.advancedSearch",
+          "command": "turbo-ai-rules.showStatistics",
           "when": "view == turboAiRulesExplorer",
           "group": "navigation@5"
+        },
+        {
+          "command": "turbo-ai-rules.advancedSearch",
+          "when": "view == turboAiRulesExplorer",
+          "group": "navigation@6"
         }
       ],
       "view/item/context": [
@@ -324,21 +335,6 @@
             }
           },
           "description": "Rule sources configuration"
-        },
-        "turbo-ai-rules.storage.useLocalConfig": {
-          "type": "boolean",
-          "default": false,
-          "description": "%turboAiRules.storage.useLocalConfig.description%"
-        },
-        "turbo-ai-rules.storage.useGlobalCache": {
-          "type": "boolean",
-          "default": true,
-          "description": "%turboAiRules.storage.useGlobalCache.description%"
-        },
-        "turbo-ai-rules.storage.projectLocalDir": {
-          "type": "string",
-          "default": ".ai-rules",
-          "description": "%turboAiRules.storage.projectLocalDir.description%"
         },
         "turbo-ai-rules.storage.autoGitignore": {
           "type": "boolean",

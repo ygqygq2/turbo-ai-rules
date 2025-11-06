@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 
 import { RulesManager } from '../services/RulesManager';
 import { Logger } from '../utils/logger';
+import { notify } from '../utils/notifications';
 
 /**
  * 同步状态
@@ -373,8 +374,9 @@ export class StatusBarProvider {
       }
     } catch (error) {
       Logger.error('Failed to execute menu command', error instanceof Error ? error : undefined);
-      vscode.window.showErrorMessage(
+      notify(
         `Failed to execute command: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'error',
       );
     }
   }
@@ -395,7 +397,7 @@ export class StatusBarProvider {
       const conflicts = this.rulesManager.detectConflicts();
 
       if (conflicts.length === 0) {
-        vscode.window.showInformationMessage('No rule conflicts detected.');
+        notify('No rule conflicts detected.', 'info');
         return;
       }
 
@@ -414,13 +416,11 @@ export class StatusBarProvider {
 
       if (selected) {
         // 这里可以添加详细的冲突解决逻辑
-        vscode.window.showInformationMessage(
-          `Conflict resolution for "${selected.label}" - Feature coming soon!`,
-        );
+        notify(`Conflict resolution for "${selected.label}" - Feature coming soon!`, 'info');
       }
     } catch (error) {
       Logger.error('Failed to show conflicts', error instanceof Error ? error : undefined);
-      vscode.window.showErrorMessage('Failed to retrieve conflict information');
+      notify('Failed to retrieve conflict information', 'error');
     }
   }
 

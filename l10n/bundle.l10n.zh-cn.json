@@ -11,6 +11,7 @@
   "Failed to generate configs": "生成配置文件失败: {0}",
   "Source not found": "未找到规则源",
   "Successfully synced {0} rule(s) from {1} source(s)": "成功从 {1} 个规则源同步了 {0} 条规则",
+  "Settings reloaded successfully": "配置重新加载成功",
   "Source removed successfully": "规则源删除成功",
   "Source updated": "规则源已更新: {0}",
   "Source added successfully": "规则源添加成功: {0}",

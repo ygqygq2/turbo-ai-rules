@@ -169,7 +169,12 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
   constructor(
     private configManager: ConfigManager,
     private rulesManager: RulesManager,
-  ) {}
+  ) {
+    // 监听活动编辑器变化，自动刷新树视图（切换工作区文件夹时更新源列表）
+    vscode.window.onDidChangeActiveTextEditor(() => {
+      this.refresh();
+    });
+  }
 
   /**
    * 刷新树视图
@@ -215,21 +220,26 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
    * 获取根节点
    */
   private async getRootItems(): Promise<RuleTreeItem[]> {
-    // 获取当前活动的 workspace folder
-    let workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    // 获取当前活动编辑器所属的工作区文件夹
+    let resourceUri: vscode.Uri | undefined;
     const activeEditor = vscode.window.activeTextEditor;
+
     if (activeEditor) {
-      const activeWorkspaceFolder = vscode.workspace.getWorkspaceFolder(activeEditor.document.uri);
-      if (activeWorkspaceFolder) {
-        workspaceFolder = activeWorkspaceFolder;
+      const workspaceFolder = vscode.workspace.getWorkspaceFolder(activeEditor.document.uri);
+      if (workspaceFolder) {
+        resourceUri = workspaceFolder.uri;
+        Logger.debug('RulesTreeProvider getting sources from active workspace folder', {
+          folder: workspaceFolder.name,
+        });
       }
+    } else {
+      Logger.debug('RulesTreeProvider getting sources (no active editor)');
     }
 
-    Logger.debug('RulesTreeProvider getting sources', {
-      workspaceFolder: workspaceFolder?.name,
-    });
-
-    const sources = this.configManager.getSources(workspaceFolder?.uri);
+    // 传递 resourceUri：
+    // - 有活动编辑器 → 读取其所属工作区文件夹的配置
+    // - 无活动编辑器 → 读取 workspace settings 或 global 配置
+    const sources = this.configManager.getSources(resourceUri);
 
     if (sources.length === 0) {
       return [

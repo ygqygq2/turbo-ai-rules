@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 import { RulesManager } from '../services/RulesManager';
 import type { ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
+import { notify } from '../utils/notifications';
 
 /**
  * 搜索规则命令处理器
@@ -21,7 +22,7 @@ export async function searchRulesCommand(): Promise<void> {
     const allRules = rulesManager.getAllRules();
 
     if (allRules.length === 0) {
-      vscode.window.showInformationMessage('No rules available. Please sync rules first.');
+      notify('No rules available. Please sync rules first.', 'info');
       return;
     }
 
@@ -40,7 +41,7 @@ export async function searchRulesCommand(): Promise<void> {
     const results = rulesManager.search(query);
 
     if (results.length === 0) {
-      vscode.window.showInformationMessage(`No rules found for "${query}"`);
+      notify(`No rules found for "${query}"`, 'info');
       return;
     }
 
@@ -70,7 +71,7 @@ export async function searchRulesCommand(): Promise<void> {
     Logger.error('Failed to search rules', error instanceof Error ? error : undefined);
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    vscode.window.showErrorMessage(`Failed to search rules: ${errorMessage}`);
+    notify(`Failed to search rules: ${errorMessage}`, 'error');
   }
 }
 

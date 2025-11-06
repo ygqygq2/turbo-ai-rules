@@ -123,12 +123,6 @@ export function validateConfig(config: unknown): {
     errors.push('storage configuration is missing');
   } else {
     const storage = cfg.storage as Record<string, unknown>;
-    if (typeof storage.useGlobalCache !== 'boolean') {
-      errors.push('storage.useGlobalCache must be a boolean');
-    }
-    if (typeof storage.projectLocalDir !== 'string') {
-      errors.push('storage.projectLocalDir must be a string');
-    }
     if (typeof storage.autoGitignore !== 'boolean') {
       errors.push('storage.autoGitignore must be a boolean');
     }

@@ -14,6 +14,7 @@ import {
   generateConfigsCommand,
   ignoreRuleCommand,
   manageSourceCommand,
+  refreshGitCacheCommand,
   removeSourceCommand,
   searchRulesCommand,
   syncRulesCommand,
@@ -41,6 +42,7 @@ import { WorkspaceDataManager } from './services/WorkspaceDataManager';
 import { WorkspaceStateManager } from './services/WorkspaceStateManager';
 import { EXTENSION_NAME } from './utils/constants';
 import { Logger } from './utils/logger';
+import { notify } from './utils/notifications';
 
 /**
  * 扩展激活入口
@@ -65,7 +67,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // 初始化工作区数据目录（如果有工作区）
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (workspaceFolders && workspaceFolders.length > 0) {
-      await workspaceDataManager.initWorkspace(workspaceFolders[0].uri.fsPath);
+      const workspaceRoot = workspaceFolders[0].uri.fsPath;
+      await workspaceDataManager.initWorkspace(workspaceRoot);
       Logger.info('Workspace data directory initialized', {
         workspaceHash: workspaceDataManager.getWorkspaceHash(),
       });
@@ -116,26 +119,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         treeProvider.refresh();
       }),
 
-      // 仅供“页面上的同步按钮/欢迎页按钮”使用：先刷新源（重新读取配置）再执行同步
-      vscode.commands.registerCommand('turbo-ai-rules.syncRulesReload', async (sourceId?: any) => {
-        const actualSourceId =
-          typeof sourceId === 'object' && sourceId?.data?.source?.id
-            ? sourceId.data.source.id
-            : typeof sourceId === 'string'
-              ? sourceId
-              : undefined;
-
-        // 强制读取一次配置并刷新树（确保最新源立即可见）
+      // 重新加载配置：从 settings.json 读取配置并刷新 UI
+      vscode.commands.registerCommand('turbo-ai-rules.reloadSettings', async () => {
         try {
+          // 强制重新读取配置
           configManager.getConfig();
-        } catch (e) {
-          // 读取失败不阻断同步，仍继续执行
-          Logger.warn('Reading config before sync failed, continue syncing');
-        }
-        treeProvider.refresh();
 
-        await syncRulesCommand(actualSourceId);
-        treeProvider.refresh();
+          // 刷新树视图（显示最新的源列表）
+          treeProvider.refresh();
+
+          notify('Settings reloaded successfully', 'info');
+          Logger.info('Settings reloaded from configuration');
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          notify(`Failed to reload settings: ${message}`, 'error');
+          Logger.error('Failed to reload settings', error instanceof Error ? error : undefined);
+        }
       }),
 
       vscode.commands.registerCommand('turbo-ai-rules.searchRules', async () => {
@@ -156,6 +155,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }),
 
       vscode.commands.registerCommand('turbo-ai-rules.refresh', () => {
+        treeProvider.refresh();
+      }),
+
+      vscode.commands.registerCommand('turbo-ai-rules.refreshGitCache', async () => {
+        // 刷新前先更新 TreeView，确保使用最新的源配置
+        treeProvider.refresh();
+        await refreshGitCacheCommand();
+        // 刷新后再次更新 TreeView（以防配置变化）
         treeProvider.refresh();
       }),
 
@@ -243,14 +250,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       vscode.commands.registerCommand('turbo-ai-rules.getAllRules', () => {
         return rulesManager.getAllRules();
       }),
-
-      // Debug command: Clear workspace state (for development)
-      vscode.commands.registerCommand('turbo-ai-rules.clearWorkspaceState', async () => {
-        await context.workspaceState.update('sources', undefined);
-        vscode.window.showInformationMessage('Workspace state cleared. Reloading window...');
-        await vscode.commands.executeCommand('workbench.action.reloadWindow');
-      }),
     ];
+
+    // Debug command: Clear workspace state (for development only)
+    // 通过环境变量控制是否注册调试命令
+    const isDevelopment = process.env.NODE_ENV === 'development' || process.env.VSCODE_DEBUG_MODE;
+    if (isDevelopment) {
+      Logger.info('Development mode detected, registering debug commands');
+      commands.push(
+        vscode.commands.registerCommand('turbo-ai-rules.clearWorkspaceState', async () => {
+          await context.workspaceState.update('sources', undefined);
+          notify('Workspace state cleared. Reloading window...', 'info');
+          await vscode.commands.executeCommand('workbench.action.reloadWindow');
+        }),
+      );
+    }
 
     commands.forEach((cmd) => context.subscriptions.push(cmd));
 
@@ -290,10 +304,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     Logger.info(`${EXTENSION_NAME} activated successfully`);
   } catch (error) {
     Logger.error('Failed to activate extension', error instanceof Error ? error : undefined);
-    vscode.window.showErrorMessage(
+    notify(
       `Failed to activate ${EXTENSION_NAME}: ${
         error instanceof Error ? error.message : 'Unknown error'
       }`,
+      'error',
+      8000,
     );
     throw error;
   }

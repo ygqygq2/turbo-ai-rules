@@ -74,40 +74,97 @@ Turbo AI Rules 遵循 VSCode 标准配置体系，支持两层配置：
 
 ### 1.3 配置读取策略
 
-#### 配置合并规则
+#### VS Code 配置优先级与数组合并策略
 
-伪代码逻辑：
+Turbo AI Rules **遵循 VS Code 原生配置优先级**，并对数组类型配置进行显式合并（因为 VS Code 不会自动合并数组）。
 
-```
-function getSources():
-  # 1. 读取两层配置
-  workspaceSources = readConfig('turboAiRules.sources', WORKSPACE)
-  userSources = readConfig('turboAiRules.sources', USER)
-
-  # 2. 合并（工作区优先，ID 去重）
-  result = []
-  usedIds = Set()
-
-  for source in workspaceSources:
-    result.add(source with origin='Workspace')
-    usedIds.add(source.id)
-
-  for source in userSources:
-    if source.id not in usedIds:
-      result.add(source with origin='User')
-
-  return result
-```
-
-#### 配置来源追踪
-
-每个规则源需标注来源，用于 UI 显示和冲突提示：
+**优先级规则（由低到高）**：
 
 ```
-RuleSourceWithOrigin {
-  ...RuleSource,
-  origin: 'Workspace' | 'User'
+1. Default Value (package.json 中的 default)
+2. Global Value (用户全局 settings.json)
+3. Workspace Value (.code-workspace 或单根工作区的 .vscode/settings.json)
+4. Workspace Folder Value (多根工作区中某文件夹的 .vscode/settings.json)
+```
+
+**数组配置的合并规则（由扩展实现）**：
+
+- ✅ 对以下数组配置执行显式合并：`turbo-ai-rules.sources`、`turbo-ai-rules.adapters.custom`
+- 🔀 合并顺序与优先级：**Workspace Folder > Workspace (.code-workspace) > Global**
+- 🧩 去重规则：按 `id` 去重；同 id 时，高优先级作用域覆盖低优先级
+
+**示例**：
+
+```typescript
+// 全局配置（Global）
+{
+  "turbo-ai-rules.sources": [
+    { "id": "global-1", "name": "Global Rule A" },
+    { "id": "global-2", "name": "Global Rule B" }
+  ]
 }
+
+// 项目配置（Workspace）
+{
+  "turbo-ai-rules.sources": [
+    { "id": "project-1", "name": "Project Rule X" }
+  ]
+}
+
+// 最终生效：只有 project-1
+// global-1 和 global-2 被完全覆盖（这是 VS Code 原生行为）
+```
+
+**实现方式**：
+
+```typescript
+// 显式合并 sources：Folder > Workspace > Global
+const cfg = vscode.workspace.getConfiguration('turbo-ai-rules', resource);
+const ins = cfg.inspect<RuleSource[]>('sources');
+const merged = mergeById(
+  ins?.workspaceFolderValue ?? [],
+  ins?.workspaceValue ?? [],
+  ins?.globalValue ?? [],
+);
+```
+
+#### 多项目共享规则源的推荐做法
+
+如果需要"全局 + 项目"组合使用规则源：
+
+**方案 1：在项目配置中写全**（推荐）
+
+```json
+// 项目 .vscode/settings.json
+{
+  "turbo-ai-rules.sources": [
+    // 复制全局通用的源
+    { "id": "common-rules", "name": "Company Standards" },
+    // 加上项目特有的源
+    { "id": "project-specific", "name": "Project Rules" }
+  ]
+}
+```
+
+**方案 2：只在全局配置**
+
+```json
+// 用户全局 settings.json
+{
+  "turbo-ai-rules.sources": [{ "id": "my-default-rules", "name": "My Default Rules" }]
+}
+// 项目不配置 sources，自动使用全局配置
+```
+
+#### 配置来源追踪（可选）
+
+UI 可通过 `inspect` API 查看配置来源：
+
+```typescript
+const inspected = config.inspect<RuleSource[]>('sources');
+// inspected.globalValue - 全局配置
+// inspected.workspaceValue - 工作区配置
+// inspected.workspaceFolderValue - 文件夹配置
 ```
 
 ### 1.4 配置结构

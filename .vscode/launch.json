@@ -13,7 +13,10 @@
       ],
       "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "preLaunchTask": "${defaultBuildTask}",
-      "sourceMaps": true
+      "sourceMaps": true,
+      "env": {
+        "VSCODE_DEBUG_MODE": "true"
+      }
     },
     {
       "name": "Test: e2e",

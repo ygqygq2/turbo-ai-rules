@@ -48,9 +48,21 @@
 
 ### 存储策略
 
-- **全局缓存**：`~/.turbo-ai-rules/sources/`（所有项目共享）
-- **项目本地**：不再创建任何隐藏目录（如 `.ai-rules/`）；仅在项目根生成最终 AI 配置文件
-- **AI 配置**：`.cursorrules`, `.github/copilot-instructions.md` 等（必要文件可纳入版本控制）
+**规则源配置**：
+
+- **Workspace settings.json**：项目级配置（扩展写入）
+- **Global settings.json**：用户自行配置（扩展不操作）
+- **读取策略**：自动合并 Global + Workspace，遵循 VSCode 优先级
+- **写入策略**：扩展只写 Workspace，避免跨项目污染
+
+**缓存与数据**：
+
+- **全局缓存**：`~/.turbo-ai-rules/sources/`（Git 仓库，所有项目共享）
+- **工作区数据**：`~/.turbo-ai-rules/workspaces/<hash>/`（索引和清单，按哈希隔离）
+- **项目根目录**：仅生成最终 AI 配置文件（`.cursorrules` 等）
+- **workspaceState**：轻量级元数据（< 10KB），同步时间、UI 状态
+
+详细设计见 `docs/development/01-04-storage-strategy.md`
 
 ### 模块分层
 
@@ -84,8 +96,10 @@
 
 ### 文件拆分阈值
 
-- **硬性上限**：单个文件不超过 500 行（除非极度单一职责且必要）
-- **建议上限**：单个文件控制在 300 行内
+不是为了拆分而拆分，是为了更好维护和合理拆分
+
+- **硬性上限**：单个文件不超过 700 行（除非极度单一职责且必要）
+- **建议上限**：单个文件控制在 500 行内
 - **函数/方法**：单个函数/方法 < 50 行，超过需拆分
 
 ### 拆分策略（按优先级）
@@ -250,7 +264,7 @@ src/
 - **FileGenerator**：配置生成、验证
 - **Adapters**：各适配器的格式转换
 
-测试文件位置：`src/test/unit/`
+测试文件位置：`src/test/unit/`，文件后缀 `.test.ts`
 
 ### 集成测试（Mocha）
 
@@ -260,11 +274,13 @@ src/
 - **端到端流程**：添加源 → 同步 → 生成配置
 - **UI 交互**：TreeView 刷新、StatusBar 更新
 
-测试文件位置：`src/test/suite/`
+测试文件位置：`src/test/suite/`，文件后缀 `.spec.ts`
 
 ---
 
-## 函数注释规范
+## 注释规范
+
+代码中注释能说清，就不要在实施文档里重复说明
 
 ### 优先使用扩展生成注释
 
@@ -350,15 +366,7 @@ private generateFileContent(rules: ParsedRule[]): string {
   ```
   设计文档: .superdesign/design_docs/01-welcome-page.md
   实施文档: docs/development/webview/01-welcome-page-implementation.md
-
-  设计文档: .superdesign/design_docs/02-statistics-dashboard.md
-  实施文档: docs/development/webview/02-statistics-implementation.md
-
-  设计文档: .superdesign/design_docs/03-rule-details-panel.md
-  实施文档: docs/development/webview/03-rule-details-implementation.md
-
-  设计文档: .superdesign/design_docs/04-advanced-search.md
-  实施文档: docs/development/webview/04-advanced-search-implementation.md
+  ...
   ```
 
 - **格式模板**：`{序号}-{简短名称}-implementation.md`
@@ -467,18 +475,21 @@ types 类型修改
 3. **架构一致性**: 遵循 `src/providers/BaseWebviewProvider.ts` 定义的架构
 4. **文件存放**: 生成的设计文件存放在 `.superdesign/design_iterations/` 目录
 
-**现有 Webview 参考** (可作为设计模板):
+**现有 Webview 参考**:
 
 - `WelcomeWebviewProvider` - 欢迎页面（引导流程）
 - `StatisticsWebviewProvider` - 统计仪表板（数据可视化）
-- `RuleDetailsWebviewProvider` - 规则详情面板（内容展示）
-- `SearchWebviewProvider` - 高级搜索界面（表单交互）
+  ...
 
 **详细文档**:
 
 - 设计指南见 `docs/development/09-ui-design.md`
 - CSS 规范见 `docs/development/08-webview-css-guide.md`
 - Codicons 使用见 `docs/development/11-codicons-guide.md`
+
+---
+
+最重要：修改/修复代码后，请务必确保设计、代码与文档一致，有必要时修改 superdesig 的那个 html(简单修改时)。
 
 ---
 

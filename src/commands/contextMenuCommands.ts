@@ -10,6 +10,7 @@ import { RulesManager } from '../services/RulesManager';
 import type { RuleSource } from '../types/config';
 import type { ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
+import { notify } from '../utils/notifications';
 
 /**
  * 编辑规则源
@@ -19,7 +20,7 @@ export async function editSourceCommand(sourceId?: string): Promise<void> {
     const configManager = ConfigManager.getInstance();
 
     if (!sourceId) {
-      vscode.window.showErrorMessage('No source selected for editing');
+      notify('No source selected for editing', 'error');
       return;
     }
 
@@ -27,7 +28,7 @@ export async function editSourceCommand(sourceId?: string): Promise<void> {
     const source = sources.find((s) => s.id === sourceId);
 
     if (!source) {
-      vscode.window.showErrorMessage('Source not found');
+      notify('Source not found', 'error');
       return;
     }
 
@@ -36,12 +37,13 @@ export async function editSourceCommand(sourceId?: string): Promise<void> {
 
     if (result) {
       await configManager.updateSource(sourceId, result);
-      vscode.window.showInformationMessage(`Source "${result.name}" updated successfully`);
+      notify(`Source "${result.name}" updated successfully`, 'info');
     }
   } catch (error) {
     Logger.error('Failed to edit source', error instanceof Error ? error : undefined);
-    vscode.window.showErrorMessage(
+    notify(
       `Failed to edit source: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'error',
     );
   }
 }
@@ -52,7 +54,7 @@ export async function editSourceCommand(sourceId?: string): Promise<void> {
 export async function testConnectionCommand(sourceId?: string): Promise<void> {
   try {
     if (!sourceId) {
-      vscode.window.showErrorMessage('No source selected for testing');
+      notify('No source selected for testing', 'error');
       return;
     }
 
@@ -61,7 +63,7 @@ export async function testConnectionCommand(sourceId?: string): Promise<void> {
     const source = sources.find((s) => s.id === sourceId);
 
     if (!source) {
-      vscode.window.showErrorMessage('Source not found');
+      notify('Source not found', 'error');
       return;
     }
 
@@ -81,20 +83,22 @@ export async function testConnectionCommand(sourceId?: string): Promise<void> {
           await new Promise((resolve) => setTimeout(resolve, 2000));
 
           progress.report({ increment: 100, message: 'Connection successful' });
-          vscode.window.showInformationMessage(`✓ Successfully connected to ${source.name}`);
+          notify(`✓ Successfully connected to ${source.name}`, 'info');
         } catch (error) {
-          vscode.window.showErrorMessage(
+          notify(
             `✗ Failed to connect to ${source.name}: ${
               error instanceof Error ? error.message : 'Unknown error'
             }`,
+            'error',
           );
         }
       },
     );
   } catch (error) {
     Logger.error('Failed to test connection', error instanceof Error ? error : undefined);
-    vscode.window.showErrorMessage(
+    notify(
       `Failed to test connection: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'error',
     );
   }
 }
@@ -105,7 +109,7 @@ export async function testConnectionCommand(sourceId?: string): Promise<void> {
 export async function toggleSourceCommand(sourceId?: string): Promise<void> {
   try {
     if (!sourceId) {
-      vscode.window.showErrorMessage('No source selected');
+      notify('No source selected', 'error');
       return;
     }
 
@@ -114,7 +118,7 @@ export async function toggleSourceCommand(sourceId?: string): Promise<void> {
     const source = sources.find((s) => s.id === sourceId);
 
     if (!source) {
-      vscode.window.showErrorMessage('Source not found');
+      notify('Source not found', 'error');
       return;
     }
 
@@ -122,11 +126,12 @@ export async function toggleSourceCommand(sourceId?: string): Promise<void> {
     await configManager.updateSource(sourceId, { ...source, enabled: newStatus });
 
     const action = newStatus ? 'enabled' : 'disabled';
-    vscode.window.showInformationMessage(`Source "${source.name}" ${action}`);
+    notify(`Source "${source.name}" ${action}`, 'info');
   } catch (error) {
     Logger.error('Failed to toggle source', error instanceof Error ? error : undefined);
-    vscode.window.showErrorMessage(
+    notify(
       `Failed to toggle source: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'error',
     );
   }
 }
@@ -137,17 +142,18 @@ export async function toggleSourceCommand(sourceId?: string): Promise<void> {
 export async function copyRuleContentCommand(rule?: ParsedRule): Promise<void> {
   try {
     if (!rule) {
-      vscode.window.showErrorMessage('No rule selected');
+      notify('No rule selected', 'error');
       return;
     }
 
     const content = `# ${rule.title}\n\n${rule.content}`;
     await vscode.env.clipboard.writeText(content);
-    vscode.window.showInformationMessage(`Rule "${rule.title}" copied to clipboard`);
+    notify(`Rule "${rule.title}" copied to clipboard`, 'info');
   } catch (error) {
     Logger.error('Failed to copy rule content', error instanceof Error ? error : undefined);
-    vscode.window.showErrorMessage(
+    notify(
       `Failed to copy rule: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'error',
     );
   }
 }
@@ -158,7 +164,7 @@ export async function copyRuleContentCommand(rule?: ParsedRule): Promise<void> {
 export async function exportRuleCommand(rule?: ParsedRule): Promise<void> {
   try {
     if (!rule) {
-      vscode.window.showErrorMessage('No rule selected');
+      notify('No rule selected', 'error');
       return;
     }
 
@@ -187,12 +193,13 @@ export async function exportRuleCommand(rule?: ParsedRule): Promise<void> {
       const content = frontmatter + rule.content;
 
       await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf8'));
-      vscode.window.showInformationMessage(`Rule exported to ${uri.fsPath}`);
+      notify(`Rule exported to ${uri.fsPath}`, 'info');
     }
   } catch (error) {
     Logger.error('Failed to export rule', error instanceof Error ? error : undefined);
-    vscode.window.showErrorMessage(
+    notify(
       `Failed to export rule: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'error',
     );
   }
 }
@@ -203,29 +210,29 @@ export async function exportRuleCommand(rule?: ParsedRule): Promise<void> {
 export async function ignoreRuleCommand(rule?: ParsedRule): Promise<void> {
   try {
     if (!rule) {
-      vscode.window.showErrorMessage('No rule selected');
+      notify('No rule selected', 'error');
       return;
     }
 
-    const confirm = await vscode.window.showWarningMessage(
+    const confirmed = await (notify(
       `Are you sure you want to ignore rule "${rule.title}"? This will exclude it from generated configs.`,
-      { modal: true },
+      'warning',
+      undefined,
       'Ignore Rule',
-      'Cancel',
-    );
+      true,
+    ) as Promise<boolean>);
 
-    if (confirm === 'Ignore Rule') {
+    if (confirmed) {
       // TODO: 实现 RulesManager.ignoreRule 方法
       // const rulesManager = RulesManager.getInstance();
       // rulesManager.ignoreRule(rule.id);
-      vscode.window.showInformationMessage(
-        `Rule "${rule.title}" will be ignored (feature coming soon)`,
-      );
+      notify(`Rule "${rule.title}" will be ignored (feature coming soon)`, 'info');
     }
   } catch (error) {
     Logger.error('Failed to ignore rule', error instanceof Error ? error : undefined);
-    vscode.window.showErrorMessage(
+    notify(
       `Failed to ignore rule: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'error',
     );
   }
 }

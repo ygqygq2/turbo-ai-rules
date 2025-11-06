@@ -257,28 +257,49 @@
         <div class="card">
           <div class="form-group">
             <label class="form-label">Authentication</label>
-            <div id="auth-type" class="auth-options" style="display: flex; gap: var(--spacing-sm)">
-              <input
-                type="radio"
-                id="auth-none"
-                name="authType"
-                value="none"
-                checked
-                style="display: none"
-              />
-              <label for="auth-none">None (Public Repo)</label>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: var(--spacing-sm);
+                flex-wrap: wrap;
+              "
+            >
+              <div
+                id="auth-type"
+                class="auth-options"
+                style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap"
+              >
+                <input
+                  type="radio"
+                  id="auth-none"
+                  name="authType"
+                  value="none"
+                  checked
+                  style="display: none"
+                />
+                <label for="auth-none">None (Public Repo)</label>
 
-              <input
-                type="radio"
-                id="auth-token"
-                name="authType"
-                value="token"
-                style="display: none"
-              />
-              <label for="auth-token">Personal Access Token</label>
+                <input
+                  type="radio"
+                  id="auth-token"
+                  name="authType"
+                  value="token"
+                  style="display: none"
+                />
+                <label for="auth-token">Personal Access Token</label>
 
-              <input type="radio" id="auth-ssh" name="authType" value="ssh" style="display: none" />
-              <label for="auth-ssh">SSH Key</label>
+                <input
+                  type="radio"
+                  id="auth-ssh"
+                  name="authType"
+                  value="ssh"
+                  style="display: none"
+                />
+                <label for="auth-ssh">SSH Key</label>
+              </div>
+              <button type="button" id="test-btn" class="btn btn-secondary">Test Connection</button>
             </div>
           </div>
 
@@ -337,6 +358,7 @@
       const submitBtn = document.getElementById('submit-btn');
       const cancelBtn = document.getElementById('cancel-btn');
       const errorBox = document.getElementById('error-box');
+      const testBtn = document.getElementById('test-btn');
 
       const authType = document.getElementById('auth-type');
       const tokenFields = document.getElementById('auth-token-fields');
@@ -370,6 +392,12 @@
 
       cancelBtn.addEventListener('click', () => {
         vscode.postMessage({ type: 'cancel' });
+      });
+
+      testBtn.addEventListener('click', () => {
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        vscode.postMessage({ type: 'testConnection', payload: data });
       });
 
       // Initial state

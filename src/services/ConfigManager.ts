@@ -17,6 +17,7 @@ import { ConfigError, ErrorCodes } from '../types/errors';
 import { CONFIG_PREFIX } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { validateConfig } from '../utils/validator';
+import { mergeById } from '../utils/configMerge';
 
 /**
  * 配置管理器
@@ -61,10 +62,26 @@ export class ConfigManager {
       // 使用 getSources 方法获取规则源（支持从 workspace state 或配置文件读取）
       const sources = this.getSources(resource);
 
+      // 先按 VS Code 默认合并规则获取适配器对象
+      const adapters = vscodeConfig.get<AdaptersConfig>('adapters', DEFAULT_CONFIG.adapters);
+
+      // 对 adapters.custom（数组）执行显式合并：Folder > Workspace > Global
+      const customInspection = vscodeConfig.inspect<any>('adapters.custom');
+      if (customInspection) {
+        const mergedCustom = mergeById(
+          customInspection.workspaceFolderValue as any[] | undefined,
+          customInspection.workspaceValue as any[] | undefined,
+          customInspection.globalValue as any[] | undefined,
+        );
+        if (mergedCustom.length > 0) {
+          adapters.custom = mergedCustom as any;
+        }
+      }
+
       const config: ExtensionConfig = {
         sources,
         storage: vscodeConfig.get<StorageConfig>('storage', DEFAULT_CONFIG.storage),
-        adapters: vscodeConfig.get<AdaptersConfig>('adapters', DEFAULT_CONFIG.adapters),
+        adapters,
         sync: vscodeConfig.get<SyncConfig>('sync', DEFAULT_CONFIG.sync),
         parser: vscodeConfig.get<ParserConfig>('parser', DEFAULT_CONFIG.parser),
       };
@@ -121,34 +138,27 @@ export class ConfigManager {
 
   /**
    * 获取所有规则源
-   * 合并工作区配置和用户配置的规则源，工作区配置优先
+   * VSCode 自动处理配置优先级（Workspace Folder > Workspace > Global）
    * @param resource 资源 URI（用于指定 workspace folder）
+   * @return {RuleSource[]} 规则源数组
    */
   public getSources(resource?: vscode.Uri): RuleSource[] {
     const vscodeConfig = this.getVscodeConfig(resource);
 
-    // 1. 读取工作区配置（优先级最高）
-    const workspaceSources = vscodeConfig.inspect<RuleSource[]>('sources');
-    const workspaceValue = workspaceSources?.workspaceValue || [];
-    const globalValue = workspaceSources?.globalValue || [];
+    // 使用 inspect 分别读取各层级值并显式合并（数组不会被 VSCode 自动合并）
+    const inspection = vscodeConfig.inspect<RuleSource[]>('sources');
+    const folder = inspection?.workspaceFolderValue || [];
+    const workspace = inspection?.workspaceValue || [];
+    const global = inspection?.globalValue || [];
+
+    const merged = mergeById<RuleSource>(folder, workspace, global);
 
     Logger.debug('getSources', {
-      workspace: workspaceValue.length,
-      global: globalValue.length,
+      resourceUri: resource?.toString(),
+      count: merged.length,
     });
 
-    // 2. 合并配置：工作区 + 全局（去重，工作区优先）
-    const mergedSources = [...workspaceValue];
-    const workspaceIds = new Set(workspaceValue.map((s) => s.id));
-
-    // 添加全局配置中不冲突的源
-    for (const globalSource of globalValue) {
-      if (!workspaceIds.has(globalSource.id)) {
-        mergedSources.push(globalSource);
-      }
-    }
-
-    return mergedSources;
+    return merged;
   }
 
   /**
@@ -167,25 +177,32 @@ export class ConfigManager {
   }
 
   /**
-   * 添加规则源
+   * 添加规则源（只写入 Workspace 配置）
    */
   public async addSource(source: RuleSource): Promise<void> {
     try {
-      const sources = this.getSources();
+      // 检查当前生效的源（VSCode 已处理优先级）
+      const allSources = this.getSources();
+      const existing = allSources.find((s) => s.id === source.id);
 
-      // 检查 ID 是否已存在
-      if (sources.some((s) => s.id === source.id)) {
+      if (existing) {
         throw new ConfigError(
-          `Source with ID '${source.id}' already exists`,
+          `Source "${existing.name}" (ID: ${source.id}) already exists. ` +
+            `Please use a different repository or edit the existing source.`,
           ErrorCodes.CONFIG_MISSING_FIELD,
         );
       }
 
-      // 添加新源
-      const newSources = [...sources, source];
-      await this.updateConfig('sources', newSources);
+      // 只获取 Workspace 层级的源进行追加
+      const vscodeConfig = this.getVscodeConfig();
+      const inspection = vscodeConfig.inspect<RuleSource[]>('sources');
+      const workspaceSources = inspection?.workspaceValue || [];
 
-      Logger.info('Source added', { sourceId: source.id });
+      // 添加到 Workspace
+      const newSources = [...workspaceSources, source];
+      await this.updateConfig('sources', newSources, false); // false = Workspace
+
+      Logger.info('Source added to workspace', { sourceId: source.id });
     } catch (error) {
       if (error instanceof ConfigError) {
         throw error;
@@ -202,23 +219,43 @@ export class ConfigManager {
   }
 
   /**
-   * 更新规则源
+   * 更新规则源（只更新 Workspace 配置中的源）
    */
   public async updateSource(id: string, updates: Partial<RuleSource>): Promise<void> {
     try {
-      const sources = this.getSources();
-      const index = sources.findIndex((s) => s.id === id);
+      // 1. 检查源是否存在（从当前生效的源中查找）
+      const allSources = this.getSources();
+      const existingSource = allSources.find((s) => s.id === id);
 
-      if (index === -1) {
+      if (!existingSource) {
         throw new ConfigError(`Source with ID '${id}' not found`, ErrorCodes.CONFIG_MISSING_FIELD);
       }
 
-      // 更新源
-      const newSources = [...sources];
-      newSources[index] = { ...newSources[index], ...updates };
-      await this.updateConfig('sources', newSources);
+      // 2. 只获取 Workspace 层级的源进行更新
+      const vscodeConfig = this.getVscodeConfig();
+      const inspection = vscodeConfig.inspect<RuleSource[]>('sources');
+      const workspaceSources = inspection?.workspaceValue || [];
 
-      Logger.info('Source updated', { sourceId: id });
+      const inWorkspace = workspaceSources.some((s) => s.id === id);
+
+      // 3. 如果源不在 Workspace 中（说明来自 Global），提示用户手动修改
+      if (!inWorkspace) {
+        throw new ConfigError(
+          `Source "${existingSource.name}" (ID: ${id}) is not in workspace settings. ` +
+            `This extension only modifies workspace settings. ` +
+            `Please edit the source manually via File > Preferences > Settings.`,
+          ErrorCodes.CONFIG_INVALID_FORMAT,
+        );
+      }
+
+      // 4. 更新 Workspace 中的源
+      const updatedWorkspaceSources = workspaceSources.map((s) =>
+        s.id === id ? { ...s, ...updates } : s,
+      );
+
+      await this.updateConfig('sources', updatedWorkspaceSources, false); // false = Workspace
+
+      Logger.info('Source updated in workspace', { sourceId: id });
     } catch (error) {
       if (error instanceof ConfigError) {
         throw error;
@@ -233,23 +270,43 @@ export class ConfigManager {
   }
 
   /**
-   * 删除规则源
+   * 删除规则源（只从 Workspace 配置删除）
    */
   public async removeSource(id: string): Promise<void> {
     try {
-      const sources = this.getSources();
-      const newSources = sources.filter((s) => s.id !== id);
+      // 1. 检查源是否存在
+      const allSources = this.getSources();
+      const existingSource = allSources.find((s) => s.id === id);
 
-      if (newSources.length === sources.length) {
+      if (!existingSource) {
         throw new ConfigError(`Source with ID '${id}' not found`, ErrorCodes.CONFIG_MISSING_FIELD);
       }
 
-      await this.updateConfig('sources', newSources);
+      // 2. 只获取 Workspace 层级的源
+      const vscodeConfig = this.getVscodeConfig();
+      const inspection = vscodeConfig.inspect<RuleSource[]>('sources');
+      const workspaceSources = inspection?.workspaceValue || [];
 
-      // 同时删除 Secret Storage 中的 token
+      const inWorkspace = workspaceSources.some((s) => s.id === id);
+
+      // 3. 如果源不在 Workspace 中，提示用户手动删除
+      if (!inWorkspace) {
+        throw new ConfigError(
+          `Source "${existingSource.name}" (ID: ${id}) is not in workspace settings. ` +
+            `This extension only modifies workspace settings. ` +
+            `Please remove it manually via File > Preferences > Settings.`,
+          ErrorCodes.CONFIG_INVALID_FORMAT,
+        );
+      }
+
+      // 4. 从 Workspace 中删除
+      const newWorkspaceSources = workspaceSources.filter((s) => s.id !== id);
+      await this.updateConfig('sources', newWorkspaceSources, false); // false = Workspace
+
+      // 5. 删除 Secret Storage 中的 token（如果存在）
       await this.deleteToken(id);
 
-      Logger.info('Source removed', { sourceId: id });
+      Logger.info('Source removed from workspace', { sourceId: id });
     } catch (error) {
       if (error instanceof ConfigError) {
         throw error;

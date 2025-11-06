@@ -11,6 +11,7 @@
   "Failed to generate configs": "Failed to generate configs: {0}",
   "Source not found": "Source not found",
   "Successfully synced {0} rule(s) from {1} source(s)": "Successfully synced {0} rule(s) from {1} source(s)",
+  "Settings reloaded successfully": "Settings reloaded successfully",
   "Source removed successfully": "Source removed successfully",
   "Source updated": "Source updated: {0}",
   "Source added successfully": "Source added successfully: {0}",

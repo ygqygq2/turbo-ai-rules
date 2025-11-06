@@ -23,6 +23,10 @@ export const NewSourceForm: React.FC<NewSourceFormProps> = ({ onCancel, onSucces
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<
+    { state: 'idle' | 'testing' | 'ok' | 'fail'; message?: string } | undefined
+  >({ state: 'idle' });
 
   useEffect(() => {
     // 监听来自后端的状态消息
@@ -33,6 +37,10 @@ export const NewSourceForm: React.FC<NewSourceFormProps> = ({ onCancel, onSucces
         const { status, message: msg, sourceId } = message.payload;
 
         switch (status) {
+          case 'testing':
+            setTesting(true);
+            setConnectionStatus({ state: 'testing', message: msg });
+            break;
           case 'cloning':
           case 'parsing':
           case 'generating':
@@ -54,6 +62,14 @@ export const NewSourceForm: React.FC<NewSourceFormProps> = ({ onCancel, onSucces
             setError(msg || 'Failed to add source');
             break;
         }
+      } else if (message.type === 'testConnectionResult') {
+        const { success, error: errMsg } = message.payload || {};
+        setTesting(false);
+        if (success) {
+          setConnectionStatus({ state: 'ok', message: 'Connection OK' });
+        } else {
+          setConnectionStatus({ state: 'fail', message: errMsg || 'Connection failed' });
+        }
       }
     };
 
@@ -68,6 +84,34 @@ export const NewSourceForm: React.FC<NewSourceFormProps> = ({ onCancel, onSucces
 
   const handleAuthTypeChange = (type: string) => {
     setForm((prev) => ({ ...prev, authType: type }));
+    // 切换认证方式不再自动触发测试；按钮常驻在右侧由用户主动点击
+  };
+
+  const validateForTest = (authType?: string): string | null => {
+    const url = form.gitUrl.trim();
+    if (!url) return 'Git repository URL is required to test connection.';
+    if (!/^https?:\/\/.+|^git@.+/.test(url)) return 'Invalid Git URL.';
+    const type = authType || form.authType;
+    if (type === 'token' && !form.token.trim()) return 'Please enter a Token to test.';
+    if (type === 'ssh' && !form.sshKeyPath.trim()) return 'Please enter SSH key path to test.';
+    return null;
+  };
+
+  const triggerTestConnection = (authType?: string) => {
+    const err = validateForTest(authType);
+    if (err) {
+      setConnectionStatus({ state: 'fail', message: err });
+      return;
+    }
+    setTesting(true);
+    setConnectionStatus({ state: 'testing', message: 'Testing connection...' });
+    vscodeApi.postMessage('testConnection', {
+      gitUrl: form.gitUrl.trim(),
+      authType: authType || form.authType,
+      token: (authType || form.authType) === 'token' ? form.token.trim() : undefined,
+      sshKeyPath: (authType || form.authType) === 'ssh' ? form.sshKeyPath.trim() : undefined,
+      sshPassphrase: (authType || form.authType) === 'ssh' ? form.sshPassphrase.trim() : undefined,
+    });
   };
 
   const validate = () => {
@@ -168,26 +212,63 @@ export const NewSourceForm: React.FC<NewSourceFormProps> = ({ onCancel, onSucces
       <Card>
         <div className="form-group">
           <label className="form-label">Authentication</label>
-          <div className="auth-options" style={{ display: 'flex', gap: '8px' }}>
-            <Button
-              type={form.authType === 'none' ? 'primary' : 'secondary'}
-              onClick={() => handleAuthTypeChange('none')}
-            >
-              None (Public Repo)
-            </Button>
-            <Button
-              type={form.authType === 'token' ? 'primary' : 'secondary'}
-              onClick={() => handleAuthTypeChange('token')}
-            >
-              Personal Access Token
-            </Button>
-            <Button
-              type={form.authType === 'ssh' ? 'primary' : 'secondary'}
-              onClick={() => handleAuthTypeChange('ssh')}
-            >
-              SSH Key
-            </Button>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '8px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div className="auth-options" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <Button
+                type={form.authType === 'none' ? 'primary' : 'secondary'}
+                onClick={() => handleAuthTypeChange('none')}
+              >
+                None (Public Repo)
+              </Button>
+              <Button
+                type={form.authType === 'token' ? 'primary' : 'secondary'}
+                onClick={() => handleAuthTypeChange('token')}
+              >
+                Personal Access Token
+              </Button>
+              <Button
+                type={form.authType === 'ssh' ? 'primary' : 'secondary'}
+                onClick={() => handleAuthTypeChange('ssh')}
+              >
+                SSH Key
+              </Button>
+            </div>
+            <div>
+              <Button
+                type="secondary"
+                onClick={() => triggerTestConnection()}
+                disabled={testing || submitting}
+              >
+                Test Connection
+              </Button>
+            </div>
           </div>
+          {/* 连接性状态展示 */}
+          {connectionStatus && connectionStatus.state !== 'idle' && (
+            <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {connectionStatus.state === 'testing' && <span>⏳</span>}
+              {connectionStatus.state === 'ok' && <span>✅</span>}
+              {connectionStatus.state === 'fail' && <span>❌</span>}
+              <span
+                style={{
+                  color:
+                    connectionStatus.state === 'fail'
+                      ? 'var(--vscode-errorForeground)'
+                      : 'var(--vscode-foreground)',
+                }}
+              >
+                {connectionStatus.message}
+              </span>
+            </div>
+          )}
         </div>
         {form.authType === 'token' && (
           <div className="form-group">
@@ -199,7 +280,11 @@ export const NewSourceForm: React.FC<NewSourceFormProps> = ({ onCancel, onSucces
               name="token"
               type="password"
               value={form.token}
-              onChange={handleChange}
+              onChange={(e) => {
+                handleChange(e);
+                // 凭证变化后，提示可重新测试
+                setConnectionStatus({ state: 'idle' });
+              }}
               placeholder="ghp_... or similar"
             />
           </div>
@@ -214,7 +299,10 @@ export const NewSourceForm: React.FC<NewSourceFormProps> = ({ onCancel, onSucces
                 id="sshKeyPath"
                 name="sshKeyPath"
                 value={form.sshKeyPath}
-                onChange={handleChange}
+                onChange={(e) => {
+                  handleChange(e);
+                  setConnectionStatus({ state: 'idle' });
+                }}
                 placeholder="~/.ssh/id_rsa"
               />
             </div>
@@ -227,7 +315,10 @@ export const NewSourceForm: React.FC<NewSourceFormProps> = ({ onCancel, onSucces
                 name="sshPassphrase"
                 type="password"
                 value={form.sshPassphrase}
-                onChange={handleChange}
+                onChange={(e) => {
+                  handleChange(e);
+                  setConnectionStatus({ state: 'idle' });
+                }}
               />
             </div>
           </>

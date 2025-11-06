@@ -11,9 +11,11 @@ import { ConfigManager } from '../services/ConfigManager';
 import { FileGenerator } from '../services/FileGenerator';
 import { GitManager } from '../services/GitManager';
 import { RulesManager } from '../services/RulesManager';
+import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
 import type { RuleSource } from '../types/config';
 import type { ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
+import { notify } from '../utils/notifications';
 
 /**
  * 按仓库分组源，确保同一仓库的不同分支/目录串行处理
@@ -58,7 +60,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
     const allWorkspaceFolders = vscode.workspace.workspaceFolders;
 
     if (!allWorkspaceFolders || allWorkspaceFolders.length === 0) {
-      vscode.window.showErrorMessage('No workspace folder opened');
+      notify('No workspace folder opened', 'error');
       return;
     }
 
@@ -95,7 +97,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
     });
 
     if (enabledSources.length === 0) {
-      vscode.window.showInformationMessage('No enabled sources to sync');
+      notify('No enabled sources to sync', 'info');
       return;
     }
 
@@ -172,7 +174,26 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
           }
         }
 
-        // 6. 生成配置文件
+        // 6. 持久化规则索引到磁盘
+        progress.report({
+          message: 'Saving rules index...',
+        });
+
+        const workspaceDataManager = WorkspaceDataManager.getInstance();
+        const allRules = rulesManager.getAllRules();
+
+        try {
+          await workspaceDataManager.writeRulesIndex(workspaceRoot, allRules);
+          Logger.info('Rules index saved to disk', {
+            workspaceRoot,
+            totalRules: allRules.length,
+          });
+        } catch (error) {
+          Logger.error('Failed to save rules index', error instanceof Error ? error : undefined);
+          // 不阻断流程，继续生成配置文件
+        }
+
+        // 7. 生成配置文件
         progress.report({
           message: 'Generating config files...',
         });
@@ -185,7 +206,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
           config.sync.conflictStrategy || 'priority',
         );
 
-        // 7. 显示结果
+        // 8. 显示结果
         Logger.info('Sync complete', {
           sources: successCount,
           totalRules,
@@ -194,16 +215,14 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
 
         // 显示通知
         if (successCount === enabledSources.length && generateResult.failures.length === 0) {
-          vscode.window.showInformationMessage(
-            `Successfully synced ${totalRules} rules from ${successCount} source(s) and generated ${generateResult.success.length} config file(s)`,
+          notify(
+            `Synced ${totalRules} rules from ${successCount} source(s), generated ${generateResult.success.length} config file(s)`,
+            'info',
           );
         } else {
           const message = `Synced ${successCount}/${enabledSources.length} source(s), ${totalRules} rules, generated ${generateResult.success.length} config file(s)`;
-          const action = await vscode.window.showWarningMessage(message, 'Show Details');
-
-          if (action === 'Show Details') {
-            await fileGenerator.showGenerationNotification(generateResult);
-          }
+          notify(message, 'warning');
+          await fileGenerator.showGenerationNotification(generateResult);
         }
       },
     );
@@ -211,7 +230,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
     Logger.error('Failed to sync rules', error instanceof Error ? error : undefined);
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    vscode.window.showErrorMessage(`Failed to sync rules: ${errorMessage}`);
+    notify(`Failed to sync rules: ${errorMessage}`, 'error');
   }
 }
 

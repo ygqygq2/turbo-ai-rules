@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 import { ConfigManager } from '../services/ConfigManager';
 import { RulesManager } from '../services/RulesManager';
 import { Logger } from '../utils/logger';
+import { notify } from '../utils/notifications';
 
 /**
  * 移除规则源命令处理器
@@ -23,7 +24,7 @@ export async function removeSourceCommand(sourceId?: string): Promise<void> {
     const sources = await configManager.getSources();
 
     if (sources.length === 0) {
-      vscode.window.showInformationMessage('No sources configured');
+      notify('No sources configured', 'info');
       return;
     }
 
@@ -53,17 +54,19 @@ export async function removeSourceCommand(sourceId?: string): Promise<void> {
     // 3. 确认删除
     const source = sources.find((s) => s.id === selectedSourceId);
     if (!source) {
-      vscode.window.showErrorMessage('Source not found');
+      notify('Source not found', 'error');
       return;
     }
 
-    const confirmed = await vscode.window.showWarningMessage(
+    const confirmed = await notify(
       `Are you sure you want to remove "${source.name || source.gitUrl}"?`,
-      { modal: true },
+      'warning',
+      undefined,
       'Remove',
+      true,
     );
 
-    if (confirmed !== 'Remove') {
+    if (!confirmed) {
       Logger.info('Remove source cancelled: user did not confirm');
       return;
     }
@@ -79,22 +82,23 @@ export async function removeSourceCommand(sourceId?: string): Promise<void> {
 
     Logger.info('Source removed successfully', { sourceId: selectedSourceId });
 
-    // 7. 显示成功消息
-    const shouldRegenerate = await vscode.window.showInformationMessage(
+    // 7. 显示成功消息并询问是否重新生成配置
+    const shouldRegenerate = await notify(
       `Source "${
         source.name || source.gitUrl
       }" removed successfully. Would you like to regenerate config files?`,
+      'info',
+      undefined,
       'Regenerate',
-      'Later',
     );
 
-    if (shouldRegenerate === 'Regenerate') {
+    if (shouldRegenerate) {
       await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
     }
   } catch (error) {
     Logger.error('Failed to remove source', error instanceof Error ? error : undefined);
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    vscode.window.showErrorMessage(`Failed to remove source: ${errorMessage}`);
+    notify(`Failed to remove source: ${errorMessage}`, 'error');
   }
 }

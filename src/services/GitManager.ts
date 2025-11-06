@@ -143,24 +143,76 @@ export class GitManager {
   }
 
   /**
-   * 获取源的认证配置（支持 VSCode 配置和本地文件）
+   * 获取源的认证配置
    * @param sourceId 源 ID
    * @returns 认证配置或 undefined
    */
   private async getAuthentication(sourceId: string): Promise<GitAuthentication | undefined> {
-    // 检查用户配置：是否使用本地配置文件
-    const useLocalConfig = vscode.workspace
-      .getConfiguration('turbo-ai-rules.storage')
-      .get<boolean>('useLocalConfig', false);
+    // 从 VSCode 配置读取
+    const configKey = `turbo-ai-rules.sources.${sourceId}.authentication`;
+    const auth = vscode.workspace.getConfiguration().get<GitAuthentication>(configKey);
+    return auth;
+  }
 
-    if (useLocalConfig) {
-      // 从本地配置文件读取
-      return await this.localConfigManager.getSourceAuth(sourceId);
-    } else {
-      // 从 VSCode 配置读取
-      const configKey = `turbo-ai-rules.sources.${sourceId}.authentication`;
-      const auth = vscode.workspace.getConfiguration().get<GitAuthentication>(configKey);
-      return auth;
+  /**
+   * 测试 Git 仓库连接（快速验证）
+   * @param gitUrl Git 仓库 URL
+   * @param authentication 认证配置
+   * @param timeoutMs 超时时间（毫秒），默认 10 秒
+   * @returns 是否可访问
+   */
+  public async testConnection(
+    gitUrl: string,
+    authentication?: GitAuthentication,
+    timeoutMs: number = 10000,
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      Logger.info('Testing Git connection', { gitUrl, authType: authentication?.type || 'none' });
+
+      // 构建认证后的 URL
+      let testUrl = gitUrl;
+      const options: string[] = [];
+
+      if (authentication?.type === 'token') {
+        testUrl = this.buildAuthenticatedUrl(gitUrl, authentication);
+      } else if (authentication?.type === 'ssh') {
+        const sshCommand = this.buildSshCommand(authentication);
+        if (sshCommand) {
+          options.push('-c', `core.sshCommand=${sshCommand}`);
+        }
+      }
+
+      // 使用 ls-remote 测试连接（不克隆，只获取远程信息）
+      const git = simpleGit();
+
+      // 创建带超时的 Promise
+      const testPromise = git.listRemote([...options, testUrl]);
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Connection timeout')), timeoutMs);
+      });
+
+      await Promise.race([testPromise, timeoutPromise]);
+
+      Logger.info('Git connection test successful', { gitUrl });
+      return { success: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      Logger.warn('Git connection test failed', { gitUrl, error: message });
+
+      // 提供更友好的错误信息
+      let friendlyError = message;
+      if (message.includes('timeout') || message.includes('Connection timeout')) {
+        friendlyError = 'Connection timeout - repository may not exist or network is slow';
+      } else if (message.includes('Authentication failed') || message.includes('403')) {
+        friendlyError = 'Authentication failed - check your credentials';
+      } else if (message.includes('not found') || message.includes('404')) {
+        friendlyError = 'Repository not found - check the URL';
+      } else if (message.includes('Network is unreachable') || message.includes('ENOTFOUND')) {
+        friendlyError = 'Network error - check your internet connection';
+      }
+
+      return { success: false, error: friendlyError };
     }
   }
 
