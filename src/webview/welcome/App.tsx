@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -11,43 +11,70 @@ interface Template {
   id: string;
   name: string;
   icon: string;
+  gitUrl: string;
   description: string;
 }
 
 const templates: Template[] = [
   {
-    id: 'typescript',
-    icon: 'TS',
-    name: 'TypeScript Best Practices',
-    description: 'Coding standards and style guide for TypeScript projects',
-  },
-  {
-    id: 'react',
-    icon: '⚛️',
-    name: 'React Development Rules',
-    description: 'Component patterns and React hooks best practices',
-  },
-  {
-    id: 'python',
-    icon: '🐍',
-    name: 'Python Style Guide',
-    description: 'PEP 8 compliant coding standards for Python',
+    id: 'ygqygq2-ai-rules',
+    icon: '🚀',
+    name: "ygqygq2's AI Rules",
+    gitUrl: 'https://github.com/ygqygq2/ai-rules.git',
+    description: 'Common rules templates for various programming languages',
   },
 ];
 
 export const App: React.FC = () => {
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [hasSource, setHasSource] = useState<boolean>(false);
+  const [dontShowAgain, setDontShowAgain] = useState<boolean>(false);
+
+  useEffect(() => {
+    // 监听来自扩展的消息
+    const messageHandler = (event: MessageEvent) => {
+      const message = event.data;
+      switch (message.type) {
+        case 'initialState':
+          // 接收初始状态（当命令打开 Welcome 页时，显示当前的设置）
+          if (message.payload?.dontShowAgain !== undefined) {
+            setDontShowAgain(message.payload.dontShowAgain);
+          }
+          break;
+        case 'rulesSelectionState':
+          setHasSource(message.enabled);
+          break;
+        case 'syncStage':
+          // TODO: 可以显示同步进度
+          break;
+      }
+    };
+
+    window.addEventListener('message', messageHandler);
+
+    // VSCode 最佳实践: 前端加载完成后通知后端，请求初始状态
+    vscodeApi.postMessage('ready');
+
+    return () => window.removeEventListener('message', messageHandler);
+  }, []);
 
   const handleAddSource = () => {
     vscodeApi.postMessage('addSource');
   };
 
-  const handleSyncRules = () => {
-    vscodeApi.postMessage('syncRules');
+  const handleOpenTemplates = () => {
+    vscodeApi.postMessage('openTemplates');
   };
 
-  const handleGenerateConfigs = () => {
-    vscodeApi.postMessage('generateConfigs');
+  const handleSelectRules = () => {
+    vscodeApi.postMessage('selectRules');
+  };
+
+  const handleSyncAndGenerate = () => {
+    vscodeApi.postMessage('syncAndGenerate');
+  };
+
+  const handleAdvancedOptions = () => {
+    vscodeApi.postMessage('openAdvancedOptions');
   };
 
   const handleViewDocs = () => {
@@ -58,96 +85,129 @@ export const App: React.FC = () => {
     vscodeApi.postMessage('getHelp');
   };
 
-  const handleDismiss = () => {
-    vscodeApi.postMessage('dismiss');
+  const handleDismissChange = (checked: boolean) => {
+    setDontShowAgain(checked);
+    // 只发送状态更新消息，不关闭页面
+    vscodeApi.postMessage('updateDontShowAgain', { checked });
   };
 
-  const handleTemplateClick = (templateId: string) => {
-    setSelectedTemplate(templateId);
-    vscodeApi.postMessage('useTemplate', { type: templateId });
+  const handleTemplateClick = (template: Template) => {
+    vscodeApi.postMessage('useTemplate', { template: template.id });
   };
 
   return (
-    <div className="container">
-      <div className="hero">
+    <div className="welcome-container">
+      <header className="header">
         <h1>🚀 Welcome to Turbo AI Rules</h1>
         <p className="subtitle">
-          Sync AI coding rules from Git repositories and automatically generate configuration files
+          Sync AI coding rules from Git repositories and automatically generate tool configs
         </p>
-      </div>
+      </header>
 
-      <div className="steps">
+      <main className="main-content">
+        {/* Step 1: Add Source */}
         <Card className="step-card">
-          <div className="step-number">1</div>
-          <div className="step-content">
+          <div className="step-header">
+            <div className="step-number">1</div>
             <h2>Add a Rule Source</h2>
-            <p>Configure your first Git repository to sync rules from</p>
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div className="step-actions">
               <Button type="primary" icon="add" onClick={handleAddSource}>
                 Add Source
               </Button>
+            </div>
+          </div>
+          <div className="step-description">
+            Configure your first Git repository to sync rules from
+          </div>
+        </Card>
+
+        {/* Step 2: Select Rules */}
+        <Card className="step-card">
+          <div className="step-header">
+            <div className="step-number">2</div>
+            <h2>Select Rules</h2>
+            <div className="step-actions">
               <Button
-                type="secondary"
-                icon="list-tree"
-                onClick={() => vscodeApi.postMessage('selectRules')}
+                type="primary"
+                icon="list-selection"
+                onClick={handleSelectRules}
+                disabled={!hasSource}
               >
                 Select Rules
               </Button>
             </div>
           </div>
-        </Card>
-        <Card className="step-card">
-          <div className="step-number">2</div>
-          <div className="step-content">
-            <h2>Sync Rules</h2>
-            <p>Fetch and update AI rules from your configured sources</p>
-            <Button type="primary" icon="sync" onClick={handleSyncRules}>
-              Sync Now
-            </Button>
+          <div className="step-description">
+            Choose which rules to sync (default: all, filter by tags/priority)
+            {!hasSource && <div className="step-hint">Add a source first</div>}
           </div>
         </Card>
-        <Card className="step-card">
-          <div className="step-number">3</div>
-          <div className="step-content">
-            <h2>Generate Configs</h2>
-            <p>Create configuration files for your AI coding tools</p>
-            <Button type="secondary" icon="file-code" onClick={handleGenerateConfigs}>
-              Generate Configs
-            </Button>
-          </div>
-        </Card>
-      </div>
 
-      <div className="templates">
-        <h2>📚 Quick Start Templates</h2>
-        <p className="section-desc">Popular rule repositories to get you started</p>
-        <div className="template-grid">
-          {templates.map((template) => (
-            <Card
-              key={template.id}
-              className={`template-card ${selectedTemplate === template.id ? 'selected' : ''}`}
-            >
-              <div onClick={() => handleTemplateClick(template.id)} style={{ cursor: 'pointer' }}>
+        {/* Step 3: Sync & Generate */}
+        <Card className="step-card">
+          <div className="step-header">
+            <div className="step-number">3</div>
+            <h2>Sync &amp; Generate</h2>
+            <div className="step-actions">
+              <Button type="primary" icon="sync" onClick={handleSyncAndGenerate}>
+                Sync Now
+              </Button>
+            </div>
+          </div>
+          <div className="step-description">
+            Fetch → Parse → Merge → Generate AI tool configuration files
+          </div>
+        </Card>
+
+        {/* Templates Section */}
+        <Card className="templates-card">
+          <div className="step-info">
+            <h2>📚 Quick Start Templates</h2>
+            <p>One-click add popular rule repositories</p>
+          </div>
+          <div className="template-grid">
+            {templates.map((template) => (
+              <div
+                key={template.id}
+                className="template-button"
+                onClick={() => handleTemplateClick(template)}
+                role="button"
+                tabIndex={0}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleTemplateClick(template);
+                  }
+                }}
+              >
                 <div className="template-icon">{template.icon}</div>
-                <h3>{template.name}</h3>
-                <p>{template.description}</p>
+                <div className="template-name">{template.name}</div>
               </div>
-            </Card>
-          ))}
-        </div>
-      </div>
+            ))}
+          </div>
+        </Card>
+      </main>
 
-      <Toolbar className="footer">
-        <Button type="secondary" icon="book" onClick={handleViewDocs}>
-          Documentation
-        </Button>
-        <Button type="secondary" icon="question" onClick={handleGetHelp}>
-          Get Help
-        </Button>
-        <Button type="secondary" icon="check" onClick={handleDismiss}>
-          Don't Show Again
-        </Button>
-      </Toolbar>
+      <footer className="footer">
+        <div className="footer-links">
+          <button className="link-button" onClick={handleViewDocs}>
+            <i className="codicon codicon-book"></i>
+            <span>Documentation</span>
+          </button>
+          <button className="link-button" onClick={handleGetHelp}>
+            <i className="codicon codicon-comment-discussion"></i>
+            <span>Get Help</span>
+          </button>
+        </div>
+        <div className="checkbox-container">
+          <input
+            type="checkbox"
+            id="dont-show-again"
+            checked={dontShowAgain}
+            onChange={(e) => handleDismissChange(e.target.checked)}
+          />
+          <label htmlFor="dont-show-again">Don't show this again</label>
+        </div>
+      </footer>
     </div>
   );
 };

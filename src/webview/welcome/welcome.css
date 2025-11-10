@@ -1,120 +1,239 @@
-.hero {
+/* Welcome Page Styles */
+
+.welcome-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 12px;
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.header {
   text-align: center;
-  margin-bottom: var(--spacing-lg);
-  padding: var(--spacing-lg) 0;
+  margin-bottom: 24px;
 }
 
-.hero h1 {
-  font-size: 2em;
-  margin-bottom: var(--spacing-sm);
+.header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: var(--vscode-foreground);
 }
 
-.subtitle {
+.header .subtitle {
   color: var(--vscode-descriptionForeground);
-  font-size: 1.1em;
+  font-size: 14px;
+  margin: 0;
 }
 
-.steps {
-  margin-bottom: var(--spacing-lg);
+.main-content {
+  margin-bottom: 24px;
 }
 
 .step-card {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md);
-  background-color: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-editorWidget-border);
-  border-radius: var(--border-radius);
+  margin-bottom: 12px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.step-card:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.step-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.step-card:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.templates-card {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeIn 0.4s ease-out forwards;
+  animation-delay: 0.4s;
+}
+
+.step-card {
   margin-bottom: var(--spacing-md);
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
 }
 
 .step-number {
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 28px;
+  height: 28px;
   background-color: var(--vscode-button-background);
   color: var(--vscode-button-foreground);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2em;
-  font-weight: bold;
+  font-weight: 600;
+  font-size: 14px;
 }
 
-.step-content {
+.step-header h2 {
   flex: 1;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
 }
 
-.step-content h2 {
-  font-size: 1.2em;
-  margin-bottom: var(--spacing-sm);
+.step-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
-.step-content p {
+.step-description {
+  margin-left: 44px; /* 28px number + 16px gap */
+  font-size: 12px;
   color: var(--vscode-descriptionForeground);
-  margin-bottom: var(--spacing-sm);
+  line-height: 1.5;
 }
 
-.templates {
-  margin-bottom: var(--spacing-lg);
-}
-
-.templates h2 {
-  margin-bottom: var(--spacing-sm);
-}
-
-.section-desc {
+.step-hint {
+  margin-top: var(--spacing-xs);
+  font-size: 11px;
   color: var(--vscode-descriptionForeground);
-  margin-bottom: var(--spacing-md);
 }
 
+/* Templates Section */
 .template-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--spacing-md);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
 }
 
-.template-card {
-  padding: var(--spacing-md);
-  background-color: var(--vscode-editorWidget-background);
+.template-button {
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-foreground);
   border: 1px solid var(--vscode-editorWidget-border);
-  border-radius: var(--border-radius);
+  border-radius: 4px;
+  padding: 12px 16px;
   cursor: pointer;
-  transition: all 0.2s;
+  text-align: left;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.template-card:hover {
+.template-button:hover {
+  background-color: var(--vscode-list-hoverBackground);
   border-color: var(--vscode-focusBorder);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.template-card.selected {
-  border-color: var(--vscode-button-background);
-  background-color: var(--vscode-list-activeSelectionBackground);
+.template-button:focus {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
 }
 
 .template-icon {
-  font-size: 2em;
-  margin-bottom: var(--spacing-sm);
+  font-size: 24px;
+  flex-shrink: 0;
 }
 
-.template-card h3 {
-  font-size: 1em;
-  margin-bottom: var(--spacing-sm);
+.template-name {
+  font-size: 13px;
+  font-weight: 500;
 }
 
-.template-card p {
-  color: var(--vscode-descriptionForeground);
-  font-size: 0.9em;
-}
-
+/* Footer */
 .footer {
-  display: flex;
-  gap: var(--spacing-sm);
-  justify-content: center;
-  padding-top: var(--spacing-lg);
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 16px;
   border-top: 1px solid var(--vscode-editorWidget-border);
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeIn 0.4s ease-out forwards;
+  animation-delay: 0.5s;
+}
+
+.footer-links {
+  margin-bottom: 12px;
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--vscode-textLink-foreground);
+  padding: 4px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  transition: background-color 0.2s ease;
+}
+
+.link-button:hover {
+  background-color: var(--vscode-toolbar-hoverBackground);
+  text-decoration: underline;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.checkbox-container input[type='checkbox'] {
+  cursor: pointer;
+}
+
+.checkbox-container label {
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .step-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .button-group {
+    width: 100%;
+  }
+
+  .button-group .button {
+    flex: 1;
+  }
+
+  .template-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

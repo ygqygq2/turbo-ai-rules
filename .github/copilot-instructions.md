@@ -6,15 +6,6 @@
 
 ---
 
-## 技术栈
-
-- **语言**：TypeScript 5.9+，Node.js 24.9+，VSCode API 1.105+
-- **工具**：esbuild（构建）、pnpm（包管理）、ESLint 9 + Prettier（规范）
-- **测试**：Vitest（单元）+ Mocha（集成）
-- **核心库**：simple-git、fs-extra、gray-matter、@ygqygq2/vscode-log
-
----
-
 ## 日志与错误码规范（强制）
 
 ### 日志规范
@@ -45,32 +36,6 @@
 ## 架构分层（概览）
 
 > 详细架构设计见 `docs/development/01-design.md`
-
-### 存储策略
-
-**规则源配置**：
-
-- **Workspace settings.json**：项目级配置（扩展写入）
-- **Global settings.json**：用户自行配置（扩展不操作）
-- **读取策略**：自动合并 Global + Workspace，遵循 VSCode 优先级
-- **写入策略**：扩展只写 Workspace，避免跨项目污染
-
-**缓存与数据**：
-
-- **全局缓存**：`~/.turbo-ai-rules/sources/`（Git 仓库，所有项目共享）
-- **工作区数据**：`~/.turbo-ai-rules/workspaces/<hash>/`（索引和清单，按哈希隔离）
-- **项目根目录**：仅生成最终 AI 配置文件（`.cursorrules` 等）
-- **workspaceState**：轻量级元数据（< 10KB），同步时间、UI 状态
-
-详细设计见 `docs/development/01-04-storage-strategy.md`
-
-### 模块分层
-
-- **Service 层**：GitManager、RulesParser、FileGenerator、ConfigManager、SyncScheduler
-- **Orchestrator 层**：RulesOrchestrator（串联端到端流程）
-- **Provider 层**：RulesTreeProvider、StatusBarProvider（UI）
-- **Adapter 层**：AIToolAdapter、CursorAdapter、CopilotAdapter、ContinueAdapter
-- **Utils 层**：logger、fileSystem、gitignore、validator
 
 ---
 
@@ -134,8 +99,6 @@
 
 ---
 
----
-
 ## 核心数据结构（概念说明）
 
 ### RuleSource（规则源配置）
@@ -157,98 +120,6 @@
 - 来源信息（sourceId, filePath）
 
 详细的数据结构定义见 `src/types/` 目录。
-
----
-
-## 工作流程（概念说明）
-
-### 1. 添加规则源流程
-
-用户通过 QuickPick 输入 Git URL → 选择认证方式 → 配置分支和子目录 → 克隆到全局缓存 → 解析规则 → 保存配置 → 生成 AI 工具配置 → 更新 .gitignore → 刷新 UI。
-
-### 2. 同步流程
-
-触发器（手动/定时/启动）→ 遍历启用的源 → 拉取更新 → 增量解析 → 合并规则（处理冲突）→ 重新生成配置 → 刷新 UI → 通知用户。
-
-### 3. 规则冲突解决策略
-
-冲突策略类型：
-
-- **priority**（默认）：高优先级覆盖低优先级；相同优先级时先添加的源优先
-- **merge**：合并规则内容（需明确合并策略）
-- **skip-duplicates**：保留第一个，跳过重复
-
-生成的配置中添加注释说明冲突来源。
-
-详细的流程图和时序图见 `docs/development/01-design.md`。
-
----
-
-## 安全与合规
-
-### 输入验证规则
-
-所有用户输入必须经过严格验证：
-
-- **Git URL**：使用正则表达式验证 https:// 或 git@ 格式
-- **路径**：规范化并限制在工作区/缓存目录内，防止目录遍历攻击
-- **分支名**：只允许字母、数字、下划线、连字符和斜杠，防止命令注入
-
-### Secret Storage 使用规范
-
-敏感信息（如 Token）必须存储在 VSCode 的 Secret Storage 中：
-
-- 存储 key 格式：`turboAiRules.token.${sourceId}`
-- 使用 `context.secrets.store()` 存储
-- 使用 `context.secrets.get()` 读取
-- 删除时使用 `context.secrets.delete()`
-
-### 文件写入安全
-
-文件写入必须使用原子操作：
-
-- 先写入临时文件（`.tmp.${timestamp}`）
-- 验证写入成功后再重命名为目标文件
-- 失败时清理临时文件
-- 所有文件操作需要 try-catch 保护
-
----
-
-## 性能优化策略
-
-### 缓存策略
-
-- 使用 LRU 缓存解析结果（最大 100 条）
-- 缓存命中时将项移到队列末尾（LRU 特性）
-- 缓存满时删除最旧的项
-
-### 防抖与节流
-
-- 文件监听使用防抖（300ms）避免频繁刷新
-- 自动同步使用节流（60 秒内最多一次）避免过度请求
-
-### 并行控制
-
-- 限制并发克隆数（建议 3 个）避免资源耗尽
-- 使用 Promise.all 并行处理独立任务
-- 使用工作队列模式控制并发数
-
----
-
-## 目录结构（简要）
-
-```
-src/
-├── extension.ts              # 入口（尽量精简）
-├── commands/                 # 命令处理
-├── services/                 # Git/Rules/Config/FileGenerator/Scheduler
-├── providers/                # Tree/StatusBar
-├── parsers/                  # 解析与校验
-├── adapters/                 # AI 工具适配（Cursor/Copilot/Continue）
-├── ui/                       # UI 助手
-├── utils/                    # logger/fs/gitignore/validator
-└── types/                    # config/rules/git 等
-```
 
 ---
 
@@ -474,6 +345,44 @@ types 类型修改
 2. **主题变量**: 使用 VS Code 官方 CSS 变量，不使用硬编码颜色
 3. **架构一致性**: 遵循 `src/providers/BaseWebviewProvider.ts` 定义的架构
 4. **文件存放**: 生成的设计文件存放在 `.superdesign/design_iterations/` 目录
+
+**三位一体强制同步规范** (⚠️ 极其重要):
+
+每次修改 Webview 相关内容时，**必须同时更新以下三个文件**，缺一不可：
+
+1. **设计文档** (`.superdesign/design_docs/{序号}-{名称}.md`)
+
+   - 描述设计理念、布局结构、交互流程
+   - 包含 CSS 样式规范和对齐策略
+   - 说明消息协议和数据流
+
+2. **UI 原型** (`.superdesign/design_iterations/{序号}-{名称}_{迭代数字}.html`)
+
+   - 完整的 HTML/CSS 静态原型
+   - 可在浏览器中直接预览
+   - 包含所有样式定义和示例数据
+
+3. **代码实现**
+   - React 组件实现
+   - 与设计文档和 UI 原型保持完全一致
+   - 所有 CSS 类名、样式值必须同步
+
+**强制规则**:
+
+- ✅ 修改任何一个文件，必须同时更新其他两个
+- ✅ CSS 样式（类名、值、布局策略）必须完全一致
+- ✅ 不需要用户提醒，自动完成三文件同步
+- ❌ 禁止只更新代码而不同步设计文档和 UI 原型
+- ❌ 禁止出现"我忘记同步了"的情况
+
+**检查清单** (每次修改后必须确认):
+
+- [ ] 设计文档已更新（CSS 规范、布局说明）
+- [ ] UI 原型已更新（HTML/CSS 代码）
+- [ ] 代码实现已更新（React 组件和样式）
+- [ ] 三者的 CSS 类名完全一致
+- [ ] 三者的样式值完全一致
+- [ ] 三者的布局策略完全一致
 
 **现有 Webview 参考**:
 

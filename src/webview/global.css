@@ -94,7 +94,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px; /* 增大图标和文字间距 */
   padding: 6px 14px;
   border: none;
   border-radius: var(--border-radius);
@@ -107,6 +107,14 @@ body {
   white-space: nowrap;
   line-height: 1.5;
   vertical-align: middle;
+}
+
+/* 按钮图标样式 */
+.button .icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  font-size: 16px; /* 图标稍大一点 */
 }
 
 .button:hover:not(:disabled) {

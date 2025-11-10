@@ -112,8 +112,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           typeof sourceId === 'object' && sourceId?.data?.source?.id
             ? sourceId.data.source.id
             : typeof sourceId === 'string'
-              ? sourceId
-              : undefined;
+            ? sourceId
+            : undefined;
 
         await syncRulesCommand(actualSourceId);
         treeProvider.refresh();
@@ -240,8 +240,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             typeof sourceId === 'object' && sourceId?.data?.source?.id
               ? sourceId.data.source.id
               : typeof sourceId === 'string'
-                ? sourceId
-                : undefined;
+              ? sourceId
+              : undefined;
           await viewSourceDetailCommand(actualSourceId);
         },
       ),

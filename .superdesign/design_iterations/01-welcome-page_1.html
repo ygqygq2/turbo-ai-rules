@@ -5,10 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; style-src 'unsafe-inline' https://microsoft.github.io; font-src https://microsoft.github.io; script-src 'nonce-{{nonce}}';"
+      content="default-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net; script-src 'nonce-{{nonce}}';"
     />
     <title>Welcome to Turbo AI Rules</title>
-    <link rel="stylesheet" href="https://microsoft.github.io/vscode-codicons/dist/codicon.css" />
+    <!-- Codicons 图标库 -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.35/dist/codicon.css"
+    />
     <style>
       :root {
         /* VS Code 主题变量 - 暗色主题默认值（用于浏览器预览）*/
@@ -135,23 +139,57 @@
         animation-delay: 0.5s;
       }
 
-      .step-content {
+      .step-card {
+        margin-bottom: var(--spacing-md);
+      }
+
+      .step-header {
         display: flex;
-        justify-content: space-between;
         align-items: center;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-sm);
       }
 
-      .step-info h2 {
-        font-size: 16px;
+      .step-number {
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-weight: 600;
-        margin: 0 0 var(--spacing-xs) 0;
+        font-size: 14px;
       }
 
-      .step-info p {
-        color: var(--vscode-descriptionForeground);
+      .step-header h2 {
+        flex: 1;
         margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--vscode-foreground);
       }
 
+      .step-actions {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .step-description {
+        margin-left: 44px; /* 28px number + 16px gap */
+        font-size: 12px;
+        color: var(--vscode-descriptionForeground);
+        line-height: 1.5;
+      }
+
+      .step-hint {
+        margin-top: var(--spacing-xs);
+        font-size: 11px;
+        color: var(--vscode-descriptionForeground);
+      }
       .button {
         background-color: var(--vscode-button-background);
         color: var(--vscode-button-foreground);
@@ -162,9 +200,15 @@
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: var(--spacing-sm);
+        gap: 8px; /* 增大图标和文字间距 */
         text-decoration: none;
         transition: transform 0.2s ease, background-color 0.2s ease;
+      }
+
+      /* 按钮图标样式 */
+      .button .codicon {
+        flex-shrink: 0;
+        font-size: 16px; /* 图标稍大一点 */
       }
 
       .button:hover {
@@ -176,9 +220,29 @@
         transform: scale(0.98);
       }
 
+      .button.secondary {
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+      }
+
+      .button.secondary:hover {
+        background-color: var(--vscode-button-secondaryHoverBackground);
+      }
+
+      .button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .button-hint {
+        font-size: 11px;
+        color: var(--vscode-descriptionForeground);
+        margin-top: 4px;
+      }
+
       .templates-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: var(--spacing-md);
       }
 
@@ -187,6 +251,26 @@
         color: var(--vscode-foreground);
         border: 1px solid var(--vscode-editorWidget-border);
         text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+      }
+
+      .template-button:hover {
+        background-color: var(--vscode-list-hoverBackground);
+        border-color: var(--vscode-focusBorder);
+        transform: translateY(-2px);
+      }
+
+      .template-icon {
+        font-size: 24px;
+        flex-shrink: 0;
+      }
+
+      .template-name {
+        font-size: 13px;
+        font-weight: 500;
       }
 
       .footer {
@@ -248,75 +332,70 @@
       <header class="header">
         <h1>🚀 Welcome to Turbo AI Rules</h1>
         <p class="subtitle">
-          Sync AI coding rules from Git repositories and automatically generate configuration files
+          Sync AI coding rules from Git repositories and automatically generate tool configs
         </p>
       </header>
 
       <main>
         <div class="card step-card">
-          <div class="step-content">
-            <div class="step-info">
-              <h2>1. Add a Rule Source</h2>
-              <p>Configure your first Git repository to sync rules from</p>
+          <div class="step-header">
+            <div class="step-number">1</div>
+            <h2>Add a Rule Source</h2>
+            <div class="step-actions">
+              <button class="button" onclick="sendMessage('addSource')">
+                <i class="codicon codicon-add"></i>
+                <span>Add Source</span>
+              </button>
             </div>
-            <button class="button" onclick="sendMessage('addSource')">
-              <i class="codicon codicon-add"></i>
-              <span>Add Source</span>
-            </button>
+          </div>
+          <div class="step-description">Configure your first Git repository to sync rules from</div>
+        </div>
+
+        <div class="card step-card">
+          <div class="step-header">
+            <div class="step-number">2</div>
+            <h2>Select Rules</h2>
+            <div class="step-actions">
+              <button class="button" onclick="sendMessage('selectRules')">
+                <i class="codicon codicon-list-selection"></i>
+                <span>Select Rules</span>
+              </button>
+            </div>
+          </div>
+          <div class="step-description">
+            Choose which rules to sync (default: all, filter by tags/priority)
+            <div class="step-hint">Add a source first</div>
           </div>
         </div>
 
         <div class="card step-card">
-          <div class="step-content">
-            <div class="step-info">
-              <h2>2. Sync Rules</h2>
-              <p>Fetch and update AI rules from your configured sources</p>
+          <div class="step-header">
+            <div class="step-number">3</div>
+            <h2>Sync &amp; Generate</h2>
+            <div class="step-actions">
+              <button class="button" onclick="sendMessage('syncAndGenerate')">
+                <i class="codicon codicon-sync"></i>
+                <span>Sync Now</span>
+              </button>
             </div>
-            <button class="button" onclick="sendMessage('syncRules')">
-              <i class="codicon codicon-sync"></i>
-              <span>Sync Now</span>
-            </button>
           </div>
-        </div>
-
-        <div class="card step-card">
-          <div class="step-content">
-            <div class="step-info">
-              <h2>3. Generate Configs</h2>
-              <p>Create configuration files for your AI coding tools</p>
-            </div>
-            <button class="button" onclick="sendMessage('generateConfigs')">
-              <i class="codicon codicon-file-code"></i>
-              <span>Generate</span>
-            </button>
+          <div class="step-description">
+            Fetch → Parse → Merge → Generate AI tool configuration files
           </div>
         </div>
 
         <div class="card templates-card">
           <div class="step-info" style="margin-bottom: var(--spacing-md)">
             <h2>📚 Quick Start Templates</h2>
+            <p>One-click add popular rule repositories</p>
           </div>
           <div class="templates-grid">
             <button
               class="button template-button"
-              onclick="sendMessage('useTemplate', { template: 'typescript' })"
+              onclick="sendMessage('useTemplate', { template: 'ygqygq2-ai-rules' })"
             >
-              <i class="codicon codicon-file-code"></i>
-              <span>TypeScript Best Practices</span>
-            </button>
-            <button
-              class="button template-button"
-              onclick="sendMessage('useTemplate', { template: 'react' })"
-            >
-              <i class="codicon codicon-file-code"></i>
-              <span>React Development Rules</span>
-            </button>
-            <button
-              class="button template-button"
-              onclick="sendMessage('useTemplate', { template: 'python' })"
-            >
-              <i class="codicon codicon-file-code"></i>
-              <span>Python Style Guide</span>
+              <div class="template-icon">🚀</div>
+              <div class="template-name">ygqygq2's AI Rules</div>
             </button>
           </div>
         </div>
@@ -337,7 +416,7 @@
           <input
             type="checkbox"
             id="dont-show-again"
-            onclick="sendMessage('dismiss', { checked: this.checked })"
+            onchange="sendMessage('updateDontShowAgain', { checked: this.checked })"
           />
           <label for="dont-show-again">Don't show this again</label>
         </div>
@@ -354,7 +433,28 @@
       window.addEventListener('message', (event) => {
         const message = event.data;
         // Handle messages from the extension if needed
-        // e.g., switch(message.type) { ... }
+        // e.g., enable/disable Select Rules button based on sources count
+        switch (message.type) {
+          case 'initialState': {
+            // 接收初始状态（当命令打开 Welcome 页时，显示当前的设置）
+            const checkbox = document.getElementById('dont-show-again');
+            if (checkbox && message.payload?.dontShowAgain !== undefined) {
+              checkbox.checked = message.payload.dontShowAgain;
+            }
+            break;
+          }
+          case 'rulesSelectionState': {
+            const buttons = document.querySelectorAll('button');
+            const selectBtn = Array.from(buttons).find(
+              (b) => b.textContent && b.textContent.includes('Select Rules'),
+            );
+            if (selectBtn) {
+              selectBtn.disabled = !message.enabled;
+              selectBtn.title = message.enabled ? '' : 'Add a source first';
+            }
+            break;
+          }
+        }
       });
     </script>
   </body>
