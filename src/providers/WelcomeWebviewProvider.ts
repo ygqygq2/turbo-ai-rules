@@ -11,6 +11,7 @@ import { ConfigManager } from '../services/ConfigManager';
 import { Logger } from '../utils/logger';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 import { notify } from '../utils/notifications';
+import { CONFIG_PREFIX, CONFIG_KEYS } from '../utils/constants';
 
 /**
  * 欢迎页面提供者
@@ -218,9 +219,26 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
     Logger.info('Send initialState to webview', {
       dontShowAgain: welcomeShown,
     });
+
+    // 发送 welcomeShown 状态
     this.postMessage({
       type: 'initialState',
       payload: { dontShowAgain: welcomeShown },
+    });
+
+    // 检查是否有规则源，发送 rulesSelectionState 消息
+    const config = vscode.workspace.getConfiguration(CONFIG_PREFIX);
+    const sources = config.get<any[]>(CONFIG_KEYS.SOURCES, []);
+    const hasSource = sources.length > 0;
+
+    Logger.info('Send rulesSelectionState to webview', {
+      hasSource,
+      sourcesCount: sources.length,
+    });
+
+    this.postMessage({
+      type: 'rulesSelectionState',
+      payload: { enabled: hasSource },
     });
   }
 

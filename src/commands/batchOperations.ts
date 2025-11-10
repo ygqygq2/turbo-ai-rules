@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
+import { CONFIG_PREFIX } from '../utils/constants';
 
 /**
  * 批量禁用规则
@@ -26,7 +27,7 @@ export async function batchDisableRulesCommand(rules: ParsedRule[]): Promise<voi
   }
 
   try {
-    const vsConfig = vscode.workspace.getConfiguration('turbo-ai-rules');
+    const vsConfig = vscode.workspace.getConfiguration(CONFIG_PREFIX);
     const ignorePatterns = new Set(vsConfig.get<string[]>('ignorePatterns', []));
 
     // 添加规则路径到忽略模式
@@ -77,7 +78,7 @@ export async function batchEnableRulesCommand(rules: ParsedRule[]): Promise<void
   }
 
   try {
-    const vsConfig = vscode.workspace.getConfiguration('turbo-ai-rules');
+    const vsConfig = vscode.workspace.getConfiguration(CONFIG_PREFIX);
     const ignorePatterns = new Set(vsConfig.get<string[]>('ignorePatterns', []));
 
     // 从忽略模式中移除规则路径

@@ -16,8 +16,30 @@ export const EXTENSION_NAME = 'Turbo AI Rules';
 
 /**
  * 配置前缀
+ * 用于 vscode.workspace.getConfiguration(CONFIG_PREFIX)
  */
 export const CONFIG_PREFIX = 'turbo-ai-rules';
+
+/**
+ * 配置键定义
+ * 使用示例:
+ * ```typescript
+ * const config = vscode.workspace.getConfiguration(CONFIG_PREFIX);
+ * const sources = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);
+ * ```
+ */
+export const CONFIG_KEYS = {
+  /** 规则源列表 */
+  SOURCES: 'sources',
+  /** 同步策略 */
+  SYNC_STRATEGY: 'syncStrategy',
+  /** 默认适配器 */
+  DEFAULT_ADAPTER: 'defaultAdapter',
+  /** 自动同步 */
+  AUTO_SYNC: 'autoSync',
+  /** 用户规则保护 */
+  USER_RULES_PROTECTION: 'userRulesProtection',
+} as const;
 
 /**
  * 全局缓存目录

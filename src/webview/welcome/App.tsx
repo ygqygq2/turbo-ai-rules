@@ -41,7 +41,10 @@ export const App: React.FC = () => {
           }
           break;
         case 'rulesSelectionState':
-          setHasSource(message.enabled);
+          // 接收规则源状态（是否有源）
+          if (message.payload?.enabled !== undefined) {
+            setHasSource(message.payload.enabled);
+          }
           break;
         case 'syncStage':
           // TODO: 可以显示同步进度
