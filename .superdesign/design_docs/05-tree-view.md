@@ -550,3 +550,35 @@ accessibilityInformation: {
 
 _设计版本: 3.0_  
 _最后更新: 2025-10-31_
+
+## 12. 与 Rule Selector 的同步（新增）
+
+### 当前阶段（MVP）
+
+- Rule Selector 在 Webview 中保存选择后，通过执行命令 `turbo-ai-rules.refresh` 刷新树视图。
+- 选中路径持久化在 `workspaceState.uiState.ruleSelections[sourceId]`（等待后续展示）。
+- 树视图暂不渲染复选框，仅展示规则文件列表（未来升级）。
+
+### 下一阶段（P1）
+
+- 为目录与文件节点增加复选框（三态）。
+- 当用户在侧边栏操作复选框时，发送消息：
+
+```typescript
+{ type: 'treeSelectionSync', sourceId: string, selectedPaths: string[] }
+```
+
+- Webview Rule Selector 接收后更新其内部状态并局部 diff 重绘。
+
+### 消息防抖与一致性
+
+- 侧边栏发出的同步消息采用 300ms 防抖，避免快速点击导致频繁刷新。
+- Rule Selector 内部维护 `lastSyncedRevision`，忽略过期消息。
+
+### 错误处理
+
+- 若 workspaceState 超过大小限制（>10KB）导致写入失败，记录 `TAI-5003` 并通知用户“选择状态写入失败，请减少选择范围”。
+
+### 安全
+
+- 仅允许源的 `subPath` 下的相对路径进入选择集合；出现 `..` 的路径直接忽略并记录警告。

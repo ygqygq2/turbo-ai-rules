@@ -68,6 +68,25 @@ export interface ArtifactInfo {
 }
 
 /**
+ * 规则选择配置
+ */
+export interface RuleSelection {
+  mode: 'include' | 'exclude';
+  paths?: string[]; // 包含模式：选中的路径
+  excludePaths?: string[]; // 排除模式：排除的路径
+}
+
+/**
+ * 规则选择数据
+ */
+export interface RuleSelections {
+  version: number;
+  workspacePath: string;
+  lastUpdated: string;
+  selections: { [sourceId: string]: RuleSelection };
+}
+
+/**
  * 工作区数据管理器
  */
 export class WorkspaceDataManager {
@@ -394,12 +413,130 @@ export class WorkspaceDataManager {
   // ==================== 清理操作 ====================
 
   /**
+   * @description 读取规则选择配置
+   * @return {Promise<RuleSelections | null>}
+   */
+  public async readRuleSelections(): Promise<RuleSelections | null> {
+    const selectionsPath = path.join(this.getWorkspaceDir(), 'rule-selections.json');
+
+    if (!(await pathExists(selectionsPath))) {
+      return null;
+    }
+
+    try {
+      const content = await safeReadFile(selectionsPath);
+      return JSON.parse(content) as RuleSelections;
+    } catch (error) {
+      Logger.warn('Failed to read rule selections', { error: String(error) });
+      return null;
+    }
+  }
+
+  /**
+   * @description 写入规则选择配置
+   * @return {Promise<void>}
+   * @param workspacePath {string}
+   * @param selections {{ [sourceId: string]: RuleSelection }}
+   */
+  public async writeRuleSelections(
+    workspacePath: string,
+    selections: { [sourceId: string]: RuleSelection },
+  ): Promise<void> {
+    const selectionsPath = path.join(this.getWorkspaceDir(), 'rule-selections.json');
+
+    const data: RuleSelections = {
+      version: 1,
+      workspacePath,
+      lastUpdated: new Date().toISOString(),
+      selections,
+    };
+
+    try {
+      const content = JSON.stringify(data, null, 2);
+      await safeWriteFile(selectionsPath, content);
+      Logger.info('Rule selections written', {
+        sourceCount: Object.keys(selections).length,
+      });
+    } catch (error) {
+      throw new SystemError(
+        'Failed to write rule selections',
+        'TAI-5003',
+        error instanceof Error ? error : undefined,
+      );
+    }
+  }
+
+  /**
+   * @description 获取某源的规则选择
+   * @return {Promise<RuleSelection | null>}
+   * @param sourceId {string}
+   */
+  public async getRuleSelection(sourceId: string): Promise<RuleSelection | null> {
+    const data = await this.readRuleSelections();
+    if (!data) {
+      return null;
+    }
+    return data.selections[sourceId] || null;
+  }
+
+  /**
+   * @description 设置某源的规则选择
+   * @return {Promise<void>}
+   * @param workspacePath {string}
+   * @param sourceId {string}
+   * @param selection {RuleSelection}
+   */
+  public async setRuleSelection(
+    workspacePath: string,
+    sourceId: string,
+    selection: RuleSelection,
+  ): Promise<void> {
+    const data = (await this.readRuleSelections()) || {
+      version: 1,
+      workspacePath,
+      lastUpdated: new Date().toISOString(),
+      selections: {},
+    };
+
+    data.selections[sourceId] = selection;
+    data.lastUpdated = new Date().toISOString();
+
+    await this.writeRuleSelections(workspacePath, data.selections);
+  }
+
+  /**
+   * @description 删除某源的规则选择
+   * @return {Promise<void>}
+   * @param workspacePath {string}
+   * @param sourceId {string}
+   */
+  public async deleteRuleSelection(workspacePath: string, sourceId: string): Promise<void> {
+    const data = await this.readRuleSelections();
+    if (!data || !data.selections[sourceId]) {
+      return;
+    }
+
+    delete data.selections[sourceId];
+    data.lastUpdated = new Date().toISOString();
+
+    await this.writeRuleSelections(workspacePath, data.selections);
+    Logger.info('Rule selection deleted', { sourceId });
+  }
+
+  // ==================== 清理操作 ====================
+
+  /**
    * 清理当前工作区的所有数据
    */
   public async clearWorkspaceData(): Promise<void> {
     const workspaceDir = this.getWorkspaceDir();
 
-    const files = ['rules.index.json', 'search.index.json', 'generation.manifest.json'];
+    const files = [
+      'rules.index.json',
+      'search.index.json',
+      'generation.manifest.json',
+      'rule-selections.json',
+    ];
 
     for (const file of files) {
       const filePath = path.join(workspaceDir, file);
