@@ -650,6 +650,7 @@
     "@vscode/codicons": "^0.0.41",
     "@ygqygq2/vscode-log": "^0.0.3",
     "gray-matter": "^4.0.3",
-    "simple-git": "^3.28.0"
+    "simple-git": "^3.28.0",
+    "zustand": "^5.0.8"
   }
 }

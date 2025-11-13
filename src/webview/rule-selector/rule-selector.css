@@ -40,13 +40,103 @@
 .rule-selector-tree {
   flex: 1;
   overflow: auto;
-  padding: 12px 20px;
+  padding: 0;
 }
 .tree-placeholder {
   color: var(--vscode-descriptionForeground);
   text-align: center;
   margin-top: 60px;
   font-size: 15px;
+  padding: 20px;
+}
+
+/* 树形节点样式 */
+.tree-node-container {
+  user-select: none;
+}
+
+.tree-node-item {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding-right: 8px;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.tree-node-item:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.tree-node-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  color: var(--vscode-icon-foreground);
+  flex-shrink: 0;
+}
+
+.tree-node-chevron:hover {
+  color: var(--vscode-foreground);
+}
+
+.tree-node-checkbox {
+  margin: 0 6px 0 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.tree-node-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+  color: var(--vscode-icon-foreground);
+  flex-shrink: 0;
+}
+
+.tree-node-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+}
+
+.tree-node-count {
+  margin-left: 6px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* 平铺列表样式（兼容旧版） */
+.rule-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.rule-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--vscode-widget-border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.1s ease;
+}
+.rule-item:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+.rule-item.selected {
+  background-color: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+}
+.rule-item input[type='checkbox'] {
+  cursor: pointer;
+  margin: 0;
 }
 .rule-selector-footer {
   display: flex;
