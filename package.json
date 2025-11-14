@@ -254,6 +254,11 @@
           "group": "1_actions@4"
         },
         {
+          "command": "turbo-ai-rules.selectRules",
+          "when": "view == turboAiRulesExplorer && viewItem == source",
+          "group": "1_actions@5"
+        },
+        {
           "command": "turbo-ai-rules.copyRuleContent",
           "when": "view == turboAiRulesExplorer && viewItem == rule",
           "group": "1_actions@1"

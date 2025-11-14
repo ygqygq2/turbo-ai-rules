@@ -1,21 +1,15 @@
 import React, { useEffect } from 'react';
 import { Icon } from '../components/Icon';
 import { TreeNode } from './TreeNode';
-import { useRuleSelectorStore } from './store';
+import { useRuleSelectorStore, setSelectionChannelPort } from './store';
 import { getDirectoryFilePaths } from './tree-utils';
 import type { TreeNode as TreeNodeType } from './tree-utils';
 import '../global.css';
 import './rule-selector.css';
 
-// 定义消息类型
-interface VsCodeApi {
-  postMessage(message: any): void;
-  getState(): any;
-  setState(state: any): void;
-}
-
-declare const acquireVsCodeApi: () => VsCodeApi;
-const vscode = acquireVsCodeApi();
+// 新的 RPC 封装
+import { createWebviewRPC } from '../common/messaging';
+const rpc = createWebviewRPC();
 
 interface RuleSelection {
   mode: 'include' | 'exclude';
@@ -23,18 +17,27 @@ interface RuleSelection {
   excludePaths?: string[];
 }
 
-interface RuleItem {
+interface SourceInfo {
   id: string;
-  title: string;
-  filePath: string;
-  tags: string[];
-  priority: number;
+  name: string;
+  totalRules?: number; // 后端传递的真实规则数
 }
 
 interface InitialData {
   workspacePath: string;
   selections: { [sourceId: string]: RuleSelection };
-  rulesBySource: { [sourceId: string]: RuleItem[] };
+  fileTreeBySource: { [sourceId: string]: any[] };
+  sourceList?: SourceInfo[]; // 源信息列表（包含 id、name 和真实规则数）
+  currentSourceId?: string; // 当前选择的源 ID
+}
+
+interface SelectionChangeMessage {
+  type: 'selectionChanged';
+  sourceId: string;
+  selectedPaths: string[];
+  totalCount: number;
+  timestamp: number;
+  fromPersistence?: boolean;
 }
 
 /**
@@ -47,7 +50,6 @@ export const App: React.FC = () => {
     workspacePath,
     currentSourceId,
     availableSources,
-    rules,
     selectedPaths,
     originalPaths,
     totalRules,
@@ -68,71 +70,90 @@ export const App: React.FC = () => {
 
   // 监听来自扩展的消息
   useEffect(() => {
-    // 页面就绪，通知扩展端发送初始数据
-    try {
-      vscode.postMessage({ type: 'webviewReady' });
-    } catch (_) {
-      // ignore
-    }
+    // 请求初始数据（RPC）
+    rpc
+      .request('getInitialData')
+      .catch((err) => console.error('Failed to request initial data', err));
 
-    const handleMessage = (event: MessageEvent) => {
-      const message = event.data;
-
-      switch (message.type) {
-        case 'initialData': {
-          const data = message.payload as InitialData;
-          setInitialData(data);
-          break;
-        }
-        case 'saveSuccess': {
-          updateAfterSave();
-          break;
-        }
-        case 'error': {
-          setSaving(false);
-          alert(message.payload.message || '操作失败');
-          break;
-        }
-        default:
-          break;
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [setInitialData, updateAfterSave, setSaving]);
-
-  // 保存
-  const handleSave = () => {
-    setSaving(true);
-    vscode.postMessage({
-      type: 'saveRuleSelection',
-      payload: {
-        sourceId: currentSourceId,
-        selection: {
-          paths: selectedPaths,
-        },
-      },
+    // 监听 initialData 推送
+    const offInitial = rpc.on('initialData', (payload: InitialData) => {
+      setInitialData(payload);
     });
+
+    // 监听 MessageChannel 初始化消息
+    const offInitChannel = rpc.on('initSelectionChannel', (payload: any) => {
+      const port = payload?.port as MessagePort | undefined;
+      if (port) {
+        // 设置到 store 以供 selectNode/selectAll/clearAll 使用
+        setSelectionChannelPort(port);
+
+        // 监听来自 Extension 的选择变更（左侧树视图的勾选）
+        port.onmessage = (event: MessageEvent<SelectionChangeMessage>) => {
+          const msg = event.data;
+          if (msg.type === 'selectionChanged' && msg.sourceId === currentSourceId) {
+            console.log('Selection changed from extension via MessageChannel', {
+              selectedCount: msg.selectedPaths.length,
+              totalCount: msg.totalCount,
+              fromPersistence: msg.fromPersistence,
+            });
+
+            // 直接更新 Zustand store 的 selectedPaths（不触发通知，避免循环）
+            useRuleSelectorStore.setState({
+              selectedPaths: msg.selectedPaths,
+              totalRules: msg.totalCount,
+            });
+          }
+        };
+
+        port.start();
+        console.log('MessageChannel port initialized for selection sync', {
+          sourceId: payload.sourceId,
+        });
+      }
+    });
+
+    // 保存成功事件（如果扩展侧未来推送）
+    const offSave = rpc.on('saveSuccess', () => {
+      updateAfterSave();
+    });
+
+    const offError = rpc.on('error', (payload: any) => {
+      setSaving(false);
+      alert(payload?.message || '操作失败');
+    });
+
+    return () => {
+      offInitial();
+      offInitChannel();
+      offSave();
+      offError();
+      // 清理 MessageChannel port
+      setSelectionChannelPort(null);
+    };
+  }, [setInitialData, updateAfterSave, setSaving, currentSourceId]);
+
+  // 保存（确认持久化）
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await rpc.request<{ message: string }>('saveRuleSelection', {
+        sourceId: currentSourceId,
+        selection: { paths: selectedPaths },
+        totalCount: totalRules,
+      });
+      updateAfterSave();
+      // 显示成功提示
+      console.log('已确认并持久化:', res.message);
+    } catch (error) {
+      setSaving(false);
+      alert((error as Error).message || '保存失败');
+    }
   };
 
   // 关闭
   const handleClose = () => {
-    vscode.postMessage({
-      type: 'close',
-    });
+    rpc.notify('close');
   };
-
-  // 过滤规则
-  const filteredRules = rules.filter((rule) => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    return (
-      rule.title.toLowerCase().includes(term) ||
-      rule.filePath.toLowerCase().includes(term) ||
-      rule.tags.some((tag) => tag.toLowerCase().includes(term))
-    );
-  });
 
   /**
    * @description 递归渲染树形节点
@@ -188,16 +209,16 @@ export const App: React.FC = () => {
       </header>
       {/* Toolbar */}
       <div className="rule-selector-toolbar">
-        {availableSources.length > 1 && (
+        {availableSources.length > 0 && (
           <select
             className="input"
             value={currentSourceId}
             onChange={(e) => switchSource(e.target.value)}
             style={{ width: 200, marginRight: 8 }}
           >
-            {availableSources.map((sourceId) => (
-              <option key={sourceId} value={sourceId}>
-                {sourceId}
+            {availableSources.map((source) => (
+              <option key={source.id} value={source.id}>
+                {source.name}
               </option>
             ))}
           </select>
@@ -255,8 +276,9 @@ export const App: React.FC = () => {
           className="button button-primary"
           onClick={handleSave}
           disabled={!hasChanges || saving}
+          title="确认当前选择并持久化（已实时同步到左侧树视图）"
         >
-          {saving ? '保存中...' : '保存'}
+          {saving ? '确认中...' : '确认'}
         </button>
       </footer>
     </div>

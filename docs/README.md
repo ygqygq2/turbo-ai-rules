@@ -42,25 +42,25 @@ This directory contains all project documentation, organized into user guides an
 | Document                                                       | Description                                      |
 | -------------------------------------------------------------- | ------------------------------------------------ |
 | [架构设计](./development/01-design.md)                         | System architecture, design patterns, data flows |
-| [自定义适配器设计](./development/02-custom-adapters-design.md) | Custom adapter design and implementation         |
+| [自定义适配器设计](./development/23-custom-adapters-design.md) | Custom adapter design and implementation         |
 | [文档导航（必读）](./00-documentation-system.md)               | How to read docs and navigate quickly            |
-| [测试覆盖规范](./development/04-test-coverage.md)              | Test coverage requirements and reports           |
+| [测试覆盖规范](./development/41-test-coverage.md)              | Test coverage requirements and reports           |
 
 #### 🛠️ 开发层：开发指南和最佳实践
 
 | Document                                                       | Description                                   |
 | -------------------------------------------------------------- | --------------------------------------------- |
-| [开发指南](./development/05-development.md)                    | Environment setup, coding standards, testing  |
-| [维护指南](./development/06-maintaining.md)                    | Maintenance workflows and best practices      |
-| [Webview 最佳实践](./development/07-webview-best-practices.md) | Webview development architecture and patterns |
-| [Webview CSS 规范](./development/08-webview-css-guide.md)      | CSS organization and styling guidelines       |
+| [开发指南](./development/40-development.md)                    | Environment setup, coding standards, testing  |
+| [维护指南](./development/42-maintaining.md)                    | Maintenance workflows and best practices      |
+| [Webview 最佳实践](./development/43-webview-best-practices.md) | Webview development architecture and patterns |
+| [Webview CSS 规范](./development/44-webview-css-guide.md)      | CSS organization and styling guidelines       |
 
 #### 🎨 实施层：UI 实施文档
 
 | Document                                                                     | Description                                  |
 | ---------------------------------------------------------------------------- | -------------------------------------------- |
-| [UI 设计方案](./development/09-ui-design.md)                                 | Complete UI design specification             |
-| [UI 开发流程](./development/10-ui-development-process.md)                    | UI development workflow and standards        |
+| [UI 设计方案](./development/31-ui-design.md)                                 | Complete UI design specification             |
+| [UI 开发流程](./development/32-ui-development-process.md)                    | UI development workflow and standards        |
 | [UI Phase 1 实施](./development/11-ui-phase1-implementation.md)              | Phase 1: Basic UI implementation             |
 | [UI Phase 2 实施](./development/12-ui-phase2-implementation.md)              | Phase 2: Enhanced UI implementation overview |
 | [欢迎页面实施](./development/13-ui-phase2-01-welcome-page-implementation.md) | Welcome page implementation details          |
@@ -71,9 +71,9 @@ This directory contains all project documentation, organized into user guides an
 ### Quick Start for Contributors
 
 1. **理解架构**：阅读 [架构设计](./development/01-design.md) 了解系统架构
-2. **搭建环境**：按照 [开发指南](./development/05-development.md) 设置开发环境
-3. **学习规范**：查看 [维护指南](./development/06-maintaining.md) 了解贡献流程
-4. **Webview 开发**：参考 [Webview 最佳实践](./development/07-webview-best-practices.md) 和 [CSS 规范](./development/08-webview-css-guide.md)
+2. **搭建环境**：按照 [开发指南](./development/40-development.md) 设置开发环境
+3. **学习规范**：查看 [维护指南](./development/42-maintaining.md) 了解贡献流程
+4. **Webview 开发**：参考 [Webview 最佳实践](./development/43-webview-best-practices.md) 和 [CSS 规范](./development/44-webview-css-guide.md)
 
 ### Other Resources
 
@@ -95,8 +95,8 @@ This directory contains all project documentation, organized into user guides an
 - **Installing**: See [User Guide - Quick Start](./user-guide/README.md#-quick-start)
 - **Configuring**: See [02. Configuration Guide](./user-guide/02-configuration.md)
 - **Troubleshooting**: See [04. FAQ](./user-guide/04-faq.md)
-- **Contributing**: See [维护指南](./development/06-maintaining.md)
-- **UI Development**: See [Webview 最佳实践](./development/07-webview-best-practices.md)
+- **Contributing**: See [维护指南](./development/42-maintaining.md)
+- **UI Development**: See [Webview 最佳实践](./development/43-webview-best-practices.md)
 
 ---
 

@@ -33,7 +33,7 @@
 │ │ File Path: rules/ts-naming.mdc    │   │
 │ │ Version: 1.2.0                    │   │
 │ │ Author: Team Lead                 │   │
-│ │ Priority: HIGH 🔥                 │   │
+│ │ Priority: high 🔥                 │   │
 │ └───────────────────────────────────┘   │
 ├─────────────────────────────────────────┤
 │ 📝 Description                          │
@@ -406,7 +406,7 @@ function escapeHtml(text: string): string {
 <!-- 元数据 -->
 <dl class="metadata-section" aria-label="Rule metadata">
   <dt class="metadata-label">Priority:</dt>
-  <dd class="metadata-value">HIGH</dd>
+  <dd class="metadata-value">high</dd>
 </dl>
 
 <!-- 标签 -->

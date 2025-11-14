@@ -41,7 +41,7 @@
 - 样式与主题规范：`./css-guide.md`
 - Codicons 图标：`./codicons-guide.md`
 - Webview 开发最佳实践：`./best-practices.md`
-- UI 设计/协作流程：`../10-ui-development-process.md`
+- UI 设计/协作流程:`../32-ui-development-process.md`
 
 ---
 

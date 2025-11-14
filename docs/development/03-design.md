@@ -1,9 +1,6 @@
 # Turbo AI Rules - 产品整体设计
 
 > 本文档是 Turbo AI Rules 扩展的总体设计概览，详细内容见各子文档。
->
-> **版本**: 1.0.0  
-> **最后更新**: 2025-01-23
 
 ---
 
@@ -11,14 +8,14 @@
 
 本设计文档采用分层结构，主文档提供概览和导航，详细设计在各子文档中：
 
-- **[01-01-background.md](./01-01-background.md)** - 项目背景和设计目标
-- **[01-02-core-concepts.md](./01-02-core-concepts.md)** - 核心理念和设计原则
-- **[01-03-architecture.md](./01-03-architecture.md)** - 顶层架构和模块分工
-- **[01-04-storage-strategy.md](./01-04-storage-strategy.md)** - 存储策略和文件管理
-- **[01-05-adapter-design.md](./01-05-adapter-design.md)** - 适配器架构和扩展机制
-- **[01-06-config-sync.md](./01-06-config-sync.md)** - 配置管理和同步策略
-- **[01-07-parser-validator.md](./01-07-parser-validator.md)** - 解析验证和错误处理
-- **[01-08-data-model.md](./01-08-data-model.md)** - 数据结构和类型定义
+- **[01-background.md](./01-background.md)** - 项目背景和设计目标
+- **[02-core-concepts.md](./02-core-concepts.md)** - 核心理念和设计原则
+- **[20-architecture.md](./20-architecture.md)** - 顶层架构和模块分工
+- **[11-storage-strategy.md](./11-storage-strategy.md)** - 存储策略和文件管理
+- **[21-adapter-design.md](./21-adapter-design.md)** - 适配器架构和扩展机制
+- **[22-config-sync.md](./22-config-sync.md)** - 配置管理和同步策略
+- **[12-parser-validator.md](./12-parser-validator.md)** - 解析验证和错误处理
+- **[10-data-model.md](./10-data-model.md)** - 数据结构和类型定义
 
 ---
 
@@ -54,10 +51,15 @@
 
 ### 3. 规则选择
 
-- 浏览规则源的目录结构
-- 选择/取消选择规则
-- 按标签过滤规则
-- 搜索规则
+- **多种选择方式**：
+  - 左侧树视图复选框（直接勾选规则）
+  - 右侧 Webview 选择器（可视化界面）
+  - 文件树视图（文件系统结构）
+- **实时同步**：三种选择方式完全同步，通过事件系统实时更新
+- **浏览规则源**：查看目录结构和规则列表
+- **按标签过滤**：根据规则标签筛选
+- **规则搜索**：全文搜索规则内容
+- **状态持久化**：选择状态自动保存，跨会话保持
 
 ### 4. 配置生成
 
@@ -68,46 +70,50 @@
 
 ### 5. 规则浏览
 
-- 侧边栏树视图显示规则源和规则
-- 规则详情面板查看规则内容
-- 统计面板显示规则数量和分布
-- 高级搜索界面
+- **侧边栏树视图**：
+  - 显示规则源和规则列表
+  - 支持复选框直接选择规则
+  - 显示选择状态（已选/总数）
+  - 图标标识优先级和状态
+- **规则详情面板**：查看规则完整内容
+- **统计面板**：显示规则数量和分布
+- **高级搜索界面**：多条件搜索和过滤
 
 ---
 
 ## 架构概览
 
-详细架构请参见 [01-03-architecture.md](./01-03-architecture.md)
+详细架构请参见 [20-architecture.md](./20-architecture.md)
 
 ---
 
 ## 存储策略
 
-详细策略请参见 [01-04-storage-strategy.md](./01-04-storage-strategy.md)
+详细策略请参见 [11-storage-strategy.md](./11-storage-strategy.md)
 
 ---
 
 ## 适配器设计
 
-详细设计请参见 [01-05-adapter-design.md](./01-05-adapter-design.md)
+详细设计请参见 [21-adapter-design.md](./21-adapter-design.md)
 
 ---
 
 ## 同步策略
 
-详细策略请参见 [01-06-config-sync.md](./01-06-config-sync.md)
+详细策略请参见 [22-config-sync.md](./22-config-sync.md)
 
 ---
 
 ## 规则格式
 
-详细格式请参见 [01-07-parser-validator.md](./01-07-parser-validator.md)
+详细格式请参见 [12-parser-validator.md](./12-parser-validator.md)
 
 ---
 
 ## 数据模型
 
-详细定义请参见 [01-08-data-model.md](./01-08-data-model.md)
+详细定义请参见 [10-data-model.md](./10-data-model.md)
 
 ---
 
@@ -151,32 +157,15 @@
 
 ## 测试覆盖
 
-详细要求见 [04-test-coverage.md](./04-test-coverage.md)
+详细要求见 [41-test-coverage.md](./41-test-coverage.md)
 
 ---
 
 ## 开发与维护
 
-- **开发指南**: [05-development.md](./05-development.md)
-- **维护指南**: [06-maintaining.md](./06-maintaining.md)
-- **UI 开发**: [07-webview-best-practices.md](./07-webview-best-practices.md) 等
-
----
-
-## 版本历史
-
-### v1.0.0 (2025-01-23)
-
-- ✅ 核心功能完成（规则源管理、同步、配置生成）
-- ✅ 内置适配器（Cursor、Copilot、Continue）
-- ✅ UI Phase 1 & Phase 2
-- ✅ 文档体系完善
-
-## 相关文档
-
-- **用户指南**: [../user-guide/README.md](../user-guide/README.md)
-- **开发文档**: [./README.md](./README.md)
-- **自定义适配器**: [02-custom-adapters-design.md](./02-custom-adapters-design.md)
+- **开发指南**: [40-development.md](./40-development.md)
+- **维护指南**: [42-maintaining.md](./42-maintaining.md)
+- **UI 开发**: [43-webview-best-practices.md](./43-webview-best-practices.md) 等
 
 ---
 

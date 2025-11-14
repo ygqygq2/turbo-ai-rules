@@ -1,6 +1,29 @@
 # 开发文档总览（development/）
 
-本文档说明 `docs/development/` 的新结构与维护规范。自 2025-11 起，取消按“阶段（Phase）”划分的文档，改为“设计 Design”与“实施 Implementation”两大类，并对旧文档进行归档/清理。
+本文档说明 `docs/development/` 的新结构与维护规范。自 2025-11 起，取消按"阶段（Phase）"划分的文档，改为"设计 Design"与"实施 Implementation"两大类，并对旧文档进行归档/清理。
+
+## 核心设计文档
+
+- **[01-design.md](./01-design.md)** - 产品整体设计总览
+- **[01-background.md](./01-background.md)** - 项目背景和设计目标
+- **[02-core-concepts.md](./02-core-concepts.md)** - 核心理念和设计原则
+- **[03-design.md](./03-design.md)** - 整体设计指引(总纲)
+- **[10-data-model.md](./10-data-model.md)** - 数据结构和类型定义
+- **[11-storage-strategy.md](./11-storage-strategy.md)** - 存储策略和文件管理
+- **[12-parser-validator.md](./12-parser-validator.md)** - 解析验证和错误处理
+- **[20-architecture.md](./20-architecture.md)** - 顶层架构和模块分工
+- **[21-adapter-design.md](./21-adapter-design.md)** - 适配器架构和扩展机制
+- **[22-config-sync.md](./22-config-sync.md)** - 配置管理和同步策略
+- **[23-custom-adapters-design.md](./23-custom-adapters-design.md)** - 自定义适配器设计
+- **[30-ui-design-overview.md](./30-ui-design-overview.md)** - UI 设计概览(包含复选框功能)
+- **[31-ui-design.md](./31-ui-design.md)** - UI 设计详细方案
+- **[32-ui-development-process.md](./32-ui-development-process.md)** - UI 开发流程
+- **[40-development.md](./40-development.md)** - 开发指南
+- **[41-test-coverage.md](./41-test-coverage.md)** - 测试覆盖规范
+- **[42-maintaining.md](./42-maintaining.md)** - 维护指南
+- **[43-webview-best-practices.md](./43-webview-best-practices.md)** - Webview 最佳实践
+- **[44-webview-css-guide.md](./44-webview-css-guide.md)** - Webview CSS 规范
+- **[45-codicons-guide.md](./45-codicons-guide.md)** - Codicons 使用指南
 
 ## 文档分层
 

@@ -380,4 +380,4 @@ src/
 
 - 设计文档: `.superdesign/design_docs/01-welcome-page.md`
 - 用户指南: `docs/user-guide/01-commands.md`
-- 开发指南: `docs/development/10-ui-development-process.md`
+- 开发指南: `docs/development/32-ui-development-process.md`

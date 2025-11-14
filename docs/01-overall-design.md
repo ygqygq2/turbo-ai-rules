@@ -13,7 +13,7 @@
 - 多工具适配：将统一规则集合转换为不同 AI 工具所需的配置文件
 - 冲突解决与校验：合并、去重、验证，保证生成结果可用
 
-参阅：docs/development/01-01-background.md（项目背景与目标）
+参阅：docs/development/01-background.md（项目背景与目标）
 
 ---
 
@@ -35,7 +35,7 @@
 - Adapter 层：面向 Cursor/Copilot/Continue 及自定义适配器
 - Storage 层：全局缓存 + 工作区索引 + 项目根输出
 
-参阅：docs/development/01-03-architecture.md（顶层架构设计）
+参阅：docs/development/20-architecture.md（顶层架构设计）
 
 ---
 
@@ -46,7 +46,7 @@
 - Local-First：全量数据本地化，离线可用，不上传用户规则
 - 单一数据源：Git 仓库即真源，生成物与索引均可重建
 
-参阅：docs/development/01-02-core-concepts.md（核心理念与设计原则）
+参阅：docs/development/02-core-concepts.md（核心理念与设计原则）
 
 ---
 
@@ -57,7 +57,7 @@
 - Adapter：将合并后的规则集转换为特定 AI 工具配置
 - RulesOrchestrator：编排端到端流程（同步/解析/合并/生成）
 
-参阅：docs/development/01-08-data-model.md（数据模型）
+参阅：docs/development/10-data-model.md（数据模型）
 
 ---
 
@@ -69,7 +69,7 @@
 - workspaceState：轻量 UI/同步元数据（< 10KB）
 - 项目根：仅输出最终 AI 配置文件（如 .github/copilot-instructions.md、.cursorrules）
 
-参阅：docs/development/01-04-storage-strategy.md（存储策略设计）
+参阅:docs/development/11-storage-strategy.md(存储策略设计)
 
 ---
 
@@ -92,7 +92,7 @@
   2. 读取合并后的规则集
   3. 生成并写入各工具目标文件（原子写、带元注释）
 
-参阅：docs/development/01-06-config-sync.md（配置与同步）、相关命令文档
+参阅:docs/development/22-config-sync.md(配置与同步)、相关命令文档
 
 ---
 
@@ -105,7 +105,7 @@
 - Adapters：Cursor/Copilot/Continue/自定义
 - SyncScheduler：手动/定时/启动触发与并发控制
 
-参阅：docs/development/01-05-adapter-design.md（适配器设计）
+参阅:docs/development/21-adapter-design.md(适配器设计)
 
 ---
 

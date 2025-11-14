@@ -86,6 +86,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const treeView = vscode.window.createTreeView('turboAiRulesExplorer', {
       treeDataProvider: treeProvider,
       showCollapseAll: true,
+      manageCheckboxStateManually: true, // 启用手动管理复选框状态
+    });
+
+    // 注册复选框变更处理器
+    treeView.onDidChangeCheckboxState(async (e) => {
+      await treeProvider.handleCheckboxChange(e.items);
     });
 
     const statusBarProvider = new StatusBarProvider(rulesManager);
@@ -176,19 +182,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
       // Context menu commands
       vscode.commands.registerCommand('turbo-ai-rules.editSource', async (item) => {
-        const sourceId = item?.data?.source?.id;
-        await editSourceCommand(sourceId);
+        await editSourceCommand(item);
         treeProvider.refresh();
       }),
 
       vscode.commands.registerCommand('turbo-ai-rules.testConnection', async (item) => {
-        const sourceId = item?.data?.source?.id;
-        await testConnectionCommand(sourceId);
+        await testConnectionCommand(item);
       }),
 
       vscode.commands.registerCommand('turbo-ai-rules.toggleSource', async (item) => {
-        const sourceId = item?.data?.source?.id;
-        await toggleSourceCommand(sourceId);
+        await toggleSourceCommand(item);
         treeProvider.refresh();
       }),
 
@@ -228,21 +231,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         await searchProvider.showSearch();
       }),
 
-      vscode.commands.registerCommand('turbo-ai-rules.selectRules', async () => {
+      vscode.commands.registerCommand('turbo-ai-rules.selectRules', async (item?: any) => {
         const ruleSelectorProvider = RuleSelectorWebviewProvider.getInstance(context);
-        await ruleSelectorProvider.showRuleSelector();
+        await ruleSelectorProvider.showRuleSelector(item);
       }),
 
       vscode.commands.registerCommand(
         'turbo-ai-rules.viewSourceDetail',
         async (sourceId?: string | any) => {
-          const actualSourceId =
-            typeof sourceId === 'object' && sourceId?.data?.source?.id
-              ? sourceId.data.source.id
-              : typeof sourceId === 'string'
-              ? sourceId
-              : undefined;
-          await viewSourceDetailCommand(actualSourceId);
+          await viewSourceDetailCommand(sourceId);
         },
       ),
 

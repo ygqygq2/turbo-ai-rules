@@ -4,6 +4,8 @@ import * as vscode from 'vscode';
 
 import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
 import { GitManager } from '../services/GitManager';
+import { SelectionStateManager } from '../services/SelectionStateManager';
+import { RulesManager } from '../services/RulesManager';
 import { Logger } from '../utils/logger';
 import type { RuleSelection } from '../services/WorkspaceDataManager';
 
@@ -55,12 +57,14 @@ export class RuleFileTreeDataProvider implements vscode.TreeDataProvider<RuleFil
 
   private sourceId: string;
   private sourcePath: string;
+  private workspacePath: string;
   private selectedPaths: Set<string>;
   private dataManager: WorkspaceDataManager;
 
-  constructor(sourceId: string, sourcePath: string) {
+  constructor(sourceId: string, sourcePath: string, workspacePath: string) {
     this.sourceId = sourceId;
     this.sourcePath = sourcePath;
+    this.workspacePath = workspacePath;
     this.selectedPaths = new Set();
     this.dataManager = WorkspaceDataManager.getInstance();
   }
@@ -105,9 +109,7 @@ export class RuleFileTreeDataProvider implements vscode.TreeDataProvider<RuleFil
         const item = new RuleFileTreeItem(
           uri,
           entry.name,
-          isFile
-            ? vscode.TreeItemCollapsibleState.None
-            : vscode.TreeItemCollapsibleState.Collapsed,
+          isFile ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed,
           isFile,
           ruleCount,
         );
@@ -131,7 +133,7 @@ export class RuleFileTreeDataProvider implements vscode.TreeDataProvider<RuleFil
 
       return items;
     } catch (error) {
-      Logger.error('Failed to read directory for tree view', { error, dirPath });
+      Logger.error('Failed to read directory for tree view', error as Error);
       return [];
     }
   }
@@ -148,10 +150,10 @@ export class RuleFileTreeDataProvider implements vscode.TreeDataProvider<RuleFil
   /**
    * @description 处理复选框状态变化
    * @return {Promise<void>}
-   * @param items {readonly vscode.TreeCheckboxChangeEvent<RuleFileTreeItem>['items']}
+   * @param items {readonly [RuleFileTreeItem, vscode.TreeItemCheckboxState][]}
    */
   async handleCheckboxChange(
-    items: readonly vscode.TreeCheckboxChangeEvent<RuleFileTreeItem>['items'],
+    items: readonly [RuleFileTreeItem, vscode.TreeItemCheckboxState][],
   ): Promise<void> {
     for (const [item, checkState] of items) {
       if (!(item instanceof RuleFileTreeItem)) continue;
@@ -206,7 +208,7 @@ export class RuleFileTreeDataProvider implements vscode.TreeDataProvider<RuleFil
         }
       }
     } catch (error) {
-      Logger.error('Failed to select directory', { error, dirPath });
+      Logger.error('Failed to select directory', error as Error);
     }
   }
 
@@ -232,7 +234,7 @@ export class RuleFileTreeDataProvider implements vscode.TreeDataProvider<RuleFil
         }
       }
     } catch (error) {
-      Logger.error('Failed to deselect directory', { error, dirPath });
+      Logger.error('Failed to deselect directory', error as Error);
     }
   }
 
@@ -247,16 +249,25 @@ export class RuleFileTreeDataProvider implements vscode.TreeDataProvider<RuleFil
         paths: Array.from(this.selectedPaths),
       };
 
-      await this.dataManager.setRuleSelection(this.sourceId, selection);
+      await this.dataManager.setRuleSelection(this.workspacePath, this.sourceId, selection);
       Logger.info('Rule selection saved', {
         sourceId: this.sourceId,
         count: this.selectedPaths.size,
       });
 
+      // 触发选择变更事件（用于左右同步）
+      const rulesManager = RulesManager.getInstance();
+      const totalCount = rulesManager.getRulesBySource(this.sourceId).length;
+      SelectionStateManager.getInstance().notifySelectionChanged(
+        this.sourceId,
+        this.selectedPaths.size,
+        totalCount,
+      );
+
       // 刷新侧边栏规则树
       vscode.commands.executeCommand('turbo-ai-rules.refresh');
     } catch (error) {
-      Logger.error('Failed to save rule selection', { error, sourceId: this.sourceId });
+      Logger.error('Failed to save rule selection', error as Error);
       vscode.window.showErrorMessage(`保存规则选择失败: ${error}`);
     }
   }
@@ -275,7 +286,7 @@ export class RuleFileTreeDataProvider implements vscode.TreeDataProvider<RuleFil
       });
       this.refresh();
     } catch (error) {
-      Logger.error('Failed to load rule selection', { error, sourceId: this.sourceId });
+      Logger.error('Failed to load rule selection', error as Error);
     }
   }
 

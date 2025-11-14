@@ -30,26 +30,26 @@
 ├─ 📦 company-rules                         main   ✓
 │  ├─ � rules/                            [✓] (目录 - 全选)
 │  │  ├─ 📁 auth/                          [✓] (子目录 - 全选)
-│  │  │  ├─ ☑️ jwt-validation.md           🔥 HIGH • auth, security
-│  │  │  └─ ☑️ oauth2-flow.md              ⚠️ MEDIUM • auth, oauth
+│  │  │  ├─ ☑️ jwt-validation.md           🔥 high • auth, security
+│  │  │  └─ ☑️ oauth2-flow.md              ⚠️ medium • auth, oauth
 │  │  ├─ 📁 security/                      [▣] (部分选中)
-│  │  │  ├─ ☑️ input-sanitize.md           ⚠️ MEDIUM • security
-│  │  │  └─ ☐ xss-prevention.md            ℹ️ LOW • security, xss
+│  │  │  ├─ ☑️ input-sanitize.md           ⚠️ medium • security
+│  │  │  └─ ☐ xss-prevention.md            ℹ️ low • security, xss
 │  │  └─ 📁 style/                         [☐] (未选)
-│  │     └─ ☐ naming-conventions.md        ℹ️ LOW • style
+│  │     └─ ☐ naming-conventions.md        ℹ️ low • style
 │  └─ ☐ README.md                          (非规则文件)
 │
 ├─ 📦 personal-rules                        develop ✗
 │  ├─ � typescript/                       [✓]
-│  │  ├─ ☑️ strict-mode.md                 🔥 HIGH • ts, config
-│  │  └─ ☑️ type-guards.md                 ⚠️ MEDIUM • ts
+│  │  ├─ ☑️ strict-mode.md                 🔥 high • ts, config
+│  │  └─ ☑️ type-guards.md                 ⚠️ medium • ts
 │  └─ 📁 react/                            [☐]
-│     ├─ ☐ hooks-rules.md                  ⚠️ MEDIUM • react
-│     └─ ☐ component-patterns.md           ℹ️ LOW • react, patterns
+│     ├─ ☐ hooks-rules.md                  ⚠️ medium • react
+│     └─ ☐ component-patterns.md           ℹ️ low • react, patterns
 │
 └─ 📦 archived-rules                        main   ⚠️ (冲突)
    ├─ 📁 legacy/                           [▣]
-   │  └─ ☑️ old-patterns.md                ℹ️ LOW • legacy
+   │  └─ ☑️ old-patterns.md                ℹ️ low • legacy
    └─ ☐ CHANGELOG.md
 
 视图切换按钮:
@@ -166,7 +166,7 @@
 ```markdown
 **JWT Validation Rules**  
 � rules/auth/jwt-validation.md  
-🔥 Priority: HIGH  
+🔥 Priority: high  
 🏷️ Tags: auth, security, jwt  
 📦 Source: company-rules  
 ✍️ Author: John Doe  
@@ -177,7 +177,7 @@
 
 **源节点描述**: `main ✓` (分支 + 状态)  
 **目录节点描述**: `3/5 selected` (选中数/总数)  
-**文件节点描述**: `HIGH • auth, security` (优先级 + 标签预览)
+**文件节点描述**: `high • auth, security` (优先级 + 标签预览)
 
 ---
 
@@ -215,17 +215,22 @@
 **文件节点菜单**:
 
 ```
-──────────────────────────
+────────────────────────────
 ☑️  选择/取消选择
-──────────────────────────
+────────────────────────────
 👁️  查看详情
 📋  复制内容
 📤  导出规则
 ✏️  在编辑器中打开
-──────────────────────────
-�  在文件管理器中显示
-──────────────────────────
+────────────────────────────
+📂  在文件管理器中显示
+────────────────────────────
 ```
+
+**说明**：
+
+- “选择/取消选择”菜单项会根据当前复选框状态动态显示
+- 右键菜单操作与复选框点击效果一致
 
 ### 展开/折叠
 
@@ -245,10 +250,27 @@
 ### 选择和操作
 
 - **单击节点**: 高亮显示（不影响复选框）
+- **单击复选框**: 切换选中状态（仅规则节点）
 - **双击文件**: 打开规则详情面板
 - **空格键**: 切换当前节点的复选框状态
 - **Ctrl/Cmd+A**: 全选当前源的所有规则
 - **拖放**: 重新排序（Phase 3 待实现）
+
+**复选框特性**（已实现）：
+
+- ✅ 仅规则节点支持复选框
+- ✅ 复选框状态实时保存到 `.turbo-ai-rules/rule-selections.json`
+- ✅ 与右侧 Webview 实时同步
+- ✅ 批量操作优化（按源分组一次性保存）
+- ✅ 事件驱动同步（通过 `SelectionStateManager`）
+- 🔵 目录节点三态复选框（未来）
+- 🔵 源节点全选/全不选（未来）
+
+- ✅ 仅规则节点支持复选框
+- ✅ 夏选框状态实时保存
+- ✅ 与右侧 Webview 同步
+- ✅ 批量操作优化
+- 🔵 目录节点三态复选框（未来）
 
 ---
 
@@ -551,34 +573,60 @@ accessibilityInformation: {
 _设计版本: 3.0_  
 _最后更新: 2025-10-31_
 
-## 12. 与 Rule Selector 的同步（新增）
+## 12. 与 Rule Selector 的同步
 
-### 当前阶段（MVP）
+### 状态同步机制（已实现）
 
-- Rule Selector 在 Webview 中保存选择后，通过执行命令 `turbo-ai-rules.refresh` 刷新树视图。
-- 选中路径持久化在 `workspaceState.uiState.ruleSelections[sourceId]`（等待后续展示）。
-- 树视图暂不渲染复选框，仅展示规则文件列表（未来升级）。
+左侧树视图和右侧规则选择器的选择状态通过事件系统实时同步：
 
-### 下一阶段（P1）
+**核心组件**:
 
-- 为目录与文件节点增加复选框（三态）。
-- 当用户在侧边栏操作复选框时，发送消息：
+- `SelectionStateManager`: 事件发射器，管理选择状态变更事件
+- `RulesTreeProvider`: 监听选择状态变更，自动刷新树视图
+- `RuleSelectorWebviewProvider`: 保存时触发选择状态变更事件
+
+**同步流程**:
+
+1. 用户在规则选择器中选择/取消选择规则
+2. 用户点击"保存"按钮
+3. 选择器调用 `SelectionStateManager.notifySelectionChanged(sourceId, selectedCount, totalCount)`
+4. 树视图监听到事件，300ms 防抖后刷新显示
+5. 树视图重新计算并显示最新的选择状态
+
+**消息格式**:
 
 ```typescript
-{ type: 'treeSelectionSync', sourceId: string, selectedPaths: string[] }
+// 保存规则选择
+{
+  type: 'saveRuleSelection',
+  payload: {
+    sourceId: string,
+    selection: { paths: string[] },
+    totalCount: number  // 用于状态同步
+  }
+}
+
+// 选择状态变更事件
+{
+  sourceId: string,
+  selectedCount: number,
+  totalCount: number,
+  timestamp: number
+}
 ```
 
-- Webview Rule Selector 接收后更新其内部状态并局部 diff 重绘。
+**性能优化**:
 
-### 消息防抖与一致性
+- **防抖刷新**: 300ms 延迟，避免频繁刷新
+- **增量更新**: 仅刷新变化的节点
+- **异步加载**: 选择状态异步获取，不阻塞 UI
 
-- 侧边栏发出的同步消息采用 300ms 防抖，避免快速点击导致频繁刷新。
-- Rule Selector 内部维护 `lastSyncedRevision`，忽略过期消息。
+**错误处理**:
 
-### 错误处理
+- 若 workspaceState 超过大小限制（>10KB）导致写入失败，记录 `TAI-5003` 并通知用户"选择状态写入失败，请减少选择范围"
+- 获取选择状态失败时，默认显示全选状态
 
-- 若 workspaceState 超过大小限制（>10KB）导致写入失败，记录 `TAI-5003` 并通知用户“选择状态写入失败，请减少选择范围”。
+**安全措施**:
 
-### 安全
-
-- 仅允许源的 `subPath` 下的相对路径进入选择集合；出现 `..` 的路径直接忽略并记录警告。
+- 仅允许源的 `subPath` 下的相对路径进入选择集合
+- 出现 `..` 的路径直接忽略并记录警告

@@ -93,6 +93,10 @@ export class WorkspaceDataManager {
   private static instance: WorkspaceDataManager;
   private workspaceHash: string | null = null;
   private workspaceDir: string | null = null;
+  // 规则选择缓存（写穿 + TTL）
+  private selectionsCache: RuleSelections | null = null;
+  private selectionsCacheTimestamp = 0;
+  private readonly selectionsCacheTTL = 5000; // 5s TTL
 
   private constructor() {}
 
@@ -417,17 +421,29 @@ export class WorkspaceDataManager {
    * @return {Promise<RuleSelections | null>}
    */
   public async readRuleSelections(): Promise<RuleSelections | null> {
-    const selectionsPath = path.join(this.getWorkspaceDir(), 'rule-selections.json');
-
-    if (!(await pathExists(selectionsPath))) {
-      return null;
+    // 缓存命中
+    if (
+      this.selectionsCache &&
+      Date.now() - this.selectionsCacheTimestamp < this.selectionsCacheTTL
+    ) {
+      Logger.debug('Rule selections cache hit');
+      return this.selectionsCache;
     }
 
+    const selectionsPath = path.join(this.getWorkspaceDir(), 'rule-selections.json');
+    if (!(await pathExists(selectionsPath))) {
+      this.selectionsCache = null;
+      return null;
+    }
     try {
       const content = await safeReadFile(selectionsPath);
-      return JSON.parse(content) as RuleSelections;
+      this.selectionsCache = JSON.parse(content) as RuleSelections;
+      this.selectionsCacheTimestamp = Date.now();
+      Logger.debug('Rule selections loaded from disk');
+      return this.selectionsCache;
     } catch (error) {
       Logger.warn('Failed to read rule selections', { error: String(error) });
+      this.selectionsCache = null;
       return null;
     }
   }
@@ -454,10 +470,15 @@ export class WorkspaceDataManager {
     try {
       const content = JSON.stringify(data, null, 2);
       await safeWriteFile(selectionsPath, content);
+      // 更新缓存（写穿）
+      this.selectionsCache = data;
+      this.selectionsCacheTimestamp = Date.now();
       Logger.info('Rule selections written', {
         sourceCount: Object.keys(selections).length,
+        cached: true,
       });
     } catch (error) {
+      this.selectionsCache = null; // 防止缓存脏数据
       throw new SystemError(
         'Failed to write rule selections',
         'TAI-5003',
@@ -491,17 +512,15 @@ export class WorkspaceDataManager {
     sourceId: string,
     selection: RuleSelection,
   ): Promise<void> {
-    const data = (await this.readRuleSelections()) || {
+    const existing = (await this.readRuleSelections()) || {
       version: 1,
       workspacePath,
       lastUpdated: new Date().toISOString(),
       selections: {},
     };
-
-    data.selections[sourceId] = selection;
-    data.lastUpdated = new Date().toISOString();
-
-    await this.writeRuleSelections(workspacePath, data.selections);
+    existing.selections[sourceId] = selection;
+    existing.lastUpdated = new Date().toISOString();
+    await this.writeRuleSelections(workspacePath, existing.selections);
   }
 
   /**

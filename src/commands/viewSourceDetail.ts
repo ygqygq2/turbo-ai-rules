@@ -11,15 +11,23 @@ import { notify } from '../utils/notifications';
 /**
  * 查看规则源详情命令处理器
  */
-export async function viewSourceDetailCommand(sourceId?: string): Promise<void> {
-  Logger.info('Executing viewSourceDetail command', { sourceId });
-
+export async function viewSourceDetailCommand(sourceId?: string | any): Promise<void> {
   try {
+    // 从 TreeItem 提取 sourceId
+    let actualSourceId =
+      typeof sourceId === 'object' && sourceId?.data?.source?.id
+        ? sourceId.data.source.id
+        : typeof sourceId === 'string'
+        ? sourceId
+        : undefined;
+
+    Logger.info('Executing viewSourceDetail command', { sourceId: actualSourceId });
+
     // 如果没有提供 sourceId，让用户选择
-    if (!sourceId) {
+    if (!actualSourceId) {
       const ConfigManager = (await import('../services/ConfigManager')).ConfigManager;
       const configManager = ConfigManager.getInstance();
-      const sources = await configManager.getSources();
+      const sources = configManager.getSources();
 
       if (sources.length === 0) {
         notify('No sources configured.', 'info');
@@ -43,13 +51,13 @@ export async function viewSourceDetailCommand(sourceId?: string): Promise<void> 
         return;
       }
 
-      sourceId = selected.sourceId;
+      actualSourceId = selected.sourceId;
     }
 
     // 显示规则源详情页面
     const context = (global as any).extensionContext as vscode.ExtensionContext;
     const provider = SourceDetailWebviewProvider.getInstance(context);
-    await provider.showSourceDetail(sourceId);
+    await provider.showSourceDetail(actualSourceId);
   } catch (error) {
     Logger.error('Failed to view source detail', error instanceof Error ? error : undefined);
 

@@ -1,20 +1,37 @@
 import * as fs from 'fs';
+import * as fsPromises from 'fs/promises';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
-import { RulesManager } from '../services/RulesManager';
-import { getRulesBySourceMap } from '../services/RuleQuery';
+import { ConfigManager } from '../services/ConfigManager';
+import { GitManager } from '../services/GitManager';
+import { SelectionChannelManager } from '../services/SelectionChannelManager';
 import type { RuleSelection } from '../services/WorkspaceDataManager';
 import { Logger } from '../utils/logger';
 import { SystemError } from '../types/errors';
+import { createExtensionMessenger, ExtensionMessenger } from './messaging/ExtensionMessenger';
+import { RulesManager } from '../services/RulesManager';
+import { RULE_FILE_EXTENSIONS } from '../utils/constants';
+
+/**
+ * 文件树节点
+ */
+interface FileTreeNode {
+  path: string;
+  name: string;
+  type: 'file' | 'directory';
+  children?: FileTreeNode[];
+}
 
 /**
  * @description 规则选择器 Webview Provider
  */
 export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
   private static instance: RuleSelectorWebviewProvider | undefined;
+  private currentSourceId?: string; // 当前选择的源 ID
+  private messenger?: ExtensionMessenger; // 新的消息管理器
 
   private constructor(context: vscode.ExtensionContext) {
     super(context);
@@ -27,15 +44,91 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
     return RuleSelectorWebviewProvider.instance;
   }
 
-  public async showRuleSelector(): Promise<void> {
+  /**
+   * @description 显示规则选择器
+   * @param sourceId 可选的源 ID，如果提供则只显示该源的规则
+   * @return {Promise<void>}
+   */
+  public async showRuleSelector(sourceId?: string | any): Promise<void> {
+    // 从 TreeItem 提取 sourceId
+    const actualSourceId =
+      typeof sourceId === 'object' && sourceId?.data?.source?.id
+        ? sourceId.data.source.id
+        : typeof sourceId === 'string'
+        ? sourceId
+        : undefined;
+
+    this.currentSourceId = actualSourceId;
+
     await this.show({
       viewType: 'turboAiRules.ruleSelector',
-      title: '规则选择器',
+      title: actualSourceId ? `规则选择器 - ${actualSourceId}` : '规则选择器',
       viewColumn: vscode.ViewColumn.Active,
     });
 
+    // 初始化消息层（仅首次创建 panel 时）
+    if (this.panel && !this.messenger) {
+      this.messenger = createExtensionMessenger(this.panel.webview);
+      this.registerMessageHandlers();
+
+      // 为当前源创建 MessageChannel
+      if (actualSourceId) {
+        const channelManager = SelectionChannelManager.getInstance();
+        channelManager.createChannel(actualSourceId, this.panel.webview);
+        Logger.info('MessageChannel created for rule selector', { sourceId: actualSourceId });
+      }
+    }
+
     // 打开后尽快发送初始数据（同时也等前端 ready 再发一遍，防止 race）
     await this.loadAndSendInitialData();
+  }
+
+  /**
+   * @description 递归读取目录树
+   * @return {Promise<FileTreeNode[]>}
+   * @param dirPath {string}
+   * @param basePath {string}
+   */
+  private async readDirectoryTree(dirPath: string, basePath: string): Promise<FileTreeNode[]> {
+    try {
+      const entries = await fsPromises.readdir(dirPath, { withFileTypes: true });
+      const nodes: FileTreeNode[] = [];
+
+      for (const entry of entries) {
+        // 跳过隐藏文件和 .git 目录
+        if (entry.name.startsWith('.')) continue;
+
+        const fullPath = path.join(dirPath, entry.name);
+        const relativePath = path.relative(basePath, fullPath);
+
+        if (entry.isDirectory()) {
+          const children = await this.readDirectoryTree(fullPath, basePath);
+          nodes.push({
+            path: relativePath,
+            name: entry.name,
+            type: 'directory',
+            children,
+          });
+        } else if (entry.isFile() && RULE_FILE_EXTENSIONS.includes(path.extname(entry.name))) {
+          nodes.push({
+            path: relativePath,
+            name: entry.name,
+            type: 'file',
+          });
+        }
+      }
+
+      return nodes.sort((a, b) => {
+        // 目录优先，然后按名称排序
+        if (a.type !== b.type) {
+          return a.type === 'directory' ? -1 : 1;
+        }
+        return a.name.localeCompare(b.name);
+      });
+    } catch (error) {
+      Logger.error('Failed to read directory tree', error as Error);
+      return [];
+    }
   }
 
   /**
@@ -47,42 +140,54 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
       const workspaceFolders = vscode.workspace.workspaceFolders;
       if (!workspaceFolders || workspaceFolders.length === 0) {
         Logger.warn('No workspace folder found when loading initial data');
-        this.postMessage({
-          type: 'error',
-          payload: { message: '未找到工作区', code: 'TAI-1001' },
-        });
+        this.messenger?.notify('error', { message: '未找到工作区', code: 'TAI-1001' });
         return;
       }
 
       const workspacePath = workspaceFolders[0].uri.fsPath;
       const dataManager = WorkspaceDataManager.getInstance();
+      const configManager = ConfigManager.getInstance(this.context);
+      const gitManager = GitManager.getInstance();
       const rulesManager = RulesManager.getInstance();
 
       // 读取所有规则选择数据
       const selections = await dataManager.readRuleSelections();
 
-      // 分组后的规则
-      const rulesBySource = getRulesBySourceMap(rulesManager);
+      // 获取所有源及其文件树（如果指定了 sourceId，则只加载该源）
+      let sources = configManager.getSources();
+      if (this.currentSourceId) {
+        sources = sources.filter((s) => s.id === this.currentSourceId);
+      }
 
-      this.postMessage({
-        type: 'initialData',
-        payload: {
-          workspacePath,
-          selections: selections?.selections || {},
-          rulesBySource,
-        },
+      const fileTreeBySource: Record<string, FileTreeNode[]> = {};
+      // 创建源信息数组，包含 id、name 和真实的规则总数
+      const sourceList = sources.map((s) => ({
+        id: s.id,
+        name: s.name || s.gitUrl,
+        totalRules: rulesManager.getRulesBySource(s.id).length, // 使用真实的规则数量
+      }));
+
+      for (const source of sources) {
+        const sourcePath = gitManager.getSourcePath(source.id);
+        fileTreeBySource[source.id] = await this.readDirectoryTree(sourcePath, sourcePath);
+      }
+
+      // 返回初始数据（供 RPC 请求使用）
+      this.messenger?.notify('initialData', {
+        workspacePath,
+        selections: selections?.selections || {},
+        fileTreeBySource,
+        sourceList,
+        currentSourceId: this.currentSourceId,
       });
 
       Logger.info('Initial data sent to rule selector webview', {
-        sourceCount: Object.keys(rulesBySource).length,
-        totalRules: Object.values(rulesBySource).reduce((acc, arr) => acc + arr.length, 0),
+        sourceCount: sources.length,
+        currentSourceId: this.currentSourceId,
       });
     } catch (error) {
       Logger.error('Failed to load initial data', error as Error);
-      this.postMessage({
-        type: 'error',
-        payload: { message: '加载数据失败', code: 'TAI-5002' },
-      });
+      this.messenger?.notify('error', { message: '加载数据失败', code: 'TAI-5002' });
     }
   }
 
@@ -123,141 +228,112 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
   }
 
   protected handleMessage(_message: WebviewMessage): void {
-    // 处理规则选择器消息：选择同步、保存等
-    try {
-      const { type, payload } = _message || { type: '', payload: undefined };
-      switch (type) {
-        case 'webviewReady': {
-          // 前端加载完成，发送初始数据
-          this.loadAndSendInitialData().catch((err) =>
-            Logger.error('Failed to send initial data on ready', err as Error),
-          );
-          break;
-        }
-        case 'close': {
-          // 关闭 webview
-          if (this.panel) {
-            this.panel.dispose();
-          }
-          break;
-        }
-        case 'selectionChanged': {
-          // payload: { sourceId: string, selectedPaths: string[] }
-          if (!payload?.sourceId || !Array.isArray(payload?.selectedPaths)) {
-            Logger.warn('selectionChanged payload invalid');
-            return;
-          }
-
-          const workspaceFolders = vscode.workspace.workspaceFolders;
-          if (!workspaceFolders || workspaceFolders.length === 0) {
-            Logger.error('No workspace folder found');
-            return;
-          }
-
-          const workspacePath = workspaceFolders[0].uri.fsPath;
-          const dataManager = WorkspaceDataManager.getInstance();
-
-          const selection: RuleSelection = {
-            mode: 'include',
-            paths: payload.selectedPaths,
-          };
-
-          dataManager
-            .setRuleSelection(workspacePath, payload.sourceId, selection)
-            .then(() => {
-              // 刷新侧边栏 TreeView（命令会触发 provider.refresh）
-              vscode.commands.executeCommand('turbo-ai-rules.refresh');
-              this.postMessage({
-                type: 'selectionUpdated',
-                payload: { count: payload.selectedPaths.length },
-              });
-            })
-            .catch((err: Error) => {
-              Logger.error('Failed to set rule selection', err, {
-                sourceId: payload.sourceId,
-              });
-              this.postMessage({
-                type: 'error',
-                payload: {
-                  message: '更新选择失败，请重试',
-                  code: 'TAI-5003',
-                },
-              });
-            });
-          break;
-        }
-        case 'saveRuleSelection': {
-          // payload: { sourceId: string, selection: { paths: string[] } }
-          const sourceId = payload?.sourceId;
-          const paths = payload?.selection?.paths as string[] | undefined;
-          if (!sourceId || !Array.isArray(paths)) {
-            Logger.warn('saveRuleSelection payload invalid');
-            return;
-          }
-
-          const workspaceFolders = vscode.workspace.workspaceFolders;
-          if (!workspaceFolders || workspaceFolders.length === 0) {
-            Logger.error('No workspace folder found');
-            return;
-          }
-
-          const workspacePath = workspaceFolders[0].uri.fsPath;
-          const dataManager = WorkspaceDataManager.getInstance();
-
-          const selection: RuleSelection = {
-            mode: 'include',
-            paths,
-          };
-
-          dataManager
-            .setRuleSelection(workspacePath, sourceId, selection)
-            .then(async () => {
-              await vscode.commands.executeCommand('turbo-ai-rules.refresh');
-              this.postMessage({ type: 'saveSuccess', payload: { message: '已保存' } });
-              Logger.info('Rule selection saved successfully', {
-                sourceId,
-                pathCount: paths.length,
-              });
-            })
-            .catch((err: Error) => {
-              Logger.error('Failed to save rule selection', err, { sourceId });
-              this.postMessage({
-                type: 'error',
-                payload: {
-                  message: '保存失败，请检查工作区写入权限',
-                  code: 'TAI-5003',
-                },
-              });
-            });
-          break;
-        }
-        case 'loadRuleTree': {
-          // MVP：暂不从磁盘读取真实树，仅返回占位统计
-          const sourceId = payload?.sourceId;
-          const dataManager = WorkspaceDataManager.getInstance();
-          dataManager
-            .getRuleSelection(sourceId)
-            .then((selection: RuleSelection | null) => {
-              this.postMessage({
-                type: 'treeData',
-                payload: {
-                  tree: null,
-                  totalRules: 0,
-                  selectedRules: selection?.paths?.length || 0,
-                },
-              });
-            })
-            .catch((err: Error) => {
-              Logger.error('Failed to load rule tree placeholder', err, { sourceId });
-            });
-          break;
-        }
-        default:
-          break;
-      }
-    } catch (error) {
-      Logger.error('RuleSelector handleMessage failed', error as Error);
-      throw new SystemError('RuleSelector message handling failed', 'TAI-5003', error as Error);
+    // 兼容旧消息或兜底（新逻辑走 ExtensionMessenger）
+    if (_message.type === 'webviewReady') {
+      this.loadAndSendInitialData().catch((err) =>
+        Logger.error('Failed to send initial data (legacy path)', err as Error),
+      );
     }
+    if (_message.type === 'close' && this.panel) {
+      this.panel.dispose();
+    }
+  }
+
+  /**
+   * @description 释放资源
+   * @return {void}
+   */
+  public dispose(): void {
+    // 关闭 MessageChannel
+    if (this.currentSourceId) {
+      const channelManager = SelectionChannelManager.getInstance();
+      channelManager.closeChannel(this.currentSourceId);
+    }
+    super.dispose();
+  }
+
+  /**
+   * @description 注册新的消息处理器
+   */
+  private registerMessageHandlers(): void {
+    if (!this.messenger) return;
+
+    this.messenger.register('getInitialData', async () => {
+      // 直接调用内部逻辑并返回数据（通过 initialData 事件推送 + 返回）
+      await this.loadAndSendInitialData();
+      return { ok: true };
+    });
+
+    this.messenger.register<
+      {
+        sourceId: string;
+        selection: { paths: string[] };
+        totalCount: number;
+      },
+      { message: string }
+    >('saveRuleSelection', async (payload) => {
+      const sourceId = payload?.sourceId;
+      const paths = payload?.selection?.paths || [];
+      const totalCount = payload?.totalCount || paths.length;
+      if (!sourceId) {
+        throw new SystemError('缺少 sourceId', 'TAI-1001');
+      }
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders || workspaceFolders.length === 0) {
+        throw new SystemError('未找到工作区', 'TAI-1001');
+      }
+      const workspacePath = workspaceFolders[0].uri.fsPath;
+      const dataManager = WorkspaceDataManager.getInstance();
+      const channelManager = SelectionChannelManager.getInstance();
+      const selection: RuleSelection = { mode: 'include', paths };
+      try {
+        await dataManager.setRuleSelection(workspacePath, sourceId, selection);
+        // 直接通过 MessageChannel 更新并广播
+        channelManager.updateMemoryState(sourceId, paths, totalCount, false);
+        Logger.info('Rule selection saved via RPC', { sourceId, pathCount: paths.length });
+        return { message: '已保存' };
+      } catch (error) {
+        Logger.error('Failed to save rule selection (RPC)', error as Error, { sourceId });
+        throw new SystemError('保存失败，请检查工作区写入权限', 'TAI-5003', error as Error);
+      }
+    });
+
+    this.messenger.register('close', async () => {
+      if (this.panel) this.panel.dispose();
+      return { closed: true };
+    });
+
+    // 仅更新内存状态（不落盘），用于右侧 Webview 的实时同步
+    this.messenger.register<
+      {
+        sourceId: string;
+        paths: string[];
+      },
+      { message: string }
+    >('updateMemorySelection', async (payload) => {
+      const sourceId = payload?.sourceId;
+      const paths = payload?.paths || [];
+      if (!sourceId) {
+        throw new SystemError('缺少 sourceId', 'TAI-1001');
+      }
+
+      const channelManager = SelectionChannelManager.getInstance();
+      const rulesManager = RulesManager.getInstance();
+      const totalCount = rulesManager.getRulesBySource(sourceId).length;
+
+      try {
+        // 通过 MessageChannel 更新内存状态并广播，不落盘
+        channelManager.updateMemoryState(sourceId, paths, totalCount, false);
+
+        Logger.debug('Memory selection updated from webview', {
+          sourceId,
+          pathCount: paths.length,
+        });
+        return { message: '内存状态已更新' };
+      } catch (error) {
+        Logger.error('Failed to update memory selection', error as Error, { sourceId });
+        throw new SystemError('更新内存状态失败', 'TAI-5003', error as Error);
+      }
+    });
   }
 }

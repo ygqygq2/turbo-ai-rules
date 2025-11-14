@@ -8,6 +8,17 @@ import {
   type TreeNode,
 } from './tree-utils';
 
+// 全局 MessageChannel port（用于规则选择实时同步）
+export let selectionChannelPort: MessagePort | null = null;
+
+/**
+ * @description 设置 MessageChannel port
+ * @param port {MessagePort | null}
+ */
+export function setSelectionChannelPort(port: MessagePort | null) {
+  selectionChannelPort = port;
+}
+
 // 类型定义
 interface RuleSelection {
   mode: 'include' | 'exclude';
@@ -15,18 +26,25 @@ interface RuleSelection {
   excludePaths?: string[];
 }
 
-interface RuleItem {
+interface FileTreeNode {
+  path: string;
+  name: string;
+  type: 'file' | 'directory';
+  children?: FileTreeNode[];
+}
+
+interface SourceInfo {
   id: string;
-  title: string;
-  filePath: string;
-  tags: string[];
-  priority: number;
+  name: string;
+  totalRules?: number; // 后端传递的真实规则数（已解析的规则数量）
 }
 
 interface InitialData {
   workspacePath: string;
   selections: { [sourceId: string]: RuleSelection };
-  rulesBySource: { [sourceId: string]: RuleItem[] };
+  fileTreeBySource: { [sourceId: string]: FileTreeNode[] };
+  sourceList?: SourceInfo[]; // 源信息列表（包含 id、name 和真实规则数）
+  currentSourceId?: string; // 当前选择的源 ID
 }
 
 // Store 接口
@@ -34,14 +52,13 @@ interface RuleSelectorState {
   // 基础状态
   workspacePath: string;
   currentSourceId: string;
-  availableSources: string[];
-  rules: RuleItem[];
+  availableSources: SourceInfo[]; // 修改为源信息数组
   selectedPaths: string[];
   originalPaths: string[];
   totalRules: number;
   searchTerm: string;
   saving: boolean;
-  allRulesBySource: { [sourceId: string]: RuleItem[] };
+  allFileTreeBySource: { [sourceId: string]: FileTreeNode[] };
   allSelections: { [sourceId: string]: RuleSelection };
   treeNodes: TreeNode[];
 
@@ -69,13 +86,12 @@ export const useRuleSelectorStore = create<RuleSelectorState>()(
       workspacePath: '',
       currentSourceId: '',
       availableSources: [],
-      rules: [],
       selectedPaths: [],
       originalPaths: [],
       totalRules: 0,
       searchTerm: '',
       saving: false,
-      allRulesBySource: {},
+      allFileTreeBySource: {},
       allSelections: {},
       treeNodes: [],
 
@@ -84,24 +100,32 @@ export const useRuleSelectorStore = create<RuleSelectorState>()(
        * @param data {InitialData}
        */
       setInitialData: (data) => {
-        const sourceIds = Object.keys(data.rulesBySource || {});
-        const firstSourceId = sourceIds[0] || '';
-        const sourceRules = data.rulesBySource[firstSourceId] || [];
-        const tree = buildTree(sourceRules);
+        // 使用 sourceList 或从 fileTreeBySource 生成
+        const sourceList: SourceInfo[] =
+          data.sourceList ||
+          Object.keys(data.fileTreeBySource || {}).map((id) => ({ id, name: id }));
+        const firstSourceId = data.currentSourceId || sourceList[0]?.id || '';
+        const sourceFileTree = data.fileTreeBySource[firstSourceId] || [];
+        const tree = buildTree(sourceFileTree);
         const selection = data.selections[firstSourceId];
-        const paths = selection?.paths || [];
+        // 默认策略统一为“无配置 = 全选”
+        const allPaths = getAllFilePaths(tree);
+        const paths = selection?.paths && selection.paths.length > 0 ? selection.paths : allPaths;
+
+        // 优先使用后端传递的真实规则数，否则使用文件树计算的文件数
+        const firstSource = sourceList.find((s) => s.id === firstSourceId);
+        const totalFiles = firstSource?.totalRules ?? getAllFilePaths(tree).length;
 
         set({
           workspacePath: data.workspacePath,
-          allRulesBySource: data.rulesBySource,
+          allFileTreeBySource: data.fileTreeBySource,
           allSelections: data.selections,
-          availableSources: sourceIds,
+          availableSources: sourceList,
           currentSourceId: firstSourceId,
-          rules: sourceRules,
           treeNodes: tree,
           selectedPaths: [...paths],
           originalPaths: [...paths],
-          totalRules: sourceRules.length,
+          totalRules: totalFiles,
         });
       },
 
@@ -123,19 +147,23 @@ export const useRuleSelectorStore = create<RuleSelectorState>()(
         };
 
         // 切换到新源
-        const sourceRules = state.allRulesBySource[newSourceId] || [];
-        const tree = buildTree(sourceRules);
+        const sourceFileTree = state.allFileTreeBySource[newSourceId] || [];
+        const tree = buildTree(sourceFileTree);
         const selection = updatedSelections[newSourceId];
-        const paths = selection?.paths || [];
+        const allPaths = getAllFilePaths(tree);
+        const paths = selection?.paths && selection.paths.length > 0 ? selection.paths : allPaths;
+
+        // 优先使用后端传递的真实规则数，否则使用文件树计算的文件数
+        const newSource = state.availableSources.find((s) => s.id === newSourceId);
+        const totalFiles = newSource?.totalRules ?? getAllFilePaths(tree).length;
 
         set({
           allSelections: updatedSelections,
           currentSourceId: newSourceId,
-          rules: sourceRules,
           treeNodes: tree,
           selectedPaths: [...paths],
           originalPaths: [...paths],
-          totalRules: sourceRules.length,
+          totalRules: totalFiles,
           searchTerm: '',
         });
       },
@@ -151,54 +179,83 @@ export const useRuleSelectorStore = create<RuleSelectorState>()(
       },
 
       /**
-       * @description 选择/取消选择节点
+       * @description 选择/取消选择节点（仅内存更新，通过事件实时同步）
        * @param path {string}
        * @param checked {boolean}
        * @param isDirectory {boolean}
        */
       selectNode: (path, checked, isDirectory) => {
         const state = get();
+        let newSelectedPaths: string[];
 
         if (isDirectory) {
           // 目录节点：选择/取消该目录下所有文件
           const dirPaths = getDirectoryFilePaths(state.treeNodes, path);
           if (checked) {
-            set({
-              selectedPaths: [...new Set([...state.selectedPaths, ...dirPaths])],
-            });
+            newSelectedPaths = [...new Set([...state.selectedPaths, ...dirPaths])];
           } else {
-            set({
-              selectedPaths: state.selectedPaths.filter((p) => !dirPaths.includes(p)),
-            });
+            newSelectedPaths = state.selectedPaths.filter((p) => !dirPaths.includes(p));
           }
         } else {
           // 文件节点：直接添加/移除
           if (checked) {
-            set({
-              selectedPaths: [...new Set([...state.selectedPaths, path])],
-            });
+            newSelectedPaths = [...new Set([...state.selectedPaths, path])];
           } else {
-            set({
-              selectedPaths: state.selectedPaths.filter((p) => p !== path),
-            });
+            newSelectedPaths = state.selectedPaths.filter((p) => p !== path);
           }
+        }
+
+        set({ selectedPaths: newSelectedPaths });
+
+        // 通过 MessageChannel 实时同步到扩展端（微秒级延迟）
+        if (selectionChannelPort) {
+          selectionChannelPort.postMessage({
+            type: 'selectionChanged',
+            sourceId: state.currentSourceId,
+            selectedPaths: newSelectedPaths,
+            totalCount: state.totalRules,
+            timestamp: Date.now(),
+          });
         }
       },
 
       /**
-       * @description 全选所有规则
+       * @description 全选所有规则（仅内存更新）
        */
       selectAll: () => {
         const state = get();
         const allPaths = getAllFilePaths(state.treeNodes);
         set({ selectedPaths: allPaths });
+
+        // 通过 MessageChannel 实时同步到扩展端
+        if (selectionChannelPort) {
+          selectionChannelPort.postMessage({
+            type: 'selectionChanged',
+            sourceId: state.currentSourceId,
+            selectedPaths: allPaths,
+            totalCount: state.totalRules,
+            timestamp: Date.now(),
+          });
+        }
       },
 
       /**
-       * @description 清除所有选择
+       * @description 清除所有选择（仅内存更新）
        */
       clearAll: () => {
+        const state = get();
         set({ selectedPaths: [] });
+
+        // 通过 MessageChannel 实时同步到扩展端
+        if (selectionChannelPort) {
+          selectionChannelPort.postMessage({
+            type: 'selectionChanged',
+            sourceId: state.currentSourceId,
+            selectedPaths: [],
+            totalCount: state.totalRules,
+            timestamp: Date.now(),
+          });
+        }
       },
 
       /**

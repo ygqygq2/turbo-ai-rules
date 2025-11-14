@@ -190,4 +190,4 @@ Git 规则仓库 ──→ [Turbo AI Rules] ──→ AI 工具配置文件
 
 ---
 
-> **返回**: [01-design.md](./01-design.md) - 产品整体设计
+> **返回**: [03-design.md](./03-design.md) - 产品整体设计

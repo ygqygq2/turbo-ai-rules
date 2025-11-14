@@ -1,14 +1,13 @@
 /**
  * 规则树工具函数
- * 用于将平铺的规则列表转换为树形结构
+ * 用于将文件树转换为UI树形结构
  */
 
-interface RuleItem {
-  id: string;
-  title: string;
-  filePath: string;
-  tags: string[];
-  priority: number;
+export interface FileTreeNode {
+  path: string;
+  name: string;
+  type: 'file' | 'directory';
+  children?: FileTreeNode[];
 }
 
 export interface TreeNode {
@@ -18,83 +17,35 @@ export interface TreeNode {
   type: 'directory' | 'file';
   children?: TreeNode[]; // 子节点（目录）
   expanded?: boolean; // 是否展开
-  rules?: RuleItem[]; // 文件节点的规则列表
-  ruleCount?: number; // 规则数量
 }
 
 /**
- * @description 从路径列表构建树形结构
+ * @description 从后端文件树构建前端树形结构
  * @return default {TreeNode[]}
- * @param rules {RuleItem[]}
+ * @param fileTree {FileTreeNode[]}
  */
-export function buildTree(rules: RuleItem[]): TreeNode[] {
-  const root: { [key: string]: TreeNode } = {};
-
-  for (const rule of rules) {
-    const pathParts = rule.filePath.split('/').filter((p) => p);
-    let currentLevel = root;
-    let currentPath = '';
-
-    for (let i = 0; i < pathParts.length; i++) {
-      const part = pathParts[i];
-      currentPath = currentPath ? `${currentPath}/${part}` : part;
-      const isFile = i === pathParts.length - 1;
-
-      if (!currentLevel[part]) {
-        currentLevel[part] = {
-          id: currentPath,
-          name: part,
-          path: currentPath,
-          type: isFile ? 'file' : 'directory',
-          children: isFile ? undefined : {},
-          expanded: false,
-          rules: isFile ? [] : undefined,
-          ruleCount: 0,
-        } as any;
-      }
-
-      if (isFile) {
-        // 文件节点：添加规则
-        if (!currentLevel[part].rules) currentLevel[part].rules = [];
-        currentLevel[part].rules!.push(rule);
-        currentLevel[part].ruleCount = (currentLevel[part].ruleCount || 0) + 1;
-      } else {
-        // 目录节点：继续向下
-        currentLevel = currentLevel[part].children as any;
-      }
-    }
-  }
-
-  return convertToArray(root);
+export function buildTree(fileTree: FileTreeNode[]): TreeNode[] {
+  return fileTree.map(convertFileNode);
 }
 
 /**
- * @description 将对象形式的树转为数组
- * @return default {TreeNode[]}
- * @param obj {{ [key: string]: TreeNode }}
+ * @description 转换单个文件节点
+ * @return default {TreeNode}
+ * @param node {FileTreeNode}
  */
-function convertToArray(obj: { [key: string]: TreeNode }): TreeNode[] {
-  const result: TreeNode[] = [];
-
-  for (const key in obj) {
-    const node = obj[key];
-    if (node.type === 'directory' && node.children) {
-      node.children = convertToArray(node.children as any);
-    }
-    result.push(node);
-  }
-
-  // 排序：目录优先，然后按名称
-  result.sort((a, b) => {
-    if (a.type !== b.type) return a.type === 'directory' ? -1 : 1;
-    return a.name.localeCompare(b.name);
-  });
-
-  return result;
+function convertFileNode(node: FileTreeNode): TreeNode {
+  return {
+    id: node.path,
+    name: node.name,
+    path: node.path,
+    type: node.type,
+    children: node.children ? node.children.map(convertFileNode) : undefined,
+    expanded: false,
+  };
 }
 
 /**
- * @description 展开/收起节点
+ * @description 展开/收起树节点
  * @return default {TreeNode[]}
  * @param nodes {TreeNode[]}
  * @param targetPath {string}

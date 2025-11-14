@@ -15,30 +15,38 @@ import { notify } from '../utils/notifications';
 /**
  * 编辑规则源
  */
-export async function editSourceCommand(sourceId?: string): Promise<void> {
+export async function editSourceCommand(sourceId?: string | any): Promise<void> {
   try {
     const configManager = ConfigManager.getInstance();
 
-    if (!sourceId) {
+    // 从 TreeItem 提取 sourceId
+    const actualSourceId =
+      typeof sourceId === 'object' && sourceId?.data?.source?.id
+        ? sourceId.data.source.id
+        : typeof sourceId === 'string'
+        ? sourceId
+        : undefined;
+
+    if (!actualSourceId) {
       notify('No source selected for editing', 'error');
       return;
     }
 
-    const sources = await configManager.getSources();
-    const source = sources.find((s) => s.id === sourceId);
+    const sources = configManager.getSources();
+    const source = sources.find((s) => s.id === actualSourceId);
 
     if (!source) {
       notify('Source not found', 'error');
       return;
     }
 
-    // 创建编辑表单
-    const result = await showSourceEditDialog(source);
-
-    if (result) {
-      await configManager.updateSource(sourceId, result);
-      notify(`Source "${result.name}" updated successfully`, 'info');
-    }
+    // 使用 Webview 编辑表单
+    const context = (global as any).extensionContext as vscode.ExtensionContext;
+    const { SourceDetailWebviewProvider } = await import(
+      '../providers/SourceDetailWebviewProvider'
+    );
+    const provider = SourceDetailWebviewProvider.getInstance(context);
+    await provider.showSourceDetail(actualSourceId);
   } catch (error) {
     Logger.error('Failed to edit source', error instanceof Error ? error : undefined);
     notify(
@@ -51,16 +59,24 @@ export async function editSourceCommand(sourceId?: string): Promise<void> {
 /**
  * 测试源连接
  */
-export async function testConnectionCommand(sourceId?: string): Promise<void> {
+export async function testConnectionCommand(sourceId?: string | any): Promise<void> {
   try {
-    if (!sourceId) {
+    // 从 TreeItem 提取 sourceId
+    const actualSourceId =
+      typeof sourceId === 'object' && sourceId?.data?.source?.id
+        ? sourceId.data.source.id
+        : typeof sourceId === 'string'
+        ? sourceId
+        : undefined;
+
+    if (!actualSourceId) {
       notify('No source selected for testing', 'error');
       return;
     }
 
     const configManager = ConfigManager.getInstance();
-    const sources = await configManager.getSources();
-    const source = sources.find((s) => s.id === sourceId);
+    const sources = configManager.getSources();
+    const source = sources.find((s) => s.id === actualSourceId);
 
     if (!source) {
       notify('Source not found', 'error');
@@ -71,26 +87,23 @@ export async function testConnectionCommand(sourceId?: string): Promise<void> {
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
-        title: `Testing connection to ${source.name}`,
+        title: `Testing connection to ${source.name || source.gitUrl}`,
         cancellable: false,
       },
       async (progress) => {
         progress.report({ increment: 0, message: 'Connecting...' });
 
         try {
-          // 这里应该调用 GitManager 的测试连接方法
-          // 暂时模拟测试
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          // 调用 GitManager 测试连接
+          const { GitManager } = await import('../services/GitManager');
+          const gitManager = GitManager.getInstance();
+          await gitManager.testConnection(source);
 
           progress.report({ increment: 100, message: 'Connection successful' });
-          notify(`✓ Successfully connected to ${source.name}`, 'info');
+          notify(`✓ Successfully connected to ${source.name || source.gitUrl}`, 'info');
         } catch (error) {
-          notify(
-            `✗ Failed to connect to ${source.name}: ${
-              error instanceof Error ? error.message : 'Unknown error'
-            }`,
-            'error',
-          );
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          notify(`✗ Failed to connect to ${source.name || source.gitUrl}: ${errorMsg}`, 'error');
         }
       },
     );
@@ -106,16 +119,24 @@ export async function testConnectionCommand(sourceId?: string): Promise<void> {
 /**
  * 切换源启用状态
  */
-export async function toggleSourceCommand(sourceId?: string): Promise<void> {
+export async function toggleSourceCommand(sourceId?: string | any): Promise<void> {
   try {
-    if (!sourceId) {
+    // 从 TreeItem 提取 sourceId
+    const actualSourceId =
+      typeof sourceId === 'object' && sourceId?.data?.source?.id
+        ? sourceId.data.source.id
+        : typeof sourceId === 'string'
+        ? sourceId
+        : undefined;
+
+    if (!actualSourceId) {
       notify('No source selected', 'error');
       return;
     }
 
     const configManager = ConfigManager.getInstance();
-    const sources = await configManager.getSources();
-    const source = sources.find((s) => s.id === sourceId);
+    const sources = configManager.getSources();
+    const source = sources.find((s) => s.id === actualSourceId);
 
     if (!source) {
       notify('Source not found', 'error');
@@ -123,10 +144,13 @@ export async function toggleSourceCommand(sourceId?: string): Promise<void> {
     }
 
     const newStatus = !source.enabled;
-    await configManager.updateSource(sourceId, { ...source, enabled: newStatus });
+    await configManager.updateSource(actualSourceId, { ...source, enabled: newStatus });
 
     const action = newStatus ? 'enabled' : 'disabled';
-    notify(`Source "${source.name}" ${action}`, 'info');
+    notify(`Source "${source.name || source.gitUrl}" ${action}`, 'info');
+
+    // 刷新树视图
+    vscode.commands.executeCommand('turbo-ai-rules.refresh');
   } catch (error) {
     Logger.error('Failed to toggle source', error instanceof Error ? error : undefined);
     notify(
@@ -235,32 +259,4 @@ export async function ignoreRuleCommand(rule?: ParsedRule): Promise<void> {
       'error',
     );
   }
-}
-
-/**
- * 显示源编辑对话框
- */
-async function showSourceEditDialog(source: RuleSource): Promise<RuleSource | undefined> {
-  const result = await vscode.window.showInputBox({
-    title: 'Edit Rule Source',
-    prompt: 'Enter source name',
-    value: source.name,
-    validateInput: (value) => {
-      if (!value.trim()) {
-        return 'Source name cannot be empty';
-      }
-      return undefined;
-    },
-  });
-
-  if (result === undefined) {
-    return undefined;
-  }
-
-  // 简化版编辑，只允许修改名称
-  // 完整版本应该提供多步骤表单或 Webview 界面
-  return {
-    ...source,
-    name: result.trim(),
-  };
 }

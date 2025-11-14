@@ -1,7 +1,5 @@
 # Git 连接优化实施文档
 
-> **实施版本**: 2.0.0  
-> **最后更新**: 2025-01-23  
 > **相关模块**: GitManager, SourceDetailWebviewProvider
 
 ---
@@ -402,7 +400,7 @@ const results = await Promise.all(
 
 ### 文档
 
-- `docs/development/01-07-parser-validator.md` - 错误处理设计
+- `docs/development/12-parser-validator.md` - 错误处理设计
 - `docs/user-guide/04-faq.md` - 用户常见问题
 
 ---

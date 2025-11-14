@@ -526,7 +526,7 @@ getComputedStyle(document.documentElement).getPropertyValue('--spacing-md');
 
 - **VSCode Webview 官方文档**：https://code.visualstudio.com/api/extension-guides/webview
 - **VSCode 主题颜色变量**：https://code.visualstudio.com/api/references/theme-color
-- **项目基础文档**：`docs/development/08-webview-best-practices.md`
+- **项目基础文档**:`docs/development/43-webview-best-practices.md`
 
 ---
 

@@ -342,7 +342,7 @@ if (inGlobal && !inWorkspace) {
 
 ### 更新的文档
 
-- `docs/development/01-04-storage-strategy.md`：存储策略设计文档
+- `docs/development/11-storage-strategy.md`:存储策略设计文档
 
   - 添加"## 2. 规则源配置管理"章节
   - 详细说明读写策略

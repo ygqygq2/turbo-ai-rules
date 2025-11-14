@@ -1,8 +1,6 @@
 # 自定义适配器设计方案
 
-（原文迁移自 `docs/development/02-custom-adapters-design.md`）
-
-> 仅保留对当前实现有用的设计要点；历史与迁移细节略。
+# 自定义适配器设计
 
 ## 目标
 
