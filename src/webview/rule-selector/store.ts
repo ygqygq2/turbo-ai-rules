@@ -196,16 +196,17 @@ export const useRuleSelectorStore = create<RuleSelectorState>()(
 
         set({ selectedPaths: newSelectedPaths });
 
-        // 通过 MessageChannel 实时同步到扩展端（微秒级延迟）
-        if (selectionChannelPort) {
-          selectionChannelPort.postMessage({
+        // 通过 RPC notify 实时同步到扩展端
+        import('../common/messaging').then(({ createWebviewRPC }) => {
+          const rpc = createWebviewRPC();
+          rpc.notify('selectionChanged', {
             type: 'selectionChanged',
             sourceId: state.currentSourceId,
             selectedPaths: newSelectedPaths,
             totalCount: state.totalRules,
             timestamp: Date.now(),
           });
-        }
+        });
       },
 
       /**
