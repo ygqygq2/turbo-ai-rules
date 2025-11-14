@@ -44,9 +44,9 @@ describe('RuleSelectorWebviewProvider - Selection Sync', () => {
     // 模拟 Webview 打开并监听选择变更
     const disposable = selectionStateManager.onSelectionChanged(async (event) => {
       if (event.sourceId === 'my-source') {
-        mockMessenger.notify('initialData', {
+        logger.debug('Received selection change event', {
           sourceId: event.sourceId,
-          selectedCount: event.selectedCount,
+          selectedCount: event.selectedPaths.length,
           totalCount: event.totalCount,
         });
       }

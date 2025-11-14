@@ -66,6 +66,7 @@ export class SelectionChannelManager {
 
   /**
    * @description 为指定源创建 MessageChannel 并初始化 Webview
+   * 注意: VSCode Webview API 不支持传递 MessagePort,因此采用 RPC 通信方式
    * @param sourceId {string} 规则源 ID
    * @param webview {vscode.Webview} Webview 实例
    * @return {void}
@@ -74,36 +75,23 @@ export class SelectionChannelManager {
     // 关闭旧通道
     this.closeChannel(sourceId);
 
-    // 创建新的 MessageChannel
-    const channel = new MessageChannel();
-
-    // 设置端口 1 的消息监听器（Extension 端）
-    channel.port1.onmessage = (event: MessageEvent<SelectionChangeMessage>) => {
-      this.handleWebviewMessage(sourceId, event.data);
-    };
-
-    // 启动端口
-    channel.port1.start();
-
-    // 将端口 2 传递给 Webview
-    webview.postMessage(
-      {
-        type: 'initSelectionChannel',
-        sourceId,
-        port: channel.port2,
-      },
-      [channel.port2],
-    );
-
-    // 保存通道信息
+    // 保存 webview 引用和源信息
+    // 注意: 由于 VSCode Webview 无法传递 MessagePort,我们使用直接的 postMessage 通信
+    // 但保持 updateMemoryState 的逻辑不变,以便未来可以切换到真正的 MessageChannel
     this.channels.set(sourceId, {
       sourceId,
-      port: channel.port1,
+      port: null as any, // 暂时不使用 MessagePort
       webview,
       createdAt: Date.now(),
     });
 
-    Logger.info('MessageChannel created for source', { sourceId });
+    // 通知 Webview 已准备好接收选择变更
+    webview.postMessage({
+      type: 'initSelectionChannel',
+      sourceId,
+    });
+
+    Logger.info('Selection channel created for source', { sourceId });
   }
 
   /**
@@ -133,6 +121,7 @@ export class SelectionChannelManager {
 
   /**
    * @description 更新内存中的选择状态并广播到所有监听者
+   * 通过 postMessage 直接发送到 Webview (由于无法使用真正的 MessageChannel)
    * @param sourceId {string} 规则源 ID
    * @param selectedPaths {string[]} 已选择的规则路径
    * @param totalCount {number} 总规则数量
@@ -148,9 +137,9 @@ export class SelectionChannelManager {
     // 更新内存状态
     this.memoryState.set(sourceId, new Set(selectedPaths));
 
-    // 通过 MessageChannel 广播到 Webview
-    const channelPort = this.channels.get(sourceId);
-    if (channelPort) {
+    // 通过 Webview postMessage 广播到 Webview (模拟 MessageChannel 行为)
+    const channelInfo = this.channels.get(sourceId);
+    if (channelInfo?.webview) {
       const message: SelectionChangeMessage = {
         type: 'selectionChanged',
         sourceId,
@@ -160,9 +149,9 @@ export class SelectionChannelManager {
         fromPersistence: false,
       };
 
-      channelPort.port.postMessage(message);
+      channelInfo.webview.postMessage(message);
 
-      Logger.debug('Broadcasted selection change via MessageChannel', {
+      Logger.debug('Broadcasted selection change via postMessage', {
         sourceId,
         selectedCount: selectedPaths.length,
         totalCount,
@@ -239,9 +228,9 @@ export class SelectionChannelManager {
         selectedCount: selectedPaths.size,
       });
 
-      // 通知持久化完成（通过 MessageChannel）
-      const channelPort = this.channels.get(sourceId);
-      if (channelPort) {
+      // 通知持久化完成（通过 postMessage）
+      const channelInfo = this.channels.get(sourceId);
+      if (channelInfo?.webview) {
         const message: SelectionChangeMessage = {
           type: 'selectionChanged',
           sourceId,
@@ -251,7 +240,7 @@ export class SelectionChannelManager {
           fromPersistence: true,
         };
 
-        channelPort.port.postMessage(message);
+        channelInfo.webview.postMessage(message);
       }
     } catch (error) {
       Logger.error('Failed to persist selection', error as Error, { sourceId });
@@ -263,16 +252,16 @@ export class SelectionChannelManager {
   }
 
   /**
-   * @description 关闭指定源的 MessageChannel
+   * @description 关闭指定源的通道
    * @param sourceId {string} 规则源 ID
    * @return {void}
    */
   public closeChannel(sourceId: string): void {
-    const channelPort = this.channels.get(sourceId);
-    if (channelPort) {
-      channelPort.port.close();
+    const channelInfo = this.channels.get(sourceId);
+    if (channelInfo) {
+      // 移除通道信息
       this.channels.delete(sourceId);
-      Logger.info('MessageChannel closed for source', { sourceId });
+      Logger.info('Selection channel closed for source', { sourceId });
     }
 
     // 清除延时定时器
@@ -284,7 +273,7 @@ export class SelectionChannelManager {
   }
 
   /**
-   * @description 关闭所有 MessageChannel
+   * @description 关闭所有通道
    * @return {void}
    */
   public closeAllChannels(): void {
@@ -292,7 +281,7 @@ export class SelectionChannelManager {
       this.closeChannel(sourceId);
     }
     this.memoryState.clear();
-    Logger.info('All MessageChannels closed');
+    Logger.info('All selection channels closed');
   }
 
   /**

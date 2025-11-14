@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Icon } from '../components/Icon';
 import { TreeNode } from './TreeNode';
-import { useRuleSelectorStore, setSelectionChannelPort } from './store';
+import { useRuleSelectorStore } from './store';
 import { getDirectoryFilePaths } from './tree-utils';
 import type { TreeNode as TreeNodeType } from './tree-utils';
 import '../global.css';
@@ -80,34 +80,23 @@ export const App: React.FC = () => {
       setInitialData(payload);
     });
 
-    // 监听 MessageChannel 初始化消息
+    // 监听 MessageChannel 初始化消息 (实际上是 postMessage,非真正的 MessageChannel)
     const offInitChannel = rpc.on('initSelectionChannel', (payload: any) => {
-      const port = payload?.port as MessagePort | undefined;
-      if (port) {
-        // 设置到 store 以供 selectNode/selectAll/clearAll 使用
-        setSelectionChannelPort(port);
+      console.log('Selection channel initialized for source', { sourceId: payload.sourceId });
+    });
 
-        // 监听来自 Extension 的选择变更（左侧树视图的勾选）
-        port.onmessage = (event: MessageEvent<SelectionChangeMessage>) => {
-          const msg = event.data;
-          if (msg.type === 'selectionChanged' && msg.sourceId === currentSourceId) {
-            console.log('Selection changed from extension via MessageChannel', {
-              selectedCount: msg.selectedPaths.length,
-              totalCount: msg.totalCount,
-              fromPersistence: msg.fromPersistence,
-            });
+    // 监听选择变更消息 (来自左侧树视图)
+    const offSelectionChanged = rpc.on('selectionChanged', (payload: SelectionChangeMessage) => {
+      if (payload.sourceId === currentSourceId && !payload.fromPersistence) {
+        console.log('Selection changed from extension via postMessage', {
+          selectedCount: payload.selectedPaths.length,
+          totalCount: payload.totalCount,
+        });
 
-            // 直接更新 Zustand store 的 selectedPaths（不触发通知，避免循环）
-            useRuleSelectorStore.setState({
-              selectedPaths: msg.selectedPaths,
-              totalRules: msg.totalCount,
-            });
-          }
-        };
-
-        port.start();
-        console.log('MessageChannel port initialized for selection sync', {
-          sourceId: payload.sourceId,
+        // 直接更新 Zustand store
+        useRuleSelectorStore.setState({
+          selectedPaths: payload.selectedPaths,
+          totalRules: payload.totalCount,
         });
       }
     });
@@ -125,10 +114,9 @@ export const App: React.FC = () => {
     return () => {
       offInitial();
       offInitChannel();
+      offSelectionChanged();
       offSave();
       offError();
-      // 清理 MessageChannel port
-      setSelectionChannelPort(null);
     };
   }, [setInitialData, updateAfterSave, setSaving, currentSourceId]);
 

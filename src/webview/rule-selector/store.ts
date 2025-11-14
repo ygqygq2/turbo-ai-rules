@@ -8,17 +8,6 @@ import {
   type TreeNode,
 } from './tree-utils';
 
-// 全局 MessageChannel port（用于规则选择实时同步）
-export let selectionChannelPort: MessagePort | null = null;
-
-/**
- * @description 设置 MessageChannel port
- * @param port {MessagePort | null}
- */
-export function setSelectionChannelPort(port: MessagePort | null) {
-  selectionChannelPort = port;
-}
-
 // 类型定义
 interface RuleSelection {
   mode: 'include' | 'exclude';
@@ -227,16 +216,17 @@ export const useRuleSelectorStore = create<RuleSelectorState>()(
         const allPaths = getAllFilePaths(state.treeNodes);
         set({ selectedPaths: allPaths });
 
-        // 通过 MessageChannel 实时同步到扩展端
-        if (selectionChannelPort) {
-          selectionChannelPort.postMessage({
+        // 通过 RPC notify 实时同步到扩展端
+        import('../common/messaging').then(({ createWebviewRPC }) => {
+          const rpc = createWebviewRPC();
+          rpc.notify('selectionChanged', {
             type: 'selectionChanged',
             sourceId: state.currentSourceId,
             selectedPaths: allPaths,
             totalCount: state.totalRules,
             timestamp: Date.now(),
           });
-        }
+        });
       },
 
       /**
@@ -246,16 +236,17 @@ export const useRuleSelectorStore = create<RuleSelectorState>()(
         const state = get();
         set({ selectedPaths: [] });
 
-        // 通过 MessageChannel 实时同步到扩展端
-        if (selectionChannelPort) {
-          selectionChannelPort.postMessage({
+        // 通过 RPC notify 实时同步到扩展端
+        import('../common/messaging').then(({ createWebviewRPC }) => {
+          const rpc = createWebviewRPC();
+          rpc.notify('selectionChanged', {
             type: 'selectionChanged',
             sourceId: state.currentSourceId,
             selectedPaths: [],
             totalCount: state.totalRules,
             timestamp: Date.now(),
           });
-        }
+        });
       },
 
       /**

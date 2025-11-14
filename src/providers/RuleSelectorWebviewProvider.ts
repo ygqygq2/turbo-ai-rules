@@ -7,7 +7,10 @@ import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider'
 import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
 import { ConfigManager } from '../services/ConfigManager';
 import { GitManager } from '../services/GitManager';
-import { SelectionChannelManager } from '../services/SelectionChannelManager';
+import {
+  SelectionChannelManager,
+  type SelectionChangeMessage,
+} from '../services/SelectionChannelManager';
 import type { RuleSelection } from '../services/WorkspaceDataManager';
 import { Logger } from '../utils/logger';
 import { SystemError } from '../types/errors';
@@ -303,37 +306,35 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
       return { closed: true };
     });
 
-    // 仅更新内存状态（不落盘），用于右侧 Webview 的实时同步
-    this.messenger.register<
-      {
-        sourceId: string;
-        paths: string[];
+    // 监听 Webview 发送的选择变更通知 (右侧勾选 → Extension)
+    this.messenger.register<SelectionChangeMessage, { message: string }>(
+      'selectionChanged',
+      async (payload) => {
+        const sourceId = payload?.sourceId;
+        const paths = payload?.selectedPaths || [];
+        const totalCount = payload?.totalCount || paths.length;
+        if (!sourceId) {
+          throw new SystemError('缺少 sourceId', 'TAI-1001');
+        }
+
+        const channelManager = SelectionChannelManager.getInstance();
+
+        try {
+          // 更新内存状态并触发延时落盘
+          channelManager.updateMemoryState(sourceId, paths, totalCount, true);
+
+          Logger.debug('Selection changed from webview', {
+            sourceId,
+            pathCount: paths.length,
+          });
+          return { message: '已更新' };
+        } catch (error) {
+          Logger.error('Failed to handle selection change from webview', error as Error, {
+            sourceId,
+          });
+          throw new SystemError('更新选择失败', 'TAI-5003', error as Error);
+        }
       },
-      { message: string }
-    >('updateMemorySelection', async (payload) => {
-      const sourceId = payload?.sourceId;
-      const paths = payload?.paths || [];
-      if (!sourceId) {
-        throw new SystemError('缺少 sourceId', 'TAI-1001');
-      }
-
-      const channelManager = SelectionChannelManager.getInstance();
-      const rulesManager = RulesManager.getInstance();
-      const totalCount = rulesManager.getRulesBySource(sourceId).length;
-
-      try {
-        // 通过 MessageChannel 更新内存状态并广播，不落盘
-        channelManager.updateMemoryState(sourceId, paths, totalCount, false);
-
-        Logger.debug('Memory selection updated from webview', {
-          sourceId,
-          pathCount: paths.length,
-        });
-        return { message: '内存状态已更新' };
-      } catch (error) {
-        Logger.error('Failed to update memory selection', error as Error, { sourceId });
-        throw new SystemError('更新内存状态失败', 'TAI-5003', error as Error);
-      }
-    });
+    );
   }
 }
