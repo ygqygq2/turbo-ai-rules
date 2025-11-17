@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 
 import { ConfigManager } from '../services/ConfigManager';
 import { RulesManager } from '../services/RulesManager';
-import { SelectionChannelManager } from '../services/SelectionChannelManager';
+import { SelectionStateManager } from '../services/SelectionStateManager';
 import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
 import type { RuleSource } from '../types/config';
 import type { ParsedRule } from '../types/rules';
@@ -234,12 +234,21 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
   private _onDidChangeTreeData = new vscode.EventEmitter<RuleTreeItem | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
   private workspaceDataManager: WorkspaceDataManager;
-  private channelManager: SelectionChannelManager;
   private refreshTimeout?: NodeJS.Timeout;
+  private stateChangeDisposable?: () => void;
 
-  constructor(private configManager: ConfigManager, private rulesManager: RulesManager) {
+  constructor(
+    private configManager: ConfigManager,
+    private rulesManager: RulesManager,
+    private selectionStateManager: SelectionStateManager,
+  ) {
     this.workspaceDataManager = WorkspaceDataManager.getInstance();
-    this.channelManager = SelectionChannelManager.getInstance();
+
+    // 订阅状态变更事件，自动刷新树视图
+    this.stateChangeDisposable = this.selectionStateManager.onStateChanged(() => {
+      Logger.debug('Selection state changed, refreshing tree view');
+      this.refresh();
+    });
 
     // 监听活动编辑器变化，自动刷新树视图（切换工作区文件夹时更新源列表）
     vscode.window.onDidChangeActiveTextEditor(() => {
@@ -280,15 +289,9 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
         const filePath = item.data.rule.filePath;
 
         if (!changesBySource.has(sourceId)) {
-          // 优先从内存状态获取，其次从持久化存储
-          const memoryState = this.channelManager.getMemoryState(sourceId);
-          if (memoryState) {
-            changesBySource.set(sourceId, new Set(memoryState));
-          } else {
-            const selection = await this.workspaceDataManager.getRuleSelection(sourceId);
-            const currentPaths = new Set(selection?.paths || []);
-            changesBySource.set(sourceId, currentPaths);
-          }
+          // 从 SelectionStateManager 获取当前状态
+          const currentPaths = this.selectionStateManager.getSelection(sourceId);
+          changesBySource.set(sourceId, new Set(currentPaths));
         }
 
         const paths = changesBySource.get(sourceId)!;
@@ -299,27 +302,16 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
         }
       }
 
-      // 通过 MessageChannel 更新内存状态并广播，安排延时落盘
+      // 通过 SelectionStateManager 更新状态，自动触发事件并安排延时落盘
       for (const [sourceId, paths] of changesBySource.entries()) {
-        const totalCount = this.rulesManager.getRulesBySource(sourceId).length;
+        // 更新状态，会自动触发 stateChanged 事件并刷新树视图
+        this.selectionStateManager.updateSelection(sourceId, Array.from(paths), true);
 
-        // 更新内存状态，通过 MessageChannel 实时同步，并安排500ms后落盘
-        this.channelManager.updateMemoryState(
-          sourceId,
-          Array.from(paths),
-          totalCount,
-          true, // 启用延时落盘
-        );
-
-        Logger.debug('Checkbox change - memory updated, persistence scheduled', {
+        Logger.debug('Checkbox change - state updated via SelectionStateManager', {
           sourceId,
           selectedCount: paths.size,
-          totalCount,
         });
       }
-
-      // 刷新树视图
-      this.refresh();
     } catch (error) {
       Logger.error('Failed to handle checkbox change', error instanceof Error ? error : undefined);
       vscode.window.showErrorMessage(`更新规则选择失败: ${error}`);
@@ -340,14 +332,56 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
         case 'source':
           // 源节点：显示该源的规则
           return await this.getSourceRules(element.data.source!);
-        case 'tag':
-          // 标签节点：显示该标签的规则
-          return await this.getTagRules(element.data.tag!);
         default:
           return [];
       }
     } catch (error) {
       Logger.error('Failed to get tree children', error instanceof Error ? error : undefined);
+      return [];
+    }
+  }
+
+  /**
+   * 从 Git 缓存目录加载规则
+   */
+  private async loadRulesFromCache(sourceId: string): Promise<ParsedRule[]> {
+    // 先尝试从 RulesManager 内存中获取
+    let rules = this.rulesManager.getRulesBySource(sourceId);
+    if (rules.length > 0) {
+      return rules;
+    }
+
+    // 如果内存中没有，从 Git 缓存目录解析
+    const GitManager = (await import('../services/GitManager')).GitManager;
+    const MdcParser = (await import('../parsers/MdcParser')).MdcParser;
+    const gitManager = GitManager.getInstance();
+    const parser = new MdcParser();
+
+    const sourcePath = gitManager.getSourcePath(sourceId);
+    const exists = await gitManager.repositoryExists(sourceId);
+
+    if (!exists) {
+      Logger.debug('Repository not synced yet', { sourceId, sourcePath });
+      return [];
+    }
+
+    try {
+      // 解析规则目录
+      const parsedRules = await parser.parseDirectory(sourcePath, sourceId, {
+        recursive: true,
+        maxDepth: 6,
+        maxFiles: 500,
+      });
+
+      // 添加到 RulesManager 缓存
+      if (parsedRules.length > 0) {
+        this.rulesManager.addRules(sourceId, parsedRules);
+      }
+
+      Logger.debug('Rules loaded from cache', { sourceId, count: parsedRules.length });
+      return parsedRules;
+    } catch (error) {
+      Logger.warn('Failed to load rules from cache', { sourceId, error });
       return [];
     }
   }
@@ -395,29 +429,13 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
       const rules = this.rulesManager.getRulesBySource(source.id);
       const totalCount = rules.length;
 
-      // 获取该源的规则选择信息（优先从内存状态读取）
+      // 获取该源的规则选择信息（从 SelectionStateManager 读取）
       let selectedCount = 0;
       try {
-        // 优先从内存状态读取
-        const memoryState = this.selectionStateManager.getMemoryState(source.id);
-        if (memoryState) {
-          selectedCount = memoryState.length;
-        } else {
-          // 内存中没有，从磁盘读取
-          const selection = await this.workspaceDataManager.getRuleSelection(source.id);
-          if (selection) {
-            // 根据选择模式计算已选择的规则数量
-            if (selection.mode === 'include') {
-              selectedCount = selection.paths?.length || 0;
-            } else {
-              // exclude 模式：总数减去排除的数量
-              selectedCount = totalCount - (selection.excludePaths?.length || 0);
-            }
-          } else {
-            // 没有选择配置时，默认全选
-            selectedCount = totalCount;
-          }
-        }
+        // 先初始化状态（从磁盘加载），如果已初始化则直接返回内存中的数据
+        await this.selectionStateManager.initializeState(source.id, totalCount);
+        const selectedPaths = this.selectionStateManager.getSelection(source.id);
+        selectedCount = selectedPaths.length;
       } catch (error) {
         Logger.warn('Failed to get rule selection', { sourceId: source.id, error });
         // 出错时默认全选
@@ -445,7 +463,8 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
    * 获取源的规则
    */
   private async getSourceRules(source: RuleSource): Promise<RuleTreeItem[]> {
-    const rules = this.rulesManager.getRulesBySource(source.id);
+    // 从 Git 缓存目录加载规则（会自动添加到 RulesManager）
+    const rules = await this.loadRulesFromCache(source.id);
 
     if (rules.length === 0) {
       return [
@@ -459,31 +478,13 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
       ];
     }
 
-    // 获取该源的规则选择信息（优先从内存状态读取）
+    // 获取该源的规则选择信息（从 SelectionStateManager 读取）
     let selectedPaths: Set<string> = new Set();
     try {
-      // 优先从内存状态读取
-      const memoryState = this.selectionStateManager.getMemoryState(source.id);
-      if (memoryState) {
-        selectedPaths = new Set(memoryState);
-      } else {
-        // 内存中没有，从磁盘读取
-        const selection = await this.workspaceDataManager.getRuleSelection(source.id);
-        if (selection) {
-          if (selection.mode === 'include') {
-            selectedPaths = new Set(selection.paths || []);
-          } else {
-            // exclude 模式：所有规则默认选中，除了排除的
-            const excludePaths = new Set(selection.excludePaths || []);
-            selectedPaths = new Set(
-              rules.map((r) => r.filePath).filter((p) => p && !excludePaths.has(p)) as string[],
-            );
-          }
-        } else {
-          // 没有选择配置时，默认全选
-          selectedPaths = new Set(rules.map((r) => r.filePath).filter((p) => p) as string[]);
-        }
-      }
+      // 先初始化状态（从磁盘加载），如果已初始化则直接返回内存中的数据
+      await this.selectionStateManager.initializeState(source.id, rules.length);
+      const paths = this.selectionStateManager.getSelection(source.id);
+      selectedPaths = new Set(paths);
     } catch (error) {
       Logger.warn('Failed to get rule selection for source', { sourceId: source.id, error });
       // 出错时默认全选

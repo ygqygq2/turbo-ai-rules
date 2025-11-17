@@ -167,12 +167,18 @@ export class WebviewRPC {
   }
 }
 
+// 单例实例
+let rpcInstance: WebviewRPC | null = null;
+
 /**
- * @description 创建 Webview RPC 实例
+ * @description 创建 Webview RPC 实例（单例模式）
  * @return {WebviewRPC}
  */
 export function createWebviewRPC(): WebviewRPC {
-  // @ts-ignore - acquireVsCodeApi is injected by VSCode
-  const vscode = acquireVsCodeApi();
-  return new WebviewRPC(vscode);
+  if (!rpcInstance) {
+    // @ts-ignore - acquireVsCodeApi is injected by VSCode
+    const vscode = acquireVsCodeApi();
+    rpcInstance = new WebviewRPC(vscode);
+  }
+  return rpcInstance;
 }

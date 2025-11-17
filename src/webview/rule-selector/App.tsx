@@ -7,9 +7,8 @@ import type { TreeNode as TreeNodeType } from './tree-utils';
 import '../global.css';
 import './rule-selector.css';
 
-// 新的 RPC 封装
+// 新的 RPC 封装（单例）
 import { createWebviewRPC } from '../common/messaging';
-const rpc = createWebviewRPC();
 
 interface RuleSelection {
   mode: 'include' | 'exclude';
@@ -68,6 +67,9 @@ export const App: React.FC = () => {
     updateAfterSave,
   } = useRuleSelectorStore();
 
+  // 获取 RPC 实例（延迟到使用时获取，确保只调用一次 acquireVsCodeApi）
+  const rpc = React.useMemo(() => createWebviewRPC(), []);
+
   // 监听来自扩展的消息
   useEffect(() => {
     // 请求初始数据（RPC）
@@ -87,8 +89,12 @@ export const App: React.FC = () => {
 
     // 监听选择变更消息 (来自左侧树视图)
     const offSelectionChanged = rpc.on('selectionChanged', (payload: SelectionChangeMessage) => {
-      if (payload.sourceId === currentSourceId && !payload.fromPersistence) {
-        console.log('Selection changed from extension via postMessage', {
+      // 不使用闭包中的 currentSourceId，而是从 store 中获取最新值
+      const state = useRuleSelectorStore.getState();
+
+      if (payload.sourceId === state.currentSourceId && !payload.fromPersistence) {
+        console.log('Selection changed from extension (left tree)', {
+          sourceId: payload.sourceId,
           selectedCount: payload.selectedPaths.length,
           totalCount: payload.totalCount,
         });
@@ -118,7 +124,7 @@ export const App: React.FC = () => {
       offSave();
       offError();
     };
-  }, [setInitialData, updateAfterSave, setSaving, currentSourceId]);
+  }, [setInitialData, updateAfterSave, setSaving]);
 
   // 保存（确认持久化）
   const handleSave = async () => {

@@ -1,51 +1,60 @@
 /**
- * 规则选择状态管理器
- * 实现左侧树视图和右侧选择器的内存状态同步
- * 左侧延时落盘，右侧通过确认按钮落盘
+ * 规则选择状态管理器（单一数据源）
+ * 负责管理所有规则源的选择状态，提供统一的读写接口
  */
 
 import * as vscode from 'vscode';
 
-import { Logger } from '../utils/logger';
 import { WorkspaceDataManager } from './WorkspaceDataManager';
+import { Logger } from '../utils/logger';
+import type { RuleSelection } from './WorkspaceDataManager';
 
 /**
- * 选择状态变更事件
+ * 状态变更事件
  */
 export interface SelectionStateChangeEvent {
   sourceId: string;
   selectedPaths: string[];
   totalCount: number;
   timestamp: number;
-  // 是否来自持久化操作（用于避免循环更新）
-  fromPersistence?: boolean;
 }
 
 /**
- * 选择状态管理器（单例）
+ * 状态变更监听器
+ */
+export type SelectionStateChangeListener = (event: SelectionStateChangeEvent) => void;
+
+/**
+ * SelectionStateManager（单例）
+ * 作为规则选择状态的唯一权威数据源（Single Source of Truth）
  */
 export class SelectionStateManager {
   private static instance: SelectionStateManager;
-  private _onSelectionChanged = new vscode.EventEmitter<SelectionStateChangeEvent>();
 
   // 内存中的选择状态（sourceId -> Set<filePath>）
   private memoryState = new Map<string, Set<string>>();
 
-  // 延时落盘定时器（sourceId -> timeout）
+  // 规则总数缓存（sourceId -> totalCount）
+  private totalCountCache = new Map<string, number>();
+
+  // 状态变更监听器
+  private listeners: SelectionStateChangeListener[] = [];
+
+  // 延时持久化定时器（sourceId -> timeout）
   private persistenceTimers = new Map<string, NodeJS.Timeout>();
 
   // 延时时间（毫秒）
   private readonly PERSISTENCE_DELAY = 500;
 
-  /**
-   * 选择状态变更事件
-   */
-  public readonly onSelectionChanged = this._onSelectionChanged.event;
+  private workspaceDataManager: WorkspaceDataManager;
 
-  private constructor() {}
+  private constructor() {
+    this.workspaceDataManager = WorkspaceDataManager.getInstance();
+  }
 
   /**
-   * 获取 SelectionStateManager 实例
+   * @description 获取 SelectionStateManager 实例
+   * @return {SelectionStateManager}
    */
   public static getInstance(): SelectionStateManager {
     if (!SelectionStateManager.instance) {
@@ -55,75 +64,111 @@ export class SelectionStateManager {
   }
 
   /**
-   * @description 更新内存中的选择状态（不立即落盘）
+   * @description 初始化源的选择状态（从磁盘加载）
    * @param sourceId {string} 规则源 ID
-   * @param selectedPaths {string[]} 已选择的规则路径
-   * @param totalCount {number} 总规则数量
-   * @param schedulePersistence {boolean} 是否安排延时落盘
-   * @return {void}
+   * @param totalCount {number} 规则总数
+   * @return {Promise<string[]>} 选择的路径列表
    */
-  public updateMemoryState(
+  public async initializeState(sourceId: string, totalCount: number): Promise<string[]> {
+    // 缓存规则总数
+    this.totalCountCache.set(sourceId, totalCount);
+
+    // 如果内存中已有状态，直接返回
+    if (this.memoryState.has(sourceId)) {
+      return Array.from(this.memoryState.get(sourceId)!);
+    }
+
+    // 从磁盘加载
+    try {
+      const selection = await this.workspaceDataManager.getRuleSelection(sourceId);
+      let paths: string[] = [];
+
+      if (selection) {
+        if (selection.mode === 'include') {
+          paths = selection.paths || [];
+        } else {
+          // exclude 模式暂不支持，默认全选
+          Logger.warn('Exclude mode not supported, defaulting to all selected');
+          paths = [];
+        }
+      }
+
+      // 如果没有配置或配置为空，默认全选（使用空数组表示）
+      // 注意：空数组会在 UI 层解释为"需要全选"
+      this.memoryState.set(sourceId, new Set(paths));
+
+      Logger.info('Selection state initialized from disk', {
+        sourceId,
+        selectedCount: paths.length,
+        totalCount,
+      });
+
+      return paths;
+    } catch (error) {
+      Logger.error('Failed to initialize selection state', error as Error, { sourceId });
+      // 出错时默认全选
+      this.memoryState.set(sourceId, new Set());
+      return [];
+    }
+  }
+
+  /**
+   * @description 获取选择状态
+   * @param sourceId {string} 规则源 ID
+   * @return {string[]} 选择的路径列表
+   */
+  public getSelection(sourceId: string): string[] {
+    const state = this.memoryState.get(sourceId);
+    return state ? Array.from(state) : [];
+  }
+
+  /**
+   * @description 获取选择数量
+   * @param sourceId {string} 规则源 ID
+   * @return {number} 选择的规则数量
+   */
+  public getSelectionCount(sourceId: string): number {
+    const state = this.memoryState.get(sourceId);
+    if (!state) {
+      // 如果没有初始化，默认全选
+      return this.totalCountCache.get(sourceId) || 0;
+    }
+    return state.size === 0 ? this.totalCountCache.get(sourceId) || 0 : state.size;
+  }
+
+  /**
+   * @description 更新选择状态
+   * @param sourceId {string} 规则源 ID
+   * @param selectedPaths {string[]} 选择的路径列表
+   * @param schedulePersistence {boolean} 是否安排延时持久化（默认 true）
+   */
+  public updateSelection(
     sourceId: string,
     selectedPaths: string[],
-    totalCount: number,
-    schedulePersistence = false,
+    schedulePersistence: boolean = true,
   ): void {
     // 更新内存状态
     this.memoryState.set(sourceId, new Set(selectedPaths));
 
-    // 触发内存状态变更事件
-    const event: SelectionStateChangeEvent = {
+    // 触发状态变更事件
+    const totalCount = this.totalCountCache.get(sourceId) || selectedPaths.length;
+    this.notifyListeners({
       sourceId,
       selectedPaths,
       totalCount,
       timestamp: Date.now(),
-      fromPersistence: false,
-    };
-
-    Logger.debug('Memory state updated', {
-      sourceId,
-      selectedCount: selectedPaths.length,
-      totalCount,
-      schedulePersistence,
     });
-    this._onSelectionChanged.fire(event);
 
-    // 如果需要延时落盘（左侧树视图）
+    // 安排延时持久化
     if (schedulePersistence) {
       this.schedulePersistence(sourceId);
     }
-  }
 
-  /**
-   * @description 获取内存中的选择状态
-   * @param sourceId {string} 规则源 ID
-   * @return {string[] | undefined}
-   */
-  public getMemoryState(sourceId: string): string[] | undefined {
-    const state = this.memoryState.get(sourceId);
-    return state ? Array.from(state) : undefined;
-  }
-
-  /**
-   * @description 安排延时落盘
-   * @param sourceId {string} 规则源 ID
-   * @return {void}
-   */
-  private schedulePersistence(sourceId: string): void {
-    // 清除旧的定时器
-    const existingTimer = this.persistenceTimers.get(sourceId);
-    if (existingTimer) {
-      clearTimeout(existingTimer);
-    }
-
-    // 设置新的延时落盘定时器
-    const timer = setTimeout(() => {
-      this.persistToDisk(sourceId).catch((error) => {
-        Logger.error('Failed to persist selection to disk', error as Error, { sourceId });
-      });
-    }, this.PERSISTENCE_DELAY);
-
-    this.persistenceTimers.set(sourceId, timer);
+    Logger.debug('Selection state updated', {
+      sourceId,
+      selectedCount: selectedPaths.length,
+      totalCount,
+    });
   }
 
   /**
@@ -145,26 +190,18 @@ export class SelectionStateManager {
     }
 
     const workspacePath = workspaceFolders[0].uri.fsPath;
-    const dataManager = WorkspaceDataManager.getInstance();
 
     try {
-      await dataManager.setRuleSelection(workspacePath, sourceId, {
+      const selection: RuleSelection = {
         mode: 'include',
         paths: Array.from(selectedPaths),
-      });
+      };
+
+      await this.workspaceDataManager.setRuleSelection(workspacePath, sourceId, selection);
 
       Logger.info('Selection persisted to disk', {
         sourceId,
         selectedCount: selectedPaths.size,
-      });
-
-      // 触发持久化完成事件
-      this._onSelectionChanged.fire({
-        sourceId,
-        selectedPaths: Array.from(selectedPaths),
-        totalCount: selectedPaths.size,
-        timestamp: Date.now(),
-        fromPersistence: true,
       });
     } catch (error) {
       Logger.error('Failed to persist selection', error as Error, { sourceId });
@@ -176,31 +213,91 @@ export class SelectionStateManager {
   }
 
   /**
-   * @description 触发选择状态变更事件（兼容旧代码）
-   * @param sourceId {string} 规则源 ID
-   * @param selectedCount {number} 已选择的规则数量
-   * @param totalCount {number} 总规则数量
-   * @return {void}
+   * @description 注册状态变更监听器
+   * @param listener {SelectionStateChangeListener} 监听器函数
+   * @return {() => void} 取消监听的函数
    */
-  public notifySelectionChanged(sourceId: string, selectedCount: number, totalCount: number): void {
-    Logger.debug('Legacy notification (deprecated)', {
-      sourceId,
-      selectedCount,
-      totalCount,
+  public onStateChanged(listener: SelectionStateChangeListener): () => void {
+    this.listeners.push(listener);
+
+    // 返回取消监听函数
+    return () => {
+      const index = this.listeners.indexOf(listener);
+      if (index !== -1) {
+        this.listeners.splice(index, 1);
+      }
+    };
+  }
+
+  /**
+   * @description 通知所有监听器
+   * @param event {SelectionStateChangeEvent} 状态变更事件
+   */
+  private notifyListeners(event: SelectionStateChangeEvent): void {
+    this.listeners.forEach((listener) => {
+      try {
+        listener(event);
+      } catch (error) {
+        Logger.error('Error in state change listener', error as Error);
+      }
     });
   }
 
   /**
+   * @description 安排延时持久化
+   * @param sourceId {string} 规则源 ID
+   */
+  private schedulePersistence(sourceId: string): void {
+    // 清除旧的定时器
+    const existingTimer = this.persistenceTimers.get(sourceId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    // 设置新的延时持久化定时器
+    const timer = setTimeout(() => {
+      this.persistToDisk(sourceId).catch((error) => {
+        Logger.error('Failed to persist selection to disk', error as Error, { sourceId });
+      });
+    }, this.PERSISTENCE_DELAY);
+
+    this.persistenceTimers.set(sourceId, timer);
+  }
+
+  /**
+   * @description 清除源的状态
+   * @param sourceId {string} 规则源 ID
+   */
+  public clearState(sourceId: string): void {
+    this.memoryState.delete(sourceId);
+    this.totalCountCache.delete(sourceId);
+
+    const timer = this.persistenceTimers.get(sourceId);
+    if (timer) {
+      clearTimeout(timer);
+      this.persistenceTimers.delete(sourceId);
+    }
+
+    Logger.info('Selection state cleared', { sourceId });
+  }
+
+  /**
    * @description 释放资源
-   * @return {void}
    */
   public dispose(): void {
-    // 清除所有延时定时器
+    // 清除所有定时器
     for (const timer of this.persistenceTimers.values()) {
       clearTimeout(timer);
     }
     this.persistenceTimers.clear();
+
+    // 清除状态
     this.memoryState.clear();
-    this._onSelectionChanged.dispose();
+    this.totalCountCache.clear();
+
+    // 清除监听器
+    this.listeners = [];
+
+    Logger.info('SelectionStateManager disposed');
   }
 }

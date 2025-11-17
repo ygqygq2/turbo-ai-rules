@@ -7,6 +7,10 @@ import {
   getDirectoryFilePaths,
   type TreeNode,
 } from './tree-utils';
+import { createWebviewRPC } from '../common/messaging';
+
+// 获取 RPC 实例（延迟到使用时获取，避免模块加载时就调用 acquireVsCodeApi）
+const getRpc = () => createWebviewRPC();
 
 // 类型定义
 interface RuleSelection {
@@ -155,6 +159,13 @@ export const useRuleSelectorStore = create<RuleSelectorState>()(
           totalRules: totalFiles,
           searchTerm: '',
         });
+
+        // 通知 Extension 端切换源（用于初始化 MessageChannel）
+        getRpc().notify('sourceChanged', {
+          sourceId: newSourceId,
+          selectedPaths: [...paths],
+          totalCount: totalFiles,
+        });
       },
 
       /**
@@ -197,15 +208,12 @@ export const useRuleSelectorStore = create<RuleSelectorState>()(
         set({ selectedPaths: newSelectedPaths });
 
         // 通过 RPC notify 实时同步到扩展端
-        import('../common/messaging').then(({ createWebviewRPC }) => {
-          const rpc = createWebviewRPC();
-          rpc.notify('selectionChanged', {
-            type: 'selectionChanged',
-            sourceId: state.currentSourceId,
-            selectedPaths: newSelectedPaths,
-            totalCount: state.totalRules,
-            timestamp: Date.now(),
-          });
+        getRpc().notify('selectionChanged', {
+          type: 'selectionChanged',
+          sourceId: state.currentSourceId,
+          selectedPaths: newSelectedPaths,
+          totalCount: state.totalRules,
+          timestamp: Date.now(),
         });
       },
 
@@ -218,15 +226,12 @@ export const useRuleSelectorStore = create<RuleSelectorState>()(
         set({ selectedPaths: allPaths });
 
         // 通过 RPC notify 实时同步到扩展端
-        import('../common/messaging').then(({ createWebviewRPC }) => {
-          const rpc = createWebviewRPC();
-          rpc.notify('selectionChanged', {
-            type: 'selectionChanged',
-            sourceId: state.currentSourceId,
-            selectedPaths: allPaths,
-            totalCount: state.totalRules,
-            timestamp: Date.now(),
-          });
+        getRpc().notify('selectionChanged', {
+          type: 'selectionChanged',
+          sourceId: state.currentSourceId,
+          selectedPaths: allPaths,
+          totalCount: state.totalRules,
+          timestamp: Date.now(),
         });
       },
 
@@ -238,15 +243,12 @@ export const useRuleSelectorStore = create<RuleSelectorState>()(
         set({ selectedPaths: [] });
 
         // 通过 RPC notify 实时同步到扩展端
-        import('../common/messaging').then(({ createWebviewRPC }) => {
-          const rpc = createWebviewRPC();
-          rpc.notify('selectionChanged', {
-            type: 'selectionChanged',
-            sourceId: state.currentSourceId,
-            selectedPaths: [],
-            totalCount: state.totalRules,
-            timestamp: Date.now(),
-          });
+        getRpc().notify('selectionChanged', {
+          type: 'selectionChanged',
+          sourceId: state.currentSourceId,
+          selectedPaths: [],
+          totalCount: state.totalRules,
+          timestamp: Date.now(),
         });
       },
 

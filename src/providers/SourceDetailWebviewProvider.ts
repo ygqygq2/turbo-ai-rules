@@ -62,6 +62,7 @@ export interface SourceDetailData {
 export class SourceDetailWebviewProvider extends BaseWebviewProvider {
   private static instance: SourceDetailWebviewProvider | undefined;
   private currentSourceId: string | undefined;
+  private webviewReady: boolean = false;
 
   private constructor(context: vscode.ExtensionContext) {
     super(context);
@@ -93,6 +94,7 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
    */
   public async showSourceDetail(sourceId: string): Promise<void> {
     this.currentSourceId = sourceId;
+    this.webviewReady = false;
 
     // 新增模式特殊处理
     if (sourceId === 'new') {
@@ -111,8 +113,12 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
       title: 'Source Details',
       viewColumn: vscode.ViewColumn.One,
     });
-    // 加载并发送数据
-    await this.loadAndSendData();
+
+    // 如果 webview 已经准备好，立即发送数据
+    // 否则等待 webview 发送 ready 消息
+    if (this.webviewReady) {
+      await this.loadAndSendData();
+    }
   }
 
   /**
@@ -364,6 +370,14 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
   protected async handleMessage(message: WebviewMessage): Promise<void> {
     try {
       switch (message.type) {
+        case 'ready':
+          // Webview 已准备好，发送数据
+          this.webviewReady = true;
+          if (this.currentSourceId && this.currentSourceId !== 'new') {
+            await this.loadAndSendData();
+          }
+          break;
+
         case 'addSource':
           await this.handleAddSource(message.payload);
           break;

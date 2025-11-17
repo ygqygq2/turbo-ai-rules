@@ -90,6 +90,9 @@ const App: React.FC = () => {
       return;
     }
 
+    // 通知扩展 webview 已准备好
+    vscodeApi.postMessage('ready');
+
     // 监听来自扩展的消息
     const handleMessage = (event: MessageEvent) => {
       const message = event.data;
@@ -118,7 +121,7 @@ const App: React.FC = () => {
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, []);
+  }, [mode]);
 
   // 新增模式：显示表单
   if (mode === 'new') {

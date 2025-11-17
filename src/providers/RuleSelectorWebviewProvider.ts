@@ -7,16 +7,14 @@ import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider'
 import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
 import { ConfigManager } from '../services/ConfigManager';
 import { GitManager } from '../services/GitManager';
-import {
-  SelectionChannelManager,
-  type SelectionChangeMessage,
-} from '../services/SelectionChannelManager';
+import { SelectionStateManager } from '../services/SelectionStateManager';
 import type { RuleSelection } from '../services/WorkspaceDataManager';
 import { Logger } from '../utils/logger';
 import { SystemError } from '../types/errors';
 import { createExtensionMessenger, ExtensionMessenger } from './messaging/ExtensionMessenger';
 import { RulesManager } from '../services/RulesManager';
 import { RULE_FILE_EXTENSIONS } from '../utils/constants';
+import type { ParsedRule } from '../types/rules';
 
 /**
  * 文件树节点
@@ -35,9 +33,23 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
   private static instance: RuleSelectorWebviewProvider | undefined;
   private currentSourceId?: string; // 当前选择的源 ID
   private messenger?: ExtensionMessenger; // 新的消息管理器
+  private selectionStateManager: SelectionStateManager;
+  private stateChangeDisposable?: () => void;
 
   private constructor(context: vscode.ExtensionContext) {
     super(context);
+    this.selectionStateManager = SelectionStateManager.getInstance();
+
+    // 订阅状态变更事件，自动向 Webview 发送消息
+    this.stateChangeDisposable = this.selectionStateManager.onStateChanged((event) => {
+      if (event.sourceId === this.currentSourceId && this.panel) {
+        Logger.debug('Selection state changed, notifying webview', { sourceId: event.sourceId });
+        this.messenger?.notify('selectionChanged', {
+          sourceId: event.sourceId,
+          paths: event.selectedPaths,
+        });
+      }
+    });
   }
 
   public static getInstance(context: vscode.ExtensionContext): RuleSelectorWebviewProvider {
@@ -54,18 +66,46 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
    */
   public async showRuleSelector(sourceId?: string | any): Promise<void> {
     // 从 TreeItem 提取 sourceId
-    const actualSourceId =
+    let actualSourceId =
       typeof sourceId === 'object' && sourceId?.data?.source?.id
         ? sourceId.data.source.id
         : typeof sourceId === 'string'
         ? sourceId
         : undefined;
 
+    // 如果没有指定 sourceId，使用第一个源作为默认值
+    if (!actualSourceId) {
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (workspaceFolders && workspaceFolders.length > 0) {
+        const configManager = ConfigManager.getInstance(this.context);
+        const sources = configManager.getSources(workspaceFolders[0].uri);
+        if (sources.length > 0) {
+          actualSourceId = sources[0].id;
+          Logger.info('No sourceId specified, using first source as default', {
+            sourceId: actualSourceId,
+          });
+        }
+      }
+    }
+
     this.currentSourceId = actualSourceId;
+
+    // 获取源名称用于标题显示
+    let sourceName = '';
+    if (actualSourceId) {
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (workspaceFolders && workspaceFolders.length > 0) {
+        const configManager = ConfigManager.getInstance(this.context);
+        const source = configManager
+          .getSources(workspaceFolders[0].uri)
+          .find((s) => s.id === actualSourceId);
+        sourceName = source?.name || source?.gitUrl || actualSourceId;
+      }
+    }
 
     await this.show({
       viewType: 'turboAiRules.ruleSelector',
-      title: actualSourceId ? `规则选择器 - ${actualSourceId}` : '规则选择器',
+      title: sourceName ? `规则选择器 - ${sourceName}` : '规则选择器',
       viewColumn: vscode.ViewColumn.Active,
     });
 
@@ -73,13 +113,6 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
     if (this.panel && !this.messenger) {
       this.messenger = createExtensionMessenger(this.panel.webview);
       this.registerMessageHandlers();
-
-      // 为当前源创建 MessageChannel
-      if (actualSourceId) {
-        const channelManager = SelectionChannelManager.getInstance();
-        channelManager.createChannel(actualSourceId, this.panel.webview);
-        Logger.info('MessageChannel created for rule selector', { sourceId: actualSourceId });
-      }
     }
 
     // 打开后尽快发送初始数据（同时也等前端 ready 再发一遍，防止 race）
@@ -148,6 +181,7 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
       }
 
       const workspacePath = workspaceFolders[0].uri.fsPath;
+      const workspaceUri = workspaceFolders[0].uri; // 获取 workspace URI
       const dataManager = WorkspaceDataManager.getInstance();
       const configManager = ConfigManager.getInstance(this.context);
       const gitManager = GitManager.getInstance();
@@ -157,20 +191,40 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
       const selections = await dataManager.readRuleSelections();
 
       // 获取所有源及其文件树（如果指定了 sourceId，则只加载该源）
-      let sources = configManager.getSources();
+      // 传递 workspaceUri 以确保能读取到工作区文件夹级别的配置
+      let sources = configManager.getSources(workspaceUri);
+
       if (this.currentSourceId) {
         sources = sources.filter((s) => s.id === this.currentSourceId);
       }
 
       const fileTreeBySource: Record<string, FileTreeNode[]> = {};
+      const selectionsData: Record<string, RuleSelection> = {};
+
       // 创建源信息数组，包含 id、name 和真实的规则总数
-      const sourceList = sources.map((s) => ({
-        id: s.id,
-        name: s.name || s.gitUrl,
-        totalRules: rulesManager.getRulesBySource(s.id).length, // 使用真实的规则数量
-      }));
+      const sourceList = [];
 
       for (const source of sources) {
+        // 从 Git 缓存加载规则（如果内存中没有）
+        const rules = await this.loadRulesFromCache(source.id);
+        const totalRules = rules.length;
+
+        // 初始化选择状态（从磁盘加载）
+        await this.selectionStateManager.initializeState(source.id, totalRules);
+        const selectedPaths = this.selectionStateManager.getSelection(source.id);
+
+        // 构建选择数据
+        selectionsData[source.id] = {
+          mode: 'include',
+          paths: selectedPaths,
+        };
+
+        sourceList.push({
+          id: source.id,
+          name: source.name || source.gitUrl,
+          totalRules,
+        });
+
         const sourcePath = gitManager.getSourcePath(source.id);
         fileTreeBySource[source.id] = await this.readDirectoryTree(sourcePath, sourcePath);
       }
@@ -178,7 +232,7 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
       // 返回初始数据（供 RPC 请求使用）
       this.messenger?.notify('initialData', {
         workspacePath,
-        selections: selections?.selections || {},
+        selections: selectionsData,
         fileTreeBySource,
         sourceList,
         currentSourceId: this.currentSourceId,
@@ -191,6 +245,54 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
     } catch (error) {
       Logger.error('Failed to load initial data', error as Error);
       this.messenger?.notify('error', { message: '加载数据失败', code: 'TAI-5002' });
+    }
+  }
+
+  /**
+   * @description 从 Git 缓存目录加载规则
+   * @return {Promise<ParsedRule[]>}
+   * @param sourceId {string}
+   */
+  private async loadRulesFromCache(sourceId: string) {
+    const rulesManager = RulesManager.getInstance();
+    const gitManager = GitManager.getInstance();
+
+    // 先尝试从 RulesManager 内存中获取
+    let rules = rulesManager.getRulesBySource(sourceId);
+    if (rules.length > 0) {
+      return rules;
+    }
+
+    // 如果内存中没有，从 Git 缓存目录解析
+    const MdcParser = (await import('../parsers/MdcParser')).MdcParser;
+    const parser = new MdcParser();
+
+    const sourcePath = gitManager.getSourcePath(sourceId);
+    const exists = await gitManager.repositoryExists(sourceId);
+
+    if (!exists) {
+      Logger.debug('Repository not synced yet', { sourceId, sourcePath });
+      return [];
+    }
+
+    try {
+      // 解析规则目录
+      const parsedRules = await parser.parseDirectory(sourcePath, sourceId, {
+        recursive: true,
+        maxDepth: 6,
+        maxFiles: 500,
+      });
+
+      // 添加到 RulesManager 缓存
+      if (parsedRules.length > 0) {
+        rulesManager.addRules(sourceId, parsedRules);
+      }
+
+      Logger.debug('Rules loaded from cache for selector', { sourceId, count: parsedRules.length });
+      return parsedRules;
+    } catch (error) {
+      Logger.warn('Failed to load rules from cache', { sourceId, error });
+      return [];
     }
   }
 
@@ -247,10 +349,10 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
    * @return {void}
    */
   public dispose(): void {
-    // 关闭 MessageChannel
-    if (this.currentSourceId) {
-      const channelManager = SelectionChannelManager.getInstance();
-      channelManager.closeChannel(this.currentSourceId);
+    // 清理事件监听器
+    if (this.stateChangeDisposable) {
+      this.stateChangeDisposable();
+      this.stateChangeDisposable = undefined;
     }
     super.dispose();
   }
@@ -287,12 +389,11 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
       }
       const workspacePath = workspaceFolders[0].uri.fsPath;
       const dataManager = WorkspaceDataManager.getInstance();
-      const channelManager = SelectionChannelManager.getInstance();
       const selection: RuleSelection = { mode: 'include', paths };
       try {
         await dataManager.setRuleSelection(workspacePath, sourceId, selection);
-        // 直接通过 MessageChannel 更新并广播
-        channelManager.updateMemoryState(sourceId, paths, totalCount, false);
+        // 通过 SelectionStateManager 更新状态（不延时落盘，因为已经保存到磁盘）
+        this.selectionStateManager.updateSelection(sourceId, paths, false);
         Logger.info('Rule selection saved via RPC', { sourceId, pathCount: paths.length });
         return { message: '已保存' };
       } catch (error) {
@@ -307,21 +408,18 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
     });
 
     // 监听 Webview 发送的选择变更通知 (右侧勾选 → Extension)
-    this.messenger.register<SelectionChangeMessage, { message: string }>(
+    this.messenger.register<{ sourceId: string; selectedPaths: string[] }, { message: string }>(
       'selectionChanged',
       async (payload) => {
         const sourceId = payload?.sourceId;
         const paths = payload?.selectedPaths || [];
-        const totalCount = payload?.totalCount || paths.length;
         if (!sourceId) {
           throw new SystemError('缺少 sourceId', 'TAI-1001');
         }
 
-        const channelManager = SelectionChannelManager.getInstance();
-
         try {
-          // 更新内存状态并触发延时落盘
-          channelManager.updateMemoryState(sourceId, paths, totalCount, true);
+          // 更新状态并触发延时落盘，会自动通知左侧树视图刷新
+          this.selectionStateManager.updateSelection(sourceId, paths, true);
 
           Logger.debug('Selection changed from webview', {
             sourceId,
@@ -336,5 +434,22 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
         }
       },
     );
+
+    // 监听源切换通知（Webview 切换源时）
+    this.messenger.register<
+      { sourceId: string; selectedPaths: string[]; totalCount: number },
+      { message: string }
+    >('sourceChanged', async (payload) => {
+      const newSourceId = payload?.sourceId;
+      if (!newSourceId) {
+        throw new SystemError('缺少 sourceId', 'TAI-1001');
+      }
+
+      // 更新当前源 ID
+      this.currentSourceId = newSourceId;
+
+      Logger.info('Source switched in webview', { newSourceId });
+      return { message: '源已切换' };
+    });
   }
 }

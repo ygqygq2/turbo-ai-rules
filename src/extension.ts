@@ -38,6 +38,7 @@ import { ConfigManager } from './services/ConfigManager';
 import { FileGenerator } from './services/FileGenerator';
 import { GitManager } from './services/GitManager';
 import { RulesManager } from './services/RulesManager';
+import { SelectionStateManager } from './services/SelectionStateManager';
 import { WorkspaceDataManager } from './services/WorkspaceDataManager';
 import { WorkspaceStateManager } from './services/WorkspaceStateManager';
 import { EXTENSION_NAME } from './utils/constants';
@@ -60,6 +61,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const configManager = ConfigManager.getInstance(context);
     const workspaceStateManager = WorkspaceStateManager.getInstance(context);
     const workspaceDataManager = WorkspaceDataManager.getInstance();
+    const selectionStateManager = SelectionStateManager.getInstance();
     const _gitManager = GitManager.getInstance();
     const rulesManager = RulesManager.getInstance();
     const _fileGenerator = FileGenerator.getInstance();
@@ -82,7 +84,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     Logger.info('Services initialized');
 
     // 2. 注册 UI 提供者
-    const treeProvider = new RulesTreeProvider(configManager, rulesManager);
+    const treeProvider = new RulesTreeProvider(configManager, rulesManager, selectionStateManager);
     const treeView = vscode.window.createTreeView('turboAiRulesExplorer', {
       treeDataProvider: treeProvider,
       showCollapseAll: true,
