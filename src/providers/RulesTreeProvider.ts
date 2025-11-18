@@ -445,7 +445,8 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
       let selectedCount = 0;
       try {
         // 先初始化状态（从磁盘加载），如果已初始化则直接返回内存中的数据
-        await this.selectionStateManager.initializeState(source.id, totalCount);
+        // 传入 undefined 因为这里还没有加载规则，无法获取路径
+        await this.selectionStateManager.initializeState(source.id, totalCount, undefined);
         // 使用 getSelectionCount() 方法，它会正确处理空数组（全选）的情况
         selectedCount = this.selectionStateManager.getSelectionCount(source.id);
       } catch (error) {
@@ -493,8 +494,12 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
     // 获取该源的规则选择信息（从 SelectionStateManager 读取）
     let selectedPaths: Set<string> = new Set();
     try {
+      // 获取所有规则路径（用于初始化默认全选）
+      const allRulePaths = rules.map((r) => r.filePath).filter((p) => p) as string[];
+
       // 先初始化状态（从磁盘加载），如果已初始化则直接返回内存中的数据
-      await this.selectionStateManager.initializeState(source.id, rules.length);
+      // 如果是新源（无保存状态），会使用 allRulePaths 初始化为全选
+      await this.selectionStateManager.initializeState(source.id, rules.length, allRulePaths);
       const paths = this.selectionStateManager.getSelection(source.id);
       selectedPaths = new Set(paths);
     } catch (error) {
@@ -502,7 +507,6 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
       // 出错时默认全选
       selectedPaths = new Set(rules.map((r) => r.filePath).filter((p) => p) as string[]);
     }
-
     return rules.map((rule) => {
       const isSelected = rule.filePath ? selectedPaths.has(rule.filePath) : true;
 

@@ -69,7 +69,11 @@ export class SelectionStateManager {
    * @param totalCount {number} 规则总数
    * @return {Promise<string[]>} 选择的路径列表
    */
-  public async initializeState(sourceId: string, totalCount: number): Promise<string[]> {
+  public async initializeState(
+    sourceId: string,
+    totalCount: number,
+    allRulePaths?: string[],
+  ): Promise<string[]> {
     // 缓存规则总数
     this.totalCountCache.set(sourceId, totalCount);
 
@@ -89,26 +93,29 @@ export class SelectionStateManager {
         } else {
           // exclude 模式暂不支持，默认全选
           Logger.warn('Exclude mode not supported, defaulting to all selected');
-          paths = [];
+          paths = allRulePaths || [];
         }
+      } else {
+        // 如果没有保存的选择状态，默认全选（使用所有规则路径）
+        paths = allRulePaths || [];
       }
 
-      // 如果没有配置或配置为空，默认全选（使用空数组表示）
-      // 注意：空数组会在 UI 层解释为"需要全选"
       this.memoryState.set(sourceId, new Set(paths));
 
       Logger.debug('Selection state initialized from disk', {
         sourceId,
         selectedCount: paths.length,
         totalCount,
+        defaultToAll: !selection && paths.length > 0,
       });
 
       return paths;
     } catch (error) {
       Logger.error('Failed to initialize selection state', error as Error, { sourceId });
-      // 出错时默认全选
-      this.memoryState.set(sourceId, new Set());
-      return [];
+      // 出错时默认全选（如果提供了规则路径）
+      const defaultPaths = allRulePaths || [];
+      this.memoryState.set(sourceId, new Set(defaultPaths));
+      return defaultPaths;
     }
   }
 
@@ -130,10 +137,10 @@ export class SelectionStateManager {
   public getSelectionCount(sourceId: string): number {
     const state = this.memoryState.get(sourceId);
     if (!state) {
-      // 如果没有初始化，默认全选
-      return this.totalCountCache.get(sourceId) || 0;
+      // 如果没有初始化，返回 0（需要先调用 initializeState）
+      return 0;
     }
-    return state.size === 0 ? this.totalCountCache.get(sourceId) || 0 : state.size;
+    return state.size;
   }
 
   /**

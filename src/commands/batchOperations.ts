@@ -1,5 +1,8 @@
 import * as vscode from 'vscode';
 
+import { RulesManager } from '../services/RulesManager';
+import { SelectionStateManager } from '../services/SelectionStateManager';
+import { RuleSource } from '../types/config';
 import { ParsedRule } from '../types/rules';
 import { CONFIG_PREFIX } from '../utils/constants';
 import { Logger } from '../utils/logger';
@@ -203,15 +206,62 @@ export async function batchDeleteRulesCommand(rules: ParsedRule[]): Promise<void
 }
 
 /**
- * 全选规则
+ * @description 全选源的所有规则
+ * @param source {RuleSource} 规则源
  */
-export function selectAllRulesCommand(): void {
-  vscode.commands.executeCommand('turbo-ai-rules.selectAllRulesInTree');
+export async function selectAllRulesCommand(source: RuleSource): Promise<void> {
+  Logger.info('Executing selectAllRules command', { sourceId: source.id });
+
+  try {
+    const rulesManager = RulesManager.getInstance();
+    const selectionStateManager = SelectionStateManager.getInstance();
+
+    // 获取该源的所有规则
+    const rules = rulesManager.getRulesBySource(source.id);
+
+    if (rules.length === 0) {
+      notify('No rules found in this source. Please sync first.', 'info');
+      return;
+    }
+
+    // 获取所有规则路径
+    const allRulePaths = rules.map((r) => r.filePath).filter((p) => p) as string[];
+
+    // 更新选择状态为全选
+    selectionStateManager.updateSelection(source.id, allRulePaths, true);
+
+    Logger.debug('All rules selected', {
+      sourceId: source.id,
+      count: allRulePaths.length,
+    });
+
+    notify(`Selected all ${allRulePaths.length} rules from ${source.name || source.id}`, 'info');
+  } catch (error) {
+    Logger.error('Failed to select all rules', error instanceof Error ? error : undefined);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    notify(`Failed to select all rules: ${errorMessage}`, 'error');
+  }
 }
 
 /**
- * 取消全选
+ * @description 全不选源的所有规则
+ * @param source {RuleSource} 规则源
  */
-export function deselectAllRulesCommand(): void {
-  vscode.commands.executeCommand('turbo-ai-rules.deselectAllRulesInTree');
+export async function deselectAllRulesCommand(source: RuleSource): Promise<void> {
+  Logger.info('Executing deselectAllRules command', { sourceId: source.id });
+
+  try {
+    const selectionStateManager = SelectionStateManager.getInstance();
+
+    // 更新选择状态为全不选（空数组）
+    selectionStateManager.updateSelection(source.id, [], true);
+
+    Logger.debug('All rules deselected', { sourceId: source.id });
+
+    notify(`Deselected all rules from ${source.name || source.id}`, 'info');
+  } catch (error) {
+    Logger.error('Failed to deselect all rules', error instanceof Error ? error : undefined);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    notify(`Failed to deselect all rules: ${errorMessage}`, 'error');
+  }
 }

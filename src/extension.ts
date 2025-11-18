@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 import {
   addSourceCommand,
   copyRuleContentCommand,
+  deselectAllRulesCommand,
   editSourceCommand,
   exportRuleCommand,
   generateConfigsCommand,
@@ -17,6 +18,7 @@ import {
   refreshGitCacheCommand,
   removeSourceCommand,
   searchRulesCommand,
+  selectAllRulesCommand,
   syncRulesCommand,
   testConnectionCommand,
   toggleSourceCommand,
@@ -198,6 +200,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       vscode.commands.registerCommand('turbo-ai-rules.toggleSource', async (item) => {
         await toggleSourceCommand(item);
         treeProvider.refresh();
+      }),
+
+      vscode.commands.registerCommand('turbo-ai-rules.selectAllRules', async (item) => {
+        const source = item?.data?.source;
+        if (source) {
+          await selectAllRulesCommand(source);
+          treeProvider.refresh();
+        }
+      }),
+
+      vscode.commands.registerCommand('turbo-ai-rules.deselectAllRules', async (item) => {
+        const source = item?.data?.source;
+        if (source) {
+          await deselectAllRulesCommand(source);
+          treeProvider.refresh();
+        }
       }),
 
       vscode.commands.registerCommand('turbo-ai-rules.copyRuleContent', async (item) => {

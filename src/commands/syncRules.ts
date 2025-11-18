@@ -180,7 +180,9 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
               reportProgress(progressPerSource * 0.3);
 
               // 初始化选择状态（从磁盘加载）
-              await selectionStateManager.initializeState(source.id, allRules.length);
+              // 如果是新源，使用所有规则路径初始化为全选
+              const allRulePaths = allRules.map((r) => r.filePath).filter((p) => p) as string[];
+              await selectionStateManager.initializeState(source.id, allRules.length, allRulePaths);
 
               // 添加所有规则到规则管理器（树视图需要显示所有规则供用户选择）
               rulesManager.addRules(source.id, allRules);
@@ -372,7 +374,7 @@ async function syncSingleSource(
   const rulesPath = subPath === '/' ? localPath : path.join(localPath, subPath.substring(1)); // 移除开头的 /
 
   Logger.debug('Parsing rules directory', {
-    sourceId,
+    sourceId: source.id,
     rulesPath,
     subPath,
   });

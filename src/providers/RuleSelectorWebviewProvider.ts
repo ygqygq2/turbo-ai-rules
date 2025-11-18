@@ -215,28 +215,62 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
       const sourceList = [];
 
       for (const source of sources) {
-        // 从 Git 缓存加载规则（如果内存中没有）
-        const rules = await this.loadRulesFromCache(source.id);
-        const totalRules = rules.length;
+        try {
+          // 从 Git 缓存加载规则（如果内存中没有）
+          const rules = await this.loadRulesFromCache(source.id);
+          const totalRules = rules.length;
 
-        // 初始化选择状态（从磁盘加载）
-        await this.selectionStateManager.initializeState(source.id, totalRules);
-        const selectedPaths = this.selectionStateManager.getSelection(source.id);
+          // 初始化选择状态（从磁盘加载）
+          // 初始化选择状态
+          const allRulePaths = rules.map((r) => r.filePath).filter((p) => p) as string[];
+          await this.selectionStateManager.initializeState(source.id, totalRules, allRulePaths);
+          const selectedPaths = this.selectionStateManager.getSelection(source.id);
 
-        // 构建选择数据
-        selectionsData[source.id] = {
-          mode: 'include',
-          paths: selectedPaths,
-        };
+          // 构建选择数据
+          selectionsData[source.id] = {
+            mode: 'include',
+            paths: selectedPaths,
+          };
 
-        sourceList.push({
-          id: source.id,
-          name: source.name || source.gitUrl,
-          totalRules,
-        });
+          sourceList.push({
+            id: source.id,
+            name: source.name || source.gitUrl,
+            totalRules,
+          });
 
-        const sourcePath = gitManager.getSourcePath(source.id);
-        fileTreeBySource[source.id] = await this.readDirectoryTree(sourcePath, sourcePath);
+          const sourcePath = gitManager.getSourcePath(source.id);
+          fileTreeBySource[source.id] = await this.readDirectoryTree(sourcePath, sourcePath);
+        } catch (error) {
+          // 源未同步，提示用户并跳过该源
+          const errorMsg = error instanceof Error ? error.message : '未知错误';
+          Logger.warn('Failed to load source for rule selector', {
+            sourceId: source.id,
+            error: errorMsg,
+          });
+
+          // 发送错误消息到前端
+          if (this.messenger) {
+            this.messenger.pushEvent('error', {
+              message: `源 '${source.name || source.id}' 尚未同步，请先同步该源`,
+              code: 'TAI-2001',
+            });
+          }
+
+          // 提示用户同步
+          const action = await vscode.window.showWarningMessage(
+            `源 '${source.name || source.id}' 尚未同步，是否立即同步？`,
+            '立即同步',
+            '取消',
+          );
+
+          if (action === '立即同步') {
+            // 触发同步命令
+            await vscode.commands.executeCommand('turbo-ai-rules.syncRules', source.id);
+            // 重新加载数据
+            await this.loadAndSendInitialData();
+          }
+          return; // 停止加载其他源
+        }
       }
 
       // 返回初始数据（供 RPC 请求使用）
@@ -287,8 +321,9 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
     const exists = await gitManager.repositoryExists(sourceId);
 
     if (!exists) {
-      Logger.debug('Repository not synced yet', { sourceId, sourcePath });
-      return [];
+      Logger.info('Repository not synced yet, triggering sync', { sourceId });
+      // 仓库未同步，需要先同步
+      throw new Error(`Source '${sourceId}' has not been synced yet. Please sync first.`);
     }
 
     try {

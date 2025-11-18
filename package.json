@@ -115,6 +115,18 @@
         "icon": "$(circle-slash)"
       },
       {
+        "command": "turbo-ai-rules.selectAllRules",
+        "title": "Select All Rules",
+        "category": "Turbo AI Rules",
+        "icon": "$(check-all)"
+      },
+      {
+        "command": "turbo-ai-rules.deselectAllRules",
+        "title": "Deselect All Rules",
+        "category": "Turbo AI Rules",
+        "icon": "$(close-all)"
+      },
+      {
         "command": "turbo-ai-rules.copyRuleContent",
         "title": "Copy Rule Content",
         "category": "Turbo AI Rules",
@@ -257,6 +269,16 @@
           "command": "turbo-ai-rules.selectRules",
           "when": "view == turboAiRulesExplorer && viewItem == source",
           "group": "1_actions@5"
+        },
+        {
+          "command": "turbo-ai-rules.selectAllRules",
+          "when": "view == turboAiRulesExplorer && viewItem == source",
+          "group": "2_selection@1"
+        },
+        {
+          "command": "turbo-ai-rules.deselectAllRules",
+          "when": "view == turboAiRulesExplorer && viewItem == source",
+          "group": "2_selection@2"
         },
         {
           "command": "turbo-ai-rules.copyRuleContent",
