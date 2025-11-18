@@ -366,9 +366,19 @@ Our team uses snake_case for database field-related variables...
 
 ---
 
-**Method 2: Single File Mode (e.g., `copilot-instructions.md`) - Block Marker Protection**
+**Method 2: Single File Mode (e.g., `.cursorrules`, `copilot-instructions.md`) - Block Marker Protection**
 
 Single file configuration uses **block markers** to separate auto-generated and user-defined areas.
+
+> ⚠️ **Important**: Block markers are only generated when `protectUserRules` is enabled!
+
+**Enable Block Marker Protection**:
+
+```json
+{
+  "turbo-ai-rules.protectUserRules": true
+}
+```
 
 **File Structure**:
 
@@ -457,9 +467,13 @@ const userId = getUserId(); // ❌ Incorrect
 4. ✅ Is rule content clear and specific?
 
 **Single File Mode**:
-1. ✅ Is custom content **outside** the block markers?
-2. ✅ Did you use clear titles and priority declarations?
-3. ✅ Have you synced rules recently? (ensure file is up-to-date)
+1. ✅ Is `protectUserRules` enabled? (If no block markers, need to enable it first)
+2. ✅ Is custom content **outside** the block markers?
+3. ✅ Did you use clear titles and priority declarations?
+4. ✅ Have you synced rules recently? (ensure file is up-to-date)
+
+> 💡 **Tip**: If generated single file has no `<!-- TURBO-AI-RULES:BEGIN -->` markers, `protectUserRules` is not enabled.
+> Enable it and re-sync to generate markers, then you can safely add custom rules outside the markers.
 
 **General Checks**:
 1. ✅ Is rule content specific enough? (vague rules may be ignored by AI)
@@ -506,9 +520,27 @@ Then ask the AI: "Did you read the test marker？"to verify if the rules are loa
 
 **When Enabled (`protectUserRules: true`)**:
 
-- 🔍 Smart detection: Reads file content to check for user-defined markers
-- 🛡️ Double protection: Checks both prefix + content markers
-- ⚠️ Conflict alerts: Shows warnings when potential conflicts are detected, avoids accidental deletion
+- 🔍 **Smart Detection**: Reads file content to check for user-defined markers
+- 🛡️ **Double Protection**: Checks both prefix + content markers
+- 📦 **Block Marker Generation**: Single file mode (`.cursorrules`, `copilot-instructions.md`, etc.) automatically adds block markers to separate auto-generated and user-defined areas
+- ⚠️ **Conflict Alerts**: Shows warnings when potential conflicts detected
+
+**Block Marker Example** (Single File Mode):
+
+When enabled, generated files will include block markers:
+
+```markdown
+<!-- TURBO-AI-RULES:BEGIN -->
+<!-- Auto-generated content -->
+
+...
+
+<!-- TURBO-AI-RULES:END -->
+
+<!-- Add your custom rules here -->
+```
+
+This allows you to safely add custom content outside the markers without being overwritten during sync.
 
 **How to Enable**:
 

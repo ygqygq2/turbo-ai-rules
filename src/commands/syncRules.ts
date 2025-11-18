@@ -191,35 +191,21 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
               // 初始化选择状态（从磁盘加载）
               await selectionStateManager.initializeState(source.id, allRules.length);
 
-              // 获取用户选择的规则路径
+              // 添加所有规则到规则管理器（树视图需要显示所有规则供用户选择）
+              rulesManager.addRules(source.id, allRules);
+
+              // 获取用户选择的规则路径（用于统计和生成配置）
               const selectedPaths = selectionStateManager.getSelection(source.id);
+              const selectedCount =
+                selectedPaths.length === 0 ? allRules.length : selectedPaths.length;
 
-              // 根据选择过滤规则
-              let filteredRules: ParsedRule[];
-              if (selectedPaths.length === 0) {
-                // 空数组表示全选（默认行为）
-                filteredRules = allRules;
-                Logger.info('No selection found, using all rules', {
-                  sourceId: source.id,
-                  totalRules: allRules.length,
-                });
-              } else {
-                // 根据选择的路径过滤规则
-                const selectedPathsSet = new Set(selectedPaths);
-                filteredRules = allRules.filter((rule) => selectedPathsSet.has(rule.filePath));
+              Logger.info('Rules synced', {
+                sourceId: source.id,
+                totalRules: allRules.length,
+                selectedRules: selectedCount,
+              });
 
-                Logger.info('Filtered rules by selection', {
-                  sourceId: source.id,
-                  totalRules: allRules.length,
-                  selectedRules: filteredRules.length,
-                  selectedPaths: selectedPaths.length,
-                });
-              }
-
-              // 添加到规则管理器（只添加过滤后的规则）
-              rulesManager.addRules(source.id, filteredRules);
-
-              totalRules += filteredRules.length;
+              totalRules += selectedCount;
               successCount++;
 
               Logger.info(`Source synced successfully`, {
@@ -267,10 +253,43 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
 
         reportProgress(saveIndexProgress - 2);
 
-        // 7. 生成配置文件
-        reportProgress(2, 'Generating config files...');
+        // 7. 根据选择状态过滤规则（生成配置时只使用选中的规则）
+        reportProgress(2, 'Filtering selected rules...');
 
-        const mergedRules = rulesManager.mergeRules(config.sync.conflictStrategy || 'priority');
+        const selectedRules: ParsedRule[] = [];
+
+        for (const rule of allRules) {
+          const selectedPaths = selectionStateManager.getSelection(rule.sourceId);
+
+          // 空数组表示全选
+          if (selectedPaths.length === 0 || selectedPaths.includes(rule.filePath)) {
+            selectedRules.push(rule);
+          }
+        }
+
+        Logger.info('Rules filtered by selection', {
+          totalRules: allRules.length,
+          selectedRules: selectedRules.length,
+        });
+
+        // 8. 合并规则并生成配置文件
+        // 创建临时 RulesManager 实例用于合并选中的规则
+        const tempRulesManager = new RulesManager();
+        const sourceRulesMap = new Map<string, ParsedRule[]>();
+
+        // 按源分组
+        for (const rule of selectedRules) {
+          const rules = sourceRulesMap.get(rule.sourceId) || [];
+          rules.push(rule);
+          sourceRulesMap.set(rule.sourceId, rules);
+        }
+
+        // 添加到临时管理器
+        for (const [sourceId, rules] of sourceRulesMap.entries()) {
+          tempRulesManager.addRules(sourceId, rules);
+        }
+
+        const mergedRules = tempRulesManager.mergeRules(config.sync.conflictStrategy || 'priority');
 
         Logger.info('Rules merged for generation', {
           totalRules: mergedRules.length,

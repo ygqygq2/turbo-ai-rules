@@ -117,9 +117,11 @@ Always enable strict mode in `tsconfig.json`:
 ### 3.1 元数据验证
 
 **ID 验证**:
-- 格式: `^[a-z0-9-]+$` (kebab-case)
-- 长度: 3-100 字符
+- 格式: `^[a-z0-9][a-z0-9-]*$` (纯数字、kebab-case 或组合)
+- 示例: `102`, `typescript-naming`, `102-typescript`
+- 长度: 1-100 字符
 - 唯一性: 在规则源内唯一
+- 注意: YAML 中纯数字 ID 会被自动转换为字符串
 
 **Title 验证**:
 - 长度: 1-200 字符

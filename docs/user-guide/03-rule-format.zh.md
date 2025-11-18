@@ -615,6 +615,41 @@ description: 规则简短描述
 | `author`      | string   | ❌   | 规则作者                                    |
 | `description` | string   | ❌   | 规则简短描述                                |
 
+#### ID 格式说明
+
+- **数据类型**: 支持 `string` 或 `number` 类型
+- **格式要求**: 字母、数字、连字符的组合
+- **支持格式**:
+  - 纯数字: `102`, `001` (常用于文件排序)
+  - kebab-case: `typescript-naming`, `react-hooks`
+  - 组合: `102-typescript`, `001-overview`
+- **类型处理**: YAML 会将纯数字解析为 number 类型,扩展完全支持,无需手动转换
+
+**示例**:
+
+```yaml
+# ✅ 推荐 - 纯数字 (YAML 解析为 number)
+id: 102
+id: 001
+id: 200
+
+# ✅ 推荐 - 数字前缀字符串
+id: 102-typescript
+id: 001-overview
+
+# ✅ 推荐 - 描述性ID
+id: typescript-naming
+id: react-hooks-best-practices
+
+# ✅ 可接受 - 纯数字加引号 (YAML 解析为 string)
+id: "102"
+
+# ❌ 错误格式
+id: TypeScript_Naming  # 包含大写和下划线
+id: react hooks        # 包含空格
+id: -102              # 以连字符开头
+```
+
 ---
 
 ### 完整示例

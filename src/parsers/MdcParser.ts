@@ -137,13 +137,16 @@ export class MdcParser {
         Logger.debug('Generated title from content/filename', { filePath, title });
       }
 
+      // 将 ID 统一转换为字符串用于存储和比较
+      const normalizedId = String(id);
+
       const rule: ParsedRule = {
-        id,
+        id: normalizedId,
         title,
         content: trimmedContent,
         metadata: {
           ...metadata,
-          id,
+          id: normalizedId,
           title,
         },
         sourceId,

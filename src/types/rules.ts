@@ -11,8 +11,8 @@ export type RulePriority = 'low' | 'medium' | 'high';
  * 规则元数据
  */
 export interface RuleMetadata {
-  /** 规则 ID */
-  id?: string;
+  /** 规则 ID - 支持字符串或数字 */
+  id?: string | number;
   /** 规则标题 */
   title?: string;
   /** 版本号 */

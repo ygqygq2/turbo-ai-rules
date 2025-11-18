@@ -218,12 +218,9 @@ class RuleTreeItem extends vscode.TreeItem {
           parts.push('✓ 已选');
         }
 
-        const priority = this.data.rule.metadata.priority;
         const tags = this.data.rule.metadata.tags;
 
-        if (priority) {
-          parts.push(priority.toUpperCase());
-        }
+        // 优先级已通过图标颜色展示,无需重复显示文本
         if (tags && tags.length > 0) {
           parts.push(tags.slice(0, 2).join(', '));
           if (tags.length > 2) {

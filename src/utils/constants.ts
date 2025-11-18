@@ -98,8 +98,9 @@ export const BRANCH_NAME_REGEX = /^[\w./]+$/;
 
 /**
  * 规则 ID 正则
+ * 允许: 纯数字(102)、kebab-case(react-hooks)、数字-文字(102-typescript)
  */
-export const RULE_ID_REGEX = /^[\w-]+$/;
+export const RULE_ID_REGEX = /^[a-z0-9][a-z0-9-]*$/i;
 
 /**
  * LRU 缓存大小

@@ -28,12 +28,18 @@ export function validateBranchName(branch: string): boolean {
 
 /**
  * 验证 Rule ID
+ * @param id - 规则ID,支持 string 或 number 类型
  */
-export function validateRuleId(id: string): boolean {
-  if (!id || typeof id !== 'string') {
+export function validateRuleId(id: string | number): boolean {
+  if (id === undefined || id === null) {
     return false;
   }
-  return RULE_ID_REGEX.test(id.trim());
+  // 转换为字符串进行验证
+  const idStr = String(id).trim();
+  if (!idStr) {
+    return false;
+  }
+  return RULE_ID_REGEX.test(idStr);
 }
 
 /**

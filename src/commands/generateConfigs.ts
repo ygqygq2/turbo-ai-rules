@@ -7,6 +7,8 @@ import * as vscode from 'vscode';
 import { ConfigManager } from '../services/ConfigManager';
 import { FileGenerator } from '../services/FileGenerator';
 import { RulesManager } from '../services/RulesManager';
+import { SelectionStateManager } from '../services/SelectionStateManager';
+import type { ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 
@@ -19,6 +21,7 @@ export async function generateConfigsCommand(): Promise<void> {
   try {
     const configManager = ConfigManager.getInstance();
     const rulesManager = RulesManager.getInstance();
+    const selectionStateManager = SelectionStateManager.getInstance();
     const fileGenerator = FileGenerator.getInstance();
 
     // 1. 获取工作区根目录
@@ -41,10 +44,48 @@ export async function generateConfigsCommand(): Promise<void> {
       return;
     }
 
-    // 4. 合并规则（解决冲突）
-    const mergedRules = rulesManager.mergeRules(config.sync.conflictStrategy || 'priority');
+    // 4. 根据选择状态过滤规则
+    const selectedRules: ParsedRule[] = [];
 
-    // 5. 显示进度
+    for (const rule of allRules) {
+      const selectedPaths = selectionStateManager.getSelection(rule.sourceId);
+
+      // 空数组表示全选
+      if (selectedPaths.length === 0 || selectedPaths.includes(rule.filePath)) {
+        selectedRules.push(rule);
+      }
+    }
+
+    Logger.info('Rules filtered by selection for generation', {
+      totalRules: allRules.length,
+      selectedRules: selectedRules.length,
+    });
+
+    if (selectedRules.length === 0) {
+      notify('No rules selected. Please select rules first.', 'info');
+      return;
+    }
+
+    // 5. 合并规则（解决冲突）
+    // 创建临时 RulesManager 实例用于合并选中的规则
+    const tempRulesManager = new RulesManager();
+    const sourceRulesMap = new Map<string, ParsedRule[]>();
+
+    // 按源分组
+    for (const rule of selectedRules) {
+      const rules = sourceRulesMap.get(rule.sourceId) || [];
+      rules.push(rule);
+      sourceRulesMap.set(rule.sourceId, rules);
+    }
+
+    // 添加到临时管理器
+    for (const [sourceId, rules] of sourceRulesMap.entries()) {
+      tempRulesManager.addRules(sourceId, rules);
+    }
+
+    const mergedRules = tempRulesManager.mergeRules(config.sync.conflictStrategy || 'priority');
+
+    // 6. 显示进度
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,

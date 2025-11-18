@@ -35,44 +35,30 @@
 - ✅ 性能优化：细粒度订阅
 - ✅ 易于扩展（撤销/重做、搜索历史等）
 
-**Store 结构**：
+**Store 状态管理**：
 
-```typescript
-interface RuleSelectorState {
-  // 基础状态
-  workspacePath: string;
-  currentSourceId: string;
-  availableSources: string[];
-  rules: RuleItem[];
-  selectedPaths: string[];
-  originalPaths: string[];
-  totalRules: number;
-  searchTerm: string;
-  saving: boolean;
-  allRulesBySource: { [sourceId: string]: RuleItem[] };
-  allSelections: { [sourceId: string]: RuleSelection };
-  treeNodes: TreeNode[];
+**状态分类**：
 
-  // Actions
-  setInitialData: (data: InitialData) => void;
-  switchSource: (newSourceId: string) => void;
-  toggleNode: (path: string) => void;
-  selectNode: (path: string, checked: boolean, isDirectory: boolean) => void;
-  selectAll: () => void;
-  clearAll: () => void;
-  reset: () => void;
-  setSearchTerm: (term: string) => void;
-  setSaving: (saving: boolean) => void;
-  updateAfterSave: () => void;
-}
-```
+1. **基础状态**：
 
-**关键 Actions**：
+   - 工作区路径、当前源 ID、可用源列表
+   - 规则列表、选择路径、总规则数
+   - 搜索关键词、保存状态
 
-1. **`setInitialData(data)`**：接收扩展端数据，初始化所有状态
-2. **`switchSource(sourceId)`**：切换规则源，自动保存/恢复选择
-3. **`selectNode(path, checked, isDirectory)`**：处理节点选择逻辑
-4. **`updateAfterSave()`**：保存成功后更新 originalPaths
+2. **缓存状态**：
+
+   - 所有源的规则数据（按源 ID 索引）
+   - 所有源的选择状态
+   - 树形节点结构
+
+3. **核心 Actions**：
+   - 初始化数据（setInitialData）
+   - 切换源（switchSource）
+   - 节点选择（selectNode）
+   - 批量操作（全选/清空/重置）
+   - 搜索过滤（setSearchTerm）
+
+**实现文件**: `src/webview/rule-selector/store.ts`
 
 ### 后端（Provider）
 
@@ -107,50 +93,45 @@ interface RuleSelectorState {
 
 **组件职责**：
 
-```typescript
-// App.tsx
-export const App: React.FC = () => {
-  // 从 store 获取状态和 actions
-  const {
-    currentSourceId,
-    selectedPaths,
-    treeNodes,
-    saving,
-    setInitialData,
-    switchSource,
-    toggleNode,
-    selectNode,
-    // ... 其他
-  } = useRuleSelectorStore();
+**App.tsx - 主组件**：
 
-  // 监听扩展消息
-  useEffect(() => {
-    vscode.postMessage({ type: 'webviewReady' });
+- 使用 Zustand store 管理状态
+- 监听扩展端消息（initialData, saveSuccess, saveError）
+- 渲染 UI 组件（源选择器、搜索框、树形结构、操作按钮）
+- 处理用户交互（点击保存、关闭等）
 
-    const handleMessage = (event) => {
-      switch (event.data.type) {
-        case 'initialData':
-          setInitialData(event.data.payload);
-          break;
-        case 'saveSuccess':
-          updateAfterSave();
-          break;
-      }
-    };
+**TreeNode.tsx - 树节点组件**：
 
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+- 递归渲染树形结构
+- 处理节点展开/折叠
+- 处理复选框选择
+- 显示规则元数据（标签、优先级）
+
+**tree-utils.ts - 树形工具**：
+
+- 将平面规则列表转换为树形结构
+- 处理目录选择逻辑（全选/半选/不选）
+- 搜索过滤逻辑
+  updateAfterSave();
+  break;
+  }
+  };
+
+      window.addEventListener('message', handleMessage);
+      return () => window.removeEventListener('message', handleMessage);
+
   }, [setInitialData, updateAfterSave]);
 
   // 渲染 UI
   return (
-    <div>
-      <select onChange={(e) => switchSource(e.target.value)}>...</select>
-      {renderTreeNodes(treeNodes)}
-    </div>
+  <div>
+  <select onChange={(e) => switchSource(e.target.value)}>...</select>
+  {renderTreeNodes(treeNodes)}
+  </div>
   );
-};
-```
+  };
+
+````
 
 **为什么使用 Zustand**：
 
@@ -205,7 +186,7 @@ interface TreeNode {
   rules?: RuleItem[]; // 文件节点的规则列表
   ruleCount?: number; // 规则数量
 }
-```
+````
 
 ---
 

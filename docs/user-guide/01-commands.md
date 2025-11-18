@@ -16,6 +16,20 @@ The extension provides 6 core commands covering the complete workflow of rule so
 - **Command Palette**: `Ctrl+Shift+P` → Type `Turbo AI Rules`
 - **Tree View**: Right-click in **AI Rules** sidebar
 
+### Tree View Icon Legend
+
+The extension uses **colored icons** to indicate rule priority:
+
+- 🔴 **Red** - High priority (HIGH)
+- 🟡 **Yellow** - Medium priority (MEDIUM)
+- ⚪ **White** - Normal priority (NORMAL)
+- ⚫ **Gray** - Low priority (LOW)
+
+Markers in rule descriptions:
+
+- **✓ 已选** - Rule is selected for config generation
+- **+N** - Number of additional tags (e.g., `+3` means 3 more tags not shown)
+
 ---
 
 ## 1. 🔗 Add Source
