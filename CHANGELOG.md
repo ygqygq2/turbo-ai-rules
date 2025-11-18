@@ -17,6 +17,13 @@ All notable changes to the "turbo-ai-rules" extension will be documented in this
   - 批量删除规则
   - 模态确认对话框，防止误操作
 
+## 问题修复 🐛
+
+- **fix: TreeView 始终显示 Git 缓存目录中的所有规则** - 修复同步规则后只显示部分规则的问题
+  - TreeView 现在直接从 Git 缓存目录加载规则，不依赖 RulesManager 内存缓存
+  - 确保不管同步与否，规则源的规则数量始终保持一致（除非规则源更新）
+  - 移除同步前清空规则的操作，避免干扰 TreeView 显示
+
 ## 文档更新 📚
 
 - **docs: Phase 3 实现文档** - 添加 `10-ui-phase3-implementation.md`

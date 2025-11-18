@@ -232,7 +232,7 @@ export class MdcParser {
     };
 
     try {
-      Logger.info('Parsing directory', {
+      Logger.debug('Parsing directory', {
         dirPath,
         sourceId,
         recursive: opts.recursive,
@@ -268,7 +268,7 @@ export class MdcParser {
         }
       }
 
-      Logger.info('Directory parsing complete', {
+      Logger.debug('Directory parsing complete', {
         dirPath,
         totalFiles: state.filesProcessed,
         successCount: rules.length,

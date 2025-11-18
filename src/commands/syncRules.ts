@@ -131,22 +131,13 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
 
         // 4. 初始化适配器
         fileGenerator.initializeAdapters(config.adapters);
-        reportProgress(2, 'Initializing adapters...');
-
-        // 4.5. 清除所有要同步的源的旧规则（避免规则累积）
-        Logger.info('Clearing rules for sources to be synced', {
-          sourceIds: enabledSources.map((s) => s.id),
-        });
-        for (const source of enabledSources) {
-          rulesManager.clearSource(source.id);
-        }
-        reportProgress(3, 'Clearing old rules...');
+        reportProgress(5, 'Initializing adapters...');
 
         // 5. 按仓库分组，确保同一仓库的不同分支/目录串行处理
         const sourcesByRepo = groupSourcesByRepository(enabledSources);
         const totalGroups = sourcesByRepo.length;
 
-        Logger.info('Grouped sources by repository', {
+        Logger.debug('Grouped sources by repository', {
           totalSources: enabledSources.length,
           repositories: totalGroups,
         });
@@ -155,7 +146,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
         const syncProgressTotal = 75;
         const saveIndexProgress = 10;
         const generateConfigProgress = 10;
-        // 已使用: 2 + 3 = 5%, 剩余: 95%
+        // 已使用: 5%, 剩余: 95%
 
         // 计算每个源的进度增量
         const progressPerSource =
@@ -166,7 +157,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
           const repoGroup = sourcesByRepo[groupIndex];
           const repoName = repoGroup.gitUrl;
 
-          Logger.info(`Processing repository group ${groupIndex + 1}/${totalGroups}`, {
+          Logger.debug(`Processing repository group ${groupIndex + 1}/${totalGroups}`, {
             gitUrl: repoName,
             sourceCount: repoGroup.sources.length,
           });
@@ -199,7 +190,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
               const selectedCount =
                 selectedPaths.length === 0 ? allRules.length : selectedPaths.length;
 
-              Logger.info('Rules synced', {
+              Logger.debug('Rules synced', {
                 sourceId: source.id,
                 totalRules: allRules.length,
                 selectedRules: selectedCount,
@@ -208,7 +199,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
               totalRules += selectedCount;
               successCount++;
 
-              Logger.info(`Source synced successfully`, {
+              Logger.debug(`Source synced successfully`, {
                 sourceId: source.id,
                 branch: source.branch || 'default',
                 subPath: source.subPath || '/',
@@ -242,7 +233,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
 
         try {
           await workspaceDataManager.writeRulesIndex(workspaceRoot, allRules);
-          Logger.info('Rules index saved to disk', {
+          Logger.debug('Rules index saved to disk', {
             workspaceRoot,
             totalRules: allRules.length,
           });
@@ -267,7 +258,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
           }
         }
 
-        Logger.info('Rules filtered by selection', {
+        Logger.debug('Rules filtered by selection', {
           totalRules: allRules.length,
           selectedRules: selectedRules.length,
         });
@@ -291,7 +282,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
 
         const mergedRules = tempRulesManager.mergeRules(config.sync.conflictStrategy || 'priority');
 
-        Logger.info('Rules merged for generation', {
+        Logger.debug('Rules merged for generation', {
           totalRules: mergedRules.length,
           conflictStrategy: config.sync.conflictStrategy || 'priority',
         });
@@ -357,10 +348,10 @@ async function syncSingleSource(
   const exists = await gitManager.repositoryExists(source.id);
 
   if (!exists) {
-    Logger.info('Cloning repository', { sourceId: source.id });
+    Logger.debug('Cloning repository', { sourceId: source.id });
     await gitManager.cloneRepository(source);
   } else {
-    Logger.info('Pulling updates', { sourceId: source.id });
+    Logger.debug('Pulling updates', { sourceId: source.id });
     await gitManager.pullUpdates(source.id, source.branch);
   }
 
@@ -380,8 +371,8 @@ async function syncSingleSource(
   // 4. 构建规则目录路径
   const rulesPath = subPath === '/' ? localPath : path.join(localPath, subPath.substring(1)); // 移除开头的 /
 
-  Logger.info('Parsing rules directory', {
-    sourceId: source.id,
+  Logger.debug('Parsing rules directory', {
+    sourceId,
     rulesPath,
     subPath,
   });

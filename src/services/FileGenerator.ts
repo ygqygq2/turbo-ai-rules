@@ -68,7 +68,7 @@ export class FileGenerator {
    * @param config 适配器配置
    */
   public initializeAdapters(config: AdaptersConfig): void {
-    Logger.info('Initializing adapters', config as Record<string, unknown>);
+    Logger.debug('Initializing adapters', config as Record<string, unknown>);
 
     this.adapters.clear();
 
@@ -99,7 +99,7 @@ export class FileGenerator {
       }
     }
 
-    Logger.info('Adapters initialized', {
+    Logger.debug('Adapters initialized', {
       count: this.adapters.size,
       adapters: Array.from(this.adapters.keys()),
     });
@@ -117,12 +117,11 @@ export class FileGenerator {
     workspaceRoot: string,
     strategy: ConflictStrategy = 'priority',
   ): Promise<GenerateResult> {
-    Logger.info('Generating all config files', {
+    Logger.debug('Generating all config files', {
       ruleCount: rules.length,
       adapterCount: this.adapters.size,
-      strategy,
+      conflictStrategy: strategy,
     });
-
     const result: GenerateResult = {
       success: [],
       failures: [],
@@ -150,7 +149,7 @@ export class FileGenerator {
         const config = await this.generateForAdapter(adapter, rules, workspaceRoot);
         result.success.push(config);
 
-        Logger.info(`Generated config for ${name}`, {
+        Logger.debug(`Generated config for ${name}`, {
           filePath: config.filePath,
           ruleCount: config.ruleCount,
         });
@@ -168,7 +167,7 @@ export class FileGenerator {
     // 确保生成的文件被 .gitignore
     await this.ensureGitIgnore(workspaceRoot);
 
-    Logger.info('Generation complete', {
+    Logger.debug('Generation complete', {
       successCount: result.success.length,
       failureCount: result.failures.length,
     });

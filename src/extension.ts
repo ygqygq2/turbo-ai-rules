@@ -71,7 +71,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     if (workspaceFolders && workspaceFolders.length > 0) {
       const workspaceRoot = workspaceFolders[0].uri.fsPath;
       await workspaceDataManager.initWorkspace(workspaceRoot);
-      Logger.info('Workspace data directory initialized', {
+      Logger.debug('Workspace data directory initialized', {
         workspaceHash: workspaceDataManager.getWorkspaceHash(),
       });
     }
@@ -261,7 +261,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // 通过环境变量控制是否注册调试命令
     const isDevelopment = process.env.NODE_ENV === 'development' || process.env.VSCODE_DEBUG_MODE;
     if (isDevelopment) {
-      Logger.info('Development mode detected, registering debug commands');
+      Logger.debug('Development mode detected, registering debug commands');
       commands.push(
         vscode.commands.registerCommand('turbo-ai-rules.clearWorkspaceState', async () => {
           await context.workspaceState.update('sources', undefined);

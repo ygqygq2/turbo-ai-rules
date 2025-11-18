@@ -366,13 +366,8 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
    * 从 Git 缓存目录加载规则
    */
   private async loadRulesFromCache(sourceId: string): Promise<ParsedRule[]> {
-    // 先尝试从 RulesManager 内存中获取
-    const rules = this.rulesManager.getRulesBySource(sourceId);
-    if (rules.length > 0) {
-      return rules;
-    }
-
-    // 如果内存中没有，从 Git 缓存目录解析
+    // 直接从 Git 缓存目录解析（不依赖 RulesManager 内存缓存）
+    // 因为 TreeView 需要显示所有已缓存的规则，不受同步操作影响
     const GitManager = (await import('../services/GitManager')).GitManager;
     const MdcParser = (await import('../parsers/MdcParser')).MdcParser;
     const gitManager = GitManager.getInstance();
@@ -394,12 +389,7 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
         maxFiles: 500,
       });
 
-      // 添加到 RulesManager 缓存
-      if (parsedRules.length > 0) {
-        this.rulesManager.addRules(sourceId, parsedRules);
-      }
-
-      Logger.debug('Rules loaded from cache', { sourceId, count: parsedRules.length });
+      Logger.debug('Rules loaded from Git cache', { sourceId, count: parsedRules.length });
       return parsedRules;
     } catch (error) {
       Logger.warn('Failed to load rules from cache', { sourceId, error });

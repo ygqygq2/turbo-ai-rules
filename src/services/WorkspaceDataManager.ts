@@ -128,7 +128,7 @@ export class WorkspaceDataManager {
 
     await ensureDir(this.workspaceDir);
 
-    Logger.info('Workspace data directory initialized', {
+    Logger.debug('Workspace data directory initialized', {
       workspacePath,
       workspaceHash: this.workspaceHash,
       workspaceDir: this.workspaceDir,

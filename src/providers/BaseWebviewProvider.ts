@@ -87,7 +87,7 @@ export abstract class BaseWebviewProvider {
       this.disposables,
     );
 
-    Logger.info(`Webview panel created: ${options.viewType}`);
+    Logger.debug(`Webview panel created: ${options.viewType}`);
   }
 
   /**

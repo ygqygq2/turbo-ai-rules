@@ -97,7 +97,7 @@ export class SelectionStateManager {
       // 注意：空数组会在 UI 层解释为"需要全选"
       this.memoryState.set(sourceId, new Set(paths));
 
-      Logger.info('Selection state initialized from disk', {
+      Logger.debug('Selection state initialized from disk', {
         sourceId,
         selectedCount: paths.length,
         totalCount,

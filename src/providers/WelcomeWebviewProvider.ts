@@ -217,7 +217,7 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
    */
   private async sendInitialState(): Promise<void> {
     const welcomeShown = this.context.globalState.get('welcomeShown', false);
-    Logger.info('Send initialState to webview', {
+    Logger.debug('Send initialState to webview', {
       dontShowAgain: welcomeShown,
     });
 
@@ -233,7 +233,7 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
     const sources = config.get<any[]>(CONFIG_KEYS.SOURCES, []);
     const hasSource = sources.length > 0;
 
-    Logger.info('Send rulesSelectionState to webview', {
+    Logger.debug('Send rulesSelectionState to webview', {
       hasSource,
       sourcesCount: sources.length,
     });
