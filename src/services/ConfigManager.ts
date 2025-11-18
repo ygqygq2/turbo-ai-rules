@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 
 import type {
   AdaptersConfig,
+  CustomAdapterConfig,
   ExtensionConfig,
   ParserConfig,
   RuleSource,
@@ -14,10 +15,10 @@ import type {
 } from '../types/config';
 import { DEFAULT_CONFIG } from '../types/config';
 import { ConfigError, ErrorCodes } from '../types/errors';
+import { mergeById } from '../utils/configMerge';
 import { CONFIG_PREFIX } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { validateConfig } from '../utils/validator';
-import { mergeById } from '../utils/configMerge';
 
 /**
  * 配置管理器
@@ -66,15 +67,15 @@ export class ConfigManager {
       const adapters = vscodeConfig.get<AdaptersConfig>('adapters', DEFAULT_CONFIG.adapters);
 
       // 对 adapters.custom（数组）执行显式合并：Folder > Workspace > Global
-      const customInspection = vscodeConfig.inspect<any>('adapters.custom');
+      const customInspection = vscodeConfig.inspect<CustomAdapterConfig[]>('adapters.custom');
       if (customInspection) {
         const mergedCustom = mergeById(
-          customInspection.workspaceFolderValue as any[] | undefined,
-          customInspection.workspaceValue as any[] | undefined,
-          customInspection.globalValue as any[] | undefined,
+          customInspection.workspaceFolderValue,
+          customInspection.workspaceValue,
+          customInspection.globalValue,
         );
         if (mergedCustom.length > 0) {
-          adapters.custom = mergedCustom as any;
+          adapters.custom = mergedCustom;
         }
       }
 

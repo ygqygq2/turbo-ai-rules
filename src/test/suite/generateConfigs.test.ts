@@ -29,7 +29,7 @@ describe('Generate Config Files Tests', () => {
     await createTempSettings(tempWorkspace, 'cursor');
 
     // 添加并同步规则源
-    const sourceUrl = 'https://github.com/PatrickJS/awesome-cursorrules.git';
+    const sourceUrl = 'https://github.com/ygqygq2/ai-rules.git';
     await vscode.commands.executeCommand('turbo-ai-rules.addSource', sourceUrl);
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
 
@@ -54,7 +54,7 @@ describe('Generate Config Files Tests', () => {
     await createTempSettings(tempWorkspace, 'copilot');
 
     // 添加并同步规则源
-    const sourceUrl = 'https://github.com/PatrickJS/awesome-cursorrules.git';
+    const sourceUrl = 'https://github.com/ygqygq2/ai-rules.git';
     await vscode.commands.executeCommand('turbo-ai-rules.addSource', sourceUrl);
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
 
@@ -78,7 +78,7 @@ describe('Generate Config Files Tests', () => {
     await createTempSettings(tempWorkspace, 'continue');
 
     // 添加并同步规则源
-    const sourceUrl = 'https://github.com/PatrickJS/awesome-cursorrules.git';
+    const sourceUrl = 'https://github.com/ygqygq2/ai-rules.git';
     await vscode.commands.executeCommand('turbo-ai-rules.addSource', sourceUrl);
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
 
@@ -98,7 +98,7 @@ describe('Generate Config Files Tests', () => {
     await createTempSettings(tempWorkspace, 'rules');
 
     // 添加并同步规则源
-    const sourceUrl = 'https://github.com/PatrickJS/awesome-cursorrules.git';
+    const sourceUrl = 'https://github.com/ygqygq2/ai-rules.git';
     await vscode.commands.executeCommand('turbo-ai-rules.addSource', sourceUrl);
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
 
@@ -140,7 +140,7 @@ describe('Generate Config Files Tests', () => {
     await createTempSettings(tempWorkspace, 'cursor');
 
     // 添加并同步规则源
-    const sourceUrl = 'https://github.com/PatrickJS/awesome-cursorrules.git';
+    const sourceUrl = 'https://github.com/ygqygq2/ai-rules.git';
     await vscode.commands.executeCommand('turbo-ai-rules.addSource', sourceUrl);
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
 

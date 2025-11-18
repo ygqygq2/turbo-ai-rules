@@ -3,18 +3,17 @@ import * as fsPromises from 'fs/promises';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
-import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
 import { ConfigManager } from '../services/ConfigManager';
 import { GitManager } from '../services/GitManager';
+import { RulesManager } from '../services/RulesManager';
 import { SelectionStateManager } from '../services/SelectionStateManager';
 import type { RuleSelection } from '../services/WorkspaceDataManager';
-import { Logger } from '../utils/logger';
+import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
 import { SystemError } from '../types/errors';
-import { createExtensionMessenger, ExtensionMessenger } from './messaging/ExtensionMessenger';
-import { RulesManager } from '../services/RulesManager';
 import { RULE_FILE_EXTENSIONS } from '../utils/constants';
-import type { ParsedRule } from '../types/rules';
+import { Logger } from '../utils/logger';
+import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
+import { createExtensionMessenger, ExtensionMessenger } from './messaging/ExtensionMessenger';
 
 /**
  * 文件树节点
@@ -46,7 +45,9 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
         Logger.debug('Selection state changed, notifying webview', { sourceId: event.sourceId });
         this.messenger?.notify('selectionChanged', {
           sourceId: event.sourceId,
-          paths: event.selectedPaths,
+          selectedPaths: event.selectedPaths, // 修复字段名：paths -> selectedPaths
+          totalCount: event.totalCount,
+          timestamp: event.timestamp,
         });
       }
     });
@@ -64,14 +65,16 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
    * @param sourceId 可选的源 ID，如果提供则只显示该源的规则
    * @return {Promise<void>}
    */
-  public async showRuleSelector(sourceId?: string | any): Promise<void> {
+  public async showRuleSelector(
+    sourceId?: string | { data?: { source?: { id: string } } },
+  ): Promise<void> {
     // 从 TreeItem 提取 sourceId
     let actualSourceId =
       typeof sourceId === 'object' && sourceId?.data?.source?.id
         ? sourceId.data.source.id
         : typeof sourceId === 'string'
-        ? sourceId
-        : undefined;
+          ? sourceId
+          : undefined;
 
     // 如果没有指定 sourceId，使用第一个源作为默认值
     if (!actualSourceId) {
@@ -135,19 +138,20 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
         if (entry.name.startsWith('.')) continue;
 
         const fullPath = path.join(dirPath, entry.name);
-        const relativePath = path.relative(basePath, fullPath);
+        // 使用绝对路径而不是相对路径，与 ParsedRule.filePath 保持一致
+        const absolutePath = fullPath;
 
         if (entry.isDirectory()) {
           const children = await this.readDirectoryTree(fullPath, basePath);
           nodes.push({
-            path: relativePath,
+            path: absolutePath,
             name: entry.name,
             type: 'directory',
             children,
           });
         } else if (entry.isFile() && RULE_FILE_EXTENSIONS.includes(path.extname(entry.name))) {
           nodes.push({
-            path: relativePath,
+            path: absolutePath,
             name: entry.name,
             type: 'file',
           });
@@ -185,10 +189,10 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
       const dataManager = WorkspaceDataManager.getInstance();
       const configManager = ConfigManager.getInstance(this.context);
       const gitManager = GitManager.getInstance();
-      const rulesManager = RulesManager.getInstance();
+      const _rulesManager = RulesManager.getInstance();
 
       // 读取所有规则选择数据
-      const selections = await dataManager.readRuleSelections();
+      const _selections = await dataManager.readRuleSelections();
 
       // 获取所有源及其文件树（如果指定了 sourceId，则只加载该源）
       // 传递 workspaceUri 以确保能读取到工作区文件夹级别的配置
@@ -258,7 +262,7 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
     const gitManager = GitManager.getInstance();
 
     // 先尝试从 RulesManager 内存中获取
-    let rules = rulesManager.getRulesBySource(sourceId);
+    const rules = rulesManager.getRulesBySource(sourceId);
     if (rules.length > 0) {
       return rules;
     }
@@ -379,7 +383,7 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
     >('saveRuleSelection', async (payload) => {
       const sourceId = payload?.sourceId;
       const paths = payload?.selection?.paths || [];
-      const totalCount = payload?.totalCount || paths.length;
+      const _totalCount = payload?.totalCount || paths.length;
       if (!sourceId) {
         throw new SystemError('缺少 sourceId', 'TAI-1001');
       }

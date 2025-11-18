@@ -27,7 +27,6 @@ import {
   RuleDetailsWebviewProvider,
   RulesTreeProvider,
   SearchWebviewProvider,
-  SourceDetailWebviewProvider,
   StatisticsWebviewProvider,
   StatusBarProvider,
   WelcomeWebviewProvider,
@@ -55,7 +54,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     Logger.info(`Activating ${EXTENSION_NAME}`);
 
     // 保存 context 到全局变量供命令使用
-    (global as any).extensionContext = context;
+    (global as { extensionContext: vscode.ExtensionContext }).extensionContext = context;
 
     // 1. 初始化服务
     const configManager = ConfigManager.getInstance(context);
@@ -114,18 +113,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         treeProvider.refresh();
       }),
 
-      vscode.commands.registerCommand('turbo-ai-rules.syncRules', async (sourceId?: any) => {
-        // 兼容从 TreeView 上下文菜单触发的调用（会传入 TreeItem 对象）或直接传入字符串 ID
-        const actualSourceId =
-          typeof sourceId === 'object' && sourceId?.data?.source?.id
-            ? sourceId.data.source.id
-            : typeof sourceId === 'string'
-            ? sourceId
-            : undefined;
+      vscode.commands.registerCommand(
+        'turbo-ai-rules.syncRules',
+        async (sourceId?: string | { data?: { source?: { id: string } } }) => {
+          // 兼容从 TreeView 上下文菜单触发的调用（会传入 TreeItem 对象）或直接传入字符串 ID
+          const actualSourceId =
+            typeof sourceId === 'object' && sourceId?.data?.source?.id
+              ? sourceId.data.source.id
+              : typeof sourceId === 'string'
+                ? sourceId
+                : undefined;
 
-        await syncRulesCommand(actualSourceId);
-        treeProvider.refresh();
-      }),
+          await syncRulesCommand(actualSourceId);
+          treeProvider.refresh();
+        },
+      ),
 
       // 重新加载配置：从 settings.json 读取配置并刷新 UI
       vscode.commands.registerCommand('turbo-ai-rules.reloadSettings', async () => {
@@ -233,14 +235,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         await searchProvider.showSearch();
       }),
 
-      vscode.commands.registerCommand('turbo-ai-rules.selectRules', async (item?: any) => {
-        const ruleSelectorProvider = RuleSelectorWebviewProvider.getInstance(context);
-        await ruleSelectorProvider.showRuleSelector(item);
-      }),
+      vscode.commands.registerCommand(
+        'turbo-ai-rules.selectRules',
+        async (item?: string | { data?: { source?: { id: string } } }) => {
+          const ruleSelectorProvider = RuleSelectorWebviewProvider.getInstance(context);
+          await ruleSelectorProvider.showRuleSelector(item);
+        },
+      ),
 
       vscode.commands.registerCommand(
         'turbo-ai-rules.viewSourceDetail',
-        async (sourceId?: string | any) => {
+        async (sourceId?: string | { data?: { source?: { id: string } } }) => {
           await viewSourceDetailCommand(sourceId);
         },
       ),

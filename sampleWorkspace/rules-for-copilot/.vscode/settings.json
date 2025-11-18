@@ -10,9 +10,9 @@
   // 预配置测试用规则源
   "turbo-ai-rules.sources": [
     {
-      "id": "awesome-cursorrules-3f7a3a29",
+      "id": "ai-rules-7008d805",
       "name": "Test Copilot Rules",
-      "gitUrl": "https://github.com/PatrickJS/awesome-cursorrules.git",
+      "gitUrl": "https://github.com/ygqygq2/ai-rules.git",
       "branch": "main",
       "subPath": "/rules-new",
       "enabled": true,

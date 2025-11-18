@@ -11,15 +11,17 @@ import { notify } from '../utils/notifications';
 /**
  * 查看规则源详情命令处理器
  */
-export async function viewSourceDetailCommand(sourceId?: string | any): Promise<void> {
+export async function viewSourceDetailCommand(
+  sourceId?: string | { data?: { source?: { id: string } } },
+): Promise<void> {
   try {
     // 从 TreeItem 提取 sourceId
     let actualSourceId =
       typeof sourceId === 'object' && sourceId?.data?.source?.id
         ? sourceId.data.source.id
         : typeof sourceId === 'string'
-        ? sourceId
-        : undefined;
+          ? sourceId
+          : undefined;
 
     Logger.info('Executing viewSourceDetail command', { sourceId: actualSourceId });
 
@@ -55,7 +57,7 @@ export async function viewSourceDetailCommand(sourceId?: string | any): Promise<
     }
 
     // 显示规则源详情页面
-    const context = (global as any).extensionContext as vscode.ExtensionContext;
+    const context = (global as { extensionContext: vscode.ExtensionContext }).extensionContext;
     const provider = SourceDetailWebviewProvider.getInstance(context);
     await provider.showSourceDetail(actualSourceId);
   } catch (error) {

@@ -5,9 +5,9 @@
 
 import * as vscode from 'vscode';
 
-import { WorkspaceDataManager } from './WorkspaceDataManager';
 import { Logger } from '../utils/logger';
 import type { RuleSelection } from './WorkspaceDataManager';
+import { WorkspaceDataManager } from './WorkspaceDataManager';
 
 /**
  * 状态变更事件

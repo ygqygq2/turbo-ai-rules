@@ -14,8 +14,8 @@ import { FileGenerator } from '../services/FileGenerator';
 import { GitManager } from '../services/GitManager';
 import { RulesManager } from '../services/RulesManager';
 import type { GitAuthentication, ParsedRule, RuleSource } from '../types';
-import { Logger } from '../utils/logger';
 import { formatBytes } from '../utils/format';
+import { Logger } from '../utils/logger';
 import { validateBranchName, validateGitUrl } from '../utils/validator';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 
@@ -233,7 +233,7 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
         const size = await this.getDirectorySize(cacheDir);
         syncInfo.cacheSize = formatBytes(size);
       }
-    } catch (error) {
+    } catch (_error) {
       Logger.warn('Failed to calculate cache size');
     }
 
@@ -320,7 +320,7 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
 
         const assetUri = webview.asWebviewUri(vscode.Uri.file(absPath));
         return match.replace(resourcePath, assetUri.toString());
-      } catch (e) {
+      } catch (_e) {
         return match;
       }
     });
@@ -440,6 +440,7 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
   /**
    * 测试 Git 连接（不进行克隆）
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async handleTestConnection(payload: any): Promise<void> {
     try {
       // 基础校验
@@ -485,6 +486,7 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
       });
     }
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async handleAddSource(payload: any): Promise<void> {
     try {
       // 1. 验证输入

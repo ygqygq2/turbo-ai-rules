@@ -9,14 +9,15 @@ import { WorkspaceStateManager } from '../../services/WorkspaceStateManager';
 
 // Mock ExtensionContext
 const createMockContext = () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const storage = new Map<string, any>();
 
   return {
     workspaceState: {
-      get: vi.fn((key: string, defaultValue?: any) => {
+      get: vi.fn((key: string, defaultValue?: unknown) => {
         return storage.has(key) ? storage.get(key) : defaultValue;
       }),
-      update: vi.fn(async (key: string, value: any) => {
+      update: vi.fn(async (key: string, value: unknown) => {
         if (value === undefined) {
           storage.delete(key);
         } else {
@@ -34,9 +35,11 @@ describe('WorkspaceStateManager', () => {
   beforeEach(async () => {
     context = createMockContext();
     // Reset singleton
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (WorkspaceStateManager as any).instance = null;
     manager = WorkspaceStateManager.getInstance(context);
     // 清空缓存
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (manager as any).cache = null;
   });
 
@@ -44,7 +47,7 @@ describe('WorkspaceStateManager', () => {
     // 清理测试数据
     try {
       await manager.clearAll();
-    } catch (error) {
+    } catch (_error) {
       // 忽略清理错误
     }
   });

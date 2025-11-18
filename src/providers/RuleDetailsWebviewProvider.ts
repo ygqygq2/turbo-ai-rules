@@ -410,7 +410,6 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
    * 渲染空状态 HTML
    */
   private getEmptyStateHtml(webview: vscode.Webview): string {
-    const nonce = this.getNonce();
     return `${this.getHtmlHead(webview, 'Rule Details')}
 <body>
     <div class="container">
@@ -452,6 +451,7 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
   /**
    * 渲染额外的元数据
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private renderAdditionalMetadata(metadata: any): string {
     // 排除已显示的标准字段
     const standardFields = ['id', 'title', 'version', 'tags', 'priority', 'author', 'description'];

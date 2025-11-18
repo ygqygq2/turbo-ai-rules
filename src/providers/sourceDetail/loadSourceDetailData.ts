@@ -1,8 +1,18 @@
+import type * as vscode from 'vscode';
+
 import { ConfigManager } from '../../services/ConfigManager';
 import { RulesManager } from '../../services/RulesManager';
 import type { ParsedRule, RuleSource } from '../../types';
 
-export async function loadSourceDetailData(sourceId: string | undefined, context: any) {
+interface SourceDetailData {
+  source: RuleSource | undefined;
+  sourceRules: ParsedRule[];
+}
+
+export async function loadSourceDetailData(
+  sourceId: string | undefined,
+  context: vscode.ExtensionContext,
+): Promise<SourceDetailData> {
   if (!sourceId || sourceId === 'new') {
     return { source: undefined, sourceRules: [] };
   }

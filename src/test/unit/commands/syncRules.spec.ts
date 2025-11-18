@@ -1,19 +1,20 @@
 import assert from 'assert';
 import sinon from 'sinon';
 import * as vscode from 'vscode';
+
 import { syncRulesCommand } from '@/commands';
-import { ConfigManager } from '@/services/ConfigManager';
-import { GitManager } from '@/services/GitManager';
-import { RulesManager } from '@/services/RulesManager';
-import { FileGenerator } from '@/services/FileGenerator';
 import { MdcParser } from '@/parsers/MdcParser';
 import { RulesValidator } from '@/parsers/RulesValidator';
+import { ConfigManager } from '@/services/ConfigManager';
+import { FileGenerator } from '@/services/FileGenerator';
+import { GitManager } from '@/services/GitManager';
+import { RulesManager } from '@/services/RulesManager';
 
 describe('syncRulesCommand 单元测试', () => {
   let sandbox: sinon.SinonSandbox;
   let showErrorMessageStub: sinon.SinonStub;
   let showInformationMessageStub: sinon.SinonStub;
-  let showWarningMessageStub: sinon.SinonStub;
+  let _showWarningMessageStub: sinon.SinonStub;
   let configManagerStub: sinon.SinonStubbedInstance<ConfigManager>;
   let gitManagerStub: sinon.SinonStubbedInstance<GitManager>;
   let rulesManagerStub: sinon.SinonStubbedInstance<RulesManager>;
@@ -23,34 +24,34 @@ describe('syncRulesCommand 单元测试', () => {
     sandbox = sinon.createSandbox();
     showErrorMessageStub = sandbox.stub(vscode.window, 'showErrorMessage');
     showInformationMessageStub = sandbox.stub(vscode.window, 'showInformationMessage');
-    showWarningMessageStub = sandbox.stub(vscode.window, 'showWarningMessage');
+    _showWarningMessageStub = sandbox.stub(vscode.window, 'showWarningMessage');
     // withProgress is already mocked in setup.ts
     // mock workspaceFolders
     sandbox
       .stub(vscode.workspace, 'workspaceFolders')
       .value([
-        { uri: { fsPath: '/mock/workspace', toString: () => 'file:///mock/workspace' } } as any,
+        { uri: { fsPath: '/mock/workspace', toString: () => 'file:///mock/workspace' } } as unknown,
       ]);
     // mock getWorkspaceFolder
     sandbox
       .stub(vscode.workspace, 'getWorkspaceFolder')
-      .returns({ uri: { fsPath: '/mock/workspace' } } as any);
+      .returns({ uri: { fsPath: '/mock/workspace' } } as unknown);
     // mock activeTextEditor
     sandbox
       .stub(vscode.window, 'activeTextEditor')
-      .value({ document: { uri: { fsPath: '/mock/workspace/README.md' } } } as any);
+      .value({ document: { uri: { fsPath: '/mock/workspace/README.md' } } } as unknown);
     // mock ConfigManager
     configManagerStub = sandbox.createStubInstance(ConfigManager);
-    sandbox.stub(ConfigManager, 'getInstance').returns(configManagerStub as any);
+    sandbox.stub(ConfigManager, 'getInstance').returns(configManagerStub as unknown);
     // mock GitManager
     gitManagerStub = sandbox.createStubInstance(GitManager);
-    sandbox.stub(GitManager, 'getInstance').returns(gitManagerStub as any);
+    sandbox.stub(GitManager, 'getInstance').returns(gitManagerStub as unknown);
     // mock RulesManager
     rulesManagerStub = sandbox.createStubInstance(RulesManager);
-    sandbox.stub(RulesManager, 'getInstance').returns(rulesManagerStub as any);
+    sandbox.stub(RulesManager, 'getInstance').returns(rulesManagerStub as unknown);
     // mock FileGenerator
     fileGeneratorStub = sandbox.createStubInstance(FileGenerator);
-    sandbox.stub(FileGenerator, 'getInstance').returns(fileGeneratorStub as any);
+    sandbox.stub(FileGenerator, 'getInstance').returns(fileGeneratorStub as unknown);
     // mock MdcParser/RulesValidator
     sandbox.stub(MdcParser.prototype, 'parseDirectory').resolves([]);
     sandbox.stub(RulesValidator.prototype, 'validateRules').returns(new Map());
@@ -70,7 +71,7 @@ describe('syncRulesCommand 单元测试', () => {
   });
 
   it('无启用源时应提示', async () => {
-    configManagerStub.getConfig.resolves({ sync: {}, adapters: {} } as any);
+    configManagerStub.getConfig.resolves({ sync: {}, adapters: {} } as unknown);
     configManagerStub.getSources.returns([]);
     await syncRulesCommand();
     assert(showInformationMessageStub.calledOnce);

@@ -3,7 +3,6 @@
  */
 
 import * as path from 'path';
-import * as vscode from 'vscode';
 
 import { GITIGNORE_MARKER } from './constants';
 import { pathExists, safeReadFile, safeWriteFile } from './fileSystem';

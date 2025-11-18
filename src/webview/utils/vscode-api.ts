@@ -3,9 +3,9 @@
  */
 
 declare function acquireVsCodeApi(): {
-  postMessage(message: any): void;
-  getState(): any;
-  setState(state: any): void;
+  postMessage(message: unknown): void;
+  getState(): unknown;
+  setState(state: unknown): void;
 };
 
 /**
@@ -17,21 +17,21 @@ class VSCodeAPIWrapper {
   /**
    * 发送消息到扩展
    */
-  public postMessage(type: string, payload?: any): void {
+  public postMessage(type: string, payload?: unknown): void {
     this.vscode.postMessage({ type, payload });
   }
 
   /**
    * 获取状态
    */
-  public getState(): any {
+  public getState(): unknown {
     return this.vscode.getState();
   }
 
   /**
    * 设置状态
    */
-  public setState(state: any): void {
+  public setState(state: unknown): void {
     this.vscode.setState(state);
   }
 }

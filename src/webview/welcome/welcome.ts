@@ -1,10 +1,15 @@
 // Get VS Code API
-declare function acquireVsCodeApi(): any;
-const vscode = acquireVsCodeApi();
+declare function acquireVsCodeApi(): {
+  postMessage(msg: unknown): void;
+  getState(): unknown;
+  setState(state: unknown): void;
+};
+const vscodeWelcome = acquireVsCodeApi();
 
 // Helper function to send messages
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function sendMessage(type: string, payload?: any) {
-  vscode.postMessage({ type, payload });
+  vscodeWelcome.postMessage({ type, payload });
 }
 
 // Event handlers

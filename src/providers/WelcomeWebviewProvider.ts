@@ -7,11 +7,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { ConfigManager } from '../services/ConfigManager';
+import { CONFIG_KEYS, CONFIG_PREFIX } from '../utils/constants';
 import { Logger } from '../utils/logger';
-import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 import { notify } from '../utils/notifications';
-import { CONFIG_PREFIX, CONFIG_KEYS } from '../utils/constants';
+import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 
 /**
  * 欢迎页面提供者
@@ -93,7 +92,7 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
 
         const assetUri = webview.asWebviewUri(vscode.Uri.file(absPath));
         return match.replace(resourcePath, assetUri.toString());
-      } catch (e) {
+      } catch (_e) {
         return match;
       }
     });
@@ -109,6 +108,7 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
   protected async handleMessage(message: WebviewMessage): Promise<void> {
     try {
       // 兼容旧版消息格式：支持 command 字段（用于向后兼容）
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const messageType = message.type || (message as any).command;
 
       switch (messageType) {
@@ -167,6 +167,7 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
           break;
 
         case 'useTemplate':
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await this.handleUseTemplate(message.payload?.template || (message as any).template);
           break;
 
@@ -228,6 +229,7 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
 
     // 检查是否有规则源，发送 rulesSelectionState 消息
     const config = vscode.workspace.getConfiguration(CONFIG_PREFIX);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sources = config.get<any[]>(CONFIG_KEYS.SOURCES, []);
     const hasSource = sources.length > 0;
 

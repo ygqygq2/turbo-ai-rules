@@ -46,7 +46,7 @@
 - Local-First：全量数据本地化，离线可用，不上传用户规则
 - 单一数据源：Git 仓库即真源，生成物与索引均可重建
 
-参阅：docs/development/02-core-concepts.md（核心理念与设计原则）
+参阅：docs/development/02-requirements.md（需求分析）
 
 ---
 

@@ -9,7 +9,7 @@
 本设计文档采用分层结构，主文档提供概览和导航，详细设计在各子文档中：
 
 - **[01-background.md](./01-background.md)** - 项目背景和设计目标
-- **[02-core-concepts.md](./02-core-concepts.md)** - 核心理念和设计原则
+- **[02-requirements.md](./02-requirements.md)** - 需求分析（功能需求、非功能需求）
 - **[20-architecture.md](./20-architecture.md)** - 顶层架构和模块分工
 - **[11-storage-strategy.md](./11-storage-strategy.md)** - 存储策略和文件管理
 - **[21-adapter-design.md](./21-adapter-design.md)** - 适配器架构和扩展机制

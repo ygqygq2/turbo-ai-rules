@@ -16,7 +16,7 @@
 2. 运行 `Turbo AI Rules: Add Source`
 3. 输入公开 Git 仓库 URL:
    ```
-   https://github.com/PatrickJS/awesome-cursorrules.git
+   https://github.com/ygqygq2/ai-rules.git
    ```
 4. 分支: `main`
 5. SubPath: `/rules-new`

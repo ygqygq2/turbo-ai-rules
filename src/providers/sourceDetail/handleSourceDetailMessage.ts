@@ -1,11 +1,22 @@
+import type * as vscode from 'vscode';
+
 import { Logger } from '../../utils/logger';
 import { loadSourceDetailData } from './loadSourceDetailData.js';
 
+interface WebviewMessage {
+  type: string;
+  payload?: unknown;
+}
+
+interface WebviewProvider {
+  postMessage(message: unknown): void;
+}
+
 export async function handleSourceDetailMessage(
-  message: any,
+  message: WebviewMessage,
   sourceId: string | undefined,
-  context: any,
-  provider: any,
+  context: vscode.ExtensionContext,
+  provider: WebviewProvider,
 ) {
   try {
     switch (message.type) {

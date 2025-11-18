@@ -1,5 +1,9 @@
 // Get VS Code API
-declare function acquireVsCodeApi(): any;
+declare function acquireVsCodeApi(): {
+  postMessage(msg: unknown): void;
+  getState(): unknown;
+  setState(state: unknown): void;
+};
 const vscode = acquireVsCodeApi();
 
 // Request statistics data

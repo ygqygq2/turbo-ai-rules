@@ -6,16 +6,15 @@
 import * as vscode from 'vscode';
 
 import { ConfigManager } from '../services/ConfigManager';
-import { RulesManager } from '../services/RulesManager';
-import type { RuleSource } from '../types/config';
-import type { ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 
 /**
  * 编辑规则源
  */
-export async function editSourceCommand(sourceId?: string | any): Promise<void> {
+export async function editSourceCommand(
+  sourceId?: string | { data?: { source?: { id: string } } },
+): Promise<void> {
   try {
     const configManager = ConfigManager.getInstance();
 
@@ -24,8 +23,8 @@ export async function editSourceCommand(sourceId?: string | any): Promise<void> 
       typeof sourceId === 'object' && sourceId?.data?.source?.id
         ? sourceId.data.source.id
         : typeof sourceId === 'string'
-        ? sourceId
-        : undefined;
+          ? sourceId
+          : undefined;
 
     if (!actualSourceId) {
       notify('No source selected for editing', 'error');
@@ -41,7 +40,7 @@ export async function editSourceCommand(sourceId?: string | any): Promise<void> 
     }
 
     // 使用 Webview 编辑表单
-    const context = (global as any).extensionContext as vscode.ExtensionContext;
+    const context = (global as { extensionContext: vscode.ExtensionContext }).extensionContext;
     const { SourceDetailWebviewProvider } = await import(
       '../providers/SourceDetailWebviewProvider'
     );
@@ -59,15 +58,17 @@ export async function editSourceCommand(sourceId?: string | any): Promise<void> 
 /**
  * 测试源连接
  */
-export async function testConnectionCommand(sourceId?: string | any): Promise<void> {
+export async function testConnectionCommand(
+  sourceId?: string | { data?: { source?: { id: string } } },
+): Promise<void> {
   try {
     // 从 TreeItem 提取 sourceId
     const actualSourceId =
       typeof sourceId === 'object' && sourceId?.data?.source?.id
         ? sourceId.data.source.id
         : typeof sourceId === 'string'
-        ? sourceId
-        : undefined;
+          ? sourceId
+          : undefined;
 
     if (!actualSourceId) {
       notify('No source selected for testing', 'error');
@@ -119,15 +120,17 @@ export async function testConnectionCommand(sourceId?: string | any): Promise<vo
 /**
  * 切换源启用状态
  */
-export async function toggleSourceCommand(sourceId?: string | any): Promise<void> {
+export async function toggleSourceCommand(
+  sourceId?: string | { data?: { source?: { id: string } } },
+): Promise<void> {
   try {
     // 从 TreeItem 提取 sourceId
     const actualSourceId =
       typeof sourceId === 'object' && sourceId?.data?.source?.id
         ? sourceId.data.source.id
         : typeof sourceId === 'string'
-        ? sourceId
-        : undefined;
+          ? sourceId
+          : undefined;
 
     if (!actualSourceId) {
       notify('No source selected', 'error');

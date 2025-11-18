@@ -6,10 +6,10 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 
-import { GitManager } from './GitManager';
 import { MdcParser } from '../parsers/MdcParser';
 import { SystemError } from '../types/errors';
 import { Logger } from '../utils/logger';
+import { GitManager } from './GitManager';
 
 /**
  * 树节点类型

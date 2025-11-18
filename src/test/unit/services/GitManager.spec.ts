@@ -2,10 +2,12 @@
  * @description GitManager 单元测试
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import * as path from 'path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { GitManager } from '@/services/GitManager';
 import type { RuleSource } from '@/types/config';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ErrorCodes } from '@/types/errors';
 import * as validator from '@/utils/validator';
 
@@ -45,7 +47,7 @@ describe('GitManager 单元测试', () => {
 
   beforeEach(() => {
     // Reset singleton
-    (GitManager as any).instance = undefined;
+    (GitManager as unknown).instance = undefined;
     gitManager = GitManager.getInstance();
     vi.clearAllMocks();
   });

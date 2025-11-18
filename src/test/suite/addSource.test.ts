@@ -19,7 +19,7 @@ describe('Add Source Tests', () => {
   // NOTE: These tests require user interaction and are skipped in automated testing
   it.skip('Should add public GitHub repository', async () => {
     const configManager = ConfigManager.getInstance();
-    const sourceUrl = 'https://github.com/PatrickJS/awesome-cursorrules.git';
+    const sourceUrl = 'https://github.com/ygqygq2/ai-rules.git';
 
     await vscode.commands.executeCommand('turbo-ai-rules.addSource', sourceUrl);
 
@@ -46,7 +46,7 @@ describe('Add Source Tests', () => {
 
   it.skip('Should not add duplicate sources', async () => {
     const configManager = ConfigManager.getInstance();
-    const sourceUrl = 'https://github.com/PatrickJS/awesome-cursorrules.git';
+    const sourceUrl = 'https://github.com/ygqygq2/ai-rules.git';
 
     // 添加第一次
     await vscode.commands.executeCommand('turbo-ai-rules.addSource', sourceUrl);

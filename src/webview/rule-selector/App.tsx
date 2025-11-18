@@ -25,7 +25,7 @@ interface SourceInfo {
 interface InitialData {
   workspacePath: string;
   selections: { [sourceId: string]: RuleSelection };
-  fileTreeBySource: { [sourceId: string]: any[] };
+  fileTreeBySource: { [sourceId: string]: unknown[] };
   sourceList?: SourceInfo[]; // 源信息列表（包含 id、name 和真实规则数）
   currentSourceId?: string; // 当前选择的源 ID
 }
@@ -46,7 +46,6 @@ interface SelectionChangeMessage {
 export const App: React.FC = () => {
   // 从 Zustand store 获取状态和 actions
   const {
-    workspacePath,
     currentSourceId,
     availableSources,
     selectedPaths,
@@ -83,7 +82,7 @@ export const App: React.FC = () => {
     });
 
     // 监听 MessageChannel 初始化消息 (实际上是 postMessage,非真正的 MessageChannel)
-    const offInitChannel = rpc.on('initSelectionChannel', (payload: any) => {
+    const offInitChannel = rpc.on('initSelectionChannel', (payload: { sourceId: string }) => {
       console.log('Selection channel initialized for source', { sourceId: payload.sourceId });
     });
 
@@ -112,7 +111,7 @@ export const App: React.FC = () => {
       updateAfterSave();
     });
 
-    const offError = rpc.on('error', (payload: any) => {
+    const offError = rpc.on('error', (payload: { message?: string }) => {
       setSaving(false);
       alert(payload?.message || '操作失败');
     });

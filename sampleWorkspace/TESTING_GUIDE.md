@@ -69,7 +69,7 @@ GitHub Actions 会自动运行所有测试（包括 xvfb-run for Linux headless 
 {
   "id": "test-cursor-rules",
   "name": "Test Cursor Rules",
-  "gitUrl": "https://github.com/PatrickJS/awesome-cursorrules.git",
+  "gitUrl": "https://github.com/ygqygq2/ai-rules.git",
   "branch": "main",
   "subPath": "/rules"
 }
@@ -145,7 +145,7 @@ GitHub Actions 会自动运行所有测试（包括 xvfb-run for Linux headless 
 ```json
 {
   "id": "test-default-rules",
-  "gitUrl": "https://github.com/PatrickJS/awesome-cursorrules.git",
+  "gitUrl": "https://github.com/ygqygq2/ai-rules.git",
   "branch": "main",
   "subPath": "/rules"
 }
@@ -189,7 +189,7 @@ GitHub Actions 会自动运行所有测试（包括 xvfb-run for Linux headless 
     {
       "id": "source-1",
       "name": "High Priority Rules",
-      "gitUrl": "https://github.com/PatrickJS/awesome-cursorrules.git"
+      "gitUrl": "https://github.com/ygqygq2/ai-rules.git"
     },
     {
       "id": "source-2",
@@ -228,7 +228,7 @@ GitHub Actions 会自动运行所有测试（包括 xvfb-run for Linux headless 
 ```json
 {
   "id": "test-user-rules",
-  "gitUrl": "https://github.com/PatrickJS/awesome-cursorrules.git"
+  "gitUrl": "https://github.com/ygqygq2/ai-rules.git"
 }
 ```
 
@@ -263,7 +263,7 @@ GitHub Actions 会自动运行所有测试（包括 xvfb-run for Linux headless 
 2. 运行：`Turbo AI Rules: Add Source`
 3. 输入公开仓库 URL：
    ```
-   https://github.com/PatrickJS/awesome-cursorrules.git
+   https://github.com/ygqygq2/ai-rules.git
    ```
 4. 分支：`main`
 5. SubPath：`/rules-new`
@@ -282,7 +282,7 @@ GitHub Actions 会自动运行所有测试（包括 xvfb-run for Linux headless 
 2. 运行：`Turbo AI Rules: Add Source`
 3. 输入私有仓库 URL（示例使用公开仓库）：
    ```
-   https://github.com/PatrickJS/awesome-cursorrules.git
+   https://github.com/ygqygq2/ai-rules.git
    ```
 4. 分支：`main`
 5. SubPath：`/rules`
@@ -463,7 +463,7 @@ rm -rf .turbo-ai-rules/
 **推荐测试仓库**：
 
 ```
-https://github.com/PatrickJS/awesome-cursorrules.git
+https://github.com/ygqygq2/ai-rules.git
 SubPath: /rules-new
 ```
 

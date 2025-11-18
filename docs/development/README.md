@@ -6,7 +6,7 @@
 
 - **[01-design.md](./01-design.md)** - 产品整体设计总览
 - **[01-background.md](./01-background.md)** - 项目背景和设计目标
-- **[02-core-concepts.md](./02-core-concepts.md)** - 核心理念和设计原则
+- **[02-requirements.md](./02-requirements.md)** - 需求分析（功能需求、非功能需求）
 - **[03-design.md](./03-design.md)** - 整体设计指引(总纲)
 - **[10-data-model.md](./10-data-model.md)** - 数据结构和类型定义
 - **[11-storage-strategy.md](./11-storage-strategy.md)** - 存储策略和文件管理

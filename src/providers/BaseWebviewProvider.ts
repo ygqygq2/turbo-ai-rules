@@ -12,7 +12,8 @@ import { Logger } from '../utils/logger';
  */
 export interface WebviewMessage {
   type: string;
-  payload?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  payload?: any; // 消息负载类型由具体消息决定，使用 any 提供灵活性
 }
 
 /**

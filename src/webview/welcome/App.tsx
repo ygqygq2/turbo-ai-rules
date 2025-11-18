@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { Toolbar } from '../components/Toolbar';
 import { vscodeApi } from '../utils/vscode-api';
 import '../global.css';
 import './welcome.css';
@@ -64,20 +63,12 @@ export const App: React.FC = () => {
     vscodeApi.postMessage('addSource');
   };
 
-  const handleOpenTemplates = () => {
-    vscodeApi.postMessage('openTemplates');
-  };
-
   const handleSelectRules = () => {
     vscodeApi.postMessage('selectRules');
   };
 
   const handleSyncAndGenerate = () => {
     vscodeApi.postMessage('syncAndGenerate');
-  };
-
-  const handleAdvancedOptions = () => {
-    vscodeApi.postMessage('openAdvancedOptions');
   };
 
   const handleViewDocs = () => {

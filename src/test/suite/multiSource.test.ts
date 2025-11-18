@@ -40,11 +40,7 @@ describe('Multi-Source Integration Tests', () => {
 
     assert.ok(sources, 'Sources should be defined');
     assert.strictEqual(sources!.length, 2, 'Should have 2 sources configured');
-    assert.strictEqual(
-      sources![0].id,
-      'awesome-cursorrules-3f7a3a29',
-      'First source ID should match',
-    );
+    assert.strictEqual(sources![0].id, 'ai-rules-7008d805', 'First source ID should match');
     assert.strictEqual(sources![1].id, 'cursor-rules-17caee3c', 'Second source ID should match');
   });
 

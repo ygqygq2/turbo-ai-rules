@@ -6,7 +6,7 @@
 /**
  * 消息基础结构
  */
-export interface Message<T = any> {
+export interface Message<T = unknown> {
   type: string;
   requestId?: string;
   payload?: T;
@@ -17,9 +17,9 @@ export interface Message<T = any> {
  * VSCode API 类型
  */
 interface VSCodeAPI {
-  postMessage(message: any): void;
-  getState(): any;
-  setState(state: any): void;
+  postMessage(message: unknown): void;
+  getState(): unknown;
+  setState(state: unknown): void;
 }
 
 /**
@@ -32,12 +32,12 @@ export class WebviewRPC {
   private pending = new Map<
     string,
     {
-      resolve: (value: any) => void;
+      resolve: (value: unknown) => void;
       reject: (error: Error) => void;
       timer: NodeJS.Timeout;
     }
   >();
-  private eventHandlers = new Map<string, ((data: any) => void)[]>();
+  private eventHandlers = new Map<string, ((data: unknown) => void)[]>();
 
   constructor(vscode: VSCodeAPI) {
     this.vscode = vscode;
@@ -83,7 +83,7 @@ export class WebviewRPC {
    * @param payload {any} 请求数据
    * @param timeout {number} 超时时间（毫秒），默认 30 秒
    */
-  request<T = any>(type: string, payload?: any, timeout = 30000): Promise<T> {
+  request<T = unknown>(type: string, payload?: unknown, timeout = 30000): Promise<T> {
     const requestId = String(++this.requestId);
 
     return new Promise<T>((resolve, reject) => {
@@ -108,6 +108,7 @@ export class WebviewRPC {
    * @param type {string} 消息类型
    * @param payload {any} 消息数据
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   notify(type: string, payload?: any): void {
     this.vscode.postMessage({
       type,
@@ -121,6 +122,7 @@ export class WebviewRPC {
    * @param type {string} 事件类型
    * @param handler {(data: any) => void} 事件处理函数
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   on(type: string, handler: (data: any) => void): () => void {
     const handlers = this.eventHandlers.get(type) || [];
     handlers.push(handler);
@@ -128,7 +130,8 @@ export class WebviewRPC {
 
     // 返回取消监听函数
     return () => {
-      const handlers = this.eventHandlers.get(type) || [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handlers = this.eventHandlers.get(type) || ([] as any[]);
       const index = handlers.indexOf(handler);
       if (index !== -1) {
         handlers.splice(index, 1);
@@ -140,7 +143,7 @@ export class WebviewRPC {
    * @description 获取 VSCode 状态
    * @return {T | undefined}
    */
-  getState<T = any>(): T | undefined {
+  getState<T = unknown>(): T | undefined {
     return this.vscode.getState();
   }
 
@@ -149,7 +152,7 @@ export class WebviewRPC {
    * @return {void}
    * @param state {T} 状态对象
    */
-  setState<T = any>(state: T): void {
+  setState<T = unknown>(state: T): void {
     this.vscode.setState(state);
   }
 
@@ -176,7 +179,7 @@ let rpcInstance: WebviewRPC | null = null;
  */
 export function createWebviewRPC(): WebviewRPC {
   if (!rpcInstance) {
-    // @ts-ignore - acquireVsCodeApi is injected by VSCode
+    // @ts-expect-error - acquireVsCodeApi is injected by VSCode
     const vscode = acquireVsCodeApi();
     rpcInstance = new WebviewRPC(vscode);
   }

@@ -2,7 +2,8 @@
  * @description RulesValidator 单元测试
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { RulesValidator } from '@/parsers/RulesValidator';
 import type { ParsedRule } from '@/types/rules';
 
@@ -91,7 +92,7 @@ describe('RulesValidator 单元测试', () => {
 
     it('应检测无效的优先级', () => {
       const rule = createTestRule({
-        metadata: { priority: 'invalid' as any },
+        metadata: { priority: 'invalid' as unknown },
       });
 
       const result = validator.validateRule(rule);

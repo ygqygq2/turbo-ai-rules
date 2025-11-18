@@ -50,11 +50,35 @@ class RuleTreeItem extends vscode.TreeItem {
     this.command = this.getCommand();
     this.description = this.getDescription();
 
+    // 设置唯一 ID（用于 VSCode 识别节点并保持复选框状态）
+    this.id = this.getId();
+
     // 为规则节点添加复选框
     if (data.type === 'rule') {
       this.checkboxState = data.isSelected
         ? vscode.TreeItemCheckboxState.Checked
         : vscode.TreeItemCheckboxState.Unchecked;
+    }
+  }
+
+  /**
+   * @description 生成唯一 ID
+   * @return {string}
+   */
+  private getId(): string {
+    switch (this.data.type) {
+      case 'source':
+        return `source:${this.data.source?.id || 'unknown'}`;
+      case 'rule':
+        return `rule:${this.data.rule?.sourceId || 'unknown'}:${
+          this.data.rule?.filePath || this.data.rule?.id || 'unknown'
+        }`;
+      case 'tag':
+        return `tag:${this.data.tag || 'unknown'}`;
+      case 'empty':
+        return `empty:${Date.now()}`;
+      default:
+        return `unknown:${Date.now()}`;
     }
   }
 
@@ -346,7 +370,7 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
    */
   private async loadRulesFromCache(sourceId: string): Promise<ParsedRule[]> {
     // 先尝试从 RulesManager 内存中获取
-    let rules = this.rulesManager.getRulesBySource(sourceId);
+    const rules = this.rulesManager.getRulesBySource(sourceId);
     if (rules.length > 0) {
       return rules;
     }

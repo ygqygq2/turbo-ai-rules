@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 
 import { ParsedRule } from '../types/rules';
+import { CONFIG_PREFIX } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
-import { CONFIG_PREFIX } from '../utils/constants';
 
 /**
  * 批量禁用规则

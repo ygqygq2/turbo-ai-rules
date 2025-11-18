@@ -3,8 +3,9 @@
  * 测试左侧树视图和右侧 Webview 的双向选择同步
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import * as vscode from 'vscode';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// vscode not used
 import { SelectionStateManager } from '../../../services/SelectionStateManager';
 
 describe('RuleSelectorWebviewProvider - Selection Sync', () => {

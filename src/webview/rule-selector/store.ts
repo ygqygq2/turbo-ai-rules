@@ -1,13 +1,14 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+
+import { createWebviewRPC } from '../common/messaging';
 import {
   buildTree,
-  toggleNode as toggleTreeNode,
   getAllFilePaths,
   getDirectoryFilePaths,
+  toggleNode as toggleTreeNode,
   type TreeNode,
 } from './tree-utils';
-import { createWebviewRPC } from '../common/messaging';
 
 // 获取 RPC 实例（延迟到使用时获取，避免模块加载时就调用 acquireVsCodeApi）
 const getRpc = () => createWebviewRPC();

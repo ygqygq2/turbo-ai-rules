@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as vscode from 'vscode';
+
 import { RuleSelectorWebviewProvider } from '../../../providers/RuleSelectorWebviewProvider';
 import { WorkspaceDataManager } from '../../../services/WorkspaceDataManager';
 
@@ -17,7 +18,7 @@ describe('RuleSelectorWebviewProvider', () => {
     mockContext = {
       extensionPath: '/fake/path',
       subscriptions: [],
-    } as any;
+    } as unknown;
 
     provider = RuleSelectorWebviewProvider.getInstance(mockContext);
   });
@@ -32,24 +33,15 @@ describe('RuleSelectorWebviewProvider', () => {
       setRuleSelection: vi.fn().mockResolvedValue(undefined),
     };
 
-    vi.mocked(WorkspaceDataManager.getInstance).mockReturnValue(mockDataManager as any);
+    vi.mocked(WorkspaceDataManager.getInstance).mockReturnValue(mockDataManager as unknown);
 
     const mockWorkspaceFolder = {
       uri: { fsPath: '/fake/workspace' },
     };
 
-    vi.mocked(vscode.workspace).workspaceFolders = [mockWorkspaceFolder] as any;
+    vi.mocked(vscode.workspace).workspaceFolders = [mockWorkspaceFolder] as unknown;
 
     // 测试保存逻辑
-    const message = {
-      type: 'saveRuleSelection',
-      payload: {
-        sourceId: 'test-source',
-        selection: {
-          paths: ['rule1.md', 'rule2.md'],
-        },
-      },
-    };
 
     // 由于 handleMessage 是 protected，这里只能通过反射测试
     // 实际测试中需要模拟完整的消息流
@@ -71,13 +63,13 @@ describe('RuleSelectorWebviewProvider', () => {
       }),
     };
 
-    vi.mocked(WorkspaceDataManager.getInstance).mockReturnValue(mockDataManager as any);
+    vi.mocked(WorkspaceDataManager.getInstance).mockReturnValue(mockDataManager as unknown);
 
     const mockWorkspaceFolder = {
       uri: { fsPath: '/fake/workspace' },
     };
 
-    vi.mocked(vscode.workspace).workspaceFolders = [mockWorkspaceFolder] as any;
+    vi.mocked(vscode.workspace).workspaceFolders = [mockWorkspaceFolder] as unknown;
 
     expect(mockDataManager.readRuleSelections).toBeDefined();
   });

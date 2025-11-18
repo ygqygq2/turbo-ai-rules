@@ -187,6 +187,7 @@ function viewRule(ruleId: string): void {
 }
 
 // 全局函数供 HTML 调用
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).viewRule = viewRule;
 
 /**
