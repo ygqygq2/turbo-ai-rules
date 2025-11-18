@@ -213,7 +213,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
                 branch: source.branch || 'default',
                 subPath: source.subPath || '/',
                 totalRulesInSource: allRules.length,
-                selectedRules: filteredRules.length,
+                selectedRules: selectedCount,
               });
 
               reportProgress(progressPerSource * 0.4);
@@ -274,7 +274,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
 
         // 8. 合并规则并生成配置文件
         // 创建临时 RulesManager 实例用于合并选中的规则
-        const tempRulesManager = new RulesManager();
+        const tempRulesManager = RulesManager.getInstance();
         const sourceRulesMap = new Map<string, ParsedRule[]>();
 
         // 按源分组

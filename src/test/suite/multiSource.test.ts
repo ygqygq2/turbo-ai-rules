@@ -52,7 +52,7 @@ describe('Multi-Source Integration Tests', () => {
   });
 
   it('Should sync rules from multiple sources without errors', async function () {
-    this.timeout(120000); // 2分钟 - 增加超时时间用于 Git 操作
+    this.timeout(180000); // 3分钟 - Git 克隆两个仓库需要更多时间
 
     console.log(`Testing multi-source sync in workspace: ${workspaceFolder.name}`);
 
@@ -67,7 +67,7 @@ describe('Multi-Source Integration Tests', () => {
       console.log('Multi-source sync completed');
 
       // 等待文件系统写入
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // 验证至少有一个适配器的输出文件存在
       const cursorRulesPath = path.join(workspaceFolder.uri.fsPath, '.cursorrules');
@@ -83,6 +83,8 @@ describe('Multi-Source Integration Tests', () => {
       console.log(`Cursor output exists: ${cursorExists}`);
       console.log(`Copilot output exists: ${copilotExists}`);
 
+      // 多源测试的重点：验证两个源都能正常同步和生成配置
+      // 不测试冲突，因为这两个仓库的规则 ID 不重复，不会产生冲突
       const hasOutput = cursorExists || copilotExists;
 
       if (!hasOutput) {
@@ -91,11 +93,11 @@ describe('Multi-Source Integration Tests', () => {
         console.log('Workspace root contents:', rootFiles);
       }
 
-      assert.ok(hasOutput, 'At least one adapter output should exist');
+      assert.ok(hasOutput, 'At least one adapter output should exist after multi-source sync');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('Multi-source sync error:', errorMessage);
-      assert.fail(`Sync should not throw error: ${errorMessage}`);
+      assert.fail(`Multi-source sync should not throw error: ${errorMessage}`);
     }
   });
 

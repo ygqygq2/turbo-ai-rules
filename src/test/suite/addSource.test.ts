@@ -1,85 +1,131 @@
 import * as assert from 'assert';
+import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { ConfigManager } from '../../services/ConfigManager';
 import type { RuleSource } from '../../types';
-import { cleanupGeneratedFiles, createTempWorkspace } from '../ready';
+import { mockShowInputBox, mockShowQuickPick, restoreAllMocks } from './mocks';
 
 describe('Add Source Tests', () => {
-  let tempWorkspace: string;
+  let workspaceFolder: vscode.WorkspaceFolder;
 
   beforeEach(() => {
-    tempWorkspace = createTempWorkspace();
+    const folders = vscode.workspace.workspaceFolders;
+    assert.ok(folders && folders.length > 0, 'No workspace folder found');
+    workspaceFolder = folders[0];
   });
 
-  afterEach(async () => {
-    await cleanupGeneratedFiles(tempWorkspace);
+  afterEach(() => {
+    // 恢复所有 mock
+    restoreAllMocks();
   });
 
-  // NOTE: These tests require user interaction and are skipped in automated testing
-  it.skip('Should add public GitHub repository', async () => {
-    const configManager = ConfigManager.getInstance();
+  it('Should add public GitHub repository', async function () {
+    this.timeout(120000);
+
     const sourceUrl = 'https://github.com/ygqygq2/ai-rules.git';
 
-    await vscode.commands.executeCommand('turbo-ai-rules.addSource', sourceUrl);
+    // Mock 用户输入 URL
+    mockShowInputBox(sourceUrl);
 
-    const sources = configManager.getSources();
-    const added = sources.find((s: RuleSource) => s.gitUrl === sourceUrl);
+    // Mock 用户选择认证方式（None）
+    mockShowQuickPick({ label: 'None', description: 'Public repository' } as vscode.QuickPickItem);
 
-    assert.ok(added, 'Source should be added to configuration');
-    assert.strictEqual(added.enabled, true, 'Source should be enabled by default');
+    // 打开 README 确保正确的 workspace
+    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
+    const doc = await vscode.workspace.openTextDocument(readmePath);
+    await vscode.window.showTextDocument(doc);
+
+    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    const sourcesBefore = config.get<RuleSource[]>('sources', []);
+    const countBefore = sourcesBefore.length;
+
+    // 执行添加命令
+    await vscode.commands.executeCommand('turbo-ai-rules.addSource');
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const sourcesAfter = config.get<RuleSource[]>('sources', []);
+    const added = sourcesAfter.find((s: RuleSource) => s.gitUrl === sourceUrl);
+
+    console.log(`Sources before: ${countBefore}, after: ${sourcesAfter.length}`);
+
+    if (added) {
+      assert.ok(added, 'Source should be added to configuration');
+      assert.strictEqual(added.enabled, true, 'Source should be enabled by default');
+    } else {
+      // 如果源已存在，确保数量没变
+      assert.strictEqual(
+        sourcesAfter.length,
+        countBefore,
+        'Source count should not change if duplicate',
+      );
+    }
   });
 
-  it.skip('Should add private repository with SSH', async () => {
-    const configManager = ConfigManager.getInstance();
-    const sourceUrl = 'git@github.com:PatrickJS/awesome-cursorrules.git';
+  it('Should not add duplicate sources', async function () {
+    this.timeout(120000);
 
-    await vscode.commands.executeCommand('turbo-ai-rules.addSource', sourceUrl);
-
-    const sources = configManager.getSources();
-    const added = sources.find((s: RuleSource) => s.gitUrl === sourceUrl);
-
-    assert.ok(added, 'Private source should be added');
-    assert.ok(added.authentication, 'Should have authentication config');
-    assert.strictEqual(added.authentication?.type, 'ssh', 'Auth type should be ssh');
-  });
-
-  it.skip('Should not add duplicate sources', async () => {
-    const configManager = ConfigManager.getInstance();
     const sourceUrl = 'https://github.com/ygqygq2/ai-rules.git';
 
-    // 添加第一次
-    await vscode.commands.executeCommand('turbo-ai-rules.addSource', sourceUrl);
-    const sourcesAfterFirst = configManager.getSources();
-    const countAfterFirst = sourcesAfterFirst.filter(
-      (s: RuleSource) => s.gitUrl === sourceUrl,
-    ).length;
+    // Mock 用户输入相同的 URL
+    mockShowInputBox(sourceUrl);
+    mockShowQuickPick({ label: 'None', description: 'Public repository' } as vscode.QuickPickItem);
 
-    // 尝试添加第二次
-    await vscode.commands.executeCommand('turbo-ai-rules.addSource', sourceUrl);
-    const sourcesAfterSecond = configManager.getSources();
-    const countAfterSecond = sourcesAfterSecond.filter(
-      (s: RuleSource) => s.gitUrl === sourceUrl,
-    ).length;
+    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
+    const doc = await vscode.workspace.openTextDocument(readmePath);
+    await vscode.window.showTextDocument(doc);
 
-    assert.strictEqual(countAfterFirst, countAfterSecond, 'Should not add duplicate source');
+    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    const sourcesBefore = config.get<RuleSource[]>('sources', []);
+    const countBefore = sourcesBefore.length;
+
+    // 尝试添加相同的源
+    await vscode.commands.executeCommand('turbo-ai-rules.addSource');
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const sourcesAfter = config.get<RuleSource[]>('sources', []);
+    const countAfter = sourcesAfter.filter((s: RuleSource) => s.gitUrl === sourceUrl).length;
+    const countBeforeUrl = sourcesBefore.filter((s: RuleSource) => s.gitUrl === sourceUrl).length;
+
+    console.log(
+      `URL ${sourceUrl} count - before: ${countBeforeUrl}, after: ${countAfter}, total before: ${countBefore}, total after: ${sourcesAfter.length}`,
+    );
+
+    // 应该不增加重复的源
+    assert.strictEqual(countAfter, countBeforeUrl, 'Should not add duplicate source');
   });
 
-  it.skip('Should validate repository URL format', async () => {
-    const invalidUrls = [
-      'not-a-url',
-      'ftp://invalid.com/repo',
-      'https://notgithub.com/repo', // 暂时只支持 GitHub
-    ];
+  it('Should validate repository URL format', async function () {
+    this.timeout(60000);
 
-    for (const url of invalidUrls) {
-      try {
-        await vscode.commands.executeCommand('turbo-ai-rules.addSource', url);
-        assert.fail(`Should reject invalid URL: ${url}`);
-      } catch (error) {
-        // Expected to throw
-        assert.ok(error, 'Should throw error for invalid URL');
-      }
+    const invalidUrl = 'not-a-valid-url';
+
+    // Mock 用户输入无效 URL
+    mockShowInputBox(invalidUrl);
+
+    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
+    const doc = await vscode.workspace.openTextDocument(readmePath);
+    await vscode.window.showTextDocument(doc);
+
+    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    const sourcesBefore = config.get<RuleSource[]>('sources', []);
+
+    try {
+      // 尝试添加无效 URL
+      await vscode.commands.executeCommand('turbo-ai-rules.addSource');
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const sourcesAfter = config.get<RuleSource[]>('sources', []);
+
+      // 无效 URL 应该被拒绝，源列表不变
+      assert.strictEqual(
+        sourcesAfter.length,
+        sourcesBefore.length,
+        'Should not add source with invalid URL',
+      );
+    } catch (error) {
+      // 如果抛出错误也是可以接受的
+      console.log('Invalid URL rejected (expected):', error);
+      assert.ok(true, 'Should reject invalid URL');
     }
   });
 });

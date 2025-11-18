@@ -5,8 +5,8 @@
 
 import * as vscode from 'vscode';
 
-import type { ParsedRule } from '../types/rules';
 import { ConfigManager } from '../services/ConfigManager';
+import type { ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 

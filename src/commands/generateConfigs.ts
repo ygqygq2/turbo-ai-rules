@@ -68,7 +68,7 @@ export async function generateConfigsCommand(): Promise<void> {
 
     // 5. 合并规则（解决冲突）
     // 创建临时 RulesManager 实例用于合并选中的规则
-    const tempRulesManager = new RulesManager();
+    const tempRulesManager = RulesManager.getInstance();
     const sourceRulesMap = new Map<string, ParsedRule[]>();
 
     // 按源分组
