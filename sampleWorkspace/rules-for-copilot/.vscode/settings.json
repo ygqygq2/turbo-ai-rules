@@ -14,7 +14,7 @@
       "name": "Test Copilot Rules",
       "gitUrl": "https://github.com/ygqygq2/ai-rules.git",
       "branch": "main",
-      "subPath": "/rules-new",
+      "subPath": "/",
       "enabled": true,
       "authentication": {
         "type": "none"

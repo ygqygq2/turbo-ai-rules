@@ -56,8 +56,9 @@ export async function viewSourceDetailCommand(
       actualSourceId = selected.sourceId;
     }
 
-    // 显示规则源详情页面
-    const context = (global as { extensionContext: vscode.ExtensionContext }).extensionContext;
+    // 使用 Webview 显示详情
+    const context = (global as unknown as { extensionContext: vscode.ExtensionContext })
+      .extensionContext;
     const provider = SourceDetailWebviewProvider.getInstance(context);
     await provider.showSourceDetail(actualSourceId);
   } catch (error) {

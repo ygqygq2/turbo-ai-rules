@@ -6,7 +6,7 @@
 import { Logger } from '@ygqygq2/vscode-log';
 import * as vscode from 'vscode';
 
-const logger = new Logger('ExtensionMessenger');
+const logger = Logger.getInstance();
 
 /**
  * 消息基础结构
@@ -114,7 +114,7 @@ export class ExtensionMessenger {
     if (this.handlers.has(type)) {
       logger.warn('Handler already registered, overwriting', { type });
     }
-    this.handlers.set(type, handler);
+    this.handlers.set(type, handler as MessageHandler<unknown, unknown>);
     logger.debug('Handler registered', { type });
   }
 

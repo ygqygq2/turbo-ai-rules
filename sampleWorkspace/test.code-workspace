@@ -26,6 +26,7 @@
     }
   ],
   "settings": {
+    "turbo-ai-rules.sync.onStartup": false,
     "turbo-ai-rules.sources": [
       {
         "id": "ai-rules-7008d805",
@@ -38,5 +39,5 @@
         "lastSync": "2025-11-06T09:11:35.378Z"
       }
     ]
-  },
+  }
 }

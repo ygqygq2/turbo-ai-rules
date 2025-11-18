@@ -37,6 +37,11 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
   }
 
   protected async handleMessage(message: WebviewMessage): Promise<void> {
-    await handleSourceDetailMessage(message, this.currentSourceId, this.context, this);
+    await handleSourceDetailMessage(message, this.currentSourceId, this.context, {
+      postMessage: async (msg: unknown) => {
+        await this.postMessage(msg as WebviewMessage);
+        return true;
+      },
+    });
   }
 }

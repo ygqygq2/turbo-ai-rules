@@ -52,12 +52,28 @@ export async function generateConfigsCommand(): Promise<void> {
         cancellable: false,
       },
       async (progress) => {
-        progress.report({ message: 'Initializing adapters...' });
+        let currentProgress = 0;
+
+        /**
+         * @description 报告进度增量并更新当前进度
+         * @return default {void}
+         * @param increment {number}
+         * @param message {string}
+         */
+        const reportProgress = (increment: number, message?: string) => {
+          currentProgress += increment;
+          progress.report({
+            message,
+            increment,
+          });
+        };
+
+        reportProgress(10, 'Initializing adapters...');
 
         // 初始化适配器
         fileGenerator.initializeAdapters(config.adapters);
 
-        progress.report({ message: 'Generating files...' });
+        reportProgress(30, 'Generating files...');
 
         // 生成配置文件
         const result = await fileGenerator.generateAll(
@@ -66,12 +82,24 @@ export async function generateConfigsCommand(): Promise<void> {
           config.sync.conflictStrategy || 'priority',
         );
 
+        reportProgress(50, 'Finalizing...');
+
         // 显示结果
         await fileGenerator.showGenerationNotification(result);
 
         Logger.info('Config files generated', {
           successCount: result.success.length,
           failureCount: result.failures.length,
+        });
+
+        // 确保进度达到100%
+        const remaining = 100 - currentProgress;
+        if (remaining > 0) {
+          reportProgress(remaining, 'Completed');
+        }
+
+        Logger.debug('Progress tracking completed', {
+          finalProgress: currentProgress + remaining,
         });
       },
     );

@@ -6,6 +6,7 @@ vi.mock('vscode', () => ({
     showInformationMessage: vi.fn(),
     showErrorMessage: vi.fn(),
     showWarningMessage: vi.fn(),
+    setStatusBarMessage: vi.fn(),
     withProgress: vi.fn(async (_options, task) => {
       return task({ report: vi.fn() }, { checkCancellation: vi.fn() });
     }),

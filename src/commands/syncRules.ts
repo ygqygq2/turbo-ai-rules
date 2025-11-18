@@ -11,6 +11,7 @@ import { ConfigManager } from '../services/ConfigManager';
 import { FileGenerator } from '../services/FileGenerator';
 import { GitManager } from '../services/GitManager';
 import { RulesManager } from '../services/RulesManager';
+import { SelectionStateManager } from '../services/SelectionStateManager';
 import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
 import type { RuleSource } from '../types/config';
 import type { ParsedRule } from '../types/rules';
@@ -51,6 +52,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
     const configManager = ConfigManager.getInstance();
     const gitManager = GitManager.getInstance();
     const rulesManager = RulesManager.getInstance();
+    const selectionStateManager = SelectionStateManager.getInstance();
     const parser = new MdcParser();
     const validator = new RulesValidator();
     const fileGenerator = FileGenerator.getInstance();
@@ -111,9 +113,34 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
       async (progress) => {
         let totalRules = 0;
         let successCount = 0;
+        let currentProgress = 0;
+
+        /**
+         * @description 报告进度增量并更新当前进度
+         * @return default {void}
+         * @param increment {number}
+         * @param message {string}
+         */
+        const reportProgress = (increment: number, message?: string) => {
+          currentProgress += increment;
+          progress.report({
+            message,
+            increment,
+          });
+        };
 
         // 4. 初始化适配器
         fileGenerator.initializeAdapters(config.adapters);
+        reportProgress(2, 'Initializing adapters...');
+
+        // 4.5. 清除所有要同步的源的旧规则（避免规则累积）
+        Logger.info('Clearing rules for sources to be synced', {
+          sourceIds: enabledSources.map((s) => s.id),
+        });
+        for (const source of enabledSources) {
+          rulesManager.clearSource(source.id);
+        }
+        reportProgress(3, 'Clearing old rules...');
 
         // 5. 按仓库分组，确保同一仓库的不同分支/目录串行处理
         const sourcesByRepo = groupSourcesByRepository(enabledSources);
@@ -123,6 +150,16 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
           totalSources: enabledSources.length,
           repositories: totalGroups,
         });
+
+        // 进度分配：75% 用于同步源，10% 用于保存索引，10% 用于生成配置
+        const syncProgressTotal = 75;
+        const saveIndexProgress = 10;
+        const generateConfigProgress = 10;
+        // 已使用: 2 + 3 = 5%, 剩余: 95%
+
+        // 计算每个源的进度增量
+        const progressPerSource =
+          enabledSources.length > 0 ? syncProgressTotal / enabledSources.length : 0;
 
         // 6. 为每个仓库组同步规则（同一仓库串行，不同仓库可并行）
         for (let groupIndex = 0; groupIndex < sourcesByRepo.length; groupIndex++) {
@@ -140,47 +177,82 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
             const sourceName = source.name || source.gitUrl;
             const currentIndex = successCount + 1;
 
-            progress.report({
-              message: `Syncing ${sourceName} (${currentIndex}/${enabledSources.length})`,
-              increment: (100 / enabledSources.length) * 0.5,
-            });
+            reportProgress(
+              progressPerSource * 0.3,
+              `Syncing ${sourceName} (${currentIndex}/${enabledSources.length})...`,
+            );
 
             try {
               // 同步单个源
-              const rules = await syncSingleSource(source, gitManager, parser, validator);
+              const allRules = await syncSingleSource(source, gitManager, parser, validator);
 
-              // 添加到规则管理器
-              rulesManager.addRules(source.id, rules);
+              reportProgress(progressPerSource * 0.3);
 
-              totalRules += rules.length;
+              // 初始化选择状态（从磁盘加载）
+              await selectionStateManager.initializeState(source.id, allRules.length);
+
+              // 获取用户选择的规则路径
+              const selectedPaths = selectionStateManager.getSelection(source.id);
+
+              // 根据选择过滤规则
+              let filteredRules: ParsedRule[];
+              if (selectedPaths.length === 0) {
+                // 空数组表示全选（默认行为）
+                filteredRules = allRules;
+                Logger.info('No selection found, using all rules', {
+                  sourceId: source.id,
+                  totalRules: allRules.length,
+                });
+              } else {
+                // 根据选择的路径过滤规则
+                const selectedPathsSet = new Set(selectedPaths);
+                filteredRules = allRules.filter((rule) => selectedPathsSet.has(rule.filePath));
+
+                Logger.info('Filtered rules by selection', {
+                  sourceId: source.id,
+                  totalRules: allRules.length,
+                  selectedRules: filteredRules.length,
+                  selectedPaths: selectedPaths.length,
+                });
+              }
+
+              // 添加到规则管理器（只添加过滤后的规则）
+              rulesManager.addRules(source.id, filteredRules);
+
+              totalRules += filteredRules.length;
               successCount++;
 
               Logger.info(`Source synced successfully`, {
                 sourceId: source.id,
                 branch: source.branch || 'default',
                 subPath: source.subPath || '/',
-                ruleCount: rules.length,
+                totalRulesInSource: allRules.length,
+                selectedRules: filteredRules.length,
               });
+
+              reportProgress(progressPerSource * 0.4);
             } catch (error) {
               Logger.error(
                 `Failed to sync source ${source.id}`,
                 error instanceof Error ? error : undefined,
               );
+              // 即使失败也要增加进度
+              reportProgress(progressPerSource * 0.7);
             }
-
-            progress.report({
-              increment: (100 / enabledSources.length) * 0.5,
-            });
           }
         }
 
-        // 6. 持久化规则索引到磁盘
-        progress.report({
-          message: 'Saving rules index...',
-        });
+        // 确保同步阶段进度达到预期值
+        const syncProgressUsed = currentProgress - 5; // 减去初始化的5%
+        if (syncProgressUsed < syncProgressTotal) {
+          reportProgress(syncProgressTotal - syncProgressUsed);
+        }
 
+        // 6. 持久化规则索引到磁盘
         const workspaceDataManager = WorkspaceDataManager.getInstance();
         const allRules = rulesManager.getAllRules();
+
+        reportProgress(2, 'Saving rules index...');
 
         try {
           await workspaceDataManager.writeRulesIndex(workspaceRoot, allRules);
@@ -193,18 +265,37 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
           // 不阻断流程，继续生成配置文件
         }
 
+        reportProgress(saveIndexProgress - 2);
+
         // 7. 生成配置文件
-        progress.report({
-          message: 'Generating config files...',
-        });
+        reportProgress(2, 'Generating config files...');
 
         const mergedRules = rulesManager.mergeRules(config.sync.conflictStrategy || 'priority');
+
+        Logger.info('Rules merged for generation', {
+          totalRules: mergedRules.length,
+          conflictStrategy: config.sync.conflictStrategy || 'priority',
+        });
 
         const generateResult = await fileGenerator.generateAll(
           mergedRules,
           workspaceRoot,
           config.sync.conflictStrategy || 'priority',
         );
+
+        reportProgress(generateConfigProgress - 2);
+
+        // 确保进度达到100%
+        const remaining = 100 - currentProgress;
+        if (remaining > 0) {
+          reportProgress(remaining, 'Completing...');
+        }
+
+        Logger.debug('Progress tracking completed', {
+          finalProgress: currentProgress + remaining,
+          sources: successCount,
+          totalRules,
+        });
 
         // 8. 显示结果
         Logger.info('Sync complete', {

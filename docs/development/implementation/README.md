@@ -7,6 +7,7 @@
 ### 规则选择与同步
 
 - **[规则选择同步机制](./rule-selection-sync.md)** - 左侧树视图和右侧 Webview 的双向选择同步实现
+- **[基于选择的同步](./rule-selection-based-sync.md)** - 同步命令根据用户选择过滤规则的实现
 - **[规则选择同步流程图](./rule-selection-sync-diagrams.md)** - 选择同步机制的可视化流程图
 - **[左侧树视图复选框功能](./tree-view-checkbox-implementation.md)** - 为主规则树视图添加复选框选择功能
 - **[选择状态同步](./selection-state-sync.md)** - 选择状态管理和事件驱动机制
@@ -65,5 +66,5 @@
 
 ---
 
-**最后更新**：2025-11-14  
+**最后更新**：2025-11-18  
 **维护者**：ygqygq2

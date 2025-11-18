@@ -63,15 +63,33 @@ export async function refreshGitCacheCommand(): Promise<void> {
         let successCount = 0;
         let failCount = 0;
         let updatedCount = 0;
+        let currentProgress = 0;
+
+        /**
+         * @description 报告进度增量并更新当前进度
+         * @return default {void}
+         * @param increment {number}
+         * @param message {string}
+         */
+        const reportProgress = (increment: number, message?: string) => {
+          currentProgress += increment;
+          progress.report({
+            message,
+            increment,
+          });
+        };
+
+        // 计算每个源的进度增量（保留一些空间用于最后的完成步骤）
+        const progressPerSource = enabledSources.length > 0 ? 95 / enabledSources.length : 0;
 
         for (let i = 0; i < enabledSources.length; i++) {
           const source = enabledSources[i];
           const sourceName = source.name || source.id;
 
-          progress.report({
-            message: `Pulling ${sourceName} (${i + 1}/${enabledSources.length})...`,
-            increment: 100 / enabledSources.length,
-          });
+          reportProgress(
+            progressPerSource,
+            `Pulling ${sourceName} (${i + 1}/${enabledSources.length})...`,
+          );
 
           try {
             // 检查仓库是否存在
@@ -115,11 +133,21 @@ export async function refreshGitCacheCommand(): Promise<void> {
           }
         }
 
+        // 确保进度达到100%
+        const remaining = 100 - currentProgress;
+        if (remaining > 0) {
+          reportProgress(remaining, 'Completing...');
+        }
+
         Logger.info('Git cache refresh completed', {
           total: enabledSources.length,
           success: successCount,
           updated: updatedCount,
           failed: failCount,
+        });
+
+        Logger.debug('Progress tracking completed', {
+          finalProgress: currentProgress,
         });
 
         // 显示结果通知

@@ -41,9 +41,10 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
 
     // 订阅状态变更事件，自动向 Webview 发送消息
     this.stateChangeDisposable = this.selectionStateManager.onStateChanged((event) => {
-      if (event.sourceId === this.currentSourceId && this.panel) {
+      // 只有当 Webview 打开、messenger 已初始化且事件涉及当前源时才推送更新
+      if (event.sourceId === this.currentSourceId && this.panel && this.messenger) {
         Logger.debug('Selection state changed, notifying webview', { sourceId: event.sourceId });
-        this.messenger?.notify('selectionChanged', {
+        this.messenger.pushEvent('selectionChanged', {
           sourceId: event.sourceId,
           selectedPaths: event.selectedPaths, // 修复字段名：paths -> selectedPaths
           totalCount: event.totalCount,
@@ -180,7 +181,7 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
       const workspaceFolders = vscode.workspace.workspaceFolders;
       if (!workspaceFolders || workspaceFolders.length === 0) {
         Logger.warn('No workspace folder found when loading initial data');
-        this.messenger?.notify('error', { message: '未找到工作区', code: 'TAI-1001' });
+        this.messenger?.pushEvent('error', { message: '未找到工作区', code: 'TAI-1001' });
         return;
       }
 
@@ -190,6 +191,11 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
       const configManager = ConfigManager.getInstance(this.context);
       const gitManager = GitManager.getInstance();
       const _rulesManager = RulesManager.getInstance();
+
+      Logger.debug('Loading initial data for rule selector', {
+        workspacePath,
+        currentSourceId: this.currentSourceId,
+      });
 
       // 读取所有规则选择数据
       const _selections = await dataManager.readRuleSelections();
@@ -234,21 +240,27 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
       }
 
       // 返回初始数据（供 RPC 请求使用）
-      this.messenger?.notify('initialData', {
-        workspacePath,
-        selections: selectionsData,
-        fileTreeBySource,
-        sourceList,
-        currentSourceId: this.currentSourceId,
-      });
+      if (this.messenger) {
+        this.messenger.pushEvent('initialData', {
+          workspacePath,
+          selections: selectionsData,
+          fileTreeBySource,
+          sourceList,
+          currentSourceId: this.currentSourceId,
+        });
 
-      Logger.info('Initial data sent to rule selector webview', {
-        sourceCount: sources.length,
-        currentSourceId: this.currentSourceId,
-      });
+        Logger.info('Initial data sent to rule selector webview', {
+          sourceCount: sources.length,
+          currentSourceId: this.currentSourceId,
+        });
+      } else {
+        Logger.warn('Messenger not initialized, skipping initialData notification');
+      }
     } catch (error) {
       Logger.error('Failed to load initial data', error as Error);
-      this.messenger?.notify('error', { message: '加载数据失败', code: 'TAI-5002' });
+      if (this.messenger) {
+        this.messenger.pushEvent('error', { message: '加载数据失败', code: 'TAI-5002' });
+      }
     }
   }
 

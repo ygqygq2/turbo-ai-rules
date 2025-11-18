@@ -5,6 +5,7 @@
 
 import * as vscode from 'vscode';
 
+import type { ParsedRule } from '../types/rules';
 import { ConfigManager } from '../services/ConfigManager';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
@@ -40,7 +41,8 @@ export async function editSourceCommand(
     }
 
     // 使用 Webview 编辑表单
-    const context = (global as { extensionContext: vscode.ExtensionContext }).extensionContext;
+    const context = (global as unknown as { extensionContext: vscode.ExtensionContext })
+      .extensionContext;
     const { SourceDetailWebviewProvider } = await import(
       '../providers/SourceDetailWebviewProvider'
     );
@@ -92,17 +94,50 @@ export async function testConnectionCommand(
         cancellable: false,
       },
       async (progress) => {
-        progress.report({ increment: 0, message: 'Connecting...' });
+        let currentProgress = 0;
+
+        /**
+         * @description 报告进度增量并更新当前进度
+         * @return default {void}
+         * @param increment {number}
+         * @param message {string}
+         */
+        const reportProgress = (increment: number, message?: string) => {
+          currentProgress += increment;
+          progress.report({
+            message,
+            increment,
+          });
+        };
+
+        reportProgress(10, 'Connecting...');
 
         try {
           // 调用 GitManager 测试连接
           const { GitManager } = await import('../services/GitManager');
           const gitManager = GitManager.getInstance();
-          await gitManager.testConnection(source);
+          await gitManager.testConnection(source.gitUrl);
 
-          progress.report({ increment: 100, message: 'Connection successful' });
+          reportProgress(80, 'Connection successful');
+
+          // 确保进度达到100%
+          const remaining = 100 - currentProgress;
+          if (remaining > 0) {
+            reportProgress(remaining, 'Completed');
+          }
+
           notify(`✓ Successfully connected to ${source.name || source.gitUrl}`, 'info');
+
+          Logger.debug('Connection test progress completed', {
+            finalProgress: currentProgress,
+          });
         } catch (error) {
+          // 即使失败也要完成进度
+          const remaining = 100 - currentProgress;
+          if (remaining > 0) {
+            reportProgress(remaining);
+          }
+
           const errorMsg = error instanceof Error ? error.message : 'Unknown error';
           notify(`✗ Failed to connect to ${source.name || source.gitUrl}: ${errorMsg}`, 'error');
         }
@@ -210,7 +245,7 @@ export async function exportRuleCommand(rule?: ParsedRule): Promise<void> {
         `title: ${rule.title}`,
         ...(rule.metadata.priority ? [`priority: ${rule.metadata.priority}`] : []),
         ...(rule.metadata.tags && rule.metadata.tags.length > 0
-          ? [`tags: [${rule.metadata.tags.map((t) => `"${t}"`).join(', ')}]`]
+          ? [`tags: [${rule.metadata.tags.map((t: string) => `"${t}"`).join(', ')}]`]
           : []),
         ...(rule.metadata.description ? [`description: ${rule.metadata.description}`] : []),
         '---',

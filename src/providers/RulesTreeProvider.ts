@@ -450,7 +450,8 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
     // 获取规则选择状态
     const items: RuleTreeItem[] = [];
     for (const source of sources) {
-      const rules = this.rulesManager.getRulesBySource(source.id);
+      // 从缓存加载规则（如果内存中没有则从 Git 缓存目录解析）
+      const rules = await this.loadRulesFromCache(source.id);
       const totalCount = rules.length;
 
       // 获取该源的规则选择信息（从 SelectionStateManager 读取）
@@ -458,8 +459,8 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
       try {
         // 先初始化状态（从磁盘加载），如果已初始化则直接返回内存中的数据
         await this.selectionStateManager.initializeState(source.id, totalCount);
-        const selectedPaths = this.selectionStateManager.getSelection(source.id);
-        selectedCount = selectedPaths.length;
+        // 使用 getSelectionCount() 方法，它会正确处理空数组（全选）的情况
+        selectedCount = this.selectionStateManager.getSelectionCount(source.id);
       } catch (error) {
         Logger.warn('Failed to get rule selection', { sourceId: source.id, error });
         // 出错时默认全选

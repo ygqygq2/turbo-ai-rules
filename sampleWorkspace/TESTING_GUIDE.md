@@ -266,13 +266,13 @@ GitHub Actions 会自动运行所有测试（包括 xvfb-run for Linux headless 
    https://github.com/ygqygq2/ai-rules.git
    ```
 4. 分支：`main`
-5. SubPath：`/rules-new`
+5. SubPath：`/`
 6. 名称：`Awesome Cursor Rules`
 7. 认证类型：`None`
 8. 运行：`Turbo AI Rules: Sync Rules`
 9. **验证**：
    - 检查是否生成 `.cursorrules` 文件
-   - 规则应该从 `/rules-new` 目录递归解析
+   - 规则应该从 `/` 目录递归解析
 
 #### 场景 2: HTTPS Token + Copilot 适配器
 
@@ -464,7 +464,7 @@ rm -rf .turbo-ai-rules/
 
 ```
 https://github.com/ygqygq2/ai-rules.git
-SubPath: /rules-new
+SubPath: /
 ```
 
 其他可选：

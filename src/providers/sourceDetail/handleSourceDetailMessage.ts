@@ -9,7 +9,7 @@ interface WebviewMessage {
 }
 
 interface WebviewProvider {
-  postMessage(message: unknown): void;
+  postMessage(message: unknown): Promise<boolean>;
 }
 
 export async function handleSourceDetailMessage(

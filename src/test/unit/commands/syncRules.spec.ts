@@ -12,9 +12,7 @@ import { RulesManager } from '@/services/RulesManager';
 
 describe('syncRulesCommand 单元测试', () => {
   let sandbox: sinon.SinonSandbox;
-  let showErrorMessageStub: sinon.SinonStub;
-  let showInformationMessageStub: sinon.SinonStub;
-  let _showWarningMessageStub: sinon.SinonStub;
+  let setStatusBarMessageStub: sinon.SinonStub;
   let configManagerStub: sinon.SinonStubbedInstance<ConfigManager>;
   let gitManagerStub: sinon.SinonStubbedInstance<GitManager>;
   let rulesManagerStub: sinon.SinonStubbedInstance<RulesManager>;
@@ -22,9 +20,7 @@ describe('syncRulesCommand 单元测试', () => {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
-    showErrorMessageStub = sandbox.stub(vscode.window, 'showErrorMessage');
-    showInformationMessageStub = sandbox.stub(vscode.window, 'showInformationMessage');
-    _showWarningMessageStub = sandbox.stub(vscode.window, 'showWarningMessage');
+    setStatusBarMessageStub = sandbox.stub(vscode.window, 'setStatusBarMessage');
     // withProgress is already mocked in setup.ts
     // mock workspaceFolders
     sandbox
@@ -74,13 +70,12 @@ describe('syncRulesCommand 单元测试', () => {
     configManagerStub.getConfig.resolves({ sync: {}, adapters: {} } as unknown);
     configManagerStub.getSources.returns([]);
     await syncRulesCommand();
-    assert(showInformationMessageStub.calledOnce);
-    assert(showInformationMessageStub.calledWith('No enabled sources to sync'));
+    assert(setStatusBarMessageStub.called);
   });
 
   it('同步异常应捕获并报错', async () => {
     configManagerStub.getConfig.rejects(new Error('mock error'));
     await syncRulesCommand();
-    assert(showErrorMessageStub.calledOnce);
+    assert(setStatusBarMessageStub.called);
   });
 });

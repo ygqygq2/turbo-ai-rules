@@ -200,9 +200,9 @@ export class RuleTreeBuilder {
           let ruleCount = 0;
           if (countRules) {
             try {
-              const content = await fs.readFile(absolutePath, 'utf-8');
-              const parsed = await this.mdcParser.parse(content, absolutePath);
-              ruleCount = parsed ? 1 : 0; // 简化：每个有效文件算 1 条规则
+              await fs.readFile(absolutePath, 'utf-8');
+              // 简化：每个文件算 1 条规则，无需解析内容
+              ruleCount = 1;
               totalRules += ruleCount;
             } catch {
               // 解析失败，跳过

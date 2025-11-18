@@ -39,7 +39,12 @@ describe('RuleSelectorWebviewProvider', () => {
       uri: { fsPath: '/fake/workspace' },
     };
 
-    vi.mocked(vscode.workspace).workspaceFolders = [mockWorkspaceFolder] as unknown;
+    // 使用 defineProperty 替代直接赋值
+    Object.defineProperty(vscode.workspace, 'workspaceFolders', {
+      value: [mockWorkspaceFolder],
+      writable: true,
+      configurable: true,
+    });
 
     // 测试保存逻辑
 
@@ -69,7 +74,11 @@ describe('RuleSelectorWebviewProvider', () => {
       uri: { fsPath: '/fake/workspace' },
     };
 
-    vi.mocked(vscode.workspace).workspaceFolders = [mockWorkspaceFolder] as unknown;
+    Object.defineProperty(vscode.workspace, 'workspaceFolders', {
+      value: [mockWorkspaceFolder],
+      writable: true,
+      configurable: true,
+    });
 
     expect(mockDataManager.readRuleSelections).toBeDefined();
   });

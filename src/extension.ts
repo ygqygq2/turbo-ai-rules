@@ -54,7 +54,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     Logger.info(`Activating ${EXTENSION_NAME}`);
 
     // 保存 context 到全局变量供命令使用
-    (global as { extensionContext: vscode.ExtensionContext }).extensionContext = context;
+    // 将 context 保存到 global，供命令使用
+    (global as unknown as { extensionContext: vscode.ExtensionContext }).extensionContext = context;
 
     // 1. 初始化服务
     const configManager = ConfigManager.getInstance(context);
