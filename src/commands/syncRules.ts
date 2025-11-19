@@ -67,7 +67,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
     const allWorkspaceFolders = vscode.workspace.workspaceFolders;
 
     if (!allWorkspaceFolders || allWorkspaceFolders.length === 0) {
-      notify('No workspace folder opened', 'error');
+      notify(vscode.l10n.t('No workspace folder opened'), 'error');
       return;
     }
 
@@ -104,7 +104,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
     });
 
     if (enabledSources.length === 0) {
-      notify('No enabled sources to sync', 'info');
+      notify(vscode.l10n.t('No enabled sources to sync'), 'info');
       statusBarProvider.setSyncStatus('idle');
       return;
     }
@@ -119,7 +119,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
-        title: 'Syncing AI Rules',
+        title: vscode.l10n.t('Syncing rules from {0} source(s)...', enabledSources.length),
         cancellable: false,
       },
       async (progress) => {
@@ -182,7 +182,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
 
             reportProgress(
               progressPerSource * 0.3,
-              `Syncing ${sourceName} (${currentIndex}/${enabledSources.length})...`,
+              vscode.l10n.t('Syncing', `${sourceName} (${currentIndex}/${enabledSources.length})`),
             );
 
             try {
@@ -362,11 +362,15 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
         // 显示通知
         if (successCount === enabledSources.length && generateResult.failures.length === 0) {
           notify(
-            `Synced ${totalRules} rules from ${successCount} source(s), generated ${generateResult.success.length} config file(s)`,
+            vscode.l10n.t(
+              'Successfully synced {0} rule(s) from {1} source(s)',
+              totalRules,
+              successCount,
+            ),
             'info',
           );
         } else {
-          const message = `Synced ${successCount}/${enabledSources.length} source(s), ${totalRules} rules, generated ${generateResult.success.length} config file(s)`;
+          const message = vscode.l10n.t('Sync completed with errors');
           notify(message, 'warning');
           await fileGenerator.showGenerationNotification(generateResult);
         }
@@ -379,7 +383,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
     statusBarProvider.setSyncStatus('error');
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    notify(`Failed to sync rules: ${errorMessage}`, 'error');
+    notify(vscode.l10n.t('Failed to sync rules', errorMessage), 'error');
   }
 }
 

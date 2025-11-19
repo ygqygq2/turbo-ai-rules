@@ -32,7 +32,7 @@ export async function viewSourceDetailCommand(
       const sources = configManager.getSources();
 
       if (sources.length === 0) {
-        notify('No sources configured.', 'info');
+        notify(vscode.l10n.t('No sources configured'), 'info');
         return;
       }
 
@@ -65,6 +65,6 @@ export async function viewSourceDetailCommand(
     Logger.error('Failed to view source detail', error instanceof Error ? error : undefined);
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    notify(`Failed to view source detail: ${errorMessage}`, 'error');
+    notify(vscode.l10n.t('Failed to manage source', errorMessage), 'error');
   }
 }

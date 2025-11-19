@@ -4,6 +4,7 @@ import { TreeNode } from './TreeNode';
 import { useRuleSelectorStore } from './store';
 import { getDirectoryFilePaths } from './tree-utils';
 import type { TreeNode as TreeNodeType } from './tree-utils';
+import { t } from '../utils/i18n';
 import '../global.css';
 import './rule-selector.css';
 
@@ -113,7 +114,7 @@ export const App: React.FC = () => {
 
     const offError = rpc.on('error', (payload: { message?: string }) => {
       setSaving(false);
-      alert(payload?.message || '操作失败');
+      alert(payload?.message || t('ruleSelector.operationFailed'));
     });
 
     return () => {
@@ -139,7 +140,7 @@ export const App: React.FC = () => {
       console.log('已确认并持久化:', res.message);
     } catch (error) {
       setSaving(false);
-      alert((error as Error).message || '保存失败');
+      alert((error as Error).message || t('ruleSelector.saveFailed'));
     }
   };
 
@@ -190,14 +191,14 @@ export const App: React.FC = () => {
       {/* Header */}
       <header className="rule-selector-header">
         <span className="title">
-          <Icon icon="list-tree" size={20} /> 选择同步规则
+          <Icon icon="list-tree" size={20} /> {t('ruleSelector.title')}
         </span>
         <button
           className="button button-secondary"
           style={{ marginLeft: 'auto' }}
           onClick={handleClose}
         >
-          关闭
+          {t('ruleSelector.cancel')}
         </button>
       </header>
       {/* Toolbar */}
@@ -218,42 +219,42 @@ export const App: React.FC = () => {
         )}
         <input
           className="input"
-          placeholder="搜索目录/文件/标签..."
+          placeholder={t('ruleSelector.filterByTag')}
           style={{ width: 220 }}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
         <button className="button button-secondary" onClick={selectAll}>
-          <Icon icon="check-all" /> 全选
+          <Icon icon="check-all" /> {t('ruleSelector.selectAll')}
         </button>
         <button className="button button-secondary" onClick={clearAll}>
-          <Icon icon="circle-slash" /> 清除
+          <Icon icon="circle-slash" /> {t('ruleSelector.deselectAll')}
         </button>
         <button className="button button-secondary" onClick={reset} disabled={!hasChanges}>
-          <Icon icon="refresh" /> 重置
+          <Icon icon="refresh" /> {t('form.cancel')}
         </button>
       </div>
       {/* Statistics */}
       <div className="rule-selector-stats">
         <span>
-          总规则数: <b>{totalRules}</b>
+          {t('statistics.totalRules')}: <b>{totalRules}</b>
         </span>
+        <span>{t('ruleSelector.selected', selectedCount)}</span>
         <span>
-          已选: <b>{selectedCount}</b>
-        </span>
-        <span>
-          排除: <b>{excludedCount}</b>
+          {t('search.deselectAll')}: <b>{excludedCount}</b>
         </span>
       </div>
       {/* Tree */}
       <div className="rule-selector-tree">
         {treeNodes.length === 0 ? (
           <div className="tree-placeholder">
-            <p>暂无规则数据</p>
+            <p>{t('ruleSelector.noSourcesDescription')}</p>
             <p style={{ fontSize: '12px', color: 'var(--vscode-descriptionForeground)' }}>
               {currentSourceId
-                ? `当前源: ${currentSourceId} - 请先同步规则`
-                : '请先添加规则源并同步'}
+                ? `${t('common.status')}: ${currentSourceId} - ${t(
+                    'No rules available. Please sync rules first.',
+                  )}`
+                : t('ruleSelector.noSourcesDescription')}
             </p>
           </div>
         ) : (
@@ -263,15 +264,15 @@ export const App: React.FC = () => {
       {/* Footer */}
       <footer className="rule-selector-footer">
         <button className="button button-secondary" onClick={handleClose}>
-          取消
+          {t('form.cancel')}
         </button>
         <button
           className="button button-primary"
           onClick={handleSave}
           disabled={!hasChanges || saving}
-          title="确认当前选择并持久化（已实时同步到左侧树视图）"
+          title={t('ruleSelector.saveSelection')}
         >
-          {saving ? '确认中...' : '确认'}
+          {saving ? t('form.submitting') : t('ruleSelector.saveSelection')}
         </button>
       </footer>
     </div>

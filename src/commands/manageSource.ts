@@ -22,8 +22,8 @@ export async function manageSourceCommand(): Promise<void> {
 
     if (sources.length === 0) {
       const action = await vscode.window.showInformationMessage(
-        'No sources configured. Would you like to add one?',
-        'Add Source',
+        vscode.l10n.t('No sources configured'),
+        vscode.l10n.t('Add Source'),
       );
 
       if (action === 'Add Source') {
@@ -41,7 +41,7 @@ export async function manageSourceCommand(): Promise<void> {
     }));
 
     const selected = await vscode.window.showQuickPick(items, {
-      placeHolder: 'Select a source to manage',
+      placeHolder: vscode.l10n.t('Select action'),
     });
 
     if (!selected) {
@@ -54,7 +54,7 @@ export async function manageSourceCommand(): Promise<void> {
     Logger.error('Failed to manage source', error instanceof Error ? error : undefined);
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    vscode.window.showErrorMessage(`Failed to manage source: ${errorMessage}`);
+    vscode.window.showErrorMessage(vscode.l10n.t('Failed to manage source', errorMessage));
   }
 }
 
@@ -107,7 +107,9 @@ async function showSourceActions(source: RuleSource): Promise<void> {
         enabled: !source.enabled,
       });
       vscode.window.showInformationMessage(
-        `Source ${source.enabled ? 'disabled' : 'enabled'}: ${source.name || source.gitUrl}`,
+        source.enabled
+          ? vscode.l10n.t('Source disabled', source.name || source.gitUrl)
+          : vscode.l10n.t('Source enabled', source.name || source.gitUrl),
       );
       break;
 
@@ -146,7 +148,7 @@ async function editSource(source: RuleSource): Promise<void> {
   ];
 
   const selected = await vscode.window.showQuickPick(editOptions, {
-    placeHolder: 'Select property to edit',
+    placeHolder: vscode.l10n.t('Select field to edit'),
   });
 
   if (!selected) {
@@ -158,21 +160,21 @@ async function editSource(source: RuleSource): Promise<void> {
   switch (selected.property) {
     case 'branch':
       newValue = await vscode.window.showInputBox({
-        prompt: 'Enter new branch name',
+        prompt: vscode.l10n.t('Enter new branch'),
         value: source.branch,
       });
       break;
 
     case 'subPath':
       newValue = await vscode.window.showInputBox({
-        prompt: 'Enter new sub path (leave empty to clear)',
+        prompt: vscode.l10n.t('Enter new subpath'),
         value: source.subPath || '',
       });
       break;
 
     case 'name':
       newValue = await vscode.window.showInputBox({
-        prompt: 'Enter new display name (leave empty to clear)',
+        prompt: vscode.l10n.t('Enter new display name'),
         value: source.name || '',
       });
       break;
@@ -183,6 +185,8 @@ async function editSource(source: RuleSource): Promise<void> {
       [selected.property]: newValue || undefined,
     });
 
-    vscode.window.showInformationMessage(`Source updated: ${source.name || source.gitUrl}`);
+    vscode.window.showInformationMessage(
+      vscode.l10n.t('Source updated', source.name || source.gitUrl),
+    );
   }
 }

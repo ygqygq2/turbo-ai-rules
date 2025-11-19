@@ -28,7 +28,7 @@ export async function editSourceCommand(
           : undefined;
 
     if (!actualSourceId) {
-      notify('No source selected for editing', 'error');
+      notify(vscode.l10n.t('Source not found'), 'error');
       return;
     }
 
@@ -36,7 +36,7 @@ export async function editSourceCommand(
     const source = sources.find((s) => s.id === actualSourceId);
 
     if (!source) {
-      notify('Source not found', 'error');
+      notify(vscode.l10n.t('Source not found'), 'error');
       return;
     }
 
@@ -51,7 +51,10 @@ export async function editSourceCommand(
   } catch (error) {
     Logger.error('Failed to edit source', error instanceof Error ? error : undefined);
     notify(
-      `Failed to edit source: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      vscode.l10n.t(
+        'Failed to manage source',
+        error instanceof Error ? error.message : 'Unknown error',
+      ),
       'error',
     );
   }
@@ -73,7 +76,7 @@ export async function testConnectionCommand(
           : undefined;
 
     if (!actualSourceId) {
-      notify('No source selected for testing', 'error');
+      notify(vscode.l10n.t('Source not found'), 'error');
       return;
     }
 
@@ -146,7 +149,10 @@ export async function testConnectionCommand(
   } catch (error) {
     Logger.error('Failed to test connection', error instanceof Error ? error : undefined);
     notify(
-      `Failed to test connection: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      vscode.l10n.t(
+        'Failed to manage source',
+        error instanceof Error ? error.message : 'Unknown error',
+      ),
       'error',
     );
   }
@@ -168,7 +174,7 @@ export async function toggleSourceCommand(
           : undefined;
 
     if (!actualSourceId) {
-      notify('No source selected', 'error');
+      notify(vscode.l10n.t('Source not found'), 'error');
       return;
     }
 
@@ -177,22 +183,27 @@ export async function toggleSourceCommand(
     const source = sources.find((s) => s.id === actualSourceId);
 
     if (!source) {
-      notify('Source not found', 'error');
+      notify(vscode.l10n.t('Source not found'), 'error');
       return;
     }
 
     const newStatus = !source.enabled;
     await configManager.updateSource(actualSourceId, { ...source, enabled: newStatus });
 
-    const action = newStatus ? 'enabled' : 'disabled';
-    notify(`Source "${source.name || source.gitUrl}" ${action}`, 'info');
+    const message = newStatus
+      ? vscode.l10n.t('Source enabled', source.name || source.gitUrl)
+      : vscode.l10n.t('Source disabled', source.name || source.gitUrl);
+    notify(message, 'info');
 
     // 刷新树视图
     vscode.commands.executeCommand('turbo-ai-rules.refresh');
   } catch (error) {
     Logger.error('Failed to toggle source', error instanceof Error ? error : undefined);
     notify(
-      `Failed to toggle source: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      vscode.l10n.t(
+        'Failed to manage source',
+        error instanceof Error ? error.message : 'Unknown error',
+      ),
       'error',
     );
   }

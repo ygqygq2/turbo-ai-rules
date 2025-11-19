@@ -19,6 +19,6 @@ export async function addSourceCommand(): Promise<void> {
   } catch (error: unknown) {
     Logger.error('Failed to add rule source', error instanceof Error ? error : undefined);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    notify(`Failed to open add source page: ${errorMessage}`, 'error');
+    notify(vscode.l10n.t('Failed to add source', errorMessage), 'error');
   }
 }

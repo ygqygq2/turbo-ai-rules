@@ -5,6 +5,7 @@ import { Toolbar } from '../components/Toolbar';
 import { Badge } from '../components/Badge';
 import { PriorityIcon } from '../components/PriorityIcon';
 import { vscodeApi } from '../utils/vscode-api';
+import { t } from '../utils/i18n';
 import '../global.css';
 import './statistics.css';
 
@@ -39,23 +40,31 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  if (loading) return <EmptyState icon={<span>⏳</span>}>Loading statistics...</EmptyState>;
+  if (loading) return <EmptyState icon={<span>⏳</span>}>{t('statistics.loading')}</EmptyState>;
   if (error) return <EmptyState icon={<span>❌</span>}>{error}</EmptyState>;
-  if (!stats) return <EmptyState icon={<span>📭</span>}>No statistics data</EmptyState>;
+  if (!stats) return <EmptyState icon={<span>📭</span>}>{t('statistics.noData')}</EmptyState>;
 
   return (
     <div className="container">
-      <h1>📊 Statistics Dashboard</h1>
+      <h1>{t('statistics.title')}</h1>
       <Card>
         <Toolbar>
-          <Badge>Total Rules: {stats.totalRules}</Badge>
-          <Badge>Active Sources: {stats.activeSources}</Badge>
-          <Badge>Conflicts: {stats.conflicts}</Badge>
-          <Badge>Cache Size: {stats.cacheSize}</Badge>
+          <Badge>
+            {t('statistics.totalRules')}: {stats.totalRules}
+          </Badge>
+          <Badge>
+            {t('statistics.activeSources')}: {stats.activeSources}
+          </Badge>
+          <Badge>
+            {t('statistics.conflicts')}: {stats.conflicts}
+          </Badge>
+          <Badge>
+            {t('statistics.cacheSize')}: {stats.cacheSize}
+          </Badge>
         </Toolbar>
       </Card>
       <Card>
-        <div className="section-title">Top Tags</div>
+        <div className="section-title">{t('statistics.topTags')}</div>
         <Toolbar>
           {stats.topTags.map((tag) => (
             <Badge key={tag.tag}>
@@ -65,16 +74,16 @@ export const App: React.FC = () => {
         </Toolbar>
       </Card>
       <Card>
-        <div className="section-title">Rules by Priority</div>
+        <div className="section-title">{t('statistics.priorityDistribution')}</div>
         <Toolbar>
           <Badge>
-            <PriorityIcon priority="high" /> High: {stats.priority.high}
+            <PriorityIcon priority="high" /> {t('common.high')}: {stats.priority.high}
           </Badge>
           <Badge>
-            <PriorityIcon priority="medium" /> Medium: {stats.priority.medium}
+            <PriorityIcon priority="medium" /> {t('common.medium')}: {stats.priority.medium}
           </Badge>
           <Badge>
-            <PriorityIcon priority="low" /> Low: {stats.priority.low}
+            <PriorityIcon priority="low" /> {t('common.low')}: {stats.priority.low}
           </Badge>
         </Toolbar>
       </Card>

@@ -80,7 +80,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
   public async showStatistics(): Promise<void> {
     await this.show({
       viewType: 'turboAiRules.statistics',
-      title: 'Turbo AI Rules Statistics',
+      title: vscode.l10n.t('statistics.title'),
       viewColumn: vscode.ViewColumn.Active,
       iconPath: EXTENSION_ICON_PATH,
     });
@@ -96,17 +96,17 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
     const nonce = this.getNonce();
     const data = this.getStatisticsData();
 
-    return `${this.getHtmlHead(webview, 'AI Rules Statistics')}
+    return `${this.getHtmlHead(webview, vscode.l10n.t('statistics.title'))}
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 AI Rules Statistics</h1>
+            <h1>${vscode.l10n.t('statistics.title')}</h1>
             <div class="toolbar">
                 <button class="button" onclick="refreshData()">
-                    🔄 Refresh
+                    🔄 ${vscode.l10n.t('statistics.refresh')}
                 </button>
                 <button class="button button-secondary" onclick="exportData()">
-                    📥 Export
+                    📥 ${vscode.l10n.t('statistics.export')}
                 </button>
             </div>
         </div>
@@ -117,7 +117,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
                 <div class="stat-icon">📝</div>
                 <div class="stat-content">
                     <div class="stat-value" id="totalRules">${data.overview.totalRules}</div>
-                    <div class="stat-label">Total Rules</div>
+                    <div class="stat-label">${vscode.l10n.t('statistics.totalRules')}</div>
                 </div>
             </div>
 
@@ -125,7 +125,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
                 <div class="stat-icon">📦</div>
                 <div class="stat-content">
                     <div class="stat-value" id="totalSources">${data.overview.totalSources}</div>
-                    <div class="stat-label">Total Sources</div>
+                    <div class="stat-label">${vscode.l10n.t('statistics.totalSources')}</div>
                 </div>
             </div>
 
@@ -135,7 +135,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
                     <div class="stat-value" id="enabledSources">${
                       data.overview.enabledSources
                     }</div>
-                    <div class="stat-label">Enabled Sources</div>
+                    <div class="stat-label">${vscode.l10n.t('statistics.enabledSources')}</div>
                 </div>
             </div>
 
@@ -143,14 +143,14 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
                 <div class="stat-icon">⚠️</div>
                 <div class="stat-content">
                     <div class="stat-value" id="conflicts">${data.overview.conflicts}</div>
-                    <div class="stat-label">Conflicts</div>
+                    <div class="stat-label">${vscode.l10n.t('statistics.conflicts')}</div>
                 </div>
             </div>
         </div>
 
         <!-- 优先级分布 -->
         <div class="section">
-            <h2>Priority Distribution</h2>
+            <h2>${vscode.l10n.t('statistics.priorityDistribution')}</h2>
             <div class="chart-container">
                 <div class="bar-chart">
                     ${this.renderPriorityChart(data.priorityDistribution)}
@@ -160,15 +160,15 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
 
         <!-- 源统计 -->
         <div class="section">
-            <h2>Sources Overview</h2>
+            <h2>${vscode.l10n.t('statistics.sourcesOverview')}</h2>
             <div class="table-container">
                 <table class="stats-table">
                     <thead>
                         <tr>
-                            <th>Source Name</th>
-                            <th>Rules</th>
-                            <th>Status</th>
-                            <th>Last Sync</th>
+                            <th>${vscode.l10n.t('statistics.sourceName')}</th>
+                            <th>${vscode.l10n.t('common.rules')}</th>
+                            <th>${vscode.l10n.t('common.status')}</th>
+                            <th>${vscode.l10n.t('statistics.lastSync')}</th>
                         </tr>
                     </thead>
                     <tbody id="sourceStats">
@@ -180,7 +180,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
 
         <!-- 热门标签 -->
         <div class="section">
-            <h2>Top Tags</h2>
+            <h2>${vscode.l10n.t('statistics.topTags')}</h2>
             <div class="tags-container">
                 ${this.renderTopTags(data.topTags)}
             </div>
@@ -425,7 +425,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
    */
   private renderPriorityChart(distribution: StatisticsData['priorityDistribution']): string {
     const total = distribution.high + distribution.medium + distribution.low;
-    if (total === 0) return '<p class="empty-state">No rules data available</p>';
+    if (total === 0) return `<p class="empty-state">${vscode.l10n.t('statistics.noRulesData')}</p>`;
 
     const highPercent = (distribution.high / total) * 100;
     const mediumPercent = (distribution.medium / total) * 100;
@@ -433,7 +433,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
 
     return `
       <div class="bar-item">
-        <div class="bar-label">🔥 High</div>
+        <div class="bar-label">🔥 ${vscode.l10n.t('common.high')}</div>
         <div class="bar-wrapper">
           <div class="bar-fill priority-high" style="width: ${highPercent}%">
             ${distribution.high}
@@ -441,7 +441,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
         </div>
       </div>
       <div class="bar-item">
-        <div class="bar-label">⚠️ Medium</div>
+        <div class="bar-label">⚠️ ${vscode.l10n.t('common.medium')}</div>
         <div class="bar-wrapper">
           <div class="bar-fill priority-medium" style="width: ${mediumPercent}%">
             ${distribution.medium}
@@ -449,7 +449,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
         </div>
       </div>
       <div class="bar-item">
-        <div class="bar-label">ℹ️ Low</div>
+        <div class="bar-label">ℹ️ ${vscode.l10n.t('common.low')}</div>
         <div class="bar-wrapper">
           <div class="bar-fill priority-low" style="width: ${lowPercent}%">
             ${distribution.low}
@@ -464,7 +464,9 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
    */
   private renderSourceStats(stats: StatisticsData['sourceStats']): string {
     if (stats.length === 0) {
-      return '<tr><td colspan="4" style="text-align: center;">No sources configured</td></tr>';
+      return `<tr><td colspan="4" style="text-align: center;">${vscode.l10n.t(
+        'No sources configured',
+      )}</td></tr>`;
     }
 
     return stats
@@ -475,10 +477,10 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
         <td>${source.ruleCount}</td>
         <td>
           <span class="status-badge ${source.enabled ? 'status-enabled' : 'status-disabled'}">
-            ${source.enabled ? 'Enabled' : 'Disabled'}
+            ${source.enabled ? vscode.l10n.t('Enabled') : vscode.l10n.t('Disabled')}
           </span>
         </td>
-        <td>${source.lastSync || 'Never'}</td>
+        <td>${source.lastSync || vscode.l10n.t('Never')}</td>
       </tr>
     `,
       )
@@ -490,7 +492,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
    */
   private renderTopTags(tags: StatisticsData['topTags']): string {
     if (tags.length === 0) {
-      return '<p class="empty-state">No tags found</p>';
+      return `<p class="empty-state">${vscode.l10n.t('statistics.noTagsFound')}</p>`;
     }
 
     return tags
@@ -626,7 +628,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
       });
     }
 
-    vscode.window.showInformationMessage('Statistics refreshed');
+    vscode.window.showInformationMessage(vscode.l10n.t('statistics.refreshed'));
   }
 
   /**
@@ -645,7 +647,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
 
     if (uri) {
       await vscode.workspace.fs.writeFile(uri, Buffer.from(json, 'utf8'));
-      vscode.window.showInformationMessage(`Statistics exported to ${uri.fsPath}`);
+      vscode.window.showInformationMessage(vscode.l10n.t('statistics.exported', uri.fsPath));
     }
   }
 

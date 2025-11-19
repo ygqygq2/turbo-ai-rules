@@ -24,7 +24,7 @@ export async function removeSourceCommand(sourceId?: string): Promise<void> {
     const sources = await configManager.getSources();
 
     if (sources.length === 0) {
-      notify('No sources configured', 'info');
+      notify(vscode.l10n.t('No sources configured'), 'info');
       return;
     }
 
@@ -40,7 +40,7 @@ export async function removeSourceCommand(sourceId?: string): Promise<void> {
       }));
 
       const selected = await vscode.window.showQuickPick(items, {
-        placeHolder: 'Select a source to remove',
+        placeHolder: vscode.l10n.t('Select a source'),
       });
 
       if (!selected) {
@@ -54,15 +54,15 @@ export async function removeSourceCommand(sourceId?: string): Promise<void> {
     // 3. 确认删除
     const source = sources.find((s) => s.id === selectedSourceId);
     if (!source) {
-      notify('Source not found', 'error');
+      notify(vscode.l10n.t('Source not found'), 'error');
       return;
     }
 
     const confirmed = await notify(
-      `Are you sure you want to remove "${source.name || source.gitUrl}"?`,
+      vscode.l10n.t('Are you sure you want to remove this source?'),
       'warning',
       undefined,
-      'Remove',
+      vscode.l10n.t('Remove'),
       true,
     );
 
@@ -84,12 +84,10 @@ export async function removeSourceCommand(sourceId?: string): Promise<void> {
 
     // 7. 显示成功消息并询问是否重新生成配置
     const shouldRegenerate = await notify(
-      `Source "${
-        source.name || source.gitUrl
-      }" removed successfully. Would you like to regenerate config files?`,
+      vscode.l10n.t('Source removed successfully'),
       'info',
       undefined,
-      'Regenerate',
+      vscode.l10n.t('Regenerate config files?'),
     );
 
     if (shouldRegenerate) {
@@ -99,6 +97,6 @@ export async function removeSourceCommand(sourceId?: string): Promise<void> {
     Logger.error('Failed to remove source', error instanceof Error ? error : undefined);
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    notify(`Failed to remove source: ${errorMessage}`, 'error');
+    notify(vscode.l10n.t('Failed to remove source', errorMessage), 'error');
   }
 }

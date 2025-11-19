@@ -59,16 +59,16 @@ export async function debugRulesCommand(): Promise<void> {
       output.appendLine(`Conflict: ${conflict.ruleId}`);
       output.appendLine(`Type: ${conflict.type}`);
       output.appendLine(`Duplicates: ${conflict.conflictingRules.length}`);
-      output.appendLine(
-        `Recommended: ${conflict.recommended.title} (${conflict.recommended.sourceId})`,
-      );
+      if (conflict.recommended) {
+        output.appendLine(
+          `Recommended: ${conflict.recommended.title} (${conflict.recommended.sourceId})`,
+        );
+      }
       output.appendLine('');
     }
   }
 
   output.show();
 
-  await vscode.window.showInformationMessage(
-    `Debug info: ${allRules.length} rules, ${conflicts.length} conflicts. Check output panel.`,
-  );
+  await vscode.window.showInformationMessage(vscode.l10n.t('Rule Debug Information'));
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { t } from '../utils/i18n';
 import { vscodeApi } from '../utils/vscode-api';
 import '../global.css';
 import './welcome.css';
@@ -92,10 +93,8 @@ export const App: React.FC = () => {
   return (
     <div className="welcome-container">
       <header className="header">
-        <h1>🚀 Welcome to Turbo AI Rules</h1>
-        <p className="subtitle">
-          Sync AI coding rules from Git repositories and automatically generate tool configs
-        </p>
+        <h1>{t('welcome.title')}</h1>
+        <p className="subtitle">{t('welcome.subtitle')}</p>
       </header>
 
       <main className="main-content">
@@ -103,23 +102,21 @@ export const App: React.FC = () => {
         <Card className="step-card">
           <div className="step-header">
             <div className="step-number">1</div>
-            <h2>Add a Rule Source</h2>
+            <h2>{t('welcome.step1.title')}</h2>
             <div className="step-actions">
               <Button type="primary" icon="add" onClick={handleAddSource}>
-                Add Source
+                {t('welcome.step1.button')}
               </Button>
             </div>
           </div>
-          <div className="step-description">
-            Configure your first Git repository to sync rules from
-          </div>
+          <div className="step-description">{t('welcome.step1.description')}</div>
         </Card>
 
         {/* Step 2: Select Rules */}
         <Card className="step-card">
           <div className="step-header">
             <div className="step-number">2</div>
-            <h2>Select Rules</h2>
+            <h2>{t('welcome.step2.title')}</h2>
             <div className="step-actions">
               <Button
                 type="primary"
@@ -127,13 +124,13 @@ export const App: React.FC = () => {
                 onClick={handleSelectRules}
                 disabled={!hasSource}
               >
-                Select Rules
+                {t('welcome.step2.button')}
               </Button>
             </div>
           </div>
           <div className="step-description">
-            Choose which rules to sync (default: all, filter by tags/priority)
-            {!hasSource && <div className="step-hint">Add a source first</div>}
+            {t('welcome.step2.description')}
+            {!hasSource && <div className="step-hint">{t('welcome.step2.hint')}</div>}
           </div>
         </Card>
 
@@ -141,23 +138,21 @@ export const App: React.FC = () => {
         <Card className="step-card">
           <div className="step-header">
             <div className="step-number">3</div>
-            <h2>Sync &amp; Generate</h2>
+            <h2>{t('welcome.step3.title')}</h2>
             <div className="step-actions">
               <Button type="primary" icon="sync" onClick={handleSyncAndGenerate}>
-                Sync Now
+                {t('welcome.step3.button')}
               </Button>
             </div>
           </div>
-          <div className="step-description">
-            Fetch → Parse → Merge → Generate AI tool configuration files
-          </div>
+          <div className="step-description">{t('welcome.step3.description')}</div>
         </Card>
 
         {/* Templates Section */}
         <Card className="templates-card">
           <div className="step-info">
-            <h2>📚 Quick Start Templates</h2>
-            <p>One-click add popular rule repositories</p>
+            <h2>{t('welcome.templates.title')}</h2>
+            <p>{t('welcome.templates.description')}</p>
           </div>
           <div className="template-grid">
             {templates.map((template) => (
@@ -185,11 +180,11 @@ export const App: React.FC = () => {
         <div className="footer-links">
           <button className="link-button" onClick={handleViewDocs}>
             <i className="codicon codicon-book"></i>
-            <span>Documentation</span>
+            <span>{t('welcome.footer.documentation')}</span>
           </button>
           <button className="link-button" onClick={handleGetHelp}>
             <i className="codicon codicon-comment-discussion"></i>
-            <span>Get Help</span>
+            <span>{t('welcome.footer.getHelp')}</span>
           </button>
         </div>
         <div className="checkbox-container">
@@ -199,7 +194,7 @@ export const App: React.FC = () => {
             checked={dontShowAgain}
             onChange={(e) => handleDismissChange(e.target.checked)}
           />
-          <label htmlFor="dont-show-again">Don't show this again</label>
+          <label htmlFor="dont-show-again">{t('welcome.footer.dontShowAgain')}</label>
         </div>
       </footer>
     </div>

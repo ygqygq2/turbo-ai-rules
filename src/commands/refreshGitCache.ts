@@ -25,7 +25,7 @@ export async function refreshGitCacheCommand(): Promise<void> {
     const allWorkspaceFolders = vscode.workspace.workspaceFolders;
 
     if (!allWorkspaceFolders || allWorkspaceFolders.length === 0) {
-      notify('No workspace folder opened', 'error');
+      notify(vscode.l10n.t('No workspace folder opened'), 'error');
       return;
     }
 
@@ -45,7 +45,7 @@ export async function refreshGitCacheCommand(): Promise<void> {
     const enabledSources = sources.filter((s) => s.enabled);
 
     if (enabledSources.length === 0) {
-      notify('No enabled sources to refresh.', 'info');
+      notify(vscode.l10n.t('No enabled sources to sync'), 'info');
       Logger.info('No enabled sources found');
       return;
     }
@@ -153,20 +153,12 @@ export async function refreshGitCacheCommand(): Promise<void> {
         // 显示结果通知
         if (failCount === 0) {
           if (updatedCount > 0) {
-            notify(
-              `Git cache refreshed: ${updatedCount} updated, ${
-                successCount - updatedCount
-              } up-to-date.`,
-              'info',
-            );
+            notify(vscode.l10n.t('Git cache cleared successfully'), 'info');
           } else {
-            notify(`Git cache refreshed: All ${successCount} source(s) up-to-date.`, 'info');
+            notify(vscode.l10n.t('No Git cache to clear'), 'info');
           }
         } else {
-          notify(
-            `Git cache refresh completed with errors. Success: ${successCount}, Failed: ${failCount}.`,
-            'warning',
-          );
+          notify(vscode.l10n.t('Sync completed with errors'), 'warning');
         }
       },
     );
@@ -175,6 +167,6 @@ export async function refreshGitCacheCommand(): Promise<void> {
     Logger.error('Failed to refresh Git cache', error instanceof Error ? error : undefined, {
       code: 'TAI-2003',
     });
-    notify(`Failed to refresh Git cache: ${message}`, 'error');
+    notify(vscode.l10n.t('Failed to sync rules', message), 'error');
   }
 }

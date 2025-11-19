@@ -1,6 +1,7 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { vscodeApi } from '../utils/vscode-api';
+import { t } from '../utils/i18n';
 
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
@@ -148,10 +149,8 @@ const App: React.FC = () => {
     return (
       <div className="container">
         <EmptyState icon="⏳">
-          <div className="empty-state-title">Loading...</div>
-          <div className="empty-state-description">
-            Please wait while we load the source details
-          </div>
+          <div className="empty-state-title">{t('source.loading')}</div>
+          <div className="empty-state-description">{t('source.loadingDescription')}</div>
         </EmptyState>
       </div>
     );
@@ -162,7 +161,7 @@ const App: React.FC = () => {
     return (
       <div className="container">
         <EmptyState icon="❌">
-          <div className="empty-state-title">Error</div>
+          <div className="empty-state-title">{t('source.error')}</div>
           <div className="empty-state-description">{error}</div>
         </EmptyState>
       </div>
@@ -174,8 +173,8 @@ const App: React.FC = () => {
     return (
       <div className="container">
         <EmptyState icon="📭">
-          <div className="empty-state-title">No Data</div>
-          <div className="empty-state-description">No source data available</div>
+          <div className="empty-state-title">{t('source.noData')}</div>
+          <div className="empty-state-description">{t('source.noDataDescription')}</div>
         </EmptyState>
       </div>
     );
@@ -213,19 +212,19 @@ const App: React.FC = () => {
               type="primary"
               onClick={() => vscodeApi.postMessage('syncSource', { sourceId: source.id })}
             >
-              🔄 Sync
+              🔄 {t('source.sync')}
             </Button>
             <Button
               type="secondary"
               onClick={() => vscodeApi.postMessage('editSource', { sourceId: source.id })}
             >
-              ✏️ Edit
+              ✏️ {t('source.edit')}
             </Button>
             <Button
               type="secondary"
               onClick={() => vscodeApi.postMessage('toggleSource', { sourceId: source.id })}
             >
-              {source.enabled ? '⏸️ Disable' : '▶️ Enable'}
+              {source.enabled ? `⏸️ ${t('source.disable')}` : `▶️ ${t('source.enable')}`}
             </Button>
           </Toolbar>
         </div>
@@ -283,9 +282,11 @@ const App: React.FC = () => {
         {/* Rules List */}
         <div className="rules-section">
           <div className="rules-header">
-            <h2>Rules ({filteredRules.length})</h2>
+            <h2>
+              {t('common.rules')} ({filteredRules.length})
+            </h2>
             <Input
-              placeholder="Search rules..."
+              placeholder={t('source.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -293,9 +294,9 @@ const App: React.FC = () => {
 
           {filteredRules.length === 0 ? (
             <EmptyState icon="🔍">
-              <div className="empty-state-title">No Rules Found</div>
+              <div className="empty-state-title">{t('source.noRulesFound')}</div>
               <div className="empty-state-description">
-                {searchQuery ? 'Try a different search term' : 'No rules available'}
+                {searchQuery ? t('source.tryDifferentSearch') : t('source.noRulesAvailable')}
               </div>
             </EmptyState>
           ) : (

@@ -6,6 +6,7 @@ import { Toolbar } from '../components/Toolbar';
 import { PriorityIcon } from '../components/PriorityIcon';
 import { EmptyState } from '../components/EmptyState';
 import { vscodeApi } from '../utils/vscode-api';
+import { t } from '../utils/i18n';
 import '../global.css';
 import './search.css';
 
@@ -37,11 +38,11 @@ interface SearchHistory {
 }
 
 const FIELD_NAMES: Record<string, string> = {
-  title: '标题',
-  content: '内容',
-  tags: '标签',
-  priority: '优先级',
-  source: '源',
+  title: t('search.field.title'),
+  content: t('search.field.content'),
+  tags: t('search.field.tags'),
+  priority: t('search.field.priority'),
+  source: t('search.field.source'),
 };
 
 export const App: React.FC = () => {
@@ -179,85 +180,85 @@ export const App: React.FC = () => {
   return (
     <div className="container">
       <Card className="section search-form">
-        <div className="section-title">🔍 Search Conditions</div>
+        <div className="section-title">{t('search.conditions')}</div>
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">Rule Name</label>
+            <label className="form-label">{t('search.label.ruleName')}</label>
             <Input
               name="namePattern"
               value={criteria.namePattern ?? ''}
               onChange={handleInputChange}
-              placeholder="Enter rule name..."
+              placeholder={t('search.placeholder.name')}
             />
           </div>
           <div className="form-group">
-            <label className="form-label">Content</label>
+            <label className="form-label">{t('search.label.content')}</label>
             <Input
               name="contentPattern"
               value={criteria.contentPattern ?? ''}
               onChange={handleInputChange}
-              placeholder="Search in rule content..."
+              placeholder={t('search.placeholder.content')}
             />
           </div>
         </div>
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">Tags (comma separated)</label>
+            <label className="form-label">{t('search.label.tags')}</label>
             <Input
               name="tags"
               value={criteria.tags?.join(', ') ?? ''}
               onChange={handleTagsChange}
-              placeholder="e.g., authentication, security"
+              placeholder={t('search.placeholder.tags')}
             />
           </div>
           <div className="form-group">
-            <label className="form-label">Source (ID or Name)</label>
+            <label className="form-label">{t('search.label.source')}</label>
             <Input
               name="source"
               value={criteria.source ?? ''}
               onChange={handleInputChange}
-              placeholder="Source ID or Name..."
+              placeholder={t('search.placeholder.source')}
             />
           </div>
         </div>
         <Toolbar>
           <Button type="primary" onClick={handleSearch} disabled={loading}>
-            🔍 Search
+            {t('search.button.search')}
           </Button>
           <Button type="secondary" onClick={handleReset}>
-            ⟲ Reset
+            {t('search.button.reset')}
           </Button>
         </Toolbar>
 
         <div className="quick-filters">
-          <div className="section-title">⚡ 优先级过滤器（可多选）</div>
+          <div className="section-title">{t('search.quickFilters')}</div>
           <div className="filter-buttons">
             <button
               className={`quick-filter priority-high ${
                 (criteria.priorities || []).includes('high') ? 'active' : ''
               }`}
               onClick={() => handleQuickFilter('high')}
-              title="高优先级（可多选，点击已选中的按钮可取消）"
+              title={t('search.filter.high')}
             >
-              🔴 High Priority
+              {t('search.filter.high')}
             </button>
             <button
               className={`quick-filter priority-medium ${
                 (criteria.priorities || []).includes('medium') ? 'active' : ''
               }`}
               onClick={() => handleQuickFilter('medium')}
-              title="中优先级（可多选，点击已选中的按钮可取消）"
+              title={t('search.filter.medium')}
             >
-              🟡 Medium Priority
+              {t('search.filter.medium')}
             </button>
             <button
               className={`quick-filter priority-low ${
                 (criteria.priorities || []).includes('low') ? 'active' : ''
               }`}
               onClick={() => handleQuickFilter('low')}
-              title="低优先级（可多选，点击已选中的按钮可取消）"
+              title={t('search.filter.low')}
             >
-              🔵 Low Priority
+              {t('search.filter.low')}
             </button>
           </div>
         </div>
@@ -265,7 +266,7 @@ export const App: React.FC = () => {
 
       {history.length > 0 && (
         <div className="history-section-compact">
-          <span className="history-label">🕒</span>
+          <span className="history-label">{t('search.history.label')}</span>
           {history.map((item, index) => (
             <span key={index}>
               <a
@@ -278,7 +279,11 @@ export const App: React.FC = () => {
               {index < history.length - 1 && <span className="history-separator"> · </span>}
             </span>
           ))}
-          <a className="history-clear" onClick={handleClearHistory} title="清空历史">
+          <a
+            className="history-clear"
+            onClick={handleClearHistory}
+            title={t('search.history.clear')}
+          >
             ×
           </a>
         </div>
@@ -286,19 +291,21 @@ export const App: React.FC = () => {
 
       <Card className="section">
         <div className="results-header">
-          <div className="section-title">Results ({results.length} found)</div>
+          <div className="section-title">{t('search.results', results.length)}</div>
           {results.length > 0 && (
             <Button type="secondary" onClick={handleSelectAll}>
-              {selectedResults.size === results.length ? '全不选' : '全选'}
+              {selectedResults.size === results.length
+                ? t('search.deselectAll')
+                : t('search.selectAll')}
             </Button>
           )}
         </div>
         {loading ? (
-          <EmptyState icon={<span>⏳</span>}>Searching...</EmptyState>
+          <EmptyState icon={<span>⏳</span>}>{t('search.searching')}</EmptyState>
         ) : error ? (
           <EmptyState icon={<span>❌</span>}>{error}</EmptyState>
         ) : results.length === 0 ? (
-          <EmptyState icon={<span>📭</span>}>No results found</EmptyState>
+          <EmptyState icon={<span>📭</span>}>{t('search.noResults')}</EmptyState>
         ) : (
           <div>
             {results.map((result) => (
@@ -321,7 +328,7 @@ export const App: React.FC = () => {
                 </div>
                 {result.matchedFields.length > 0 && (
                   <div className="matched-fields">
-                    ✓ 匹配:{' '}
+                    {t('search.matched')}{' '}
                     {['title', 'content', 'tags', 'priority', 'source'].map((field) => (
                       <span
                         key={field}
@@ -335,25 +342,25 @@ export const App: React.FC = () => {
                 <div className="result-desc">{result.rule.description}</div>
                 <div className="result-actions">
                   <button className="view-button" onClick={() => handleViewRule(result.rule.id)}>
-                    📄 预览 Markdown
+                    {t('search.viewMarkdown')}
                   </button>
                   <button
                     className="view-button"
                     onClick={() => handleSelectRules([result.rule.id])}
                   >
-                    ✅ 选中规则
+                    {t('search.selectRule')}
                   </button>
                 </div>
               </Card>
             ))}
             {selectedResults.size > 0 && (
               <div className="batch-actions">
-                <span>已选择 {selectedResults.size} 项</span>
+                <span>{t('search.selected', selectedResults.size)}</span>
                 <Button type="primary" onClick={handleBatchSelect}>
-                  批量选中
+                  {t('search.batchSelect')}
                 </Button>
                 <Button type="secondary" onClick={handleBatchExport}>
-                  批量导出
+                  {t('search.batchExport')}
                 </Button>
               </div>
             )}

@@ -27,7 +27,7 @@ export async function generateConfigsCommand(): Promise<void> {
     // 1. 获取工作区根目录
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (!workspaceFolder) {
-      notify('No workspace folder opened', 'error');
+      notify(vscode.l10n.t('No workspace folder opened'), 'error');
       return;
     }
 
@@ -40,7 +40,7 @@ export async function generateConfigsCommand(): Promise<void> {
     const allRules = rulesManager.getAllRules();
 
     if (allRules.length === 0) {
-      notify('No rules available. Please sync rules first.', 'info');
+      notify(vscode.l10n.t('No rules available. Please sync rules first.'), 'info');
       return;
     }
 
@@ -148,6 +148,6 @@ export async function generateConfigsCommand(): Promise<void> {
     Logger.error('Failed to generate configs', error instanceof Error ? error : undefined);
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    notify(`Failed to generate configs: ${errorMessage}`, 'error');
+    notify(vscode.l10n.t('Failed to generate configs', errorMessage), 'error');
   }
 }
