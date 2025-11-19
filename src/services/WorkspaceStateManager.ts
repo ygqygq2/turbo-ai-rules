@@ -20,6 +20,13 @@ interface WorkspaceState {
     sourceHashes: { [sourceId: string]: string }; // 内容哈希
   };
 
+  /** 规则统计信息（< 1KB） - 用于状态栏显示 */
+  rulesStats: {
+    totalRules: number;
+    sourceCount: number;
+    enabledSourceCount: number;
+  };
+
   /** UI 状态（< 2KB） */
   uiState: {
     expandedNodes: string[]; // TreeView 展开节点
@@ -45,6 +52,11 @@ const DEFAULT_WORKSPACE_STATE: WorkspaceState = {
   syncMetadata: {
     lastSyncTime: {},
     sourceHashes: {},
+  },
+  rulesStats: {
+    totalRules: 0,
+    sourceCount: 0,
+    enabledSourceCount: 0,
   },
   uiState: {
     expandedNodes: [],
@@ -148,6 +160,10 @@ export class WorkspaceStateManager {
           ...DEFAULT_WORKSPACE_STATE.syncMetadata,
           ...stored.syncMetadata,
         },
+        rulesStats: {
+          ...DEFAULT_WORKSPACE_STATE.rulesStats,
+          ...stored.rulesStats,
+        },
         uiState: {
           ...DEFAULT_WORKSPACE_STATE.uiState,
           ...stored.uiState,
@@ -234,6 +250,33 @@ export class WorkspaceStateManager {
     const state = await this.readState();
     delete state.syncMetadata.lastSyncTime[sourceId];
     delete state.syncMetadata.sourceHashes[sourceId];
+    await this.writeState(state);
+  }
+
+  // ==================== 规则统计信息 ====================
+
+  /**
+   * 获取规则统计信息
+   */
+  public async getRulesStats(): Promise<{
+    totalRules: number;
+    sourceCount: number;
+    enabledSourceCount: number;
+  }> {
+    const state = await this.readState();
+    return state.rulesStats;
+  }
+
+  /**
+   * 设置规则统计信息
+   */
+  public async setRulesStats(stats: {
+    totalRules: number;
+    sourceCount: number;
+    enabledSourceCount: number;
+  }): Promise<void> {
+    const state = await this.readState();
+    state.rulesStats = stats;
     await this.writeState(state);
   }
 

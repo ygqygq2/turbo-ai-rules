@@ -31,6 +31,15 @@
   "main": "./out/extension/extension.js",
   "l10n": "./l10n",
   "contributes": {
+    "icons": {
+      "turbo-ai-rules-logo": {
+        "description": "Turbo AI Rules Logo",
+        "default": {
+          "fontPath": "./resources/fonts/logo.woff",
+          "fontCharacter": "\\E900"
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -65,12 +74,6 @@
         "title": "%turboAiRules.reloadSettings.title%",
         "category": "Turbo AI Rules",
         "icon": "$(refresh)"
-      },
-      {
-        "command": "turbo-ai-rules.searchRules",
-        "title": "%turboAiRules.searchRules.title%",
-        "category": "Turbo AI Rules",
-        "icon": "$(search)"
       },
       {
         "command": "turbo-ai-rules.generateConfigs",
@@ -570,12 +573,6 @@
         "command": "turbo-ai-rules.addSource",
         "key": "ctrl+shift+a",
         "mac": "cmd+shift+a",
-        "when": "view == turboAiRulesExplorer"
-      },
-      {
-        "command": "turbo-ai-rules.searchRules",
-        "key": "ctrl+shift+f",
-        "mac": "cmd+shift+f",
         "when": "view == turboAiRulesExplorer"
       },
       {

@@ -147,6 +147,24 @@
       .history-item:hover {
         color: var(--vscode-textLink-activeForeground);
       }
+      .history-item-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        background: var(--vscode-badge-background);
+        color: var(--vscode-badge-foreground);
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 11px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition: all 0.2s;
+      }
+      .history-item-chip:hover {
+        background: var(--vscode-list-activeSelectionBackground);
+        transform: translateY(-1px);
+      }
 
       .result-card {
         background-color: var(--vscode-editorWidget-background);
@@ -182,30 +200,26 @@
         <div class="section">
           <h2 class="section-title">Search Conditions</h2>
           <div class="form-grid">
-            <div><label for="name-input">Name</label><input id="name-input" type="text" /></div>
-            <div style="margin-top: 8px">
-              <label for="content-input">Content</label><input id="content-input" type="text" />
-            </div>
-            <div style="margin-top: 8px">
-              <label for="tags-input">Tags</label><input id="tags-input" type="text" />
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px">
+            <div
+              style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px"
+            >
+              <div><label for="name-input">Name</label><input id="name-input" type="text" /></div>
               <div>
-                <label>Priority</label
-                ><select>
-                  <option>All</option>
-                  <option>High</option>
-                  <option>Medium</option>
-                  <option>Low</option>
-                </select>
+                <label for="content-input">Content</label><input id="content-input" type="text" />
               </div>
+            </div>
+            <div
+              style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px"
+            >
+              <div><label for="tags-input">Tags</label><input id="tags-input" type="text" /></div>
               <div>
-                <label>Source</label
-                ><select>
-                  <option>All</option>
-                  <option>company-rules</option>
-                </select>
+                <label for="source-input">Source (ID or Name)</label
+                ><input id="source-input" type="text" placeholder="Source ID or Name..." />
               </div>
+            </div>
+            <div style="text-align: right; margin-top: 8px">
+              <button style="padding: 6px 14px; margin-right: 8px">🔍 Search</button>
+              <button style="padding: 6px 14px">⟲ Reset</button>
             </div>
           </div>
         </div>
@@ -218,27 +232,101 @@
             <button class="quick-filter">🔄 Clear</button>
           </div>
         </div>
-        <div class="section">
-          <h2 class="section-title">Search History</h2>
-          <div>
-            <div class="history-item">"authentication rules" - 2 results</div>
-            <div class="history-item">"high priority" - 15 results</div>
-          </div>
+        <div
+          style="
+            padding: 8px 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            background: var(--vscode-editorWidget-background);
+            border: 1px solid var(--vscode-editorWidget-border);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+          "
+        >
+          <span style="font-size: 14px">🕒</span>
+          <a style="color: var(--vscode-textLink-foreground); cursor: pointer">标题:"auth"</a>
+          <span style="opacity: 0.5"> · </span>
+          <a style="color: var(--vscode-textLink-foreground); cursor: pointer">内容:"jwt"</a>
+          <span style="opacity: 0.5"> · </span>
+          <a style="color: var(--vscode-textLink-foreground); cursor: pointer">优先级:high</a>
+          <a style="margin-left: auto; font-size: 18px; cursor: pointer" title="清空历史">×</a>
         </div>
       </div>
       <div class="results-panel">
         <div class="section-title" style="padding: 0 0 8px 0">Results (23 found)</div>
         <div id="results-list">
           <div class="result-card" style="animation-delay: 0.05s">
-            <div>🔥 auth/jwt-validation.mdc <button style="float: right">View</button></div>
-            <div style="font-size: 12px; color: var(--vscode-descriptionForeground)">
-              Source: company-rules
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 6px;
+              "
+            >
+              <div>
+                <input type="checkbox" style="margin-right: 8px" />🔥 auth/jwt-validation.mdc
+              </div>
+            </div>
+            <div
+              style="
+                font-size: 12px;
+                color: var(--vscode-descriptionForeground);
+                margin-bottom: 8px;
+              "
+            >
+              📦 Source: company-rules | 🏷️ Tags: auth, security, jwt
+            </div>
+            <div
+              style="
+                font-size: 11px;
+                color: var(--vscode-descriptionForeground);
+                margin-bottom: 8px;
+              "
+            >
+              ✓ 匹配: name, tags
+            </div>
+            <div style="display: flex; gap: 8px">
+              <button style="padding: 4px 12px; font-size: 12px">📄 预览 Markdown</button>
+              <button style="padding: 4px 12px; font-size: 12px">✅ 选中规则</button>
             </div>
           </div>
           <div class="result-card" style="animation-delay: 0.1s">
-            <div>⚠️ security/input-sanitize.mdc <button style="float: right">View</button></div>
-            <div style="font-size: 12px; color: var(--vscode-descriptionForeground)">
-              Source: best-practices
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 6px;
+              "
+            >
+              <div>
+                <input type="checkbox" style="margin-right: 8px" />⚠️ security/input-sanitize.mdc
+              </div>
+            </div>
+            <div
+              style="
+                font-size: 12px;
+                color: var(--vscode-descriptionForeground);
+                margin-bottom: 8px;
+              "
+            >
+              📦 Source: best-practices | 🏷️ Tags: security, validation
+            </div>
+            <div
+              style="
+                font-size: 11px;
+                color: var(--vscode-descriptionForeground);
+                margin-bottom: 8px;
+              "
+            >
+              ✓ 匹配: content, tags
+            </div>
+            <div style="display: flex; gap: 8px">
+              <button style="padding: 4px 12px; font-size: 12px">📄 预览 Markdown</button>
+              <button style="padding: 4px 12px; font-size: 12px">✅ 选中规则</button>
             </div>
           </div>
         </div>

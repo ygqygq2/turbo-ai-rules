@@ -82,22 +82,23 @@
 
 ### Webview → Extension
 
-| 消息类型      | 用途         | 触发时机     |
-| ------------- | ------------ | ------------ |
-| `copyContent` | 复制规则内容 | 点击复制按钮 |
-| `exportRule`  | 导出规则     | 点击导出按钮 |
-| `editRule`    | 编辑规则     | 点击编辑按钮 |
-| `ignoreRule`  | 忽略规则     | 点击忽略按钮 |
-| `toggleWrap`  | 切换换行     | 点击换行按钮 |
-| `viewSource`  | 查看源文件   | 点击源链接   |
+| 消息类型              | 用途                   | 触发时机          |
+| --------------------- | ---------------------- | ----------------- |
+| `openMarkdownPreview` | 打开 Markdown 预览     | 点击 Preview 按钮 |
+| `copyContent`         | 复制规则内容           | 点击 Copy 按钮    |
+| `renderMarkdown`      | 渲染 Markdown 为 HTML  | 点击 Render 按钮  |
+| `exportRule`          | 导出规则               | 点击 Export 按钮  |
+| `openInEditor`        | 在编辑器中打开原始文件 | 点击 Edit 按钮    |
+| `searchByTag`         | 按标签搜索             | 点击 Tag 标签     |
 
 ### Extension → Webview
 
-| 消息类型        | 用途     | 数据内容     |
-| --------------- | -------- | ------------ |
-| `ruleData`      | 规则数据 | 完整规则信息 |
-| `updateSuccess` | 操作成功 | 成功消息     |
-| `error`         | 错误提示 | 错误信息     |
+| 消息类型        | 用途         | 数据内容     |
+| --------------- | ------------ | ------------ |
+| `ruleData`      | 规则数据     | 完整规则信息 |
+| `renderedHtml`  | 返回渲染结果 | HTML 字符串  |
+| `updateSuccess` | 操作成功     | 成功消息     |
+| `error`         | 错误提示     | 错误信息     |
 
 **设计亮点**:
 
@@ -166,6 +167,111 @@
 - 满足不同使用场景
 - 便于分享和引用
 - 格式保持一致
+
+---
+
+## 关键实现详情
+
+### 1. Priority 显示样式
+
+**设计决策**: 简洁文字样式，不使用按钮背景
+
+**实现要点**:
+
+```typescript
+private getPriorityBadge(priority: 'high' | 'medium' | 'low'): string {
+  const icons = { high: '🔥', medium: '⚠️', low: 'ℹ️' };
+  const icon = icons[priority] || 'ℹ️';
+  // 注意：priority 直接使用小写，不需要 toUpperCase()
+  return `<span class="priority-text priority-${priority}">${icon} ${priority}</span>`;
+}
+```
+
+**CSS 样式**:
+
+```css
+.priority-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95em;
+  font-weight: 600;
+}
+
+.priority-high {
+  color: var(--vscode-errorForeground);
+}
+.priority-medium {
+  color: var(--vscode-editorWarning-foreground);
+}
+.priority-low {
+  color: var(--vscode-charts-blue);
+}
+```
+
+**显示效果**: 🔥 high, ⚠️ medium, ℹ️ low
+
+### 2. 内容视图切换功能
+
+**设计决策**: 支持原始 Markdown 和渲染 HTML 两种模式
+
+**实现要点**:
+
+1. **默认模式**: Raw Content (原始 Markdown 代码)
+2. **渲染模式**: Rendered HTML (使用 VSCode API 渲染)
+
+**消息流程**:
+
+```typescript
+// 用户点击 "Render" 按钮
+{ type: 'renderMarkdown' }
+
+// Extension 处理
+- 优先尝试: await vscode.commands.executeCommand('markdown.api.render', content)
+- 降级方案: 简单 Markdown 渲染（支持标题、粗体、代码块等）
+
+// 返回结果
+panel.webview.postMessage({ type: 'renderedHtml', html: renderedHtml })
+
+// Webview 更新显示
+contentDiv.innerHTML = html
+```
+
+**切换按钮**:
+
+- Raw 模式: 🔄 Render (切换到渲染视图)
+- Rendered 模式: 📝 Raw (切换回原始代码)
+
+### 3. JavaScript 初始化
+
+**关键要点**: 必须在脚本开头初始化 VSCode API
+
+```javascript
+const vscode = acquireVsCodeApi();
+
+function copyContent() {
+  const content = document.getElementById('rule-content').textContent;
+
+  // 优先使用 Clipboard API
+  navigator.clipboard
+    .writeText(content)
+    .then(() => {
+      // 显示复制成功反馈
+      showFeedback('✅ Copied!');
+    })
+    .catch(() => {
+      // 降级到后端复制
+      vscode.postMessage({ type: 'copyContent' });
+    });
+}
+
+function showFeedback(message) {
+  const btn = document.querySelector('.copy-button');
+  const originalText = btn.textContent;
+  btn.textContent = message;
+  setTimeout(() => (btn.textContent = originalText), 2000);
+}
+```
 
 ---
 

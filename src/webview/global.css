@@ -131,12 +131,13 @@ body {
 }
 
 .button-primary {
-  background-color: var(--vscode-button-background);
-  color: var(--vscode-button-foreground);
+  background-color: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: 1px solid var(--vscode-button-border);
 }
 
 .button-primary:hover:not(:disabled) {
-  background-color: var(--vscode-button-hoverBackground);
+  background-color: var(--vscode-button-secondaryHoverBackground);
 }
 
 .button-secondary {

@@ -3,6 +3,8 @@
  * 从外部 Git 仓库同步 AI 编码规则并生成配置文件
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
 import * as vscode from 'vscode';
 
 // Commands
@@ -17,13 +19,14 @@ import {
   manageSourceCommand,
   refreshGitCacheCommand,
   removeSourceCommand,
-  searchRulesCommand,
   selectAllRulesCommand,
   syncRulesCommand,
   testConnectionCommand,
   toggleSourceCommand,
   viewSourceDetailCommand,
 } from './commands';
+import { MdcParser } from './parsers/MdcParser';
+import { RulesValidator } from './parsers/RulesValidator';
 // Providers
 import {
   RuleDetailsWebviewProvider,
@@ -42,9 +45,75 @@ import { RulesManager } from './services/RulesManager';
 import { SelectionStateManager } from './services/SelectionStateManager';
 import { WorkspaceDataManager } from './services/WorkspaceDataManager';
 import { WorkspaceStateManager } from './services/WorkspaceStateManager';
+import type { RuleSource } from './types/config';
 import { EXTENSION_NAME } from './utils/constants';
 import { Logger } from './utils/logger';
 import { notify } from './utils/notifications';
+
+/**
+ * 从缓存目录加载已同步的规则
+ */
+async function loadRulesFromCache(
+  sources: RuleSource[],
+  rulesManager: RulesManager,
+): Promise<void> {
+  const parser = new MdcParser();
+  const validator = new RulesValidator();
+  const gitManager = GitManager.getInstance();
+
+  let totalLoaded = 0;
+
+  for (const source of sources) {
+    try {
+      const cacheDir = gitManager.getSourcePath(source.id);
+      const rulesPath = path.join(cacheDir, source.subPath || '');
+
+      // 检查缓存目录是否存在
+      if (!fs.existsSync(rulesPath)) {
+        Logger.debug('Rules cache not found, skipping', {
+          sourceId: source.id,
+          path: rulesPath,
+        });
+        continue;
+      }
+
+      // 使用 parseDirectory 解析规则
+      const parsedRules = await parser.parseDirectory(rulesPath, source.id, {
+        recursive: true,
+        maxDepth: 6,
+        maxFiles: 500,
+      });
+
+      // 验证规则
+      const validationResults = validator.validateRules(parsedRules);
+
+      // 只保留有效的规则
+      const validRules = parsedRules.filter((rule) => {
+        const result = validationResults.get(rule.id);
+        return result && result.valid;
+      });
+
+      if (validRules.length > 0) {
+        rulesManager.addRules(source.id, validRules);
+        totalLoaded += validRules.length;
+        Logger.debug('Rules loaded from cache', {
+          sourceId: source.id,
+          total: parsedRules.length,
+          valid: validRules.length,
+        });
+      }
+    } catch (error) {
+      Logger.warn('Failed to load rules from cache', {
+        sourceId: source.id,
+        error: String(error),
+      });
+    }
+  }
+
+  if (totalLoaded > 0) {
+    Logger.info('Rules loaded from cache', { totalRules: totalLoaded });
+  }
+}
 
 /**
  * 扩展激活入口
@@ -85,7 +154,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     Logger.info('Services initialized');
 
-    // 2. 注册 UI 提供者
+    // 2. 从缓存加载已同步的规则
+    await loadRulesFromCache(sources, rulesManager);
+
+    // 3. 注册 UI 提供者
     const treeProvider = new RulesTreeProvider(configManager, rulesManager, selectionStateManager);
     const treeView = vscode.window.createTreeView('turboAiRulesExplorer', {
       treeDataProvider: treeProvider,
@@ -98,7 +170,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       await treeProvider.handleCheckboxChange(e.items);
     });
 
-    const statusBarProvider = new StatusBarProvider(rulesManager);
+    const statusBarProvider = StatusBarProvider.getInstance(rulesManager);
 
     context.subscriptions.push(treeView, statusBarProvider);
 
@@ -150,10 +222,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }
       }),
 
-      vscode.commands.registerCommand('turbo-ai-rules.searchRules', async () => {
-        await searchRulesCommand();
-      }),
-
       vscode.commands.registerCommand('turbo-ai-rules.generateConfigs', async () => {
         await generateConfigsCommand();
       }),
@@ -161,10 +229,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       vscode.commands.registerCommand('turbo-ai-rules.manageSource', async () => {
         await manageSourceCommand();
         treeProvider.refresh();
-      }),
-
-      vscode.commands.registerCommand('turbo-ai-rules.showMenu', async () => {
-        await statusBarProvider.showMenu();
       }),
 
       vscode.commands.registerCommand('turbo-ai-rules.refresh', () => {

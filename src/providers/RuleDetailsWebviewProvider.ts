@@ -64,6 +64,9 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
                 <div class="rule-id">#${this.escapeHtml(rule.id)}</div>
             </div>
             <div class="toolbar">
+                <button class="button" onclick="openMarkdownPreview()" title="Open in VSCode Markdown preview">
+                    👁️ Preview
+                </button>
                 <button class="button" onclick="copyContent()" title="Copy content">
                     📋 Copy
                 </button>
@@ -92,14 +95,7 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
                     ? this.renderMetadataItem('Author', rule.metadata.author)
                     : ''
                 }
-                ${
-                  rule.metadata.priority
-                    ? this.renderMetadataItem(
-                        'Priority',
-                        this.getPriorityBadge(rule.metadata.priority),
-                      )
-                    : ''
-                }
+                ${rule.metadata.priority ? this.renderPriorityItem(rule.metadata.priority) : ''}
             </div>
         </div>
 
@@ -125,7 +121,12 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
             <h2>🏷️ Tags</h2>
             <div class="tags-container">
                 ${rule.metadata.tags
-                  .map((tag) => `<span class="tag">${this.escapeHtml(tag)}</span>`)
+                  .map(
+                    (tag) =>
+                      `<span class="tag" onclick="searchByTag('${this.escapeHtml(
+                        tag,
+                      )}')" title="Click to search">${this.escapeHtml(tag)}</span>`,
+                  )
                   .join('')}
             </div>
         </div>
@@ -138,8 +139,8 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
             <div class="content-header">
                 <h2>📄 Content Preview</h2>
                 <div class="content-actions">
-                    <button class="button-icon" onclick="toggleWrap()" title="Toggle word wrap">
-                        ↔️
+                    <button class="button-icon" id="toggleViewBtn" onclick="toggleContentView()" title="Toggle between raw and rendered view">
+                        🔄 Render
                     </button>
                     <button class="button-icon" onclick="copyContent()" title="Copy content">
                         📋
@@ -147,7 +148,10 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
                 </div>
             </div>
             <div class="content-preview" id="contentPreview">
-                <pre class="code-block"><code>${this.escapeHtml(rule.content)}</code></pre>
+                <pre class="code-block" id="rawContent"><code>${this.escapeHtml(
+                  rule.content,
+                )}</code></pre>
+                <div class="rendered-content" id="renderedContent" style="display: none;"></div>
             </div>
         </div>
 
@@ -185,15 +189,17 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
             background: var(--vscode-button-secondaryBackground);
             color: var(--vscode-button-secondaryForeground);
             border: none;
-            padding: var(--spacing-xs);
+            padding: 6px 12px;
             border-radius: var(--border-radius);
             cursor: pointer;
-            font-size: 1.2em;
-            width: 32px;
-            height: 32px;
-            display: flex;
+            font-size: 0.9em;
+            min-width: 80px;
+            height: auto;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 4px;
+            transition: background 0.2s;
         }
         
         .button-icon:hover {
@@ -230,34 +236,33 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
         .metadata-value {
             font-weight: 500;
             word-break: break-all;
+            display: flex;
+            align-items: center;
         }
         
-        .priority-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85em;
+        .priority-text {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.95em;
             font-weight: 600;
-            text-transform: uppercase;
         }
         
         .priority-high {
-            background-color: var(--vscode-errorForeground);
-            color: white;
+            color: var(--vscode-errorForeground);
         }
         
         .priority-medium {
-            background-color: var(--vscode-editorWarning-foreground);
-            color: white;
+            color: var(--vscode-editorWarning-foreground);
         }
         
         .priority-low {
-            background-color: var(--vscode-charts-blue);
-            color: white;
+            color: var(--vscode-charts-blue);
         }
         
         .section {
             margin-bottom: var(--spacing-lg);
+            min-height: 60px;
         }
         
         .section h2 {
@@ -276,16 +281,30 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
         .tags-container {
             display: flex;
             flex-wrap: wrap;
-            gap: var(--spacing-sm);
+            gap: 10px;
+            padding: 8px 0;
+            min-height: 40px;
         }
         
         .tag {
-            background-color: var(--vscode-badge-background);
+            background: linear-gradient(135deg, var(--vscode-badge-background), var(--vscode-button-secondaryBackground));
             color: var(--vscode-badge-foreground);
-            padding: var(--spacing-xs) var(--spacing-sm);
-            border-radius: 12px;
-            font-size: 0.9em;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 0.85em;
             font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tag:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-color: var(--vscode-focusBorder);
+            background: linear-gradient(135deg, var(--vscode-button-background), var(--vscode-button-hoverBackground));
+            color: var(--vscode-button-foreground);
         }
         
         .content-header {
@@ -293,6 +312,7 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
             justify-content: space-between;
             align-items: center;
             margin-bottom: var(--spacing-md);
+            padding: 8px 0;
         }
         
         .content-header h2 {
@@ -301,7 +321,8 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
         
         .content-actions {
             display: flex;
-            gap: var(--spacing-xs);
+            gap: 8px;
+            align-items: center;
         }
         
         .content-preview {
@@ -329,6 +350,81 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
         
         .code-block code {
             font-family: inherit;
+        }
+        
+        .rendered-content {
+            padding: var(--spacing-md);
+            line-height: 1.8;
+            font-size: 14px;
+        }
+        
+        .rendered-content h1,
+        .rendered-content h2,
+        .rendered-content h3 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            font-weight: 600;
+        }
+        
+        .rendered-content h1 { font-size: 1.8em; border-bottom: 2px solid var(--vscode-editorWidget-border); padding-bottom: 0.3em; }
+        .rendered-content h2 { font-size: 1.5em; border-bottom: 1px solid var(--vscode-editorWidget-border); padding-bottom: 0.2em; }
+        .rendered-content h3 { font-size: 1.25em; }
+        
+        .rendered-content pre {
+            background-color: var(--vscode-textCodeBlock-background);
+            border: 1px solid var(--vscode-editorWidget-border);
+            border-radius: 4px;
+            padding: 12px;
+            overflow-x: auto;
+            margin: 1em 0;
+        }
+        
+        .rendered-content code {
+            background-color: var(--vscode-textCodeBlock-background);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: var(--vscode-editor-font-family);
+            font-size: 0.9em;
+        }
+        
+        .rendered-content pre code {
+            background: none;
+            padding: 0;
+        }
+        
+        .rendered-content ul,
+        .rendered-content ol {
+            padding-left: 2em;
+            margin: 1em 0;
+        }
+        
+        .rendered-content li {
+            margin: 0.5em 0;
+        }
+        
+        .rendered-content blockquote {
+            border-left: 4px solid var(--vscode-textBlockQuote-border);
+            background-color: var(--vscode-textBlockQuote-background);
+            padding: 0.5em 1em;
+            margin: 1em 0;
+        }
+        
+        .rendered-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+        }
+        
+        .rendered-content th,
+        .rendered-content td {
+            border: 1px solid var(--vscode-editorWidget-border);
+            padding: 8px 12px;
+            text-align: left;
+        }
+        
+        .rendered-content th {
+            background-color: var(--vscode-editorWidget-background);
+            font-weight: 600;
         }
         
         .additional-metadata {
@@ -382,8 +478,39 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
     ${this.getScriptTag(
       nonce,
       `
+        const vscode = acquireVsCodeApi();
+        let isRenderedView = false;
+        
+        function sendMessage(type, payload) {
+            vscode.postMessage({ type, payload });
+        }
+        
+        function openMarkdownPreview() {
+            sendMessage('openMarkdownPreview');
+        }
+        
         function copyContent() {
-            sendMessage('copyContent');
+            // 获取当前显示的内容
+            const rawContent = document.getElementById('rawContent');
+            if (rawContent) {
+                const text = rawContent.textContent || '';
+                // 使用Clipboard API复制
+                navigator.clipboard.writeText(text).then(() => {
+                    // 可以显示复制成功提示
+                    const btn = document.querySelector('.content-actions button[title="Copy content"]');
+                    if (btn) {
+                        const originalText = btn.innerHTML;
+                        btn.innerHTML = '✅ Copied!';
+                        setTimeout(() => {
+                            btn.innerHTML = originalText;
+                        }, 2000);
+                    }
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    // 降级方案：发送消息给后端
+                    sendMessage('copyContent');
+                });
+            }
         }
         
         function exportRule() {
@@ -394,12 +521,51 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
             sendMessage('openInEditor');
         }
         
-        function toggleWrap() {
-            const codeBlock = document.querySelector('.code-block');
-            if (codeBlock) {
-                codeBlock.classList.toggle('wrap');
+        function searchByTag(tag) {
+            sendMessage('searchByTag', { tag });
+        }
+        
+        function toggleContentView() {
+            const rawContent = document.getElementById('rawContent');
+            const renderedContent = document.getElementById('renderedContent');
+            const toggleBtn = document.getElementById('toggleViewBtn');
+            
+            if (!rawContent || !renderedContent || !toggleBtn) {
+                console.error('Required elements not found');
+                return;
+            }
+            
+            isRenderedView = !isRenderedView;
+            
+            if (isRenderedView) {
+                // 切换到渲染视图
+                if (!renderedContent.innerHTML) {
+                    // 首次渲染，请求后端转换Markdown
+                    sendMessage('renderMarkdown');
+                }
+                rawContent.style.display = 'none';
+                renderedContent.style.display = 'block';
+                toggleBtn.innerHTML = '📝 Raw';
+                toggleBtn.title = 'Show raw content';
+            } else {
+                // 切换到原始视图
+                rawContent.style.display = 'block';
+                renderedContent.style.display = 'none';
+                toggleBtn.innerHTML = '🔄 Render';
+                toggleBtn.title = 'Show rendered view';
             }
         }
+        
+        // 接收渲染后的HTML
+        window.addEventListener('message', event => {
+            const message = event.data;
+            if (message.type === 'renderedHtml') {
+                const renderedContent = document.getElementById('renderedContent');
+                if (renderedContent) {
+                    renderedContent.innerHTML = message.html;
+                }
+            }
+        });
     `,
     )}
 </body>
@@ -436,6 +602,18 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
   }
 
   /**
+   * 渲染优先级项（不转义HTML）
+   */
+  private renderPriorityItem(priority: string): string {
+    return `
+      <div class="metadata-item">
+        <div class="metadata-label">Priority</div>
+        <div class="metadata-value">${this.getPriorityBadge(priority)}</div>
+      </div>
+    `;
+  }
+
+  /**
    * 获取优先级徽章 HTML
    */
   private getPriorityBadge(priority: string): string {
@@ -445,7 +623,7 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
       low: 'ℹ️',
     };
     const icon = icons[priority] || '';
-    return `<span class="priority-badge priority-${priority}">${icon} ${priority}</span>`;
+    return `<span class="priority-text priority-${priority}">${icon} ${priority}</span>`;
   }
 
   /**
@@ -506,6 +684,10 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
 
     try {
       switch (message.type) {
+        case 'openMarkdownPreview':
+          await this.handleOpenMarkdownPreview();
+          break;
+
         case 'copyContent':
           await this.handleCopyContent();
           break;
@@ -516,6 +698,14 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
 
         case 'openInEditor':
           await this.handleOpenInEditor();
+          break;
+
+        case 'renderMarkdown':
+          await this.handleRenderMarkdown();
+          break;
+
+        case 'searchByTag':
+          await this.handleSearchByTag(message.payload?.tag);
           break;
 
         default:
@@ -533,13 +723,134 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
   }
 
   /**
+   * 处理渲染Markdown
+   */
+  private async handleRenderMarkdown(): Promise<void> {
+    if (!this.currentRule || !this.panel) return;
+
+    try {
+      // 使用VSCode的Markdown引擎渲染
+      const rendered = await vscode.commands.executeCommand<string>(
+        'markdown.api.render',
+        this.currentRule.content,
+      );
+
+      // 发送渲染后的HTML回前webview
+      this.panel.webview.postMessage({
+        type: 'renderedHtml',
+        html: rendered || this.simpleMarkdownRender(this.currentRule.content),
+      });
+
+      Logger.debug('[RuleDetails] Markdown rendered successfully');
+    } catch (error) {
+      Logger.error(
+        '[RuleDetails] Failed to render markdown',
+        error instanceof Error ? error : undefined,
+      );
+      // 如果VSCode API失败，使用简单的渲染
+      if (this.panel) {
+        this.panel.webview.postMessage({
+          type: 'renderedHtml',
+          html: this.simpleMarkdownRender(this.currentRule.content),
+        });
+      }
+    }
+  }
+
+  /**
+   * 简单的Markdown渲染（备用）
+   */
+  private simpleMarkdownRender(content: string): string {
+    let html = this.escapeHtml(content);
+
+    // 基本的Markdown转换
+    html = html
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/^(?!<[hul])/gm, '<p>')
+      .replace(/(?<![hul]>)$/gm, '</p>');
+
+    return html;
+  }
+
+  /**
+   * 处理按标签搜索
+   */
+  private async handleSearchByTag(tag: string): Promise<void> {
+    if (!tag) return;
+
+    try {
+      // 打开高级搜索并预填标签
+      await vscode.commands.executeCommand('turbo-ai-rules.advancedSearch');
+      // TODO: 需要SearchWebviewProvider支持接收预填数据
+      Logger.debug('[RuleDetails] Opened search with tag', { tag });
+    } catch (error) {
+      Logger.error(
+        '[RuleDetails] Failed to search by tag',
+        error instanceof Error ? error : undefined,
+      );
+    }
+  }
+
+  /**
+   * 处理在VSCode中打开Markdown预览
+   */
+  private async handleOpenMarkdownPreview(): Promise<void> {
+    if (!this.currentRule) return;
+
+    try {
+      const fileUri = vscode.Uri.file(this.currentRule.filePath);
+
+      // 在编辑器中打开Markdown文件
+      const doc = await vscode.workspace.openTextDocument(fileUri);
+      await vscode.window.showTextDocument(doc, {
+        preview: false,
+        viewColumn: vscode.ViewColumn.One,
+      });
+
+      // 打开Markdown预览（侧边）
+      await vscode.commands.executeCommand('markdown.showPreviewToSide', fileUri);
+
+      Logger.debug('[RuleDetails] Opened VSCode Markdown preview', {
+        filePath: this.currentRule.filePath,
+      });
+    } catch (error) {
+      Logger.error(
+        '[RuleDetails] Failed to open Markdown preview',
+        error instanceof Error ? error : undefined,
+      );
+      vscode.window.showErrorMessage(
+        `Failed to open Markdown preview: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      );
+    }
+  }
+
+  /**
    * 处理复制内容
    */
   private async handleCopyContent(): Promise<void> {
     if (!this.currentRule) return;
 
-    await vscode.env.clipboard.writeText(this.currentRule.content);
-    vscode.window.showInformationMessage('Rule content copied to clipboard');
+    try {
+      await vscode.env.clipboard.writeText(this.currentRule.content);
+      vscode.window.showInformationMessage('Rule content copied to clipboard');
+      Logger.debug('[RuleDetails] Content copied to clipboard');
+    } catch (error) {
+      Logger.error(
+        '[RuleDetails] Failed to copy content',
+        error instanceof Error ? error : undefined,
+      );
+      vscode.window.showErrorMessage('Failed to copy content to clipboard');
+    }
   }
 
   /**

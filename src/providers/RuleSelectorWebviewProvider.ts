@@ -10,6 +10,7 @@ import { SelectionStateManager } from '../services/SelectionStateManager';
 import type { RuleSelection } from '../services/WorkspaceDataManager';
 import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
 import { SystemError } from '../types/errors';
+import { EXTENSION_ICON_PATH } from '../utils/constants';
 import { RULE_FILE_EXTENSIONS } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
@@ -111,6 +112,7 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
       viewType: 'turboAiRules.ruleSelector',
       title: sourceName ? `规则选择器 - ${sourceName}` : '规则选择器',
       viewColumn: vscode.ViewColumn.Active,
+      iconPath: EXTENSION_ICON_PATH,
     });
 
     // 初始化消息层（仅首次创建 panel 时）

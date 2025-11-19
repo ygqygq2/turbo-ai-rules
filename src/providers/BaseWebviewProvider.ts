@@ -32,6 +32,8 @@ export interface WebviewOptions {
   retainContextWhenHidden?: boolean;
   /** 显示列 */
   viewColumn?: vscode.ViewColumn;
+  /** 标签页图标路径 */
+  iconPath?: string;
 }
 
 /**
@@ -66,6 +68,11 @@ export abstract class BaseWebviewProvider {
         vscode.Uri.joinPath(this.context.extensionUri, 'out'),
       ],
     });
+
+    // 设置面板图标
+    if (options.iconPath) {
+      this.panel.iconPath = vscode.Uri.joinPath(this.context.extensionUri, options.iconPath);
+    }
 
     // 设置 HTML 内容
     this.panel.webview.html = await this.getHtmlContent(this.panel.webview);

@@ -16,6 +16,9 @@
 - ⚡ 快捷过滤器加速常用搜索
 - 📊 实时显示搜索结果
 - 📥 支持结果导出（JSON/CSV）
+- 🎯 支持批量操作（选中、导出）
+- 📄 支持 Markdown 预览（在 VSCode 中打开）
+- 🔖 显示匹配字段提示
 
 ---
 
@@ -29,10 +32,9 @@
 ├─────────────────────────────────────────────────┤
 │ 🔍 Search Conditions                            │
 │ ┌───────────────────────────────────────────┐   │
-│ │ Name:      [________________] 🔍          │   │
-│ │ Content:   [________________]             │   │
-│ │ Tags:      [tag1, tag2...   ]             │   │
-│ │ Priority:  [ All ▼] Source: [ All ▼]     │   │
+│ │ Name: [__________] Content: [__________]  │   │
+│ │ Tags: [__________] Source:  [__________]  │   │
+│ │                     [🔍 Search] [⟲ Reset] │   │
 │ └───────────────────────────────────────────┘   │
 │                                                  │
 │ ⚡ Quick Filters                                 │
@@ -40,24 +42,21 @@
 │ │ [🔥 High]  [⚠️ Medium]  [ℹ️ Low]  [🔄]    │   │
 │ └───────────────────────────────────────────┘   │
 │                                                  │
-│ 📜 Search History                                │
-│ ┌───────────────────────────────────────────┐   │
-│ │ • "authentication rules" - 2 results      │   │
-│ │ • "high priority" - 15 results            │   │
-│ │ • "typescript naming" - 8 results         │   │
-│ └───────────────────────────────────────────┘   │
+│ 🕒 标题:"auth" · 内容:"jwt" · 优先级:high · ... ×  │
 │                                                  │
 │ 📊 Results (23 found)              [Export ▼]   │
 │ ┌───────────────────────────────────────────┐   │
-│ │ 🔥 auth/jwt-validation.mdc          [View]│   │
+│ │ □ 🔥 auth/jwt-validation.mdc              │   │
 │ │    Source: company-rules                  │   │
 │ │    Tags: auth, security, jwt              │   │
 │ │    Matched: name, tags                    │   │
+│ │    [📄 预览 Markdown] [✅ 选中规则]        │   │
 │ ├───────────────────────────────────────────┤   │
-│ │ ⚠️  security/input-sanitize.mdc     [View]│   │
+│ │ □ ⚠️  security/input-sanitize.mdc         │   │
 │ │    Source: best-practices                 │   │
 │ │    Tags: security, validation             │   │
 │ │    Matched: content, tags                 │   │
+│ │    [📄 预览 Markdown] [✅ 选中规则]        │   │
 │ ├───────────────────────────────────────────┤   │
 │ │ ... 21 more results                       │   │
 │ └───────────────────────────────────────────┘   │
@@ -82,11 +81,18 @@
   background-color: var(--vscode-editorWidget-background);
   border: 1px solid var(--vscode-editorWidget-border);
   border-radius: 4px;
-  padding: 20px;
-  margin-bottom: 16px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
 }
 
-/* 输入框 */
+/* 输入框 - 一行2列布局 */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
 .search-input {
   width: 100%;
   background-color: var(--vscode-input-background);
@@ -94,7 +100,7 @@
   border: 1px solid var(--vscode-input-border);
   padding: 6px 12px;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .search-input:focus {
@@ -125,19 +131,41 @@
   background-color: var(--vscode-button-hoverBackground);
 }
 
-/* 搜索历史 */
-.history-item {
+/* 搜索历史 - 横向单行滚动 */
+.history-container {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
-  margin: 4px 0;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.2s;
+  gap: 8px;
+  padding: 8px 0;
 }
 
-.history-item:hover {
-  background-color: var(--vscode-list-hoverBackground);
+.history-list-horizontal {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex: 1;
+  padding: 2px 0;
+}
+
+.history-item-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background-color: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.history-item-chip:hover {
+  background-color: var(--vscode-list-activeSelectionBackground);
+  transform: translateY(-1px);
 }
 
 /* 结果卡片 */
@@ -187,7 +215,7 @@ interface SearchCriteria {
   contentPattern?: string; // 内容全文搜索
   tags?: string[]; // 标签过滤
   priority?: 0 | 1 | 2; // 优先级筛选
-  source?: string; // 来源过滤
+  source?: string; // 来源过滤（支持 ID 和 Name）
 }
 ```
 
@@ -204,10 +232,11 @@ interface SearchResult {
 ### 搜索历史
 
 ```typescript
-interface SearchHistory {
+interface SearchHistoryItem {
   criteria: SearchCriteria; // 搜索条件
   timestamp: number; // 搜索时间戳
   resultCount: number; // 结果数量
+  summary: string; // 搜索摘要（如"标题:"auth" + 优先级:high"）
 }
 ```
 
@@ -246,13 +275,39 @@ interface SearchHistory {
 
 **功能**：点击历史记录重新搜索
 
+**显示信息**：
+
+- 搜索摘要（条件组合）
+- 结果数量
+- 相对时间（刚刚/分钟前/小时前/天前）
+
 **存储**：
 
 - 存储位置：`globalState`
-- 最大数量：10 条
-- 去重策略：相同条件不重复
+- 最大数量：5 条
+- 去重策略：相同条件不重复，保留最新
 
-**清除**：右键历史项显示"删除"选项
+**交互**：
+
+- 简洁链接样式显示
+- 点击链接重新执行搜索
+- 清空按钮（× 图标）位于右侧
+
+### 搜索结果操作按钮
+
+**单条规则操作**（每个搜索结果卡片上）：
+
+| 按钮             | 图标 | 功能说明                                                         |
+| ---------------- | ---- | ---------------------------------------------------------------- |
+| 📄 预览 Markdown | 📄   | 打开 Rule Details Panel（Webview），显示规则详细信息和格式化内容 |
+| ✅ 选中规则      | ✅   | 显示扩展侧边栏，在 TreeView 中自动勾选该规则（添加到选择列表）   |
+
+**批量操作**（多选后显示）：
+
+| 按钮     | 功能说明                                         |
+| -------- | ------------------------------------------------ |
+| 批量选中 | 显示扩展侧边栏，在 TreeView 中勾选所有选择的规则 |
+| 批量导出 | 将搜索结果导出为 JSON 或 CSV 格式文件            |
 
 ---
 
@@ -333,36 +388,39 @@ interface SearchHistory {
 // 执行搜索
 { type: 'search', payload: { criteria: SearchCriteria } }
 
-// 查看规则详情
-{ type: 'viewRule', payload: { rulePath: string } }
+// 查看规则详情（打开 Rule Details Panel）
+{ type: 'viewRule', payload: { ruleId: string } }
+
+// 选中规则（显示侧边栏 TreeView 并勾选规则）
+{ type: 'selectRules', payload: { ruleIds: string[] } }
 
 // 导出结果
-{ type: 'exportResults', payload: { format: 'json' | 'csv' } }
+{ type: 'exportResults', payload: { format: 'json' | 'csv', ruleIds?: string[] } }
 
 // 加载历史记录
 { type: 'loadHistory' }
 
-// 清除历史记录
-{ type: 'clearHistory', payload: { index?: number } }
+// 应用历史搜索
+{ type: 'applyHistory', payload: { criteria: SearchCriteria } }
 
-// 按标签搜索
-{ type: 'searchByTag', payload: { tag: string } }
+// 清除历史记录
+{ type: 'clearHistory' }
 ```
 
 ### Extension → Webview 消息
 
 ```typescript
 // 搜索结果
-{ type: 'searchResults', data: { results: SearchResult[], total: number } }
+{ type: 'searchResults', payload: { results: SearchResult[] } }
 
 // 搜索历史
-{ type: 'searchHistory', data: SearchHistory[] }
+{ type: 'searchHistory', payload: { history: SearchHistoryItem[] } }
 
-// 搜索错误
-{ type: 'searchError', error: string }
+// 错误消息
+{ type: 'error', payload: { message: string } }
 
-// 导出完成
-{ type: 'exportComplete', path: string }
+// 成功消息
+{ type: 'success', payload: { message: string } }
 ```
 
 ---

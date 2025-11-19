@@ -7,12 +7,14 @@ import * as vscode from 'vscode';
 
 import { MdcParser } from '../parsers/MdcParser';
 import { RulesValidator } from '../parsers/RulesValidator';
+import { StatusBarProvider } from '../providers/StatusBarProvider';
 import { ConfigManager } from '../services/ConfigManager';
 import { FileGenerator } from '../services/FileGenerator';
 import { GitManager } from '../services/GitManager';
 import { RulesManager } from '../services/RulesManager';
 import { SelectionStateManager } from '../services/SelectionStateManager';
 import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
+import { WorkspaceStateManager } from '../services/WorkspaceStateManager';
 import type { RuleSource } from '../types/config';
 import type { ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
@@ -47,6 +49,9 @@ function groupSourcesByRepository(sources: RuleSource[]): RepositoryGroup[] {
  */
 export async function syncRulesCommand(sourceId?: string): Promise<void> {
   Logger.info('Executing syncRules command', { sourceId });
+
+  // 获取状态栏提供者实例
+  const statusBarProvider = StatusBarProvider.getInstance();
 
   try {
     const configManager = ConfigManager.getInstance();
@@ -100,8 +105,15 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
 
     if (enabledSources.length === 0) {
       notify('No enabled sources to sync', 'info');
+      statusBarProvider.setSyncStatus('idle');
       return;
     }
+
+    // 设置同步状态
+    statusBarProvider.setSyncStatus('syncing', {
+      completed: 0,
+      total: enabledSources.length,
+    });
 
     // 3. 显示进度
     await vscode.window.withProgress(
@@ -200,6 +212,14 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
 
               totalRules += selectedCount;
               successCount++;
+
+              // 更新状态栏进度
+              statusBarProvider.setSyncStatus('syncing', {
+                completed: successCount,
+                total: enabledSources.length,
+                currentSource: sourceName,
+                operation: 'Syncing rules',
+              });
 
               Logger.debug(`Source synced successfully`, {
                 sourceId: source.id,
@@ -316,6 +336,29 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
           generatedFiles: generateResult.success.length,
         });
 
+        // 持久化同步时间到 workspaceState
+        const workspaceStateManager = WorkspaceStateManager.getInstance();
+        const syncTime = new Date().toISOString();
+        for (const source of enabledSources) {
+          await workspaceStateManager.setLastSyncTime(source.id, syncTime);
+        }
+
+        // 持久化规则统计信息到 workspaceState（用于状态栏显示）
+        await workspaceStateManager.setRulesStats({
+          totalRules: totalRules,
+          sourceCount: sources.length,
+          enabledSourceCount: enabledSources.length,
+        });
+
+        Logger.debug('Sync metadata persisted to workspace state', {
+          syncTime,
+          sourceCount: enabledSources.length,
+          totalRules,
+        });
+
+        // 更新状态栏为成功
+        statusBarProvider.setSyncStatus('success');
+
         // 显示通知
         if (successCount === enabledSources.length && generateResult.failures.length === 0) {
           notify(
@@ -331,6 +374,9 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
     );
   } catch (error) {
     Logger.error('Failed to sync rules', error instanceof Error ? error : undefined);
+
+    // 更新状态栏为错误
+    statusBarProvider.setSyncStatus('error');
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     notify(`Failed to sync rules: ${errorMessage}`, 'error');

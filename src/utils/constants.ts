@@ -126,3 +126,9 @@ export const RULE_FILE_EXTENSIONS = ['.md', '.mdc'];
  * .gitignore 标记
  */
 export const GITIGNORE_MARKER = '# Turbo AI Rules - Auto-generated files';
+
+/**
+ * 扩展图标路径
+ * 用于 Webview 标签页图标（使用固定颜色，适合标签页显示）
+ */
+export const EXTENSION_ICON_PATH = 'resources/images/logo-icon-webview.svg';

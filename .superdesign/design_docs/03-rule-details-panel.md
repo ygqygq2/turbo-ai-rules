@@ -25,7 +25,7 @@
 ````
 ┌─────────────────────────────────────────┐
 │ 📄 TypeScript Naming Conventions        │
-│               [↔️] [📋] [📥] [📝] [×]   │  ← 工具栏
+│         [👁️] [📋] [📥] [📝] [×]        │  ← 工具栏
 ├─────────────────────────────────────────┤
 │ 📊 Metadata                             │
 │ ┌───────────────────────────────────┐   │
@@ -33,7 +33,7 @@
 │ │ File Path: rules/ts-naming.mdc    │   │
 │ │ Version: 1.2.0                    │   │
 │ │ Author: Team Lead                 │   │
-│ │ Priority: high 🔥                 │   │
+│ │ Priority: 🔥 high                 │   │
 │ └───────────────────────────────────┘   │
 ├─────────────────────────────────────────┤
 │ 📝 Description                          │
@@ -206,33 +206,32 @@
 
 ### 快速操作
 
-| 按钮           | 功能                   | 快捷键 |
-| -------------- | ---------------------- | ------ |
-| ↔️ Toggle Wrap | 切换内容自动换行       | Ctrl+W |
-| 📋 Copy        | 复制规则内容到剪贴板   | Ctrl+C |
-| 📥 Export      | 导出为 Markdown 文件   | Ctrl+E |
-| 📝 Edit        | 在编辑器中打开原始文件 | Ctrl+O |
-| × Close        | 关闭详情面板           | Esc    |
+| 按钮       | 功能说明                                         | 交互反馈                 |
+| ---------- | ------------------------------------------------ | ------------------------ |
+| 👁️ Preview | 在 VSCode 中打开原始 Markdown 预览（编辑器侧边） | 打开 Markdown 预览标签   |
+| 📋 Copy    | 复制规则内容到剪贴板                             | 按钮显示 ✅ Copied! 2 秒 |
+| 🔄 Render  | 切换到 Markdown 渲染视图                         | 切换视图模式             |
+| 📥 Export  | 导出为 Markdown 文件                             | 打开保存对话框           |
+| 📝 Edit    | 在编辑器中打开原始文件                           | 打开编辑器               |
 
-### 自动换行切换
+### Content Preview 操作按钮
 
-**默认状态**: 自动换行开启
+**右上角按钮**:
 
-**切换效果**:
+| 按钮      | 默认状态 | 功能说明                 | 切换后状态    |
+| --------- | -------- | ------------------------ | ------------- |
+| 🔄 Render | 显示     | 切换到 Markdown 渲染视图 | 📝 Raw        |
+| 📋 Copy   | 显示     | 复制内容到剪贴板         | ✅ Copied! 2s |
 
-```css
-/* 开启自动换行 */
-.content-preview {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
+**视图模式**:
 
-/* 关闭自动换行 */
-.content-preview.no-wrap {
-  white-space: pre;
-  overflow-x: auto;
-}
-```
+- **Raw Content (默认)**: 显示原始 Markdown 代码，语法高亮
+- **Rendered View**: 显示渲染后的 HTML，格式化标题、代码块、列表等
+
+**渲染引擎**:
+
+1. 优先使用 VSCode Markdown API (`markdown.api.render`)
+2. 降级使用简单渲染（基本 Markdown 语法转换）
 
 ---
 
@@ -290,27 +289,50 @@ interface RuleMetadata {
 }
 ```
 
-### 工具栏按钮
+### Priority 样式
+
+**设计原则**: 简洁文本样式，不使用按钮背景
 
 ```css
-.toolbar-button {
-  transition: all 0.2s ease;
+.priority-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
 }
 
-.toolbar-button:hover {
-  background-color: var(--vscode-toolbar-hoverBackground);
-  transform: scale(1.1);
-}
-
-.toolbar-button:active {
-  transform: scale(0.95);
-}
+.priority-high {
+  color: var(--vscode-errorForeground);
+} /* 红色 */
+.priority-medium {
+  color: var(--vscode-editorWarning-foreground);
+} /* 橙色 */
+.priority-low {
+  color: var(--vscode-charts-blue);
+} /* 蓝色 */
 ```
 
-### 标签悬停
+**显示效果**:
 
-```css
-.tag {
+- 🔥 high (红色)
+- ⚠️ medium (橙色)
+- ℹ️ low (蓝色)
+
+### 工具栏按钮
+
+````css
+.button-icon {
+  padding: 6px 12px;
+  min-width: 80px;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.button-icon:hover {
+  background-color: var(--vscode-button-secondaryHoverBackground);
+}
+
+### 标签悬停 ```css .tag {
   transition: all 0.2s ease;
   cursor: pointer;
 }
@@ -322,6 +344,60 @@ interface RuleMetadata {
 }
 ```
 
+### Priority 显示
+
+**样式**：图标 + 小写文字 + 颜色标识
+
+| Priority | 图标 | 颜色说明                          |
+| -------- | ---- | --------------------------------- |
+| high     | 🔥   | 红色 (`errorForeground`)          |
+| medium   | ⚠️   | 橙色 (`editorWarning.foreground`) |
+| low      | ℹ️   | 蓝色 (`charts.blue`)              |
+
+**示例**：
+- 🔥 high
+- ⚠️ medium
+- ℹ️ low
+
+**CSS 样式**：
+
+```css
+.priority-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95em;
+  font-weight: 600;
+}
+
+.priority-high {
+  color: var(--vscode-errorForeground);
+}
+
+.priority-medium {
+  color: var(--vscode-editorWarning-foreground);
+}
+
+.priority-low {
+  color: var(--vscode-charts-blue);
+}
+```
+
+### 内容视图切换
+
+**两种模式**：
+
+1. **Raw Content** (默认) - 原始 Markdown 代码
+2. **Rendered** - 渲染后的 HTML 视图
+
+**切换按钮**：
+- 原始模式: 🔄 Render
+- 渲染模式: 📝 Raw
+
+**渲染实现**：
+- 优先使用 VSCode API `markdown.api.render`
+- 降级到简单 Markdown 渲染（支持标题、粗体、代码块等）
+
 ---
 
 ## 消息通信
@@ -329,20 +405,20 @@ interface RuleMetadata {
 ### Webview → Extension 消息
 
 ```typescript
-// 复制内容
+// 在 VSCode 中打开 Markdown 预览
+{ type: 'openMarkdownPreview' }
+
+// 复制内容（前端优先使用 Clipboard API，失败时发送此消息）
 { type: 'copyContent' }
 
 // 导出规则
-{ type: 'exportRule', payload: { format: 'markdown' } }
+{ type: 'exportRule' }
 
-// 编辑规则
-{ type: 'editRule', payload: { path: string } }
+// 在编辑器中打开
+{ type: 'openInEditor' }
 
-// 切换自动换行
-{ type: 'toggleWrap' }
-
-// 查看相关规则
-{ type: 'viewRelatedRule', payload: { rulePath: string } }
+// 渲染 Markdown 为 HTML
+{ type: 'renderMarkdown' }
 
 // 按标签搜索
 { type: 'searchByTag', payload: { tag: string } }
@@ -351,8 +427,8 @@ interface RuleMetadata {
 ### Extension → Webview 消息
 
 ```typescript
-// 加载规则数据
-{ type: 'loadRule', data: RuleMetadata }
+// 返回渲染后的 HTML（响应 renderMarkdown）
+{ type: 'renderedHtml', html: string }
 
 // 复制成功
 { type: 'copySuccess' }
@@ -446,5 +522,6 @@ function escapeHtml(text: string): string {
 
 ---
 
-_设计版本: 2.0_  
+_设计版本: 2.0_
 _最后更新: 2025-10-27_
+````

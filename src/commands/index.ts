@@ -7,7 +7,6 @@ export { generateConfigsCommand } from './generateConfigs';
 export { manageSourceCommand } from './manageSource';
 export { refreshGitCacheCommand } from './refreshGitCache';
 export { removeSourceCommand } from './removeSource';
-export { searchRulesCommand } from './searchRules';
 export { syncRulesCommand } from './syncRules';
 export { viewSourceDetailCommand } from './viewSourceDetail';
 

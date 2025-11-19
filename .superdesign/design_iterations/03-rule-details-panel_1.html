@@ -157,13 +157,24 @@
         word-break: break-all;
       }
 
-      .priority-high {
-        background-color: var(--vscode-errorForeground);
-        color: var(--vscode-button-foreground);
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 12px;
+      .priority-text {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.95em;
         font-weight: 600;
+      }
+
+      .priority-high {
+        color: var(--vscode-errorForeground);
+      }
+
+      .priority-medium {
+        color: var(--vscode-editorWarning-foreground);
+      }
+
+      .priority-low {
+        color: var(--vscode-charts-blue);
       }
 
       .tag-cloud {
@@ -174,18 +185,28 @@
 
       .tag {
         display: inline-block;
-        background-color: var(--vscode-badge-background);
+        background: linear-gradient(
+          135deg,
+          var(--vscode-badge-background) 0%,
+          color-mix(in srgb, var(--vscode-badge-background) 80%, var(--vscode-charts-blue) 20%) 100%
+        );
         color: var(--vscode-badge-foreground);
-        padding: 4px 10px;
-        border-radius: var(--border-radius);
+        padding: 6px 12px;
+        border-radius: 12px;
         font-size: 13px;
+        font-weight: 500;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
       }
       .tag:hover {
-        background-color: var(--vscode-badge-foreground);
-        color: var(--vscode-badge-background);
+        background: linear-gradient(
+          135deg,
+          var(--vscode-charts-blue) 0%,
+          color-mix(in srgb, var(--vscode-charts-blue) 70%, var(--vscode-charts-purple) 30%) 100%
+        );
         transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
       }
 
       .content-preview {
@@ -251,32 +272,45 @@
             <span id="rule-name">TypeScript Naming Conventions</span>
           </h1>
           <div class="toolbar" role="toolbar" aria-label="Rule actions">
-            <button id="toggle-wrap" class="toolbar-button" aria-label="Toggle word wrap">
-              <i class="codicon codicon-word-wrap"></i>
+            <button
+              class="toolbar-button"
+              onclick="sendMessage('openMarkdownPreview')"
+              aria-label="Preview markdown"
+              title="👁️ Preview"
+            >
+              <i class="codicon codicon-open-preview"></i>
             </button>
             <button
               class="toolbar-button"
               onclick="sendMessage('copyContent')"
               aria-label="Copy content"
+              title="📋 Copy"
             >
               <i class="codicon codicon-copy"></i>
             </button>
             <button
               class="toolbar-button"
-              onclick="sendMessage('exportRule')"
-              aria-label="Export rule"
+              onclick="sendMessage('renderMarkdown')"
+              aria-label="Render markdown"
+              title="🔄 Render"
             >
-              <i class="codicon codicon-export"></i>
-            </button>
-            <button class="toolbar-button" onclick="sendMessage('editRule')" aria-label="Edit rule">
-              <i class="codicon codicon-edit"></i>
+              <i class="codicon codicon-preview"></i>
             </button>
             <button
               class="toolbar-button"
-              onclick="sendMessage('closePanel')"
-              aria-label="Close panel"
+              onclick="sendMessage('exportRule')"
+              aria-label="Export rule"
+              title="📥 Export"
             >
-              <i class="codicon codicon-close"></i>
+              <i class="codicon codicon-export"></i>
+            </button>
+            <button
+              class="toolbar-button"
+              onclick="sendMessage('openInEditor')"
+              aria-label="Edit in editor"
+              title="📝 Edit"
+            >
+              <i class="codicon codicon-edit"></i>
             </button>
           </div>
         </div>
@@ -295,7 +329,9 @@
             <div class="metadata-label">Author</div>
             <div class="metadata-value" id="meta-author">Team Lead</div>
             <div class="metadata-label">Priority</div>
-            <div class="metadata-value"><span class="priority-high">high 🔥</span></div>
+            <div class="metadata-value">
+              <span class="priority-text priority-high">🔥 high</span>
+            </div>
           </div>
         </section>
 

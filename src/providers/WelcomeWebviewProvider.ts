@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { CONFIG_KEYS, CONFIG_PREFIX } from '../utils/constants';
+import { CONFIG_KEYS, CONFIG_PREFIX, EXTENSION_ICON_PATH } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
@@ -40,6 +40,7 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
       viewType: 'turboAiRules.welcome',
       title: 'Welcome to Turbo AI Rules',
       viewColumn: vscode.ViewColumn.One,
+      iconPath: EXTENSION_ICON_PATH,
     });
     // 注意：不在这里发送初始状态，而是等待前端的 ready 消息
     // 这是 VSCode Webview 的最佳实践，避免时序问题

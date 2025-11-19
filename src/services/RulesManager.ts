@@ -6,6 +6,7 @@
 import type { ConflictStrategy, ParsedRule, RuleConflict, SearchFilters } from '../types/rules';
 import { LRU_CACHE_SIZE } from '../utils/constants';
 import { Logger } from '../utils/logger';
+import { ConfigManager } from './ConfigManager';
 
 /**
  * LRU 缓存实现
@@ -360,14 +361,19 @@ export class RulesManager {
   public getStats(): {
     totalRules: number;
     sourceCount: number;
+    enabledSourceCount: number;
     cacheSize: number;
     conflictCount: number;
   } {
     const conflicts = this.detectConflicts();
+    const configManager = ConfigManager.getInstance();
+    const sources = configManager.getSources();
+    const enabledSources = sources.filter((s) => s.enabled !== false);
 
     return {
       totalRules: this.getAllRules().length,
       sourceCount: this.rulesIndex.size,
+      enabledSourceCount: enabledSources.length,
       cacheSize: this.rulesCache.size,
       conflictCount: conflicts.length,
     };

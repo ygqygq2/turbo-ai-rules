@@ -2,28 +2,273 @@
  * 搜索页面专属样式
  */
 
+/* 快速筛选按钮 */
+.quick-filters {
+  margin-top: 16px;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
 .quick-filter {
-  padding: 6px 12px;
+  flex: 1;
+  padding: 8px 16px;
   font-size: 12px;
   border: 1px solid var(--vscode-editorWidget-border);
   background: var(--vscode-button-secondaryBackground);
   color: var(--vscode-button-secondaryForeground);
   border-radius: var(--border-radius);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
 .quick-filter:hover {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
+.quick-filter.active {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border-color: var(--vscode-focusBorder);
+}
+
+.quick-filter.priority-high.active {
+  border-left: 3px solid var(--vscode-errorForeground);
+}
+
+.quick-filter.priority-medium.active {
+  border-left: 3px solid var(--vscode-editorWarning-foreground);
+}
+
+.quick-filter.priority-low.active {
+  border-left: 3px solid var(--vscode-charts-blue);
+}
+
+/* 搜索表单紧凑布局 */
+.search-form {
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+
+.search-form .section-title {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+/* 表单行 - 一行2列布局 */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: var(--vscode-foreground);
+}
+
+/* 搜索历史 - 简洁链接样式 */
+.history-section-compact {
+  padding: 8px 12px;
+  margin-top: 8px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: var(--border-radius);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.history-label {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.history-link {
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.history-link:hover {
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
+.history-separator {
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.5;
+}
+
+.history-clear {
+  margin-left: auto;
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 4px;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.history-clear:hover {
+  color: var(--vscode-errorForeground);
+}
+
+.history-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-label {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.history-link {
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.history-link:hover {
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
+.history-separator {
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.5;
+}
+
+.history-clear {
+  margin-left: auto;
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 4px;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.history-clear:hover {
+  color: var(--vscode-errorForeground);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.section-header .section-title {
+  cursor: default;
+  user-select: none;
+}
+
 .clear-history-btn {
-  float: right;
   padding: 4px 10px;
-  font-size: 11px;
-  border: none;
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: 1px solid var(--vscode-button-border);
   border-radius: var(--border-radius);
   cursor: pointer;
+  font-size: 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.clear-history-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* 横向滚动的历史记录列表 */
+.history-list-horizontal {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
+  flex: 1;
+  scrollbar-width: thin;
+}
+
+.history-list-horizontal::-webkit-scrollbar {
+  height: 6px;
+}
+
+.history-list-horizontal::-webkit-scrollbar-track {
+  background: var(--vscode-scrollbarSlider-background);
+  border-radius: 3px;
+}
+
+.history-list-horizontal::-webkit-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-hoverBackground);
+  border-radius: 3px;
+}
+
+.history-item-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 11px;
+  white-space: nowrap;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.history-item-chip:hover {
+  background: var(--vscode-list-activeSelectionBackground);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.history-chip-label {
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.history-chip-count {
+  padding: 1px 5px;
+  background: var(--vscode-editor-background);
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* 保留旧样式以兼容 */
+.history-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .history-item {
@@ -44,8 +289,10 @@
 .history-summary {
   color: var(--vscode-descriptionForeground);
   margin-top: var(--spacing-xs);
+  font-size: 11px;
 }
 
+/* 结果列表 */
 .results-header {
   display: flex;
   justify-content: space-between;
@@ -65,6 +312,7 @@
   border-left: 3px solid transparent;
   border-radius: var(--border-radius);
   transition: background-color 0.2s;
+  position: relative;
 }
 
 .result-item:hover {
@@ -90,34 +338,77 @@
   margin-bottom: var(--spacing-xs);
 }
 
+.result-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.result-checkbox {
+  cursor: pointer;
+}
+
 .result-title {
   font-weight: 600;
   font-size: 13px;
-  flex: 1;
+  color: var(--vscode-foreground);
 }
 
 .result-meta {
   font-size: 12px;
   color: var(--vscode-descriptionForeground);
   margin-bottom: var(--spacing-xs);
+  display: flex;
+  gap: 16px;
 }
 
-.result-description {
+.result-desc {
   margin-top: var(--spacing-xs);
   font-size: 12px;
   color: var(--vscode-descriptionForeground);
+  line-height: 1.5;
+  margin-bottom: 12px;
 }
 
+/* 匹配字段显示 */
 .matched-fields {
-  margin-top: var(--spacing-xs);
-  font-size: 11px;
-  color: var(--vscode-testing-iconPassed);
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  flex-wrap: wrap;
+}
+
+.matched-fields span {
+  padding: 2px 8px;
+  border-radius: 2px;
+}
+
+.matched-fields .matched {
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  font-weight: 500;
+}
+
+.matched-fields .unmatched {
+  background: var(--vscode-input-background);
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.5;
+}
+
+/* 操作按钮 */
+.result-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .view-button {
-  padding: 4px 10px;
+  padding: 4px 12px;
   font-size: 11px;
-  border: none;
+  border: 1px solid var(--vscode-button-border);
   border-radius: var(--border-radius);
   background: var(--vscode-button-secondaryBackground);
   color: var(--vscode-button-secondaryForeground);
@@ -127,4 +418,23 @@
 
 .view-button:hover {
   background: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* 批量操作 */
+.batch-actions {
+  position: sticky;
+  bottom: 0;
+  background: var(--vscode-editor-background);
+  padding: 12px;
+  border-top: 1px solid var(--vscode-panel-border);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.batch-actions span {
+  flex: 1;
+  font-size: 13px;
+  color: var(--vscode-descriptionForeground);
 }

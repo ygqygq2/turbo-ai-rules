@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 
 import { ConfigManager } from '../services/ConfigManager';
 import { RulesManager } from '../services/RulesManager';
+import { EXTENSION_ICON_PATH } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 
@@ -79,8 +80,9 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
   public async showStatistics(): Promise<void> {
     await this.show({
       viewType: 'turboAiRules.statistics',
-      title: 'AI Rules Statistics',
-      viewColumn: vscode.ViewColumn.One,
+      title: 'Turbo AI Rules Statistics',
+      viewColumn: vscode.ViewColumn.Active,
+      iconPath: EXTENSION_ICON_PATH,
     });
 
     // 启动自动刷新
