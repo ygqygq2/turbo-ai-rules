@@ -36,11 +36,16 @@ export class MdcParser {
   /**
    * 获取解析器配置
    */
-  private getParserConfig(): { strictMode: boolean; requireFrontmatter: boolean } {
+  private getParserConfig(): {
+    strictMode: boolean;
+    requireFrontmatter: boolean;
+    excludeFiles: string[];
+  } {
     const config = vscode.workspace.getConfiguration('turbo-ai-rules.parser');
     return {
       strictMode: config.get<boolean>('strictMode', false),
       requireFrontmatter: config.get<boolean>('requireFrontmatter', false),
+      excludeFiles: config.get<string[]>('excludeFiles', ['README.md', 'readme.md', 'README.MD']),
     };
   }
 
@@ -368,11 +373,18 @@ export class MdcParser {
   ): Promise<string[]> {
     const files: string[] = [];
     const entries = await fs.readdir(dirPath, { withFileTypes: true });
+    const { excludeFiles } = this.getParserConfig();
 
     for (const entry of entries) {
       const fullPath = path.join(dirPath, entry.name);
 
       if (entry.isFile()) {
+        // 检查是否在排除列表中
+        if (excludeFiles.includes(entry.name)) {
+          Logger.debug('Skipping excluded file', { filePath: fullPath });
+          continue;
+        }
+
         const ext = path.extname(entry.name);
         if (extensions.includes(ext)) {
           files.push(fullPath);

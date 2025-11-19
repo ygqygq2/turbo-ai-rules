@@ -426,6 +426,18 @@
           "default": false,
           "description": "%turboAiRules.parser.requireFrontmatter.description%"
         },
+        "turbo-ai-rules.parser.excludeFiles": {
+          "type": "array",
+          "default": [
+            "README.md",
+            "readme.md",
+            "README.MD"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "%turboAiRules.parser.excludeFiles.description%"
+        },
         "turbo-ai-rules.adapters.cursor.enabled": {
           "type": "boolean",
           "default": false,

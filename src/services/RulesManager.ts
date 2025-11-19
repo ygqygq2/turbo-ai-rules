@@ -3,6 +3,8 @@
  * 负责规则的索引、搜索、缓存和冲突解决
  */
 
+import * as path from 'path';
+
 import type { ConflictStrategy, ParsedRule, RuleConflict, SearchFilters } from '../types/rules';
 import { LRU_CACHE_SIZE } from '../utils/constants';
 import { Logger } from '../utils/logger';
@@ -66,6 +68,7 @@ export class RulesManager {
   private static instance: RulesManager;
   private rulesCache: LRUCache<string, ParsedRule>;
   private rulesIndex: Map<string, ParsedRule[]>; // sourceId -> rules
+  private conflictsCache: RuleConflict[] | null = null; // 缓存冲突检测结果
 
   private constructor() {
     this.rulesCache = new LRUCache(LRU_CACHE_SIZE);
@@ -97,6 +100,9 @@ export class RulesManager {
       const cacheKey = `${sourceId}:${rule.id}`;
       this.rulesCache.set(cacheKey, rule);
     }
+
+    // 清除冲突缓存，因为规则已更新
+    this.conflictsCache = null;
 
     Logger.debug('Rules added to index', {
       sourceId,
@@ -239,6 +245,11 @@ export class RulesManager {
    * @returns 冲突列表
    */
   public detectConflicts(): RuleConflict[] {
+    // 使用缓存避免重复计算
+    if (this.conflictsCache !== null) {
+      return this.conflictsCache;
+    }
+
     const allRules = this.getAllRules();
     const conflicts: RuleConflict[] = [];
 
@@ -255,6 +266,7 @@ export class RulesManager {
       if (rules.length > 1) {
         // 推荐使用优先级最高的
         const sortedByPriority = this.sortByPriority(rules);
+
         conflicts.push({
           ruleId,
           conflictingRules: rules,
@@ -264,13 +276,18 @@ export class RulesManager {
       }
     }
 
+    // 只在检测到冲突时记录简要警告
     if (conflicts.length > 0) {
-      Logger.warn('Rule conflicts detected', { count: conflicts.length });
+      Logger.warn('Rule conflicts detected', {
+        count: conflicts.length,
+        ruleIds: conflicts.map((c) => c.ruleId),
+      });
     }
 
+    // 缓存结果
+    this.conflictsCache = conflicts;
     return conflicts;
   }
-
   /**
    * 合并规则（解决冲突）
    * @param strategy 冲突解决策略
@@ -319,19 +336,25 @@ export class RulesManager {
   }
 
   /**
-   * 清除指定源的规则
+   * 移除指定源的规则
    * @param sourceId 规则源 ID
    */
-  public clearSource(sourceId: string): void {
+  public removeRules(sourceId: string): void {
     this.rulesIndex.delete(sourceId);
-
-    // 清除缓存中该源的所有规则
-    // 由于 LRU 缓存的实现，我们需要重建缓存
-    this.rebuildCache();
-
-    Logger.info('Source rules cleared', { sourceId });
+    // 清除冲突缓存
+    this.conflictsCache = null;
+    Logger.info('Rules removed from index', { sourceId });
   }
 
+  /**
+   * 清空所有规则
+   */
+  public clear(): void {
+    this.rulesIndex.clear();
+    this.rulesCache.clear();
+    this.conflictsCache = null;
+    Logger.info('All rules cleared from index');
+  }
   /**
    * 清除所有规则
    */

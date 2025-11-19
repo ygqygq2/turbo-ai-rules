@@ -13,7 +13,7 @@ interface SearchCriteria {
   namePattern?: string;
   contentPattern?: string;
   tags?: string[];
-  priority?: string;
+  priorities?: string[]; // 支持多选优先级
   source?: string;
 }
 
@@ -110,12 +110,19 @@ export const App: React.FC = () => {
   };
 
   const handleQuickFilter = (priority: 'high' | 'medium' | 'low') => {
-    const newCriteria = { ...criteria, priority };
-    console.log('[SearchApp] Quick filter triggered, priority:', priority);
+    const currentPriorities = criteria.priorities || [];
+    let newPriorities: string[];
+
+    // 切换逻辑：如果已选中则取消，否则添加
+    if (currentPriorities.includes(priority)) {
+      newPriorities = currentPriorities.filter((p) => p !== priority);
+    } else {
+      newPriorities = [...currentPriorities, priority];
+    }
+
+    const newCriteria = { ...criteria, priorities: newPriorities };
+    console.log('[SearchApp] Quick filter toggled, priorities:', newPriorities);
     setCriteria(newCriteria);
-    setLoading(true);
-    setError(null);
-    vscodeApi.postMessage('search', newCriteria);
   };
 
   const handleApplyHistory = (historyItem: SearchHistory) => {
@@ -223,30 +230,32 @@ export const App: React.FC = () => {
         </Toolbar>
 
         <div className="quick-filters">
-          <div className="section-title">⚡ Quick Filters</div>
+          <div className="section-title">⚡ 优先级过滤器（可多选）</div>
           <div className="filter-buttons">
             <button
               className={`quick-filter priority-high ${
-                criteria.priority === 'high' ? 'active' : ''
+                (criteria.priorities || []).includes('high') ? 'active' : ''
               }`}
               onClick={() => handleQuickFilter('high')}
-              title="High Priority"
+              title="高优先级（可多选，点击已选中的按钮可取消）"
             >
               🔴 High Priority
             </button>
             <button
               className={`quick-filter priority-medium ${
-                criteria.priority === 'medium' ? 'active' : ''
+                (criteria.priorities || []).includes('medium') ? 'active' : ''
               }`}
               onClick={() => handleQuickFilter('medium')}
-              title="Medium Priority"
+              title="中优先级（可多选，点击已选中的按钮可取消）"
             >
               🟡 Medium Priority
             </button>
             <button
-              className={`quick-filter priority-low ${criteria.priority === 'low' ? 'active' : ''}`}
+              className={`quick-filter priority-low ${
+                (criteria.priorities || []).includes('low') ? 'active' : ''
+              }`}
               onClick={() => handleQuickFilter('low')}
-              title="Low Priority"
+              title="低优先级（可多选，点击已选中的按钮可取消）"
             >
               🔵 Low Priority
             </button>

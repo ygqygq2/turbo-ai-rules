@@ -19,7 +19,7 @@ interface SearchCriteria {
   namePattern?: string;
   contentPattern?: string;
   tags?: string[];
-  priority?: string;
+  priorities?: string[]; // 支持多选优先级
   source?: string;
 }
 
@@ -178,7 +178,7 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
       (criteria.namePattern && criteria.namePattern.trim()) ||
       (criteria.contentPattern && criteria.contentPattern.trim()) ||
       (criteria.tags && criteria.tags.length > 0) ||
-      criteria.priority ||
+      (criteria.priorities && criteria.priorities.length > 0) ||
       (criteria.source && criteria.source.trim());
 
     // 如果没有任何条件，返回所有规则
@@ -271,8 +271,9 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
       }
 
       // 优先级匹配（如果提供了条件）
-      if (isMatch && criteria.priority) {
-        if (rule.metadata?.priority === criteria.priority) {
+      if (isMatch && criteria.priorities && criteria.priorities.length > 0) {
+        const rulePriority = rule.metadata?.priority || 'medium';
+        if (criteria.priorities.includes(rulePriority)) {
           matchedFields.push('priority');
         } else {
           isMatch = false;
@@ -518,7 +519,8 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
     if (criteria.contentPattern?.trim())
       cleanCriteria.contentPattern = criteria.contentPattern.trim();
     if (criteria.tags && criteria.tags.length > 0) cleanCriteria.tags = criteria.tags;
-    if (criteria.priority) cleanCriteria.priority = criteria.priority;
+    if (criteria.priorities && criteria.priorities.length > 0)
+      cleanCriteria.priorities = criteria.priorities;
     if (criteria.source?.trim()) cleanCriteria.source = criteria.source.trim();
 
     // 生成搜索摘要
@@ -547,15 +549,17 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
     }
 
     this.saveSearchHistory();
+    // 立即发送更新后的历史记录给前端
+    this.sendSearchHistory();
   }
 
   private generateSearchSummary(criteria: SearchCriteria): string {
     const parts: string[] = [];
-    if (criteria.namePattern) parts.push(`标题:“${criteria.namePattern}”`);
-    if (criteria.contentPattern) parts.push(`内容:“${criteria.contentPattern}”`);
+    if (criteria.namePattern) parts.push(`标题:"${criteria.namePattern}"`);
+    if (criteria.contentPattern) parts.push(`内容:"${criteria.contentPattern}"`);
     if (criteria.tags?.length) parts.push(`标签:[${criteria.tags.join(', ')}]`);
-    if (criteria.priority) parts.push(`优先级:${criteria.priority}`);
-    if (criteria.source) parts.push(`源:“${criteria.source}”`);
+    if (criteria.priorities?.length) parts.push(`优先级:[${criteria.priorities.join('+')}]`);
+    if (criteria.source) parts.push(`源:"${criteria.source}"`);
     return parts.length > 0 ? parts.join(' + ') : '全部规则';
   }
 

@@ -11,6 +11,7 @@ import * as vscode from 'vscode';
 import {
   addSourceCommand,
   copyRuleContentCommand,
+  debugRulesCommand,
   deselectAllRulesCommand,
   editSourceCommand,
   exportRuleCommand,
@@ -349,6 +350,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           await context.workspaceState.update('sources', undefined);
           notify('Workspace state cleared. Reloading window...', 'info');
           await vscode.commands.executeCommand('workbench.action.reloadWindow');
+        }),
+        vscode.commands.registerCommand('turbo-ai-rules.debugRules', async () => {
+          await debugRulesCommand();
         }),
       );
     }

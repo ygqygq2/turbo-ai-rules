@@ -3,6 +3,7 @@
  */
 
 export { addSourceCommand } from './addSource';
+export { debugRulesCommand } from './debugRules';
 export { generateConfigsCommand } from './generateConfigs';
 export { manageSourceCommand } from './manageSource';
 export { refreshGitCacheCommand } from './refreshGitCache';

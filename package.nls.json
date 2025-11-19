@@ -21,6 +21,7 @@
   "turboAiRules.blockMarkers.end.description": "End marker for auto-generated content block",
   "turboAiRules.parser.strictMode.description": "Enable strict validation: require id, title, and valid metadata in all rules (recommended for managed rule libraries)",
   "turboAiRules.parser.requireFrontmatter.description": "Require YAML frontmatter in rule files (when disabled, plain Markdown files are accepted)",
+  "turboAiRules.parser.excludeFiles.description": "Exclude specific files from being parsed as rules (e.g., README.md). Use filename with extension.",
   "turboAiRules.adapters.cursor.enabled.description": "Enable Cursor adapter (.cursorrules)",
   "turboAiRules.adapters.cursor.autoUpdate.description": "Auto-update .cursorrules after sync",
   "turboAiRules.adapters.copilot.enabled.description": "Enable GitHub Copilot adapter (.github/copilot-instructions.md)",
