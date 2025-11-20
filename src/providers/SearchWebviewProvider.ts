@@ -158,7 +158,7 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
     const criteria = this.pendingSearchCriteria;
     this.pendingSearchCriteria = null; // 清除缓存
 
-    Logger.info('[SearchWebview] Executing pending search', { criteria });
+    Logger.debug('[SearchWebview] Executing pending search', { criteria });
 
     // 发送预填数据到前端
     this.postMessage({

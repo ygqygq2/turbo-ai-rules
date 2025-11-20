@@ -56,41 +56,29 @@ export const App: React.FC = () => {
   useEffect(() => {
     // 通知后端 Webview 已准备就绪
     vscodeApi.postMessage('webviewReady', {});
-    console.log('[SearchApp] Webview ready signal sent');
 
     const handleMessage = (event: MessageEvent) => {
       const message = event.data;
-      console.log('[SearchApp] ===== Received message =====');
-      console.log('[SearchApp] Type:', message.type);
-      console.log('[SearchApp] Payload:', message.payload);
-      console.log('[SearchApp] ========================');
 
       if (message.type === 'searchResults') {
-        console.log('[SearchApp] Search results count:', message.payload.results.length);
         setResults(message.payload.results);
         setLoading(false);
         setSelectedResults(new Set());
       } else if (message.type === 'error') {
-        console.error('[SearchApp] Error received:', message.payload.message);
         setError(message.payload.message);
         setLoading(false);
       } else if (message.type === 'searchHistory') {
         setHistory(message.payload.history);
       } else if (message.type === 'success') {
         // 显示成功提示
-        console.log('[SearchApp] Success:', message.payload.message);
       } else if (message.type === 'prefillCriteria') {
         // 从统计页面跳转过来时预填搜索条件并执行搜索
-        console.log('[SearchApp] *** PREFILL TRIGGERED ***');
-        console.log('[SearchApp] Prefilling criteria:', message.payload);
         const newCriteria = message.payload;
         setCriteria(newCriteria);
         setLoading(true);
         setError(null);
         // 直接使用 payload 中的条件进行搜索，而不是依赖状态更新
-        console.log('[SearchApp] Sending search request with:', newCriteria);
         vscodeApi.postMessage('search', newCriteria);
-        console.log('[SearchApp] Search request sent!');
       }
     };
     window.addEventListener('message', handleMessage);
