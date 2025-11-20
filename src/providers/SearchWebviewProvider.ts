@@ -40,6 +40,8 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
   private searchHistory: SearchHistoryItem[] = [];
   private lastSearchResults: SearchResult[] = [];
   private readonly MAX_HISTORY = 10;
+  private pendingSearchCriteria: SearchCriteria | null = null; // 待执行的搜索条件
+  private webviewReady: boolean = false; // Webview 是否已准备就绪
 
   private constructor(
     context: vscode.ExtensionContext,
@@ -60,6 +62,10 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
   }
 
   public async showSearch(): Promise<void> {
+    // 重置状态
+    this.webviewReady = false;
+    this.pendingSearchCriteria = null;
+
     await this.show({
       viewType: 'turboAiRules.search',
       title: 'Search Rules',
@@ -72,17 +78,22 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
    * 显示搜索面板并预填搜索条件
    */
   public async showSearchWithCriteria(criteria: SearchCriteria): Promise<void> {
+    Logger.debug('[SearchWebview] showSearchWithCriteria called', { criteria });
+
+    // 先打开面板（会重置状态）
     await this.showSearch();
 
-    // 等待面板准备就绪后发送预填数据并执行搜索
-    setTimeout(() => {
-      this.postMessage({
-        type: 'prefillCriteria',
-        payload: criteria,
-      });
-    }, 300);
-  }
+    // 然后设置搜索条件（支持覆盖：快速点击多个标签时只执行最后一个）
+    this.pendingSearchCriteria = criteria;
+    Logger.debug('[SearchWebview] Pending search criteria set', { criteria });
 
+    // 如果 Webview 已经准备好（重复打开的情况），立即执行搜索
+    if (this.webviewReady) {
+      Logger.debug('[SearchWebview] Webview already ready, executing search immediately');
+      await this.executePendingSearch();
+    }
+    // 否则等待 webviewReady 消息（在 handleMessage 中处理）
+  }
   /**
    * 生成 HTML 内容 - 从文件加载
    */
@@ -136,11 +147,41 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
   }
 
   /**
+   * 执行待处理的搜索
+   */
+  private async executePendingSearch(): Promise<void> {
+    if (!this.pendingSearchCriteria) {
+      Logger.debug('[SearchWebview] No pending search criteria');
+      return;
+    }
+
+    const criteria = this.pendingSearchCriteria;
+    this.pendingSearchCriteria = null; // 清除缓存
+
+    Logger.info('[SearchWebview] Executing pending search', { criteria });
+
+    // 发送预填数据到前端
+    this.postMessage({
+      type: 'prefillCriteria',
+      payload: criteria,
+    });
+
+    // 立即执行搜索
+    await this.performSearch(criteria);
+  }
+
+  /**
    * 处理来自 Webview 的消息
    */
   protected async handleMessage(message: WebviewMessage): Promise<void> {
     try {
       switch (message.type) {
+        case 'webviewReady':
+          Logger.debug('[SearchWebview] Webview ready signal received');
+          this.webviewReady = true;
+          // 执行待处理的搜索（如果有）
+          await this.executePendingSearch();
+          break;
         case 'search':
           Logger.debug('[SearchWebview] Received search request', {
             criteria: message.payload,
