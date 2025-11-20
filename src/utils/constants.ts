@@ -93,8 +93,9 @@ export const GIT_URL_REGEX =
 
 /**
  * 分支名正则
+ * 支持字母、数字、下划线、点、斜杠和连字符
  */
-export const BRANCH_NAME_REGEX = /^[\w./]+$/;
+export const BRANCH_NAME_REGEX = /^[\w./-]+$/;
 
 /**
  * 规则 ID 正则
@@ -110,12 +111,12 @@ export const LRU_CACHE_SIZE = 1000;
 /**
  * 递归解析最大深度
  */
-export const MAX_PARSE_DEPTH = 6;
+export const MAX_PARSE_DEPTH = 10;
 
 /**
  * 递归解析最大文件数
  */
-export const MAX_PARSE_FILES = 500;
+export const MAX_PARSE_FILES = 1000;
 
 /**
  * 支持的规则文件扩展名

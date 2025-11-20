@@ -132,6 +132,8 @@ describe('GitManager 单元测试', () => {
         'feature/test',
         'release_1.0',
         'feature_branch',
+        'feature-branch',
+        'bugfix-issue-123',
       ];
 
       validBranches.forEach((branch) => {
@@ -145,7 +147,6 @@ describe('GitManager 单元测试', () => {
         'branch with spaces', // 含空格
         'branch;rm-rf', // 含分号
         'branch@test', // 含@符号
-        'branch-with-dash', // 含连字符（不在 \w 范围内）
       ];
 
       invalidBranches.forEach((branch) => {

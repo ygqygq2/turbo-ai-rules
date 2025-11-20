@@ -445,6 +445,11 @@ export class WorkspaceStateManager {
         lastSyncTime: {},
         sourceHashes: {},
       },
+      rulesStats: {
+        totalRules: 0,
+        sourceCount: 0,
+        enabledSourceCount: 0,
+      },
       uiState: {
         expandedNodes: [],
         selectedSource: null,

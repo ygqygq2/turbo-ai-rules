@@ -1,28 +1,69 @@
-// See https://go.microsoft.com/fwlink/?LinkId=733558
-// for the documentation about the tasks.json format
 {
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "watch",
       "type": "npm",
       "script": "watch",
-      "problemMatcher": "$tsc-watch",
+      "problemMatcher": [
+        {
+          "pattern": {
+            "regexp": "^([^\\s].*)\\((\\d+|\\d+,\\d+|\\d+,\\d+,\\d+,\\d+)\\):\\s+(error|warning|info)\\s+(TS\\d+)\\s*:\\s*(.*)$",
+            "file": 1,
+            "location": 2,
+            "severity": 3,
+            "code": 4,
+            "message": 5
+          },
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": "^.*esbuild.*$",
+            "endsPattern": "^\\[watch\\] build finished, watching for changes\\.\\.\\.$"
+          }
+        }
+      ],
       "isBackground": true,
       "presentation": {
-        "reveal": "never"
+        "reveal": "never",
+        "panel": "dedicated"
       },
       "group": {
         "kind": "build",
         "isDefault": true
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
       }
     },
     {
-      "type": "npm",
-      "script": "compile",
-      "problemMatcher": "$tsc",
+      "label": "build-webview",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "build:webview"],
       "presentation": {
-        "reveal": "never"
+        "reveal": "silent",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true,
+        "close": false
       },
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "compile",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "esbuild-base", "--", "--sourcemap"],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false,
+        "close": true
+      },
+      "problemMatcher": [],
+      "dependsOn": ["build-webview"],
       "group": "build"
     },
     {

@@ -99,13 +99,36 @@
 }
 
 /* 优先级柱状图 */
-.priority-bar {
-  background-color: var(--vscode-progressBar-background);
-  height: 24px;
+.priority-bar-wrapper {
+  flex: 1;
+  background-color: var(--vscode-input-background);
   border-radius: 4px;
+  height: 24px;
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
-  padding: 0 8px;
+  justify-content: center;
+}
+
+.priority-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.priority-bar-text {
+  position: relative;
+  z-index: 1;
+  font-size: 0.85em;
+  font-weight: 600;
+  white-space: nowrap;
+  /* 白色文字配合阴影，确保在所有颜色背景上都清晰可见 */
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 0, 0, 0.6);
 }
 
 .priority-high {
@@ -129,6 +152,19 @@
   margin: 4px;
   border-radius: 12px;
   font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tag:hover {
+  background-color: var(--vscode-button-hoverBackground);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.tag:active {
+  transform: translateY(0);
 }
 ```
 
@@ -198,6 +234,27 @@ interface StatisticsData {
 更新 Webview 内容
     ↓
 显示完成动画
+```
+
+### 标签点击搜索
+
+**触发方式**：
+
+- 点击任意标签
+- 标签呈现可点击样式（鼠标悬停效果）
+
+**搜索流程**：
+
+```
+点击标签
+    ↓
+发送 searchByTag 消息
+    ↓
+打开搜索页面
+    ↓
+预填标签条件
+    ↓
+自动执行搜索
 ```
 
 ### 导出功能
@@ -301,8 +358,8 @@ interface StatisticsData {
 // 查看源详情
 { type: 'viewSource', payload: { sourceName: string } }
 
-// 查看标签规则
-{ type: 'viewTagRules', payload: { tag: string } }
+// 根据标签搜索规则
+{ type: 'searchByTag', payload: { tag: string } }
 ```
 
 ### Extension → Webview 消息

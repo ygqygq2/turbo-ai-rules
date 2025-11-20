@@ -39,7 +39,7 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
   private static instance: SearchWebviewProvider | undefined;
   private searchHistory: SearchHistoryItem[] = [];
   private lastSearchResults: SearchResult[] = [];
-  private readonly MAX_HISTORY = 5;
+  private readonly MAX_HISTORY = 10;
 
   private constructor(
     context: vscode.ExtensionContext,
@@ -66,6 +66,21 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
       viewColumn: vscode.ViewColumn.Active,
       iconPath: EXTENSION_ICON_PATH,
     });
+  }
+
+  /**
+   * 显示搜索面板并预填搜索条件
+   */
+  public async showSearchWithCriteria(criteria: SearchCriteria): Promise<void> {
+    await this.showSearch();
+
+    // 等待面板准备就绪后发送预填数据并执行搜索
+    setTimeout(() => {
+      this.postMessage({
+        type: 'prefillCriteria',
+        payload: criteria,
+      });
+    }, 300);
   }
 
   /**

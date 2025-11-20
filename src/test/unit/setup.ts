@@ -36,6 +36,9 @@ vi.mock('vscode', () => ({
   },
   ThemeIcon: vi.fn(),
   ThemeColor: vi.fn(),
+  l10n: {
+    t: vi.fn((...args) => args.join(' ')),
+  },
 }));
 
 // Mock logger to avoid vscode-log initialization issues in unit tests

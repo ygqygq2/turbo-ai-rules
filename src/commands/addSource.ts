@@ -2,6 +2,8 @@
  * 添加规则源命令
  */
 
+import * as vscode from 'vscode';
+
 import { SourceDetailWebviewProvider } from '../providers/SourceDetailWebviewProvider';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';

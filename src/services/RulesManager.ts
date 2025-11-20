@@ -3,8 +3,6 @@
  * 负责规则的索引、搜索、缓存和冲突解决
  */
 
-import * as path from 'path';
-
 import type { ConflictStrategy, ParsedRule, RuleConflict, SearchFilters } from '../types/rules';
 import { LRU_CACHE_SIZE } from '../utils/constants';
 import { Logger } from '../utils/logger';
@@ -344,6 +342,14 @@ export class RulesManager {
     // 清除冲突缓存
     this.conflictsCache = null;
     Logger.info('Rules removed from index', { sourceId });
+  }
+
+  /**
+   * 清除指定源的规则（removeRules 的别名）
+   * @param sourceId 规则源 ID
+   */
+  public clearSource(sourceId: string): void {
+    this.removeRules(sourceId);
   }
 
   /**

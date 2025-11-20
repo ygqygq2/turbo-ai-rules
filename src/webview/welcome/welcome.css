@@ -1,7 +1,7 @@
 /* Welcome Page Styles */
 
 .welcome-container {
-  max-width: 800px;
+  max-width: var(--container-max-width);
   margin: 0 auto;
   padding: 12px;
   animation: fadeIn 0.4s ease-out forwards;

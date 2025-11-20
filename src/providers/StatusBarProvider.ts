@@ -165,7 +165,12 @@ export class StatusBarProvider {
         const stateManager = WorkspaceStateManager.getInstance();
         const cachedStats = await stateManager.getRulesStats();
         if (cachedStats.totalRules > 0) {
-          stats = cachedStats;
+          stats = {
+            ...stats,
+            totalRules: cachedStats.totalRules,
+            sourceCount: cachedStats.sourceCount,
+            enabledSourceCount: cachedStats.enabledSourceCount,
+          };
         }
       } catch (_error) {
         // 忽略错误，使用默认值
@@ -181,27 +186,25 @@ export class StatusBarProvider {
     switch (this.syncStatus) {
       case 'initializing':
         icon = '⏳'; // 沙漏
-        text = 'Loading...';
-        tooltip = 'Initializing Turbo AI Rules';
+        text = vscode.l10n.t('statusBar.loading');
+        tooltip = vscode.l10n.t('statusBar.initializing');
         break;
 
       case 'syncing':
         icon = '$(sync~spin)';
         if (this.syncProgress) {
           const { completed, total, currentSource, operation } = this.syncProgress;
-          text = `Syncing ${completed}/${total}`;
-          tooltip = [
-            'Syncing AI rules from configured sources',
-            '',
-            `Progress: ${completed}/${total} sources`,
-            currentSource ? `Current: ${currentSource}` : '',
-            operation ? `Operation: ${operation}` : '',
-          ]
-            .filter(Boolean)
-            .join('\n');
+          text = vscode.l10n.t('statusBar.syncingProgress', completed, total);
+          tooltip = vscode.l10n.t(
+            'statusBar.tooltip.syncingDetail',
+            completed,
+            total,
+            currentSource || '',
+            operation || '',
+          );
         } else {
-          text = 'Syncing...';
-          tooltip = 'Syncing AI rules from configured sources';
+          text = vscode.l10n.t('statusBar.syncing');
+          tooltip = vscode.l10n.t('statusBar.tooltip.syncing');
         }
         break;
 
@@ -216,8 +219,8 @@ export class StatusBarProvider {
 
       case 'error':
         icon = '$(error)';
-        text = 'Sync Failed';
-        tooltip = 'Failed to sync AI rules. Click to retry or view details.';
+        text = vscode.l10n.t('statusBar.syncFailed');
+        tooltip = vscode.l10n.t('statusBar.tooltip.failed');
         backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
         break;
 
@@ -235,8 +238,8 @@ export class StatusBarProvider {
             backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
           }
         } else {
-          text = 'No Rules';
-          tooltip = 'No AI rules configured. Click to add sources and get started.';
+          text = vscode.l10n.t('statusBar.noRules');
+          tooltip = vscode.l10n.t('statusBar.tooltip.idle', 0, 0, 0);
         }
         break;
     }
@@ -266,27 +269,24 @@ export class StatusBarProvider {
   }): string {
     const enabledCount = stats.enabledSourceCount || stats.sourceCount;
     const lines = [
-      '✓ Sync completed successfully',
-      '',
-      `📚 Total Rules: ${stats.totalRules}`,
-      `📦 Sources: ${enabledCount}/${stats.sourceCount} enabled`,
+      vscode.l10n.t('statusBar.tooltip.success', stats.totalRules, enabledCount, stats.sourceCount),
     ];
 
     if (stats.cacheSize) {
-      lines.push(`💾 Cache: ${stats.cacheSize}`);
+      lines.push(vscode.l10n.t('statusBar.tooltip.cache', stats.cacheSize));
     }
 
     if (stats.conflictCount > 0) {
-      lines.push(`⚠️  Conflicts: ${stats.conflictCount}`);
+      lines.push(vscode.l10n.t('statusBar.tooltip.conflicts', stats.conflictCount));
     }
 
     if (this.lastSyncTime) {
       lines.push('');
-      lines.push(`🕒 Just now`);
+      lines.push(vscode.l10n.t('statusBar.tooltip.justNow'));
     }
 
     lines.push('');
-    lines.push('Click to open Turbo AI Rules panel');
+    lines.push(vscode.l10n.t('statusBar.clickToOpen'));
 
     return lines.join('\n');
   }
@@ -303,27 +303,24 @@ export class StatusBarProvider {
   }): string {
     const enabledCount = stats.enabledSourceCount || stats.sourceCount;
     const lines = [
-      'Turbo AI Rules',
-      '',
-      `📚 Total Rules: ${stats.totalRules}`,
-      `📦 Sources: ${enabledCount}/${stats.sourceCount} enabled`,
+      vscode.l10n.t('statusBar.tooltip.idle', stats.totalRules, enabledCount, stats.sourceCount),
     ];
 
     if (stats.cacheSize) {
-      lines.push(`💾 Cache: ${stats.cacheSize}`);
+      lines.push(vscode.l10n.t('statusBar.tooltip.cache', stats.cacheSize));
     }
 
     if (stats.conflictCount > 0) {
-      lines.push(`⚠️  Conflicts: ${stats.conflictCount}`);
+      lines.push(vscode.l10n.t('statusBar.tooltip.conflicts', stats.conflictCount));
     }
 
     if (this.lastSyncTime) {
       lines.push('');
-      lines.push(`🕒 Last sync: ${this.formatTime(this.lastSyncTime)}`);
+      lines.push(vscode.l10n.t('statusBar.tooltip.lastSync', this.formatTime(this.lastSyncTime)));
     }
 
     lines.push('');
-    lines.push('Click to open Turbo AI Rules panel');
+    lines.push(vscode.l10n.t('statusBar.clickToOpen'));
 
     return lines.join('\n');
   }
@@ -339,11 +336,11 @@ export class StatusBarProvider {
     const hours = Math.floor(minutes / 60);
 
     if (seconds < 60) {
-      return 'just now';
+      return vscode.l10n.t('time.justNow');
     } else if (minutes < 60) {
-      return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+      return vscode.l10n.t('time.minutesAgo', minutes);
     } else if (hours < 24) {
-      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+      return vscode.l10n.t('time.hoursAgo', hours);
     } else {
       return date.toLocaleString();
     }

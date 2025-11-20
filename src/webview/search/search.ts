@@ -203,6 +203,10 @@ window.addEventListener('message', (event) => {
     case 'searchHistory':
       displayHistory(message.payload.history);
       break;
+    case 'prefillCriteria':
+      // 预填搜索条件（从统计页面跳转过来时）
+      loadCriteria(message.payload);
+      break;
     case 'error':
       alert(message.payload.message);
       break;
