@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as path from 'path';
 
 vi.mock('vscode', () => ({
   workspace: {
@@ -49,6 +50,6 @@ describe('RulesAdapter', () => {
     ];
     const config = await adapter.generate(rules);
     expect(config.content).toContain('A');
-    expect(config.filePath).toBe('rules/index.md');
+    expect(path.normalize(config.filePath)).toBe(path.normalize('rules/index.md'));
   });
 });
