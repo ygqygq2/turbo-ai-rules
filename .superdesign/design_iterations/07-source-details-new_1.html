@@ -7,7 +7,7 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'none'; style-src 'unsafe-inline' ${webview.cspSource}; script-src 'nonce-${nonce}' https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;"
     />
-    <title>Add New Rule Source</title>
+    <title id="page-title">Rule Source</title>
     <script nonce="${nonce}" src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -204,8 +204,13 @@
           gap: var(--spacing-md);
         "
       >
-        <i data-lucide="plus-circle" style="width: 28px; height: 28px" class="description"></i>
-        <h1 style="font-size: 1.5rem; font-weight: 600">Add New Rule Source</h1>
+        <i
+          id="header-icon"
+          data-lucide="plus-circle"
+          style="width: 28px; height: 28px"
+          class="description"
+        ></i>
+        <h1 id="header-title" style="font-size: 1.5rem; font-weight: 600">Add New Rule Source</h1>
       </header>
 
       <div id="error-box" class="error-box hidden">
@@ -345,7 +350,9 @@
           "
         >
           <button type="button" id="cancel-btn" class="btn btn-secondary">Cancel</button>
-          <button type="submit" id="submit-btn" class="btn btn-primary">Add Source</button>
+          <button type="submit" id="submit-btn" class="btn btn-primary">
+            <span id="submit-text">Add Source</span>
+          </button>
         </div>
       </form>
     </div>
@@ -356,13 +363,78 @@
       const vscode = acquireVsCodeApi();
       const form = document.getElementById('add-source-form');
       const submitBtn = document.getElementById('submit-btn');
+      const submitText = document.getElementById('submit-text');
       const cancelBtn = document.getElementById('cancel-btn');
       const errorBox = document.getElementById('error-box');
       const testBtn = document.getElementById('test-btn');
+      const headerTitle = document.getElementById('header-title');
+      const headerIcon = document.getElementById('header-icon');
+      const pageTitle = document.getElementById('page-title');
 
       const authType = document.getElementById('auth-type');
       const tokenFields = document.getElementById('auth-token-fields');
       const sshFields = document.getElementById('auth-ssh-fields');
+      const gitUrlInput = document.getElementById('gitUrl');
+
+      // 从 URL 参数或 vscode state 获取模式和 sourceId
+      const state = vscode.getState() || {};
+      const mode = state.mode || 'new'; // 'new' or 'edit'
+      const sourceId = state.sourceId || 'new';
+
+      // 根据模式设置 UI
+      if (mode === 'edit') {
+        headerTitle.textContent = 'Edit Rule Source';
+        headerIcon.setAttribute('data-lucide', 'edit');
+        submitText.textContent = 'Save';
+        pageTitle.textContent = 'Edit Rule Source';
+        gitUrlInput.disabled = true;
+        gitUrlInput.style.cursor = 'not-allowed';
+        gitUrlInput.style.opacity = '0.6';
+
+        // 请求加载现有数据
+        vscode.postMessage({ type: 'loadSourceData', payload: { sourceId } });
+      } else {
+        headerTitle.textContent = 'Add New Rule Source';
+        headerIcon.setAttribute('data-lucide', 'plus-circle');
+        submitText.textContent = 'Add Source';
+        pageTitle.textContent = 'Add New Rule Source';
+      }
+
+      // 重新渲染图标
+      lucide.createIcons();
+
+      // 监听来自扩展的消息（用于编辑模式数据填充）
+      window.addEventListener('message', (event) => {
+        const message = event.data;
+        if (message.type === 'sourceData' && message.data) {
+          const source = message.data.source;
+          // 填充表单
+          document.getElementById('name').value = source.name || '';
+          document.getElementById('gitUrl').value = source.gitUrl || '';
+          document.getElementById('branch').value = source.branch || 'main';
+          document.getElementById('subPath').value = source.subPath || '/';
+
+          // 设置认证类型
+          const authTypeValue = source.auth?.type || 'none';
+          document.getElementById(`auth-${authTypeValue}`).checked = true;
+          tokenFields.classList.toggle('hidden', authTypeValue !== 'token');
+          sshFields.classList.toggle('hidden', authTypeValue !== 'ssh');
+
+          if (authTypeValue === 'token' && source.auth?.token) {
+            document.getElementById('token').value = source.auth.token;
+          } else if (authTypeValue === 'ssh') {
+            if (source.auth?.sshKeyPath) {
+              document.getElementById('sshKeyPath').value = source.auth.sshKeyPath;
+            }
+            if (source.auth?.passphrase) {
+              document.getElementById('sshPassphrase').value = source.auth.passphrase;
+            }
+          }
+
+          // 触发校验
+          form.dispatchEvent(new Event('input'));
+        }
+      });
 
       authType.addEventListener('change', (event) => {
         const selected = event.target.value;
@@ -387,7 +459,11 @@
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
 
-        vscode.postMessage({ type: 'addSource', payload: data });
+        if (mode === 'edit') {
+          vscode.postMessage({ type: 'updateSource', payload: { sourceId, ...data } });
+        } else {
+          vscode.postMessage({ type: 'addSource', payload: data });
+        }
       });
 
       cancelBtn.addEventListener('click', () => {

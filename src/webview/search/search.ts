@@ -108,7 +108,7 @@ function displayResults(results: SearchResultItem[]): void {
     .map((result) => {
       const priorityClass = `priority-${result.rule.priority}`;
       const priorityIcon =
-        result.rule.priority === 'high' ? '🔥' : result.rule.priority === 'medium' ? '⚠️' : 'ℹ️';
+        result.rule.priority === 'high' ? '🔥' : result.rule.priority === 'medium' ? '⭐' : 'ℹ️';
 
       return `
         <div class="result-item ${priorityClass}">

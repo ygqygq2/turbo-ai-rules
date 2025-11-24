@@ -4,7 +4,7 @@
 
 import * as vscode from 'vscode';
 
-import { SourceDetailWebviewProvider } from '../providers/SourceDetailWebviewProvider';
+import { SourceDetailWebviewProvider } from '../providers/SourceDetailWebview';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 
@@ -60,7 +60,7 @@ export async function viewSourceDetailCommand(
     const context = (global as unknown as { extensionContext: vscode.ExtensionContext })
       .extensionContext;
     const provider = SourceDetailWebviewProvider.getInstance(context);
-    await provider.showSourceDetail(actualSourceId);
+    await provider.showDetail(actualSourceId);
   } catch (error) {
     Logger.error('Failed to view source detail', error instanceof Error ? error : undefined);
 

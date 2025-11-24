@@ -5,14 +5,14 @@ import { Input } from '../components/Input';
 import { vscodeApi } from '../utils/vscode-api';
 import { t } from '../utils/i18n';
 
-interface NewSourceFormProps {
+interface SourceFormProps {
   mode?: 'new' | 'edit';
   sourceId?: string;
   onCancel?: () => void;
   onSuccess?: (sourceId: string) => void;
 }
 
-export const NewSourceForm: React.FC<NewSourceFormProps> = ({
+export const SourceForm: React.FC<SourceFormProps> = ({
   mode = 'new',
   sourceId,
   onCancel,
@@ -53,17 +53,18 @@ export const NewSourceForm: React.FC<NewSourceFormProps> = ({
 
       // 编辑模式：接收源数据
       if (message.type === 'sourceData' && isEditMode) {
-        const source = message.data?.source;
+        const source = message.payload?.source;
+        const authentication = message.payload?.authentication;
         if (source) {
           setForm({
             name: source.name || '',
             gitUrl: source.gitUrl || '',
             branch: source.branch || 'main',
             subPath: source.subPath || '/',
-            authType: source.auth?.type || 'none',
-            token: source.auth?.token || '',
-            sshKeyPath: source.auth?.sshKeyPath || '',
-            sshPassphrase: source.auth?.passphrase || '',
+            authType: authentication?.type || 'none',
+            token: authentication?.token || '',
+            sshKeyPath: authentication?.sshKeyPath || '',
+            sshPassphrase: authentication?.passphrase || '',
           });
           setLoading(false);
         }
@@ -203,7 +204,6 @@ export const NewSourceForm: React.FC<NewSourceFormProps> = ({
   return (
     <form className="new-source-form" onSubmit={handleSubmit}>
       <Card>
-        <h2>{isEditMode ? t('form.button.editSource') : t('form.button.addSource')}</h2>
         {error && <div className="error-box">{error}</div>}
         {progress && (
           <div
@@ -245,7 +245,7 @@ export const NewSourceForm: React.FC<NewSourceFormProps> = ({
             value={form.gitUrl}
             onChange={handleChange}
             required
-            disabled={isEditMode}
+            disabled={!!isEditMode}
             placeholder={t('form.placeholder.gitUrl')}
             style={isEditMode ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
           />
@@ -405,7 +405,7 @@ export const NewSourceForm: React.FC<NewSourceFormProps> = ({
           {t('form.cancel')}
         </Button>
         <button type="submit" className="button button-primary" disabled={submitting}>
-          {isEditMode ? t('form.button.save') : t('form.button.addSource')}
+          {isEditMode ? t('form.save') : t('form.button.addSource')}
         </button>
       </div>
     </form>

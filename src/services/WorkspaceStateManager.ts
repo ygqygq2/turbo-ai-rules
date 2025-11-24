@@ -10,6 +10,22 @@ import { SystemError } from '../types/errors';
 import { Logger } from '../utils/logger';
 
 /**
+ * 规则源同步统计
+ */
+export interface SourceSyncStats {
+  /** 上次同步成功时间 */
+  lastSyncTime: string; // ISO 8601
+  /** 上次同步成功包含的规则数 */
+  syncedRulesCount: number;
+  /** 上次同步时用户选择的规则路径（快照） */
+  syncedRulePaths: string[];
+  /** 同步状态 */
+  syncStatus: 'success' | 'failed' | 'never';
+  /** 错误信息（如果失败） */
+  errorMessage?: string;
+}
+
+/**
  * workspaceState 完整数据结构
  * 严格控制大小：< 10KB
  */
@@ -20,11 +36,18 @@ interface WorkspaceState {
     sourceHashes: { [sourceId: string]: string }; // 内容哈希
   };
 
+  /** 每个规则源的同步统计（< 3KB） */
+  sourceSyncStats: {
+    [sourceId: string]: SourceSyncStats;
+  };
+
   /** 规则统计信息（< 1KB） - 用于状态栏显示 */
   rulesStats: {
-    totalRules: number;
-    sourceCount: number;
-    enabledSourceCount: number;
+    totalRules: number; // 所有源的规则总数
+    totalSyncedRules: number; // 所有源已同步的规则总数
+    sourceCount: number; // 规则源总数
+    enabledSourceCount: number; // 已启用的规则源数量
+    syncedSourceCount: number; // 至少同步过一次的源数量
   };
 
   /** UI 状态（< 2KB） */
@@ -53,10 +76,13 @@ const DEFAULT_WORKSPACE_STATE: WorkspaceState = {
     lastSyncTime: {},
     sourceHashes: {},
   },
+  sourceSyncStats: {},
   rulesStats: {
     totalRules: 0,
+    totalSyncedRules: 0,
     sourceCount: 0,
     enabledSourceCount: 0,
+    syncedSourceCount: 0,
   },
   uiState: {
     expandedNodes: [],
@@ -160,6 +186,10 @@ export class WorkspaceStateManager {
           ...DEFAULT_WORKSPACE_STATE.syncMetadata,
           ...stored.syncMetadata,
         },
+        sourceSyncStats: {
+          ...DEFAULT_WORKSPACE_STATE.sourceSyncStats,
+          ...stored.sourceSyncStats,
+        },
         rulesStats: {
           ...DEFAULT_WORKSPACE_STATE.rulesStats,
           ...stored.rulesStats,
@@ -250,6 +280,57 @@ export class WorkspaceStateManager {
     const state = await this.readState();
     delete state.syncMetadata.lastSyncTime[sourceId];
     delete state.syncMetadata.sourceHashes[sourceId];
+    delete state.sourceSyncStats[sourceId];
+    await this.writeState(state);
+  }
+
+  // ==================== 规则源同步统计 ====================
+
+  /**
+   * @description 获取单个规则源的同步统计
+   * @return {Promise<SourceSyncStats | undefined>}
+   * @param sourceId {string}
+   */
+  public async getSourceSyncStats(sourceId: string): Promise<SourceSyncStats | undefined> {
+    const state = await this.readState();
+    return state.sourceSyncStats[sourceId];
+  }
+
+  /**
+   * @description 设置单个规则源的同步统计
+   * @return {Promise<void>}
+   * @param sourceId {string}
+   * @param stats {SourceSyncStats}
+   */
+  public async setSourceSyncStats(sourceId: string, stats: SourceSyncStats): Promise<void> {
+    const state = await this.readState();
+    state.sourceSyncStats[sourceId] = stats;
+    await this.writeState(state);
+
+    Logger.debug('Source sync stats updated', {
+      sourceId,
+      syncStatus: stats.syncStatus,
+      syncedRulesCount: stats.syncedRulesCount,
+    });
+  }
+
+  /**
+   * @description 获取所有规则源的同步统计
+   * @return {Promise<{ [sourceId: string]: SourceSyncStats }>}
+   */
+  public async getAllSourceSyncStats(): Promise<{ [sourceId: string]: SourceSyncStats }> {
+    const state = await this.readState();
+    return state.sourceSyncStats;
+  }
+
+  /**
+   * @description 删除规则源的同步统计
+   * @return {Promise<void>}
+   * @param sourceId {string}
+   */
+  public async deleteSourceSyncStats(sourceId: string): Promise<void> {
+    const state = await this.readState();
+    delete state.sourceSyncStats[sourceId];
     await this.writeState(state);
   }
 
@@ -260,8 +341,10 @@ export class WorkspaceStateManager {
    */
   public async getRulesStats(): Promise<{
     totalRules: number;
+    totalSyncedRules: number;
     sourceCount: number;
     enabledSourceCount: number;
+    syncedSourceCount: number;
   }> {
     const state = await this.readState();
     return state.rulesStats;
@@ -272,8 +355,10 @@ export class WorkspaceStateManager {
    */
   public async setRulesStats(stats: {
     totalRules: number;
+    totalSyncedRules: number;
     sourceCount: number;
     enabledSourceCount: number;
+    syncedSourceCount: number;
   }): Promise<void> {
     const state = await this.readState();
     state.rulesStats = stats;
@@ -424,6 +509,13 @@ export class WorkspaceStateManager {
       }
     }
 
+    // 清理规则源同步统计
+    for (const sourceId of Object.keys(state.sourceSyncStats)) {
+      if (!validIdSet.has(sourceId)) {
+        delete state.sourceSyncStats[sourceId];
+      }
+    }
+
     // 清理 UI 状态
     if (state.uiState.selectedSource && !validIdSet.has(state.uiState.selectedSource)) {
       state.uiState.selectedSource = null;
@@ -445,10 +537,13 @@ export class WorkspaceStateManager {
         lastSyncTime: {},
         sourceHashes: {},
       },
+      sourceSyncStats: {},
       rulesStats: {
         totalRules: 0,
+        totalSyncedRules: 0,
         sourceCount: 0,
         enabledSourceCount: 0,
+        syncedSourceCount: 0,
       },
       uiState: {
         expandedNodes: [],

@@ -4,7 +4,7 @@
 
 import * as vscode from 'vscode';
 
-import { SourceDetailWebviewProvider } from '../providers/SourceDetailWebviewProvider';
+import { SourceDetailWebviewProvider } from '../providers/SourceDetailWebview';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 
@@ -17,7 +17,7 @@ export async function addSourceCommand(): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const context = (global as any).extensionContext as import('vscode').ExtensionContext;
     const provider = SourceDetailWebviewProvider.getInstance(context);
-    await provider.showSourceDetail('new');
+    await provider.showSourceForm('new');
   } catch (error: unknown) {
     Logger.error('Failed to add rule source', error instanceof Error ? error : undefined);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

@@ -1,0 +1,199 @@
+/**
+ * Add Source page specific styles
+ */
+
+.add-source-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* 统一的页面 header */
+.page-header {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: var(--vscode-foreground);
+}
+
+.page-header .subtitle {
+  font-size: 14px;
+  color: var(--vscode-descriptionForeground);
+  margin: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Form container */
+.new-source-form {
+  width: 100%;
+}
+
+.new-source-form h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-lg);
+  color: var(--vscode-foreground);
+}
+
+/* Form groups */
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  font-weight: 500;
+  color: var(--vscode-foreground);
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 4px;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: 1px solid var(--vscode-focusBorder);
+  border-color: var(--vscode-focusBorder);
+}
+
+.form-group input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-group input::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+.form-hint {
+  font-size: 0.85rem;
+  color: var(--vscode-descriptionForeground);
+  margin-top: 4px;
+}
+
+/* Error and progress boxes */
+.error-box {
+  padding: 12px;
+  margin-bottom: 16px;
+  background-color: var(--vscode-inputValidation-errorBackground);
+  border: 1px solid var(--vscode-inputValidation-errorBorder);
+  border-radius: 4px;
+  color: var(--vscode-errorForeground);
+}
+
+.progress-box {
+  padding: 12px;
+  margin-bottom: 16px;
+  background-color: var(--vscode-editor-inactiveSelectionBackground);
+  border-radius: 4px;
+  color: var(--vscode-foreground);
+}
+
+.progress-box .spinner {
+  display: inline-block;
+  margin-right: 8px;
+}
+
+/* Auth type tabs */
+.auth-type-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: var(--spacing-md);
+}
+
+.auth-tab {
+  padding: 8px 16px;
+  background-color: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.auth-tab:hover {
+  background-color: var(--vscode-button-secondaryHoverBackground);
+}
+
+.auth-tab.active {
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border-color: var(--vscode-focusBorder);
+}
+
+/* Connection status */
+.connection-status {
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.connection-status.testing {
+  background-color: var(--vscode-editor-inactiveSelectionBackground);
+  color: var(--vscode-foreground);
+}
+
+.connection-status.ok {
+  background-color: var(--vscode-testing-iconPassed);
+  color: white;
+}
+
+.connection-status.fail {
+  background-color: var(--vscode-inputValidation-errorBackground);
+  color: var(--vscode-errorForeground);
+}
+
+/* Form actions */
+.form-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--vscode-editorWidget-border);
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .add-source-container {
+    padding: var(--spacing-md);
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+}

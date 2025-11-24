@@ -7,6 +7,7 @@
   "turbo-ai-rules.sync.conflictStrategy": "priority",
   "turbo-ai-rules.sync.auto": false,
   "turbo-ai-rules.sync.onStartup": false,
+  // "turbo-ai-rules.sync.interval": 1,
 
   // 预配置测试用规则源（公开仓库，无需认证）
   "turbo-ai-rules.sources": [

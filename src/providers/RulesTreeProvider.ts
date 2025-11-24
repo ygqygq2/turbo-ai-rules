@@ -105,7 +105,7 @@ class RuleTreeItem extends vscode.TreeItem {
         const ruleTip = [
           `📝 ${rule.title}`,
           `🆔 ID: ${rule.id}`,
-          `⚡ Priority: ${rule.metadata.priority || 'normal'}`,
+          `⚡ Priority: ${rule.metadata.priority || 'medium'}`,
         ];
         if (rule.metadata.tags && rule.metadata.tags.length > 0) {
           ruleTip.push(`🏷️ Tags: ${rule.metadata.tags.join(', ')}`);
@@ -142,10 +142,7 @@ class RuleTreeItem extends vscode.TreeItem {
             case 'high':
               return new vscode.ThemeIcon('pass-filled', new vscode.ThemeColor('errorForeground'));
             case 'medium':
-              return new vscode.ThemeIcon(
-                'pass-filled',
-                new vscode.ThemeColor('warningForeground'),
-              );
+              return new vscode.ThemeIcon('pass-filled', new vscode.ThemeColor('charts.blue'));
             case 'low':
               return new vscode.ThemeIcon(
                 'pass-filled',
@@ -162,7 +159,7 @@ class RuleTreeItem extends vscode.TreeItem {
           case 'high':
             return new vscode.ThemeIcon('flame', new vscode.ThemeColor('errorForeground'));
           case 'medium':
-            return new vscode.ThemeIcon('warning', new vscode.ThemeColor('warningForeground'));
+            return new vscode.ThemeIcon('star-full', new vscode.ThemeColor('charts.yellow'));
           case 'low':
             return new vscode.ThemeIcon('info', new vscode.ThemeColor('descriptionForeground'));
           default:
@@ -241,7 +238,7 @@ class RuleTreeItem extends vscode.TreeItem {
       return {
         command: 'turbo-ai-rules.showRuleDetail',
         title: 'Show Rule Detail',
-        arguments: [this.data.rule],
+        arguments: [this], // 传递整个 TreeItem
       };
     }
     return undefined;
@@ -366,8 +363,14 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
    * 从 Git 缓存目录加载规则
    */
   private async loadRulesFromCache(sourceId: string): Promise<ParsedRule[]> {
-    // 直接从 Git 缓存目录解析（不依赖 RulesManager 内存缓存）
-    // 因为 TreeView 需要显示所有已缓存的规则，不受同步操作影响
+    // 优先从 RulesManager 内存缓存获取
+    const cachedRules = this.rulesManager.getRulesBySource(sourceId);
+    if (cachedRules.length > 0) {
+      Logger.debug('Rules loaded from memory cache', { sourceId, count: cachedRules.length });
+      return cachedRules;
+    }
+
+    // 内存中没有，从 Git 缓存目录解析
     const GitManager = (await import('../services/GitManager')).GitManager;
     const MdcParser = (await import('../parsers/MdcParser')).MdcParser;
     const gitManager = GitManager.getInstance();
@@ -390,6 +393,10 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
       });
 
       Logger.debug('Rules loaded from Git cache', { sourceId, count: parsedRules.length });
+
+      // 将解析的规则添加到 RulesManager 缓存中
+      this.rulesManager.addRules(sourceId, parsedRules);
+
       return parsedRules;
     } catch (error) {
       Logger.warn('Failed to load rules from cache', { sourceId, error });

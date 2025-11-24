@@ -124,69 +124,13 @@ async function showSourceActions(source: RuleSource): Promise<void> {
 }
 
 /**
- * 编辑源配置
+ * 编辑源配置（通过 Webview 表单）
  */
 async function editSource(source: RuleSource): Promise<void> {
-  const configManager = ConfigManager.getInstance();
-
-  const editOptions = [
-    {
-      label: '$(repo) Branch',
-      description: `Current: ${source.branch}`,
-      property: 'branch',
-    },
-    {
-      label: '$(folder) Sub Path',
-      description: source.subPath ? `Current: ${source.subPath}` : 'Not set',
-      property: 'subPath',
-    },
-    {
-      label: '$(tag) Name',
-      description: source.name ? `Current: ${source.name}` : 'Not set',
-      property: 'name',
-    },
-  ];
-
-  const selected = await vscode.window.showQuickPick(editOptions, {
-    placeHolder: vscode.l10n.t('Select field to edit'),
-  });
-
-  if (!selected) {
-    return;
-  }
-
-  let newValue: string | undefined;
-
-  switch (selected.property) {
-    case 'branch':
-      newValue = await vscode.window.showInputBox({
-        prompt: vscode.l10n.t('Enter new branch'),
-        value: source.branch,
-      });
-      break;
-
-    case 'subPath':
-      newValue = await vscode.window.showInputBox({
-        prompt: vscode.l10n.t('Enter new subpath'),
-        value: source.subPath || '',
-      });
-      break;
-
-    case 'name':
-      newValue = await vscode.window.showInputBox({
-        prompt: vscode.l10n.t('Enter new display name'),
-        value: source.name || '',
-      });
-      break;
-  }
-
-  if (newValue !== undefined) {
-    await configManager.updateSource(source.id, {
-      [selected.property]: newValue || undefined,
-    });
-
-    vscode.window.showInformationMessage(
-      vscode.l10n.t('Source updated', source.name || source.gitUrl),
-    );
-  }
+  // 使用 Webview 编辑表单
+  const context = (global as unknown as { extensionContext: vscode.ExtensionContext })
+    .extensionContext;
+  const { SourceDetailWebviewProvider } = await import('../providers/SourceDetailWebview');
+  const provider = SourceDetailWebviewProvider.getInstance(context);
+  await provider.showSourceForm(source.id);
 }

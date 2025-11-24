@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { vscodeApi } from '../utils/vscode-api';
 import { t } from '../utils/i18n';
@@ -13,10 +13,6 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import '../global.css';
 import './source-detail.css';
-
-const LazyNewSourceForm = React.lazy(() =>
-  import('./NewSourceForm').then((m) => ({ default: m.NewSourceForm })),
-);
 
 interface RuleData {
   id: string;
@@ -69,28 +65,17 @@ interface SourceDetailData {
   syncInfo: SyncInfoData;
 }
 
-interface WindowWithInitialMode extends Window {
-  initialMode?: string;
-}
-
 /**
  * 规则源详情页面组件
  */
 const App: React.FC = () => {
-  // 同步检查初始模式，避免闪烁
-  const initialMode = (window as WindowWithInitialMode).initialMode === 'new' ? 'new' : 'loading';
-  const [mode, setMode] = useState<'loading' | 'new' | 'view'>(initialMode);
+  const [mode, setMode] = useState<'loading' | 'view'>('loading');
   const [data, setData] = useState<SourceDetailData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
   useEffect(() => {
-    // 如果已经是新增模式，不需要监听消息
-    if (mode === 'new') {
-      return;
-    }
-
     // 通知扩展 webview 已准备好
     vscodeApi.postMessage('ready');
 
@@ -122,27 +107,7 @@ const App: React.FC = () => {
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [mode]);
-
-  // 新增模式：显示表单
-  if (mode === 'new') {
-    return (
-      <ErrorBoundary>
-        <div className="container">
-          <Suspense
-            fallback={
-              <div className="loading-spinner">
-                <div className="spinner">⏳</div>
-                <p>Loading form...</p>
-              </div>
-            }
-          >
-            <LazyNewSourceForm />
-          </Suspense>
-        </div>
-      </ErrorBoundary>
-    );
-  }
+  }, []);
 
   // 加载中
   if (mode === 'loading') {

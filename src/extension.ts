@@ -39,6 +39,7 @@ import {
 } from './providers';
 import { RuleSelectorWebviewProvider } from './providers/RuleSelectorWebviewProvider';
 // Services
+import { AutoSyncService } from './services/AutoSyncService';
 import { ConfigManager } from './services/ConfigManager';
 import { FileGenerator } from './services/FileGenerator';
 import { GitManager } from './services/GitManager';
@@ -245,7 +246,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }),
 
       vscode.commands.registerCommand('turbo-ai-rules.showRuleDetail', async (item) => {
-        const rule = item?.data?.rule;
+        // 兼容两种调用方式: 1. 从TreeItem双击(item.data.rule) 2. 直接传递rule对象
+        const rule = item?.data?.rule || (item?.id ? item : null);
         if (rule) {
           const detailsProvider = RuleDetailsWebviewProvider.getInstance(context);
           await detailsProvider.showRuleDetails(rule);
@@ -368,7 +370,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       await welcomeProvider.showWelcome();
     }
 
-    // 5. 启动时同步（如果配置启用）
+    // 5. 启动自动同步服务
+    const autoSyncService = AutoSyncService.getInstance();
+    await autoSyncService.start();
+    context.subscriptions.push({
+      dispose: () => autoSyncService.dispose(),
+    });
+    Logger.info('Auto-sync service initialized');
+
+    // 6. 启动时同步（如果配置启用）
     const config = await configManager.getConfig();
     if (config.sync.onStartup && config.sources.length > 0) {
       Logger.info('Starting initial sync');
@@ -382,7 +392,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }, 2000);
     }
 
-    // 6. 监听配置变化
+    // 7. 监听配置变化
     context.subscriptions.push(
       vscode.workspace.onDidChangeConfiguration((e) => {
         if (e.affectsConfiguration('turbo-ai-rules')) {

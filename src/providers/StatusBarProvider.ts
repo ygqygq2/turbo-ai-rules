@@ -158,22 +158,41 @@ export class StatusBarProvider {
    */
   private async updateStatusBar(): Promise<void> {
     let stats = this.rulesManager.getStats();
+    let totalSyncedRules = 0;
+    let syncedSourceCount = 0;
+    let sourceCount = 0;
 
     // 如果内存中没有规则，尝试从 WorkspaceState 加载统计信息
     if (stats.totalRules === 0) {
       try {
         const stateManager = WorkspaceStateManager.getInstance();
         const cachedStats = await stateManager.getRulesStats();
-        if (cachedStats.totalRules > 0) {
+        if (cachedStats.totalRules > 0 || cachedStats.totalSyncedRules > 0) {
           stats = {
             ...stats,
             totalRules: cachedStats.totalRules,
             sourceCount: cachedStats.sourceCount,
             enabledSourceCount: cachedStats.enabledSourceCount,
           };
+          totalSyncedRules = cachedStats.totalSyncedRules;
+          syncedSourceCount = cachedStats.syncedSourceCount;
+          sourceCount = cachedStats.sourceCount;
         }
       } catch (_error) {
         // 忽略错误，使用默认值
+      }
+    } else {
+      // 使用内存中的统计
+      sourceCount = stats.sourceCount;
+
+      // 从 WorkspaceState 获取已同步规则数
+      try {
+        const stateManager = WorkspaceStateManager.getInstance();
+        const cachedStats = await stateManager.getRulesStats();
+        totalSyncedRules = cachedStats.totalSyncedRules;
+        syncedSourceCount = cachedStats.syncedSourceCount;
+      } catch (_error) {
+        // 忽略错误
       }
     }
 
@@ -210,9 +229,8 @@ export class StatusBarProvider {
 
       case 'success': {
         icon = '✅'; // 绿色勾
-        const enabledCount = stats.enabledSourceCount || stats.sourceCount;
-        text = `${stats.totalRules}R·${enabledCount}S`;
-        tooltip = this.getSuccessTooltip(stats);
+        text = `${totalSyncedRules}R·${syncedSourceCount}/${sourceCount}S`;
+        tooltip = await this.getSuccessTooltip(totalSyncedRules, syncedSourceCount, sourceCount);
         backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
         break;
       }
@@ -227,11 +245,10 @@ export class StatusBarProvider {
       case 'idle':
       default:
         // 保持使用 logo 图标
-        if (stats.totalRules > 0) {
-          // 显示规则数和启用的源数
-          const enabledCount = stats.enabledSourceCount || stats.sourceCount;
-          text = `${stats.totalRules}R·${enabledCount}S`;
-          tooltip = this.getIdleTooltip(stats);
+        if (stats.totalRules > 0 || totalSyncedRules > 0) {
+          // 显示已同步规则数和源数
+          text = `${totalSyncedRules}R·${syncedSourceCount}/${sourceCount}S`;
+          tooltip = await this.getIdleTooltip(totalSyncedRules, syncedSourceCount, sourceCount);
           // 如果有冲突，显示警告颜色
           if (stats.conflictCount > 0) {
             icon = '⚠️'; // 警告
@@ -258,60 +275,31 @@ export class StatusBarProvider {
   }
 
   /**
-   * 获取成功状态的提示
+   * @description 获取成功状态的提示
+   * @return {Promise<string>}
+   * @param totalSyncedRules {number}
+   * @param syncedSourceCount {number}
+   * @param sourceCount {number}
    */
-  private getSuccessTooltip(stats: {
-    totalRules: number;
-    sourceCount: number;
-    cacheSize: number;
-    conflictCount: number;
-    enabledSourceCount?: number;
-  }): string {
-    const enabledCount = stats.enabledSourceCount || stats.sourceCount;
+  private async getSuccessTooltip(
+    totalSyncedRules: number,
+    syncedSourceCount: number,
+    sourceCount: number,
+  ): Promise<string> {
     const lines = [
-      vscode.l10n.t('statusBar.tooltip.success', stats.totalRules, enabledCount, stats.sourceCount),
+      vscode.l10n.t('statusBar.tooltip.syncSuccess'),
+      '',
+      vscode.l10n.t('statusBar.tooltip.statsTitle'),
+      vscode.l10n.t('statusBar.tooltip.syncedRules', totalSyncedRules),
+      vscode.l10n.t('statusBar.tooltip.sources', syncedSourceCount, sourceCount),
     ];
 
-    if (stats.cacheSize) {
-      lines.push(vscode.l10n.t('statusBar.tooltip.cache', stats.cacheSize));
-    }
-
-    if (stats.conflictCount > 0) {
-      lines.push(vscode.l10n.t('statusBar.tooltip.conflicts', stats.conflictCount));
-    }
-
-    if (this.lastSyncTime) {
+    // 添加各规则源详情
+    const sourceDetails = await this.getSourceDetails();
+    if (sourceDetails.length > 0) {
       lines.push('');
-      lines.push(vscode.l10n.t('statusBar.tooltip.justNow'));
-    }
-
-    lines.push('');
-    lines.push(vscode.l10n.t('statusBar.clickToOpen'));
-
-    return lines.join('\n');
-  }
-
-  /**
-   * 获取空闲状态的提示
-   */
-  private getIdleTooltip(stats: {
-    totalRules: number;
-    sourceCount: number;
-    cacheSize: number;
-    conflictCount: number;
-    enabledSourceCount?: number;
-  }): string {
-    const enabledCount = stats.enabledSourceCount || stats.sourceCount;
-    const lines = [
-      vscode.l10n.t('statusBar.tooltip.idle', stats.totalRules, enabledCount, stats.sourceCount),
-    ];
-
-    if (stats.cacheSize) {
-      lines.push(vscode.l10n.t('statusBar.tooltip.cache', stats.cacheSize));
-    }
-
-    if (stats.conflictCount > 0) {
-      lines.push(vscode.l10n.t('statusBar.tooltip.conflicts', stats.conflictCount));
+      lines.push(vscode.l10n.t('statusBar.tooltip.sourcesTitle'));
+      lines.push(...sourceDetails);
     }
 
     if (this.lastSyncTime) {
@@ -323,6 +311,87 @@ export class StatusBarProvider {
     lines.push(vscode.l10n.t('statusBar.clickToOpen'));
 
     return lines.join('\n');
+  }
+
+  /**
+   * @description 获取空闲状态的提示
+   * @return {Promise<string>}
+   * @param totalSyncedRules {number}
+   * @param syncedSourceCount {number}
+   * @param sourceCount {number}
+   */
+  private async getIdleTooltip(
+    totalSyncedRules: number,
+    syncedSourceCount: number,
+    sourceCount: number,
+  ): Promise<string> {
+    const lines = [
+      'Turbo AI Rules',
+      '',
+      vscode.l10n.t('statusBar.tooltip.statsTitle'),
+      vscode.l10n.t('statusBar.tooltip.syncedRules', totalSyncedRules),
+      vscode.l10n.t('statusBar.tooltip.sources', syncedSourceCount, sourceCount),
+    ];
+
+    // 添加各规则源详情
+    const sourceDetails = await this.getSourceDetails();
+    if (sourceDetails.length > 0) {
+      lines.push('');
+      lines.push(vscode.l10n.t('statusBar.tooltip.sourcesTitle'));
+      lines.push(...sourceDetails);
+    }
+
+    if (this.lastSyncTime) {
+      lines.push('');
+      lines.push(vscode.l10n.t('statusBar.tooltip.lastSync', this.formatTime(this.lastSyncTime)));
+    }
+
+    lines.push('');
+    lines.push(vscode.l10n.t('statusBar.clickToOpen'));
+
+    return lines.join('\n');
+  }
+
+  /**
+   * @description 获取各规则源的详细信息
+   * @return {Promise<string[]>}
+   */
+  private async getSourceDetails(): Promise<string[]> {
+    const lines: string[] = [];
+
+    try {
+      const configManager = (await import('../services/ConfigManager')).ConfigManager.getInstance();
+      const stateManager = WorkspaceStateManager.getInstance();
+
+      const sources = configManager.getSources();
+      const allSourceSyncStats = await stateManager.getAllSourceSyncStats();
+
+      for (const source of sources) {
+        const stats = allSourceSyncStats[source.id];
+
+        if (!stats) {
+          // 未同步过
+          lines.push(`  ⏳ ${source.name} (${vscode.l10n.t('statusBar.tooltip.sourceNever')})`);
+        } else if (stats.syncStatus === 'success') {
+          // 同步成功
+          const timeStr = this.formatTime(new Date(stats.lastSyncTime));
+          lines.push(
+            `  ✅ ${source.name} (${vscode.l10n.t(
+              'statusBar.tooltip.sourceSuccess',
+              stats.syncedRulesCount,
+              timeStr,
+            )})`,
+          );
+        } else if (stats.syncStatus === 'failed') {
+          // 同步失败
+          lines.push(`  ❌ ${source.name} (${vscode.l10n.t('statusBar.tooltip.sourceFailed')})`);
+        }
+      }
+    } catch (_error) {
+      // 忽略错误
+    }
+
+    return lines;
   }
 
   /**

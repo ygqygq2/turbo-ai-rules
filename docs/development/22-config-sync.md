@@ -335,7 +335,62 @@ TreeView 显示格式：
 - **启动触发**: 扩展激活时根据 `onStartup` 配置同步
 - **文件监听触发**: 监听配置文件变化自动同步
 
-### 2.2 同步流程
+### 2.2 规则选择与同步行为
+
+#### 规则选择的默认行为
+
+**核心原则**：新添加的规则源默认不选择任何规则，需要用户手动勾选
+
+- ✅ **新规则源初始化**：选择状态为空（0 条规则被选中）
+- ✅ **用户主动选择**：通过 TreeView 复选框、Webview 界面或文件树视图勾选规则
+- ✅ **选择状态持久化**：选择结果保存在工作区数据目录（`workspaces/{hash}/rule-selections.json`）
+
+**设计考量**：
+
+- 避免默认包含所有规则导致的配置文件冗余
+- 用户明确知道哪些规则会被包含在生成的配置中
+- 新规则源同步后，状态栏显示 "0 Synced"，提醒用户进行选择
+
+#### 已同步规则的定义
+
+**"已同步规则"** 指被用户勾选的规则，具体包括：
+
+- ✅ 用户在 TreeView、Webview 或文件树中勾选的规则
+- ✅ 这些规则会被包含在生成的配置文件中（`.cursorrules`、`.github/copilot-instructions.md` 等）
+- ❌ 未勾选的规则虽然从 Git 仓库拉取并解析，但不会出现在配置文件中
+
+**统计逻辑**：
+
+```typescript
+// 伪代码示例
+let totalSelectedRules = 0;
+for (const source of enabledSources) {
+  const selectedPaths = selectionStateManager.getSelection(source.id);
+  totalSelectedRules += selectedPaths.length;
+}
+// totalSelectedRules 即为状态栏显示的"已同步规则数"
+```
+
+**WorkspaceState 统计字段**：
+
+```typescript
+rulesStats: {
+  totalRules: number; // 所有规则源的规则总数
+  selectedRules: number; // 用户已选择（已勾选）的规则总数
+  sourceCount: number; // 规则源总数
+  enabledSourceCount: number; // 已启用的规则源数量
+}
+```
+
+#### 状态栏显示逻辑
+
+- **格式**：`{selectedRules} Synced·{enabledSourceCount}S`
+- **示例**：`30 Synced·2S`（已同步 30 条规则，启用 2 个规则源）
+- **Tooltip**：详细信息
+  - 中文：`已同步规则: 30\n规则源: 2/3 已启用`
+  - 英文：`Synced Rules: 30\nRule Sources: 2/3 enabled`
+
+### 2.3 同步流程
 
 ```
 1. 检查是否需要同步
@@ -353,21 +408,29 @@ TreeView 显示格式：
 4. 增量解析规则
    • 只解析变化的文件
    • 更新规则索引
+   • **初始化规则选择状态（新源默认不选择任何规则）**
    ↓
-5. 合并规则
+5. 统计已选择的规则
+   • 遍历所有规则源，读取选择状态
+   • 计算 selectedRules 总数
+   • 更新 WorkspaceState.rulesStats
+   ↓
+6. 合并已选择的规则
+   • **只对用户勾选的规则进行合并**
    • 处理规则冲突
    • 应用冲突解决策略
    ↓
-6. 生成配置文件
+7. 生成配置文件
+   • **只包含已选择的规则**
    • 调用启用的适配器
    • 写入目标文件
    ↓
-7. 更新 UI
-   • 刷新 TreeView
-   • 更新状态栏
+8. 更新 UI
+   • 刷新 TreeView（显示选择状态）
+   • **更新状态栏（显示已选择规则数）**
    ↓
-8. 通知用户
-   • 显示同步结果
+9. 通知用户
+   • 显示同步结果（已选择规则数 / 总规则数）
    • 报告错误和警告
 ```
 

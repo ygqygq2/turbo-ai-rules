@@ -42,6 +42,7 @@ export interface WebviewOptions {
 export abstract class BaseWebviewProvider {
   protected panel: vscode.WebviewPanel | undefined;
   protected disposables: vscode.Disposable[] = [];
+  protected currentViewType: string = '';
 
   constructor(protected context: vscode.ExtensionContext) {}
 
@@ -51,7 +52,10 @@ export abstract class BaseWebviewProvider {
   public async show(options: WebviewOptions): Promise<void> {
     const column = options.viewColumn || vscode.ViewColumn.One;
 
-    // 如果面板已存在，直接显示并刷新内容（确保模式切换如“Add Source”生效）
+    // 保存当前 viewType
+    this.currentViewType = options.viewType;
+
+    // 如果面板已存在，直接显示并刷新内容（确保模式切换如"Add Source"生效）
     if (this.panel) {
       this.panel.reveal(column);
       // 刷新 HTML 内容以注入最新的模式或数据

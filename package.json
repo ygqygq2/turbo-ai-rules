@@ -101,49 +101,49 @@
       },
       {
         "command": "turbo-ai-rules.editSource",
-        "title": "Edit Source",
+        "title": "%turboAiRules.editSource.title%",
         "category": "Turbo AI Rules",
         "icon": "$(edit)"
       },
       {
         "command": "turbo-ai-rules.testConnection",
-        "title": "Test Connection",
+        "title": "%turboAiRules.testConnection.title%",
         "category": "Turbo AI Rules",
         "icon": "$(plug)"
       },
       {
         "command": "turbo-ai-rules.toggleSource",
-        "title": "Toggle Enable/Disable",
+        "title": "%turboAiRules.toggleSource.title%",
         "category": "Turbo AI Rules",
         "icon": "$(circle-slash)"
       },
       {
         "command": "turbo-ai-rules.selectAllRules",
-        "title": "Select All Rules",
+        "title": "%turboAiRules.selectAllRules.title%",
         "category": "Turbo AI Rules",
         "icon": "$(check-all)"
       },
       {
         "command": "turbo-ai-rules.deselectAllRules",
-        "title": "Deselect All Rules",
+        "title": "%turboAiRules.deselectAllRules.title%",
         "category": "Turbo AI Rules",
         "icon": "$(close-all)"
       },
       {
         "command": "turbo-ai-rules.copyRuleContent",
-        "title": "Copy Rule Content",
+        "title": "%turboAiRules.copyRuleContent.title%",
         "category": "Turbo AI Rules",
         "icon": "$(copy)"
       },
       {
         "command": "turbo-ai-rules.exportRule",
-        "title": "Export Rule",
+        "title": "%turboAiRules.exportRule.title%",
         "category": "Turbo AI Rules",
         "icon": "$(export)"
       },
       {
         "command": "turbo-ai-rules.ignoreRule",
-        "title": "Ignore Rule",
+        "title": "%turboAiRules.ignoreRule.title%",
         "category": "Turbo AI Rules",
         "icon": "$(eye-closed)"
       },
@@ -167,13 +167,13 @@
       },
       {
         "command": "turbo-ai-rules.selectRules",
-        "title": "Select Rules",
+        "title": "%turboAiRules.selectRules.title%",
         "category": "Turbo AI Rules",
         "icon": "$(list-tree)"
       },
       {
         "command": "turbo-ai-rules.viewSourceDetail",
-        "title": "View Source Details",
+        "title": "%turboAiRules.viewSourceDetail.title%",
         "category": "Turbo AI Rules",
         "icon": "$(info)"
       },

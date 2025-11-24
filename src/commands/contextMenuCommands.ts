@@ -43,11 +43,9 @@ export async function editSourceCommand(
     // 使用 Webview 编辑表单
     const context = (global as unknown as { extensionContext: vscode.ExtensionContext })
       .extensionContext;
-    const { SourceDetailWebviewProvider } = await import(
-      '../providers/SourceDetailWebviewProvider'
-    );
+    const { SourceDetailWebviewProvider } = await import('../providers/SourceDetailWebview');
     const provider = SourceDetailWebviewProvider.getInstance(context);
-    await provider.showSourceDetail(actualSourceId);
+    await provider.showSourceForm(actualSourceId);
   } catch (error) {
     Logger.error('Failed to edit source', error instanceof Error ? error : undefined);
     notify(
@@ -212,20 +210,31 @@ export async function toggleSourceCommand(
 /**
  * 复制规则内容
  */
-export async function copyRuleContentCommand(rule?: ParsedRule): Promise<void> {
+export async function copyRuleContentCommand(
+  ruleOrItem?: ParsedRule | { data?: { rule?: ParsedRule } },
+): Promise<void> {
   try {
+    // 从 TreeItem 或直接使用 ParsedRule
+    const rule =
+      ruleOrItem && typeof ruleOrItem === 'object' && 'data' in ruleOrItem
+        ? ruleOrItem.data?.rule
+        : (ruleOrItem as ParsedRule);
+
     if (!rule) {
-      notify('No rule selected', 'error');
+      notify(vscode.l10n.t('No rule selected'), 'error');
       return;
     }
 
     const content = `# ${rule.title}\n\n${rule.content}`;
     await vscode.env.clipboard.writeText(content);
-    notify(`Rule "${rule.title}" copied to clipboard`, 'info');
+    notify(vscode.l10n.t('Rule "{0}" copied to clipboard', rule.title), 'info');
   } catch (error) {
     Logger.error('Failed to copy rule content', error instanceof Error ? error : undefined);
     notify(
-      `Failed to copy rule: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      vscode.l10n.t(
+        'Failed to copy rule',
+        error instanceof Error ? error.message : 'Unknown error',
+      ),
       'error',
     );
   }
@@ -234,10 +243,18 @@ export async function copyRuleContentCommand(rule?: ParsedRule): Promise<void> {
 /**
  * 导出规则
  */
-export async function exportRuleCommand(rule?: ParsedRule): Promise<void> {
+export async function exportRuleCommand(
+  ruleOrItem?: ParsedRule | { data?: { rule?: ParsedRule } },
+): Promise<void> {
   try {
+    // 从 TreeItem 或直接使用 ParsedRule
+    const rule =
+      ruleOrItem && typeof ruleOrItem === 'object' && 'data' in ruleOrItem
+        ? ruleOrItem.data?.rule
+        : (ruleOrItem as ParsedRule);
+
     if (!rule) {
-      notify('No rule selected', 'error');
+      notify(vscode.l10n.t('No rule selected'), 'error');
       return;
     }
 
@@ -266,12 +283,15 @@ export async function exportRuleCommand(rule?: ParsedRule): Promise<void> {
       const content = frontmatter + rule.content;
 
       await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf8'));
-      notify(`Rule exported to ${uri.fsPath}`, 'info');
+      notify(vscode.l10n.t('Rule exported to {0}', uri.fsPath), 'info');
     }
   } catch (error) {
     Logger.error('Failed to export rule', error instanceof Error ? error : undefined);
     notify(
-      `Failed to export rule: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      vscode.l10n.t(
+        'Failed to export rule',
+        error instanceof Error ? error.message : 'Unknown error',
+      ),
       'error',
     );
   }
@@ -279,32 +299,65 @@ export async function exportRuleCommand(rule?: ParsedRule): Promise<void> {
 
 /**
  * 忽略规则
+ *
+ * 此命令会将规则取消选择（设置复选框为未选中状态），使其在生成配置文件时被排除。
+ * 这不会删除规则文件，只是在同步和生成配置时忽略它。
+ *
+ * 功能说明：
+ * - 取消规则的复选框选中状态
+ * - 该规则将不会包含在生成的配置文件中
+ * - 不影响源文件，只影响选择状态
+ * - 可以随时通过重新选中复选框来恢复
  */
-export async function ignoreRuleCommand(rule?: ParsedRule): Promise<void> {
+export async function ignoreRuleCommand(
+  ruleOrItem?: ParsedRule | { data?: { rule?: ParsedRule } },
+): Promise<void> {
   try {
-    if (!rule) {
-      notify('No rule selected', 'error');
+    // 从 TreeItem 或直接使用 ParsedRule
+    const rule =
+      ruleOrItem && typeof ruleOrItem === 'object' && 'data' in ruleOrItem
+        ? ruleOrItem.data?.rule
+        : (ruleOrItem as ParsedRule);
+
+    if (!rule || !rule.filePath) {
+      notify(vscode.l10n.t('No rule selected'), 'error');
       return;
     }
 
     const confirmed = await (notify(
-      `Are you sure you want to ignore rule "${rule.title}"? This will exclude it from generated configs.`,
+      vscode.l10n.t(
+        'Are you sure you want to ignore rule "{0}"? This will uncheck it and exclude from generated configs.',
+        rule.title,
+      ),
       'warning',
       undefined,
-      'Ignore Rule',
+      vscode.l10n.t('Ignore Rule'),
       true,
     ) as Promise<boolean>);
 
     if (confirmed) {
-      // TODO: 实现 RulesManager.ignoreRule 方法
-      // const rulesManager = RulesManager.getInstance();
-      // rulesManager.ignoreRule(rule.id);
-      notify(`Rule "${rule.title}" will be ignored (feature coming soon)`, 'info');
+      // 通过 SelectionStateManager 取消选择
+      const { SelectionStateManager } = await import('../services/SelectionStateManager');
+      const selectionStateManager = SelectionStateManager.getInstance();
+
+      // 获取当前选择的路径
+      const selectedPaths = selectionStateManager.getSelection(rule.sourceId);
+
+      // 移除该规则的路径
+      const newPaths = selectedPaths.filter((p) => p !== rule.filePath);
+
+      // 更新选择状态
+      selectionStateManager.updateSelection(rule.sourceId, newPaths, true);
+
+      notify(vscode.l10n.t('Rule "{0}" unchecked and will be excluded', rule.title), 'info');
     }
   } catch (error) {
     Logger.error('Failed to ignore rule', error instanceof Error ? error : undefined);
     notify(
-      `Failed to ignore rule: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      vscode.l10n.t(
+        'Failed to ignore rule',
+        error instanceof Error ? error.message : 'Unknown error',
+      ),
       'error',
     );
   }

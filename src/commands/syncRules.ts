@@ -192,17 +192,15 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
               reportProgress(progressPerSource * 0.3);
 
               // 初始化选择状态（从磁盘加载）
-              // 如果是新源，使用所有规则路径初始化为全选
-              const allRulePaths = allRules.map((r) => r.filePath).filter((p) => p) as string[];
-              await selectionStateManager.initializeState(source.id, allRules.length, allRulePaths);
+              // 如果是新源，默认不选择任何规则（传入空数组）
+              await selectionStateManager.initializeState(source.id, allRules.length, []);
 
               // 添加所有规则到规则管理器（树视图需要显示所有规则供用户选择）
               rulesManager.addRules(source.id, allRules);
 
               // 获取用户选择的规则路径（用于统计和生成配置）
               const selectedPaths = selectionStateManager.getSelection(source.id);
-              const selectedCount =
-                selectedPaths.length === 0 ? allRules.length : selectedPaths.length;
+              const selectedCount = selectedPaths.length;
 
               Logger.debug('Rules synced', {
                 sourceId: source.id,
@@ -235,6 +233,17 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
                 `Failed to sync source ${source.id}`,
                 error instanceof Error ? error : undefined,
               );
+
+              // 标记同步失败
+              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+              await WorkspaceStateManager.getInstance().setSourceSyncStats(source.id, {
+                lastSyncTime: new Date().toISOString(),
+                syncedRulesCount: 0,
+                syncedRulePaths: [],
+                syncStatus: 'failed',
+                errorMessage,
+              });
+
               // 即使失败也要增加进度
               reportProgress(progressPerSource * 0.7);
             }
@@ -274,8 +283,8 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
         for (const rule of allRules) {
           const selectedPaths = selectionStateManager.getSelection(rule.sourceId);
 
-          // 空数组表示全选
-          if (selectedPaths.length === 0 || selectedPaths.includes(rule.filePath)) {
+          // 只包含用户勾选的规则
+          if (selectedPaths.length > 0 && selectedPaths.includes(rule.filePath)) {
             selectedRules.push(rule);
           }
         }
@@ -286,23 +295,11 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
         });
 
         // 8. 合并规则并生成配置文件
-        // 创建临时 RulesManager 实例用于合并选中的规则
-        const tempRulesManager = RulesManager.getInstance();
-        const sourceRulesMap = new Map<string, ParsedRule[]>();
-
-        // 按源分组
-        for (const rule of selectedRules) {
-          const rules = sourceRulesMap.get(rule.sourceId) || [];
-          rules.push(rule);
-          sourceRulesMap.set(rule.sourceId, rules);
-        }
-
-        // 添加到临时管理器
-        for (const [sourceId, rules] of sourceRulesMap.entries()) {
-          tempRulesManager.addRules(sourceId, rules);
-        }
-
-        const mergedRules = tempRulesManager.mergeRules(config.sync.conflictStrategy || 'priority');
+        // 对选中的规则进行合并（使用本地变量，不影响 rulesManager 中存储的所有规则）
+        const mergedRules = mergeSelectedRules(
+          selectedRules,
+          config.sync.conflictStrategy || 'priority',
+        );
 
         Logger.debug('Rules merged for generation', {
           totalRules: mergedRules.length,
@@ -336,24 +333,54 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
           generatedFiles: generateResult.success.length,
         });
 
-        // 持久化同步时间到 workspaceState
+        // 持久化同步时间和统计信息到 workspaceState
         const workspaceStateManager = WorkspaceStateManager.getInstance();
         const syncTime = new Date().toISOString();
+
+        // 为每个成功同步的源保存同步快照
         for (const source of enabledSources) {
           await workspaceStateManager.setLastSyncTime(source.id, syncTime);
+
+          // 获取该源实际选中的规则数量
+          const selectedPaths = selectionStateManager.getSelection(source.id);
+
+          // 保存该源的同步快照
+          await workspaceStateManager.setSourceSyncStats(source.id, {
+            lastSyncTime: syncTime,
+            syncedRulesCount: selectedPaths.length,
+            syncedRulePaths: selectedPaths,
+            syncStatus: 'success',
+          });
         }
 
-        // 持久化规则统计信息到 workspaceState（用于状态栏显示）
+        // 聚合统计：计算所有源的已同步规则总数
+        const allSourceSyncStats = await workspaceStateManager.getAllSourceSyncStats();
+        let totalSyncedRules = 0;
+        let syncedSourceCount = 0;
+
+        for (const sourceId of Object.keys(allSourceSyncStats)) {
+          const stats = allSourceSyncStats[sourceId];
+          if (stats.syncStatus === 'success') {
+            totalSyncedRules += stats.syncedRulesCount;
+            syncedSourceCount++;
+          }
+        }
+
+        // 持久化聚合统计信息到 workspaceState（用于状态栏显示）
         await workspaceStateManager.setRulesStats({
-          totalRules: totalRules,
+          totalRules: allRules.length,
+          totalSyncedRules,
           sourceCount: sources.length,
           enabledSourceCount: enabledSources.length,
+          syncedSourceCount,
         });
 
         Logger.debug('Sync metadata persisted to workspace state', {
           syncTime,
           sourceCount: enabledSources.length,
-          totalRules,
+          totalRules: allRules.length,
+          totalSyncedRules,
+          syncedSourceCount,
         });
 
         // 更新状态栏为成功
@@ -364,7 +391,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
           notify(
             vscode.l10n.t(
               'Successfully synced {0} rule(s) from {1} source(s)',
-              totalRules,
+              totalSyncedRules,
               successCount,
             ),
             'info',
@@ -457,4 +484,72 @@ async function syncSingleSource(
 
   // 8. 返回有效的规则
   return validator.getValidRules(rulesWithSource);
+}
+
+/**
+ * @description 合并选中的规则（不影响全局 RulesManager）
+ * @return {ParsedRule[]}
+ * @param selectedRules {ParsedRule[]}
+ * @param strategy {ConflictStrategy}
+ */
+function mergeSelectedRules(
+  selectedRules: ParsedRule[],
+  strategy: 'priority' | 'skip-duplicates' | 'keep-all',
+): ParsedRule[] {
+  if (strategy === 'skip-duplicates') {
+    // 跳过重复，只保留第一个
+    const seen = new Set<string>();
+    return selectedRules.filter((rule) => {
+      if (seen.has(rule.id)) {
+        return false;
+      }
+      seen.add(rule.id);
+      return true;
+    });
+  }
+
+  if (strategy === 'priority') {
+    // 按优先级保留
+    const groupedById = new Map<string, ParsedRule[]>();
+    for (const rule of selectedRules) {
+      const existing = groupedById.get(rule.id) || [];
+      existing.push(rule);
+      groupedById.set(rule.id, existing);
+    }
+
+    const merged: ParsedRule[] = [];
+    for (const rules of groupedById.values()) {
+      if (rules.length === 1) {
+        merged.push(rules[0]);
+      } else {
+        // 选择优先级最高的
+        const sortedByPriority = sortByPriority(rules);
+        merged.push(sortedByPriority[0]);
+      }
+    }
+
+    return merged;
+  }
+
+  // 默认返回所有规则
+  return selectedRules;
+}
+
+/**
+ * @description 按优先级排序规则
+ * @return {ParsedRule[]}
+ * @param rules {ParsedRule[]}
+ */
+function sortByPriority(rules: ParsedRule[]): ParsedRule[] {
+  const priorityOrder: Record<string, number> = {
+    high: 3,
+    medium: 2,
+    low: 1,
+  };
+
+  return rules.sort((a, b) => {
+    const aPriority = priorityOrder[a.metadata.priority || 'medium'] || 2;
+    const bPriority = priorityOrder[b.metadata.priority || 'medium'] || 2;
+    return bPriority - aPriority; // 降序
+  });
 }
