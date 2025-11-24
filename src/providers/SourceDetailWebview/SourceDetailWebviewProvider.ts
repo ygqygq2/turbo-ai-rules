@@ -36,7 +36,7 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider implements 
   /**
    * 实现 MessageSender 接口
    */
-  public send(type: string, payload?: any): void {
+  public send(type: string, payload?: unknown): void {
     this.postMessage({ type, payload });
   }
 

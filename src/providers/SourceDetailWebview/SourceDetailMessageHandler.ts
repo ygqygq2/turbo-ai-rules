@@ -20,7 +20,7 @@ import { validateBranchName, validateGitUrl } from '../../utils/validator';
  * 消息发送器接口
  */
 export interface MessageSender {
-  send(type: string, payload?: any): void;
+  send(type: string, payload?: unknown): void;
 }
 
 /**
@@ -38,9 +38,17 @@ export class SourceDetailMessageHandler {
   /**
    * 测试 Git 连接
    */
-  async handleTestConnection(payload: any): Promise<void> {
+  async handleTestConnection(payload: unknown): Promise<void> {
     try {
-      if (!payload?.gitUrl || !validateGitUrl(payload.gitUrl)) {
+      const data = payload as {
+        gitUrl?: string;
+        branch?: string;
+        authType?: string;
+        token?: string;
+        sshKeyPath?: string;
+        sshPassphrase?: string;
+      };
+      if (!data?.gitUrl || !validateGitUrl(data.gitUrl)) {
         this.messageSender.send('testConnectionResult', {
           success: false,
           error: 'Invalid Git URL',
@@ -49,13 +57,13 @@ export class SourceDetailMessageHandler {
       }
 
       let authentication: GitAuthentication | undefined;
-      if (payload.authType === 'token' && payload.token) {
-        authentication = { type: 'token', token: payload.token };
-      } else if (payload.authType === 'ssh' && payload.sshKeyPath) {
+      if (data.authType === 'token' && data.token) {
+        authentication = { type: 'token', token: data.token };
+      } else if (data.authType === 'ssh' && data.sshKeyPath) {
         authentication = {
           type: 'ssh',
-          sshKeyPath: payload.sshKeyPath,
-          sshPassphrase: payload.sshPassphrase,
+          sshKeyPath: data.sshKeyPath,
+          sshPassphrase: data.sshPassphrase,
         };
       }
 
@@ -66,7 +74,7 @@ export class SourceDetailMessageHandler {
         message: 'Testing Git connection...',
       });
 
-      const result = await gitManager.testConnection(payload.gitUrl, authentication, 10000);
+      const result = await gitManager.testConnection(data.gitUrl, authentication, 10000);
 
       this.messageSender.send('testConnectionResult', {
         success: result.success,
@@ -83,21 +91,31 @@ export class SourceDetailMessageHandler {
   /**
    * 处理添加规则源
    */
-  async handleAddSource(payload: any): Promise<void> {
+  async handleAddSource(payload: unknown): Promise<void> {
     try {
-      if (!payload || !payload.name || !payload.gitUrl) {
+      const data = payload as {
+        name?: string;
+        gitUrl?: string;
+        branch?: string;
+        subPath?: string;
+        authType?: string;
+        token?: string;
+        sshKeyPath?: string;
+        sshPassphrase?: string;
+      };
+      if (!data || !data.name || !data.gitUrl) {
         throw new Error('Source name and Git URL are required');
       }
 
-      if (!validateGitUrl(payload.gitUrl)) {
+      if (!validateGitUrl(data.gitUrl)) {
         throw new Error('Invalid Git URL format');
       }
 
-      if (payload.branch && !validateBranchName(payload.branch)) {
+      if (data.branch && !validateBranchName(data.branch)) {
         throw new Error('Invalid branch name');
       }
 
-      const sourceId = this.generateSourceId(payload.gitUrl);
+      const sourceId = this.generateSourceId(data.gitUrl);
       const configManager = ConfigManager.getInstance(this.context);
       const existingSource = configManager.getSourceById(sourceId);
 
@@ -108,22 +126,22 @@ export class SourceDetailMessageHandler {
       }
 
       let authentication: GitAuthentication | undefined;
-      if (payload.authType === 'token' && payload.token) {
-        authentication = { type: 'token', token: payload.token };
-      } else if (payload.authType === 'ssh' && payload.sshKeyPath) {
+      if (data.authType === 'token' && data.token) {
+        authentication = { type: 'token', token: data.token };
+      } else if (data.authType === 'ssh' && data.sshKeyPath) {
         authentication = {
           type: 'ssh',
-          sshKeyPath: payload.sshKeyPath,
-          sshPassphrase: payload.sshPassphrase,
+          sshKeyPath: data.sshKeyPath,
+          sshPassphrase: data.sshPassphrase,
         };
       }
 
       const source: RuleSource = {
         id: sourceId,
-        name: payload.name,
-        gitUrl: payload.gitUrl,
-        branch: payload.branch || 'main',
-        subPath: payload.subPath || '/',
+        name: data.name,
+        gitUrl: data.gitUrl,
+        branch: data.branch || 'main',
+        subPath: data.subPath || '/',
         enabled: true,
         syncInterval: 0,
       };
@@ -249,13 +267,24 @@ export class SourceDetailMessageHandler {
   /**
    * 处理更新规则源（编辑模式）
    */
-  async handleUpdateSource(payload: any): Promise<void> {
+  async handleUpdateSource(payload: unknown): Promise<void> {
     try {
-      if (!payload || !payload.sourceId || !payload.name) {
+      const data = payload as {
+        sourceId?: string;
+        name?: string;
+        branch?: string;
+        subPath?: string;
+        authType?: string;
+        token?: string;
+        sshKeyPath?: string;
+        sshPassphrase?: string;
+        enabled?: boolean;
+      };
+      if (!data || !data.sourceId || !data.name) {
         throw new Error('Source ID and name are required');
       }
 
-      const { sourceId } = payload;
+      const { sourceId } = data;
       const configManager = ConfigManager.getInstance(this.context);
       const existingSource = configManager.getSourceById(sourceId);
 
@@ -263,30 +292,30 @@ export class SourceDetailMessageHandler {
         throw new Error(`Source not found: ${sourceId}`);
       }
 
-      if (payload.branch && !validateBranchName(payload.branch)) {
+      if (data.branch && !validateBranchName(data.branch)) {
         throw new Error('Invalid branch name');
       }
 
       const updates: Partial<RuleSource> = {
-        name: payload.name,
-        branch: payload.branch || 'main',
-        subPath: payload.subPath || '/',
-        enabled: payload.enabled !== undefined ? payload.enabled : true,
+        name: data.name,
+        branch: data.branch || 'main',
+        subPath: data.subPath || '/',
+        enabled: data.enabled !== undefined ? data.enabled : true,
       };
 
       // 更新认证信息
-      if (payload.authType === 'token' && payload.token) {
+      if (data.authType === 'token' && data.token) {
         await this.context.secrets.store(
           `turboAiRules.auth.${sourceId}`,
-          JSON.stringify({ type: 'token', token: payload.token }),
+          JSON.stringify({ type: 'token', token: data.token }),
         );
-      } else if (payload.authType === 'ssh' && payload.sshKeyPath) {
+      } else if (data.authType === 'ssh' && data.sshKeyPath) {
         await this.context.secrets.store(
           `turboAiRules.auth.${sourceId}`,
           JSON.stringify({
             type: 'ssh',
-            sshKeyPath: payload.sshKeyPath,
-            sshPassphrase: payload.sshPassphrase,
+            sshKeyPath: data.sshKeyPath,
+            sshPassphrase: data.sshPassphrase,
           }),
         );
       }
