@@ -316,6 +316,7 @@ describe('batchOperations 命令单元测试', () => {
         'source-1',
         ['/test/rules/001-rule1.md', '/test/rules/002-rule2.md'],
         true,
+        undefined,
       );
 
       expect(notify).toHaveBeenCalledWith(expect.stringContaining('Selected all 2 rules'), 'info');
@@ -344,7 +345,12 @@ describe('batchOperations 命令单元测试', () => {
 
       await deselectAllRulesCommand(mockSource);
 
-      expect(mockSelectionStateManager.updateSelection).toHaveBeenCalledWith('source-1', [], true);
+      expect(mockSelectionStateManager.updateSelection).toHaveBeenCalledWith(
+        'source-1',
+        [],
+        true,
+        undefined,
+      );
 
       expect(notify).toHaveBeenCalledWith(expect.stringContaining('Deselected all rules'), 'info');
     });
