@@ -32,7 +32,9 @@ jobs:
           sudo systemctl start dbus
           xvfb-run -a pnpm test:suite:mocha
         if: runner.os == 'Linux'
+        timeout-minutes: 15
       - run: pnpm test:suite:mocha
         if: runner.os != 'Linux'
+        timeout-minutes: 15
       - run: pnpm run test:coverage
       - run: vsce package --no-dependencies
