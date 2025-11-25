@@ -29,9 +29,15 @@ export function getSourceRootPath(sourceId: string): string {
 export function toRelativePath(absolutePath: string, sourceId: string): string {
   const sourceRoot = getSourceRootPath(sourceId);
 
+  // 规范化路径以处理不同平台的路径分隔符
+  const normalizedAbsPath = path.normalize(absolutePath);
+  const normalizedSourceRoot = path.normalize(sourceRoot);
+
   // 如果路径以源根目录开头，提取相对路径
-  if (absolutePath.startsWith(sourceRoot)) {
-    return absolutePath.substring(sourceRoot.length).replace(/^\//, '');
+  if (normalizedAbsPath.startsWith(normalizedSourceRoot)) {
+    const relativePath = normalizedAbsPath.substring(normalizedSourceRoot.length);
+    // 移除开头的路径分隔符（Unix 的 / 或 Windows 的 \）
+    return relativePath.replace(/^[/\\]+/, '');
   }
 
   // 如果不是以源根目录开头，返回原路径（向后兼容）
@@ -51,8 +57,12 @@ export function toRelativePath(absolutePath: string, sourceId: string): string {
 export function toAbsolutePath(relativePath: string, sourceId: string): string {
   const sourceRoot = getSourceRootPath(sourceId);
 
+  // 规范化路径
+  const normalizedRelPath = path.normalize(relativePath);
+  const normalizedSourceRoot = path.normalize(sourceRoot);
+
   // 如果已经是绝对路径（向后兼容），直接返回
-  if (relativePath.startsWith('/') || relativePath.includes(sourceRoot)) {
+  if (path.isAbsolute(normalizedRelPath) || normalizedRelPath.includes(normalizedSourceRoot)) {
     return relativePath;
   }
 

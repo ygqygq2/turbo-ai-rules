@@ -9,8 +9,99 @@ Turbo AI Rules 采用**分层测试策略**，确保代码质量和功能稳定�
 
 > **测试范围说明**：本项目专注于核心业务逻辑的测试，遵循"不测试 web 页面"的原则。
 >
-> - ✅ **已覆盖**：Services、Parsers、Adapters、Commands、Utils 等核心模块（357 个测试用例，100% 通过）
+> - ✅ **已覆盖**：Services、Parsers、Adapters、Commands、Utils 等核心模块（393 个测试用例，100% 通过）
 > - ❌ **不测试**：Webview Provider 的 UI 交互细节（如 postMessage、panel 状态等）应通过集成测试或手动测试验证
+
+## 跨平台兼容性
+
+### 路径处理规范
+
+所有涉及文件路径的测试必须兼容 **Windows/macOS/Linux** 三大平台。
+
+**推荐方案**：使用 `src/test/unit/testUtils/pathMatchers.ts` 提供的工具函数：
+
+```typescript
+import {
+  expectPathToBe, // 比较路径（自动规范化分隔符）
+  expectPathsToBe, // 比较路径数组
+  expectPathToMatch, // 正则匹配路径
+  expectNormalizedPathToBe, // 比较规范化后的路径
+} from '../testUtils/pathMatchers';
+
+// ✅ 推荐用法
+expectPathToBe(result, 'rules/001.md'); // 自动处理 \ 和 /
+expectPathsToBe(results, ['rules/001.md', 'rules/002.md']); // 批量比较
+expectPathToMatch(path, 'sources/test-123$'); // 正则匹配
+expectNormalizedPathToBe(result, expected); // Windows 路径比较
+```
+
+**工具函数详解**：
+
+| 函数                                         | 用途                                 | 示例                                                |
+| -------------------------------------------- | ------------------------------------ | --------------------------------------------------- |
+| `expectPathToBe(actual, expected)`           | 比较单个路径（自动统一分隔符为 `/`） | `expectPathToBe('rules\\001.md', 'rules/001.md')`   |
+| `expectPathsToBe(actual, expected)`          | 比较路径数组                         | `expectPathsToBe(['a\\b', 'c\\d'], ['a/b', 'c/d'])` |
+| `expectPathToMatch(actual, pattern)`         | 正则匹配（自动转换 `/` 为 `[\\/]`）  | `expectPathToMatch(path, 'sources/test$')`          |
+| `expectNormalizedPathToBe(actual, expected)` | 使用 `path.normalize()` 比较         | `expectNormalizedPathToBe('C:/a', 'C:\\a')`         |
+
+**手动处理方案**（仅在工具函数不适用时）：
+
+```typescript
+// 1. 使用 path.normalize 规范化路径
+const normalizedPath = path.normalize(somePath);
+
+// 2. 使用正则表达式匹配跨平台路径分隔符
+expect(result).toMatch(/sources[\\/]test-source[\\/]rules/);
+
+// 3. 使用 path.join 构建路径
+const fullPath = path.join(baseDir, 'subdir', 'file.txt');
+
+// 4. 比较前统一路径分隔符
+expect(result.replace(/\\/g, '/')).toBe('rules/001.md');
+
+// 5. 使用 path.isAbsolute 判断绝对路径
+if (path.isAbsolute(somePath)) {
+  /* ... */
+}
+```
+
+**❌ 错误做法**：
+
+```typescript
+// ❌ 硬编码 Unix 路径分隔符
+expect(result).toMatch(/sources\/test-source/);
+
+// ❌ 硬编码 Unix 绝对路径
+if (path.startsWith('/')) {
+  /* ... */
+}
+
+// ❌ 字符串拼接路径
+const fullPath = baseDir + '/subdir/file.txt';
+
+// ❌ 直接比较不同平台的路径
+expect(result).toBe('/unix/path'); // Windows 会失败
+```
+
+**关键修复示例**：
+
+```typescript
+// ❌ 修复前
+expect(result).toMatch(/sources\/test-source-123$/);
+expect(result.replace(/\\/g, '/')).toBe('rules/001.md');
+result.forEach((p) => expect(p).toMatch(/sources[\\/]test-source/));
+
+// ✅ 修复后
+expectPathToMatch(result, 'sources/test-source-123$');
+expectPathToBe(result, 'rules/001.md');
+result.forEach((p) => expectPathToMatch(p, 'sources/test-source'));
+```
+
+**关键修复点**：
+
+1. **rulePath.ts**：使用 `path.normalize()` 和正则 `/^[/\\]+/` 处理路径分隔符
+2. **rulePath.spec.ts**：使用 `expectPathToBe/expectPathToMatch` 替代手动正则
+3. **path.spec.ts**：使用 `expectNormalizedPathToBe` 替代手动 `path.normalize()` 比较
 
 ## 测试原则
 

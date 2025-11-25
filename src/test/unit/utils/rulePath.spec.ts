@@ -11,6 +11,7 @@ import {
   toRelativePath,
   toRelativePaths,
 } from '../../../utils/rulePath';
+import { expectPathsToBe, expectPathToBe, expectPathToMatch } from '../testUtils/pathMatchers';
 
 describe('rulePath 工具函数', () => {
   const sourceId = 'test-source-123';
@@ -18,7 +19,7 @@ describe('rulePath 工具函数', () => {
   describe('getSourceRootPath', () => {
     it('应返回源的根目录路径', () => {
       const result = getSourceRootPath(sourceId);
-      expect(result).toMatch(/sources\/test-source-123$/);
+      expectPathToMatch(result, 'sources/test-source-123$');
     });
   });
 
@@ -27,21 +28,21 @@ describe('rulePath 工具函数', () => {
       const sourceRoot = getSourceRootPath(sourceId);
       const absolutePath = `${sourceRoot}/rules/001-typescript.md`;
       const result = toRelativePath(absolutePath, sourceId);
-      expect(result).toBe('rules/001-typescript.md');
+      expectPathToBe(result, 'rules/001-typescript.md');
     });
 
     it('应处理开头带斜杠的路径', () => {
       const sourceRoot = getSourceRootPath(sourceId);
       const absolutePath = `${sourceRoot}/rules/002-react.md`;
       const result = toRelativePath(absolutePath, sourceId);
-      expect(result).toBe('rules/002-react.md');
+      expectPathToBe(result, 'rules/002-react.md');
     });
 
     it('应处理嵌套目录路径', () => {
       const sourceRoot = getSourceRootPath(sourceId);
       const absolutePath = `${sourceRoot}/rules/backend/001-nodejs.md`;
       const result = toRelativePath(absolutePath, sourceId);
-      expect(result).toBe('rules/backend/001-nodejs.md');
+      expectPathToBe(result, 'rules/backend/001-nodejs.md');
     });
 
     it('应返回不匹配的路径（向后兼容）', () => {
@@ -55,13 +56,13 @@ describe('rulePath 工具函数', () => {
     it('应将相对路径转换为绝对路径', () => {
       const relativePath = 'rules/001-typescript.md';
       const result = toAbsolutePath(relativePath, sourceId);
-      expect(result).toMatch(/sources\/test-source-123\/rules\/001-typescript\.md$/);
+      expectPathToMatch(result, 'sources/test-source-123/rules/001-typescript.md$');
     });
 
     it('应处理嵌套目录的相对路径', () => {
       const relativePath = 'rules/backend/001-nodejs.md';
       const result = toAbsolutePath(relativePath, sourceId);
-      expect(result).toMatch(/sources\/test-source-123\/rules\/backend\/001-nodejs\.md$/);
+      expectPathToMatch(result, 'sources/test-source-123/rules/backend/001-nodejs.md$');
     });
 
     it('应直接返回已经是绝对路径的路径（向后兼容）', () => {
@@ -87,7 +88,7 @@ describe('rulePath 工具函数', () => {
         `${sourceRoot}/rules/backend/003.md`,
       ];
       const result = toRelativePaths(absolutePaths, sourceId);
-      expect(result).toEqual(['rules/001.md', 'rules/002.md', 'rules/backend/003.md']);
+      expectPathsToBe(result, ['rules/001.md', 'rules/002.md', 'rules/backend/003.md']);
     });
 
     it('应处理空数组', () => {
@@ -107,7 +108,7 @@ describe('rulePath 工具函数', () => {
       const result = toAbsolutePaths(relativePaths, sourceId);
       expect(result).toHaveLength(3);
       result.forEach((path) => {
-        expect(path).toMatch(/sources\/test-source-123/);
+        expectPathToMatch(path, 'sources/test-source-123');
       });
     });
 
@@ -123,7 +124,7 @@ describe('rulePath 工具函数', () => {
       ];
       const result = toAbsolutePaths(paths, sourceId);
       expect(result).toHaveLength(2);
-      expect(result[0]).toMatch(/sources\/test-source-123\/rules\/001\.md$/);
+      expectPathToMatch(result[0], 'sources/test-source-123/rules/001.md$');
       expect(result[1]).toBe('/absolute/path/002.md');
     });
   });

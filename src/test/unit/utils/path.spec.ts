@@ -14,6 +14,8 @@ import {
   resolveConfigPath,
 } from '@/utils/path';
 
+import { expectNormalizedPathToBe } from '../testUtils/pathMatchers';
+
 describe('path 单元测试', () => {
   const originalEnv = process.env;
   const originalPlatform = process.platform;
@@ -41,7 +43,9 @@ describe('path 单元测试', () => {
     });
 
     it('应该保持非 ~ 路径不变', () => {
-      expect(expandHome('/abs/path')).toBe('/abs/path');
+      // Windows 绝对路径可能是 C:\abs\path 格式
+      const absPath = process.platform === 'win32' ? 'C:\\abs\\path' : '/abs/path';
+      expect(expandHome(absPath)).toBe(absPath);
       expect(expandHome('relative/path')).toBe('relative/path');
       expect(expandHome('./current/path')).toBe('./current/path');
     });
@@ -85,8 +89,8 @@ describe('path 单元测试', () => {
       process.env.LOCALAPPDATA = 'C:\\Users\\Test\\AppData\\Local';
 
       const result = resolveCachePath(undefined, 'test-app');
-      // path.join 会使用正确的分隔符
-      expect(result.replace(/\\/g, '/')).toBe('C:/Users/Test/AppData/Local/test-app');
+      const expected = path.join('C:\\Users\\Test\\AppData\\Local', 'test-app');
+      expectNormalizedPathToBe(result, expected);
     });
 
     it('应该在 Linux 上使用 ~/.cache', () => {
@@ -136,8 +140,8 @@ describe('path 单元测试', () => {
       process.env.LOCALAPPDATA = 'C:\\Users\\Test\\AppData\\Local';
 
       const result = resolveConfigPath(undefined, 'test-app');
-      // path.join 会使用正确的分隔符
-      expect(result.replace(/\\/g, '/')).toBe('C:/Users/Test/AppData/Local/test-app');
+      const expected = path.join('C:\\Users\\Test\\AppData\\Local', 'test-app');
+      expectNormalizedPathToBe(result, expected);
     });
 
     it('应该在 Linux 上使用 ~/.config', () => {
@@ -160,13 +164,16 @@ describe('path 单元测试', () => {
     it('应该展开 ~ 并规范化', () => {
       const homeDir = os.homedir();
       const result = normalizePath('~/Documents/./file.txt');
-      const expected = path.normalize(path.join(homeDir, 'Documents/file.txt'));
+      const expected = path.normalize(path.join(homeDir, 'Documents', 'file.txt'));
       expect(result).toBe(expected);
     });
 
     it('应该处理绝对路径', () => {
-      const result = normalizePath('/abs/path/./file');
-      expect(result).toBe(path.normalize('/abs/path/file'));
+      // Windows 和 Unix 的绝对路径格式不同
+      const absPath = process.platform === 'win32' ? 'C:/abs/path/./file' : '/abs/path/./file';
+      const expectedPath = process.platform === 'win32' ? 'C:/abs/path/file' : '/abs/path/file';
+      const result = normalizePath(absPath);
+      expect(result).toBe(path.normalize(expectedPath));
     });
   });
 
