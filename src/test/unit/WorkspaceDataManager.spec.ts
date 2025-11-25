@@ -14,7 +14,6 @@ describe('WorkspaceDataManager', () => {
 
   beforeEach(async () => {
     // Reset singleton
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (WorkspaceDataManager as any).instance = null;
     manager = WorkspaceDataManager.getInstance();
     await manager.initWorkspace(testWorkspacePath);
@@ -46,7 +45,6 @@ describe('WorkspaceDataManager', () => {
       const hash1 = manager.getWorkspaceHash();
 
       // 重新初始化相同路径
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (WorkspaceDataManager as any).instance = null;
       const manager2 = WorkspaceDataManager.getInstance();
       await manager2.initWorkspace(testWorkspacePath);
@@ -58,7 +56,6 @@ describe('WorkspaceDataManager', () => {
     it('不同路径应该生成不同哈希', async () => {
       const hash1 = manager.getWorkspaceHash();
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (WorkspaceDataManager as any).instance = null;
       const manager2 = WorkspaceDataManager.getInstance();
       await manager2.initWorkspace('/different/workspace/path');

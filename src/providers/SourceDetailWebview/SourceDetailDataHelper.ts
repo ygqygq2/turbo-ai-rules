@@ -9,9 +9,10 @@ import * as vscode from 'vscode';
 
 import { ConfigManager } from '../../services/ConfigManager';
 import { RulesManager } from '../../services/RulesManager';
+import type { RuleSource } from '../../types/config';
+import type { ParsedRule } from '../../types/rules';
 import { formatBytes } from '../../utils/format';
 import { Logger } from '../../utils/logger';
-import type { ParsedRule, RuleSource } from '../types';
 
 /**
  * 规则源统计信息
@@ -118,7 +119,7 @@ export class SourceDetailDataHelper {
     const tagCounts = new Map<string, number>();
     rules.forEach((rule) => {
       const tags = rule.metadata?.tags || [];
-      tags.forEach((tag) => {
+      tags.forEach((tag: string) => {
         tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
       });
     });

@@ -14,7 +14,6 @@ describe('syncRulesCommand 单元测试', () => {
 
   it('无 workspace folder 时应提前返回', async () => {
     // Mock vscode.workspace.workspaceFolders 为空数组
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mockWorkspace = vscode.workspace as any;
     const originalFolders = mockWorkspace.workspaceFolders;
     mockWorkspace.workspaceFolders = [];
@@ -35,7 +34,6 @@ describe('syncRulesCommand 单元测试', () => {
 
   it('正常执行时不应抛出异常', async () => {
     // 确保有 workspace folder
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mockWorkspace = vscode.workspace as any;
     if (!mockWorkspace.workspaceFolders || mockWorkspace.workspaceFolders.length === 0) {
       // 如果测试环境没有 workspace，跳过此测试
@@ -48,7 +46,6 @@ describe('syncRulesCommand 单元测试', () => {
 
   it('指定 sourceId 时应该只同步该源', async () => {
     // 确保有 workspace folder
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mockWorkspace = vscode.workspace as any;
     if (!mockWorkspace.workspaceFolders || mockWorkspace.workspaceFolders.length === 0) {
       return;

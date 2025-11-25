@@ -1,0 +1,23 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "../../..",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "types": ["vitest/globals", "node"],
+    "ignoreDeprecations": "6.0"
+  },
+  "include": [
+    "./**/*.ts",
+    "./**/*.spec.ts",
+    "../../types/**/*.ts",
+    "../../utils/**/*.ts",
+    "../../services/**/*.ts",
+    "../../adapters/**/*.ts",
+    "../../parsers/**/*.ts",
+    "../../providers/**/*.ts",
+    "../../commands/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}

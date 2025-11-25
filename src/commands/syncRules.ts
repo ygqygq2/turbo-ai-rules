@@ -16,7 +16,7 @@ import { SelectionStateManager } from '../services/SelectionStateManager';
 import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
 import { WorkspaceStateManager } from '../services/WorkspaceStateManager';
 import type { RuleSource } from '../types/config';
-import type { ParsedRule } from '../types/rules';
+import type { ConflictStrategy, ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 
@@ -492,10 +492,7 @@ async function syncSingleSource(
  * @param selectedRules {ParsedRule[]}
  * @param strategy {ConflictStrategy}
  */
-function mergeSelectedRules(
-  selectedRules: ParsedRule[],
-  strategy: 'priority' | 'skip-duplicates' | 'keep-all',
-): ParsedRule[] {
+function mergeSelectedRules(selectedRules: ParsedRule[], strategy: ConflictStrategy): ParsedRule[] {
   if (strategy === 'skip-duplicates') {
     // 跳过重复，只保留第一个
     const seen = new Set<string>();
@@ -508,8 +505,8 @@ function mergeSelectedRules(
     });
   }
 
-  if (strategy === 'priority') {
-    // 按优先级保留
+  if (strategy === 'priority' || strategy === 'merge') {
+    // 按优先级保留（merge 和 priority 处理相同）
     const groupedById = new Map<string, ParsedRule[]>();
     for (const rule of selectedRules) {
       const existing = groupedById.get(rule.id) || [];

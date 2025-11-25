@@ -4,36 +4,173 @@ All notable changes to the "turbo-ai-rules" extension will be documented in this
 
 # [2.0.0]
 
-## 新增功能 🌱
+🎉 **重大版本更新** - 首个 UI 版本,全面重构用户体验
 
-- **feat: 高级搜索 Webview** - 强大的多条件组合搜索
-  - 支持名称/内容/标签/优先级/来源多条件搜索
-  - 搜索历史记录（最近 10 次，持久化存储）
-  - 快捷过滤器（按优先级快速筛选）
-  - 快捷键：`Cmd+Shift+Alt+F`
-- **feat: 批量操作命令** - 提升规则管理效率
-  - 批量启用/禁用规则
-  - 批量导出规则
-  - 批量删除规则
-  - 模态确认对话框，防止误操作
+## 💎 核心特性
 
-## 问题修复 🐛
+### 全新 Webview UI 系统
 
-- **fix: TreeView 始终显示 Git 缓存目录中的所有规则** - 修复同步规则后只显示部分规则的问题
-  - TreeView 现在直接从 Git 缓存目录加载规则，不依赖 RulesManager 内存缓存
-  - 确保不管同步与否，规则源的规则数量始终保持一致（除非规则源更新）
-  - 移除同步前清空规则的操作，避免干扰 TreeView 显示
+基于 React + Zustand 构建的现代化 UI 界面,提供更直观的交互体验:
 
-## 文档更新 📚
+- **欢迎页面** - 新手引导,一键快速开始
+- **源详情页** - 可视化查看规则源配置、分支信息、同步状态
+- **规则选择器** - 交互式规则启用/禁用管理
+- **统计仪表板** - 规则数量、分布、来源统计可视化
+- **高级搜索** - 多条件组合搜索,支持搜索历史
+- **规则详情** - 完整的规则元数据和内容展示
 
-- **docs: Phase 3 实现文档** - 添加 `10-ui-phase3-implementation.md`
-  - 详细的架构设计和实现说明
-  - 完整的测试清单
-  - 性能优化建议
-- **docs: 更新 README** - 添加新功能介绍
-  - 高级搜索功能说明
-  - 批量操作功能说明
-  - 新增快捷键文档
+### 可视化源管理
+
+- **添加源向导** - 分步引导添加 Git 规则源
+- **源详情查看** - 实时显示分支、最后同步时间、规则统计
+- **快捷操作** - 一键同步、启用/禁用、测试连接、编辑配置
+
+### 强大的搜索功能
+
+- **多维度搜索** - 支持名称/内容/标签/优先级/来源组合搜索
+- **搜索历史** - 自动保存最近 10 次搜索,快速重用
+- **快捷过滤器** - 按优先级(高/中/低)快速筛选
+- **快捷键支持** - `Cmd+Shift+Alt+F` (macOS) / `Ctrl+Shift+Alt+F` (Windows/Linux)
+
+### 批量操作增强
+
+- **批量规则管理** - 选择多个规则进行启用/禁用/导出/删除
+- **全选/取消全选** - 按源快速选择所有规则
+- **安全确认** - 危险操作(删除)需二次确认
+
+## 🚀 新增功能
+
+### UI 界面
+
+- **feat: 欢迎页 Webview** - 引导新用户快速上手
+- **feat: 源详情 Webview** - 可视化展示规则源配置和状态
+- **feat: 规则选择器 Webview** - 交互式规则管理界面
+- **feat: 统计仪表板 Webview** - 数据可视化展示
+- **feat: 高级搜索 Webview** - 强大的多条件搜索
+- **feat: 规则详情 Webview** - 完整的规则信息展示
+
+### 命令增强
+
+- **feat: 批量操作命令** - 批量启用/禁用/导出/删除规则
+- **feat: 查看源详情命令** - 右键菜单打开源详情页
+- **feat: 规则选择命令** - 通过 UI 界面管理规则选择状态
+- **feat: 刷新 Git 缓存命令** - 强制重新克隆规则源
+
+### 状态管理
+
+- **feat: WorkspaceStateManager** - 工作区级别状态持久化
+- **feat: SelectionStateManager** - 规则选择状态管理
+- **feat: 搜索历史持久化** - 自动保存和恢复搜索记录
+
+### 快捷键
+
+- `Cmd/Ctrl+Shift+R` - 同步规则
+- `Cmd/Ctrl+Shift+A` - 添加规则源
+- `Cmd/Ctrl+Shift+G` - 生成配置文件
+- `Cmd/Ctrl+Shift+S` - 查看统计
+- `Cmd/Ctrl+Shift+Alt+F` - 高级搜索
+
+## 🐛 问题修复
+
+- **fix: TreeView 始终显示所有规则** - 直接从 Git 缓存目录加载,不依赖内存缓存
+- **fix: 规则同步后 TreeView 刷新** - 确保同步后立即更新显示
+- **fix: 规则选择状态持久化** - 工作区级别保存,重启后保持选择
+- **fix: 测试覆盖完善** - 357 个单元测试 + 31 个集成测试,100% 通过
+
+## ⚙️ 架构优化
+
+### 模块化重构
+
+- **BaseWebviewProvider** - 统一的 Webview 基类,简化新页面开发
+- **分层架构** - Services → Providers → Commands 清晰职责划分
+- **状态管理** - Zustand 实现响应式状态管理
+
+### 性能优化
+
+- **按需加载** - Webview 仅在需要时创建和加载
+- **缓存策略** - Git 缓存避免重复克隆
+- **增量更新** - 仅同步变更的规则源
+
+### 开发体验
+
+- **TypeScript 严格模式** - 完整的类型安全
+- **ESLint 配置优化** - 测试目录允许 any 类型
+- **Vite 构建** - 快速的 Webview 资源构建
+- **React 开发模式** - 支持热重载和调试
+
+## 📚 文档更新
+
+### 开发文档
+
+- **docs: UI 设计总览** - `docs/development/30-ui-design-overview.md`
+- **docs: UI 开发流程** - `docs/development/32-ui-development-process.md`
+- **docs: Webview 最佳实践** - `docs/development/43-webview-best-practices.md`
+- **docs: CSS 规范** - `docs/development/44-webview-css-guide.md`
+- **docs: Codicons 使用指南** - `docs/development/45-codicons-guide.md`
+- **docs: StatusBar 设计** - `docs/development/46-status-bar-design.md`
+
+### 实施文档
+
+- **docs: 欢迎页实施** - `docs/development/webview/01-welcome-page-implementation.md`
+- **docs: 添加源实施** - `docs/development/webview/02-add-source-implementation.md`
+- **docs: 源详情实施** - `docs/development/webview/03-source-detail-implementation.md`
+- **docs: 规则选择器实施** - `docs/development/webview/04-rule-selector-implementation.md`
+- **docs: 统计页实施** - `docs/development/webview/05-statistics-implementation.md`
+- **docs: 搜索页实施** - `docs/development/webview/06-search-implementation.md`
+- **docs: 规则详情实施** - `docs/development/webview/07-rule-details-implementation.md`
+
+### 测试文档
+
+- **docs: 测试覆盖报告** - `docs/development/41-test-coverage.md`
+  - 36 个单元测试文件,357 个测试用例
+  - 11 个集成测试文件,31 个测试用例
+  - 100% 测试通过率
+
+### 用户文档
+
+- **docs: 命令说明更新** - 新增 UI 相关命令
+- **docs: 快捷键文档** - 完整的快捷键列表
+- **docs: FAQ 更新** - 常见问题解答
+
+## 🔧 技术栈
+
+### 前端
+
+- **React 19.2.0** - UI 框架
+- **Zustand 5.0.8** - 状态管理
+- **Vite 7.1.11** - 构建工具
+- **@vscode/codicons** - VSCode 官方图标
+
+### 后端
+
+- **TypeScript 5.9.3** - 类型安全
+- **simple-git 3.28.0** - Git 操作
+- **gray-matter 4.0.3** - Frontmatter 解析
+- **@ygqygq2/vscode-log** - 日志系统
+
+### 测试
+
+- **Vitest 3.2.4** - 单元测试
+- **Mocha 11.7.4** - 集成测试
+- **@vscode/test-electron** - VSCode 扩展测试
+
+## ⚠️ 破坏性变更
+
+- 最低 VSCode 版本要求: `^1.105.0`
+- Node.js 版本要求: `>=18.0.0`
+- 配置结构无变化,完全向后兼容 1.x
+
+## 📦 升级指南
+
+从 1.x 升级到 2.0:
+
+1. **自动迁移** - 配置和数据自动迁移,无需手动操作
+2. **新功能体验** - 升级后打开欢迎页了解新功能
+3. **性能提升** - 首次同步可能需要重建缓存
+
+## 🙏 致谢
+
+感谢所有贡献者和用户的反馈,让 Turbo AI Rules 2.0 成为可能!
 
 # [1.0.1]
 

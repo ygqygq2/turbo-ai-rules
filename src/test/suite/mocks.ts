@@ -3,7 +3,6 @@
  * 用于模拟用户交互，使测试可以完全自动化运行
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as vscode from 'vscode';
 
 /**

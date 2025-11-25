@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { RulesManager } from '../services/RulesManager';
 import type { ParsedRule } from '../types/rules';
 import { EXTENSION_ICON_PATH } from '../utils/constants';
 import { Logger } from '../utils/logger';

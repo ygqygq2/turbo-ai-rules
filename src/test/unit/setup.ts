@@ -19,6 +19,8 @@ vi.mock('vscode', () => ({
       hide: vi.fn(),
       dispose: vi.fn(),
     })),
+    showSaveDialog: vi.fn().mockResolvedValue(undefined),
+    showTextDocument: vi.fn().mockResolvedValue({}),
   },
   workspace: {
     getConfiguration: vi.fn(() => ({
@@ -29,10 +31,36 @@ vi.mock('vscode', () => ({
     })),
     workspaceFolders: [],
     getWorkspaceFolder: vi.fn(),
+    openTextDocument: vi.fn().mockResolvedValue({}),
+    fs: {
+      writeFile: vi.fn().mockResolvedValue(undefined),
+      readFile: vi.fn().mockResolvedValue(new Uint8Array()),
+    },
   },
   Uri: {
     file: vi.fn((path) => ({ fsPath: path, scheme: 'file', path })),
     parse: vi.fn((path) => ({ fsPath: path, scheme: 'file', path })),
+  },
+  ViewColumn: {
+    Active: -1,
+    Beside: -2,
+    One: 1,
+    Two: 2,
+    Three: 3,
+  },
+  commands: {
+    registerCommand: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+    executeCommand: vi.fn().mockResolvedValue(undefined),
+    getCommands: vi.fn().mockResolvedValue([]),
+  },
+  env: {
+    clipboard: {
+      readText: vi.fn().mockResolvedValue(''),
+      writeText: vi.fn().mockResolvedValue(undefined),
+    },
+    openExternal: vi.fn().mockResolvedValue(true),
+    appName: 'VS Code',
+    language: 'en',
   },
   ThemeIcon: vi.fn(),
   ThemeColor: vi.fn(),

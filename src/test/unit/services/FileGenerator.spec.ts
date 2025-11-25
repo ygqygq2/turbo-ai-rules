@@ -39,7 +39,6 @@ describe('FileGenerator', () => {
     });
 
     // 手动添加 mock adapter
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (generator as any).adapters.set('mock', mockAdapter);
   });
 

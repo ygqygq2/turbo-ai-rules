@@ -9,7 +9,6 @@ import { WorkspaceStateManager } from '../../services/WorkspaceStateManager';
 
 // Mock ExtensionContext
 const createMockContext = () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const storage = new Map<string, any>();
 
   return {
@@ -35,11 +34,9 @@ describe('WorkspaceStateManager', () => {
   beforeEach(async () => {
     context = createMockContext();
     // Reset singleton
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (WorkspaceStateManager as any).instance = null;
     manager = WorkspaceStateManager.getInstance(context);
     // 清空缓存
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (manager as any).cache = null;
   });
 

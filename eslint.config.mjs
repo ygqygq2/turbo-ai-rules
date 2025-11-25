@@ -29,4 +29,11 @@ export default tseslint.config(
       'prettier/prettier': 'warn',
     },
   },
+  // 测试目录特殊规则：允许使用 any 类型
+  {
+    files: ['src/test/**/*.ts', '__mocks__/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
 );

@@ -7,7 +7,6 @@ import * as tmp from 'tmp';
  */
 async function createTempDir(): Promise<string> {
   return new Promise<string>((resolve, reject) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tmp.dir((err: any, dir: string | PromiseLike<string>) => {
       if (err) {
         return reject(err);
