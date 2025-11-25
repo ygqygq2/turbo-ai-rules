@@ -73,9 +73,6 @@ describe('Sync Rules Tests', () => {
 
     assert.ok(sources && sources.length > 0, 'Should have pre-configured sources');
 
-    // 检查适配器配置
-    const cursorEnabled = config.get<boolean>('adapters.cursor.enabled');
-
     // 打开当前 workspace folder 中的 README 文件，确保 activeEditor 在正确的 folder
     const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
     const doc = await vscode.workspace.openTextDocument(readmePath);
