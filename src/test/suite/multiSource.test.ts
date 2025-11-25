@@ -3,20 +3,36 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { SelectionStateManager } from '../../services/SelectionStateManager';
+import { initializeAllTestSourcesSelection } from './testHelpers';
+
 describe('Multi-Source Integration Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
+  let selectionStateManager: SelectionStateManager;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     const folders = vscode.workspace.workspaceFolders;
     assert.ok(folders && folders.length > 0, 'No workspace folder found');
 
     // 查找 multi-source 测试工作区
     workspaceFolder = folders.find((f) => f.name.includes('Multi-Source')) || folders[0];
+
+    // 初始化选择状态管理器
+    selectionStateManager = SelectionStateManager.getInstance();
   });
 
   afterEach(async () => {
     if (!workspaceFolder) {
       return;
+    }
+
+    // 清理选择状态
+    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    const sources = config.get<Array<{ id: string }>>('sources');
+    if (sources) {
+      for (const source of sources) {
+        selectionStateManager.clearState(source.id);
+      }
     }
 
     // 清理所有可能生成的配置文件和目录
@@ -65,6 +81,9 @@ describe('Multi-Source Integration Tests', () => {
       console.log('Starting multi-source sync...');
       await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
       console.log('Multi-source sync completed');
+
+      // 同步后初始化选择状态（全选所有规则）
+      await initializeAllTestSourcesSelection(workspaceFolder);
 
       // 等待文件系统写入
       await new Promise((resolve) => setTimeout(resolve, 2000));

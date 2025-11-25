@@ -3,20 +3,36 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { SelectionStateManager } from '../../services/SelectionStateManager';
+import { initializeAllTestSourcesSelection } from './testHelpers';
+
 describe('Sync Rules Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
+  let selectionStateManager: SelectionStateManager;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     const folders = vscode.workspace.workspaceFolders;
     assert.ok(folders && folders.length > 0, 'No workspace folder found');
 
     // 使用第一个测试工作区（rules-for-cursor）
     workspaceFolder = folders[0];
+
+    // 初始化选择状态管理器
+    selectionStateManager = SelectionStateManager.getInstance();
   });
 
   afterEach(async () => {
     if (!workspaceFolder) {
       return;
+    }
+
+    // 清理选择状态（避免影响其他测试）
+    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    const sources = config.get<Array<{ id: string }>>('sources');
+    if (sources) {
+      for (const source of sources) {
+        selectionStateManager.clearState(source.id);
+      }
     }
 
     // 清理所有可能生成的配置文件和目录
@@ -81,6 +97,10 @@ describe('Sync Rules Tests', () => {
     // 执行同步
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
 
+    // 同步后初始化选择状态（全选所有规则）
+    // 这是为了模拟用户在 UI 中勾选规则的行为
+    await initializeAllTestSourcesSelection(workspaceFolder);
+
     // 等待同步和文件生成完成
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
@@ -124,6 +144,9 @@ describe('Sync Rules Tests', () => {
 
     // 执行同步
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+
+    // 同步后初始化选择状态（全选所有规则）
+    await initializeAllTestSourcesSelection(workspaceFolder);
 
     // 等待文件生成
     await new Promise((resolve) => setTimeout(resolve, 2000));

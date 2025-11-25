@@ -48,7 +48,7 @@
 
 **方式 1：通过状态栏**
 
-- 点击 **🤖 AI Rules** 图标 → 选择 **Add Source**
+- 点击 **Turbo AI Rules** 状态栏图标 → 选择 **Add Source**
 
 **方式 2：通过命令面板**
 
@@ -70,7 +70,7 @@
 添加源后会自动同步。也可以手动同步：
 
 - 命令面板：`Turbo AI Rules: Sync Rules`
-- 状态栏：点击 **🤖 AI Rules** → **Sync Rules**
+- 状态栏：点击 **Turbo AI Rules** → **Sync Rules**
 
 ### 4. 验证生成的文件
 

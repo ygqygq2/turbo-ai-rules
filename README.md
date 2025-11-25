@@ -48,7 +48,7 @@ Search for **Turbo AI Rules** in VS Code Extension Marketplace and install.
 
 **Method 1: Via Status Bar**
 
-- Click **🤖 AI Rules** icon → Select **Add Source**
+- Click **Turbo AI Rules** status bar icon → Select **Add Source**
 
 **Method 2: Via Command Palette**
 
@@ -70,7 +70,7 @@ Access Token:   ghp_xxxx (for private repos only)
 After adding a source, sync is triggered automatically. You can also manually sync:
 
 - Command Palette: `Turbo AI Rules: Sync Rules`
-- Status Bar: Click **🤖 AI Rules** → **Sync Rules**
+- Status Bar: Click **Turbo AI Rules** → **Sync Rules**
 
 ### 4. Verify Generated Files
 

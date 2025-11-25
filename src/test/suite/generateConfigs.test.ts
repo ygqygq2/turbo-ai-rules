@@ -3,19 +3,35 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { SelectionStateManager } from '../../services/SelectionStateManager';
+import { initializeAllTestSourcesSelection } from './testHelpers';
+
 describe('Generate Config Files Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
+  let selectionStateManager: SelectionStateManager;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     const folders = vscode.workspace.workspaceFolders;
     assert.ok(folders && folders.length > 0, 'No workspace folder found');
     // 使用第一个工作区（Cursor Adapter）
     workspaceFolder = folders[0];
+
+    // 初始化选择状态管理器
+    selectionStateManager = SelectionStateManager.getInstance();
   });
 
   afterEach(async () => {
     if (!workspaceFolder) {
       return;
+    }
+
+    // 清理选择状态
+    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    const sources = config.get<Array<{ id: string }>>('sources');
+    if (sources) {
+      for (const source of sources) {
+        selectionStateManager.clearState(source.id);
+      }
     }
 
     // 清理生成的配置文件
@@ -43,6 +59,10 @@ describe('Generate Config Files Tests', () => {
     // 先同步规则
     console.log('Syncing rules...');
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+
+    // 同步后初始化选择状态（全选所有规则）
+    await initializeAllTestSourcesSelection(workspaceFolder);
+
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // 生成配置文件
