@@ -26,16 +26,34 @@ export async function generateConfigsCommand(): Promise<void> {
     const fileGenerator = FileGenerator.getInstance();
 
     // 1. 获取工作区根目录
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    if (!workspaceFolder) {
+    // 优先使用活动编辑器所在的 workspace folder，如果没有则使用第一个
+    const allWorkspaceFolders = vscode.workspace.workspaceFolders;
+
+    if (!allWorkspaceFolders || allWorkspaceFolders.length === 0) {
       notify(vscode.l10n.t('No workspace folder opened'), 'error');
       return;
     }
 
+    let workspaceFolder = allWorkspaceFolders[0];
+
+    // 尝试获取活动编辑器的 workspace folder
+    const activeEditor = vscode.window.activeTextEditor;
+    if (activeEditor) {
+      const activeWorkspaceFolder = vscode.workspace.getWorkspaceFolder(activeEditor.document.uri);
+      if (activeWorkspaceFolder) {
+        workspaceFolder = activeWorkspaceFolder;
+      }
+    }
+
+    Logger.debug('Using workspace folder for generation', {
+      name: workspaceFolder.name,
+      path: workspaceFolder.uri.fsPath,
+    });
+
     const workspaceRoot = workspaceFolder.uri.fsPath;
 
-    // 2. 获取配置
-    const config = await configManager.getConfig();
+    // 2. 获取配置（传递 workspace folder URI）
+    const config = await configManager.getConfig(workspaceFolder.uri);
 
     // 3. 获取所有规则
     const allRules = rulesManager.getAllRules();

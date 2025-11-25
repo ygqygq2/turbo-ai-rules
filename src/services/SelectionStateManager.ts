@@ -38,6 +38,10 @@ export class SelectionStateManager {
   // 规则总数缓存（sourceId -> totalCount）
   private totalCountCache = new Map<string, number>();
 
+  // 工作区路径缓存（sourceId -> workspacePath）
+  // 用于延时持久化时知道保存到哪个工作区
+  private workspacePathCache = new Map<string, string>();
+
   // 状态变更监听器
   private listeners: SelectionStateChangeListener[] = [];
 
@@ -158,14 +162,21 @@ export class SelectionStateManager {
    * @param sourceId {string} 规则源 ID
    * @param selectedPaths {string[]} 选择的路径列表
    * @param schedulePersistence {boolean} 是否安排延时持久化（默认 true）
+   * @param workspacePath {string} 可选的工作区路径（用于持久化）
    */
   public updateSelection(
     sourceId: string,
     selectedPaths: string[],
     schedulePersistence: boolean = true,
+    workspacePath?: string,
   ): void {
     // 更新内存状态
     this.memoryState.set(sourceId, new Set(selectedPaths));
+
+    // 缓存 workspacePath（如果提供）
+    if (workspacePath) {
+      this.workspacePathCache.set(sourceId, workspacePath);
+    }
 
     // 触发状态变更事件
     const totalCount = this.totalCountCache.get(sourceId) || selectedPaths.length;
@@ -191,22 +202,25 @@ export class SelectionStateManager {
   /**
    * @description 立即持久化到磁盘
    * @param sourceId {string} 规则源 ID
+   * @param workspacePath {string} 可选的工作区路径（默认使用第一个工作区）
    * @return {Promise<void>}
    */
-  public async persistToDisk(sourceId: string): Promise<void> {
+  public async persistToDisk(sourceId: string, workspacePath?: string): Promise<void> {
     const selectedPaths = this.memoryState.get(sourceId);
     if (!selectedPaths) {
       Logger.warn('No memory state found for persistence', { sourceId });
       return;
     }
 
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
-      Logger.warn('No workspace folder found for persistence');
-      return;
+    // 如果没有提供 workspacePath，则使用第一个工作区
+    if (!workspacePath) {
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders || workspaceFolders.length === 0) {
+        Logger.warn('No workspace folder found for persistence');
+        return;
+      }
+      workspacePath = workspaceFolders[0].uri.fsPath;
     }
-
-    const workspacePath = workspaceFolders[0].uri.fsPath;
 
     try {
       // 使用工具函数批量转换绝对路径为相对路径（减少存储空间）
@@ -221,11 +235,12 @@ export class SelectionStateManager {
 
       Logger.info('Selection persisted to disk (relative paths)', {
         sourceId,
+        workspacePath,
         selectedCount: relativePaths.length,
         samplePath: relativePaths[0],
       });
     } catch (error) {
-      Logger.error('Failed to persist selection', error as Error, { sourceId });
+      Logger.error('Failed to persist selection', error as Error, { sourceId, workspacePath });
       throw error;
     } finally {
       // 清除定时器
@@ -277,7 +292,9 @@ export class SelectionStateManager {
 
     // 设置新的延时持久化定时器
     const timer = setTimeout(() => {
-      this.persistToDisk(sourceId).catch((error) => {
+      // 使用缓存的 workspacePath（如果有）
+      const workspacePath = this.workspacePathCache.get(sourceId);
+      this.persistToDisk(sourceId, workspacePath).catch((error) => {
         Logger.error('Failed to persist selection to disk', error as Error, { sourceId });
       });
     }, this.PERSISTENCE_DELAY);
@@ -292,6 +309,7 @@ export class SelectionStateManager {
   public clearState(sourceId: string): void {
     this.memoryState.delete(sourceId);
     this.totalCountCache.delete(sourceId);
+    this.workspacePathCache.delete(sourceId);
 
     const timer = this.persistenceTimers.get(sourceId);
     if (timer) {
@@ -315,6 +333,7 @@ export class SelectionStateManager {
     // 清除状态
     this.memoryState.clear();
     this.totalCountCache.clear();
+    this.workspacePathCache.clear();
 
     // 清除监听器
     this.listeners = [];

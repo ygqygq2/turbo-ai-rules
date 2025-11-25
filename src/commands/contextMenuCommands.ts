@@ -331,8 +331,12 @@ export async function ignoreRuleCommand(
       // 移除该规则的路径
       const newPaths = selectedPaths.filter((p) => p !== rule.filePath);
 
+      // 获取工作区路径
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      const workspacePath = workspaceFolders?.[0]?.uri.fsPath;
+
       // 更新选择状态
-      selectionStateManager.updateSelection(rule.sourceId, newPaths, true);
+      selectionStateManager.updateSelection(rule.sourceId, newPaths, true, workspacePath);
 
       notify(vscode.l10n.t('Rule "{0}" unchecked and will be excluded', rule.title), 'info');
     }

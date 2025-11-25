@@ -321,9 +321,17 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
       }
 
       // 通过 SelectionStateManager 更新状态，自动触发事件并安排延时落盘
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      const workspacePath = workspaceFolders?.[0]?.uri.fsPath;
+
       for (const [sourceId, paths] of changesBySource.entries()) {
         // 更新状态，会自动触发 stateChanged 事件并刷新树视图
-        this.selectionStateManager.updateSelection(sourceId, Array.from(paths), true);
+        this.selectionStateManager.updateSelection(
+          sourceId,
+          Array.from(paths),
+          true,
+          workspacePath,
+        );
 
         Logger.debug('Checkbox change - state updated via SelectionStateManager', {
           sourceId,

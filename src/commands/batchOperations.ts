@@ -227,8 +227,12 @@ export async function selectAllRulesCommand(source: RuleSource): Promise<void> {
     // 获取所有规则路径
     const allRulePaths = rules.map((r) => r.filePath).filter((p) => p) as string[];
 
+    // 获取工作区路径
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    const workspacePath = workspaceFolders?.[0]?.uri.fsPath;
+
     // 更新选择状态为全选
-    selectionStateManager.updateSelection(source.id, allRulePaths, true);
+    selectionStateManager.updateSelection(source.id, allRulePaths, true, workspacePath);
 
     Logger.debug('All rules selected', {
       sourceId: source.id,
@@ -253,8 +257,12 @@ export async function deselectAllRulesCommand(source: RuleSource): Promise<void>
   try {
     const selectionStateManager = SelectionStateManager.getInstance();
 
+    // 获取工作区路径
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    const workspacePath = workspaceFolders?.[0]?.uri.fsPath;
+
     // 更新选择状态为全不选（空数组）
-    selectionStateManager.updateSelection(source.id, [], true);
+    selectionStateManager.updateSelection(source.id, [], true, workspacePath);
 
     Logger.debug('All rules deselected', { sourceId: source.id });
 

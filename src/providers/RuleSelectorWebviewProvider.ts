@@ -446,7 +446,7 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
       try {
         await dataManager.setRuleSelection(workspacePath, sourceId, selection);
         // 通过 SelectionStateManager 更新状态（不延时落盘，因为已经保存到磁盘）
-        this.selectionStateManager.updateSelection(sourceId, paths, false);
+        this.selectionStateManager.updateSelection(sourceId, paths, false, workspacePath);
         Logger.info('Rule selection saved via RPC', { sourceId, pathCount: paths.length });
         return { message: '已保存' };
       } catch (error) {
@@ -471,8 +471,12 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
         }
 
         try {
+          // 获取工作区路径
+          const workspaceFolders = vscode.workspace.workspaceFolders;
+          const workspacePath = workspaceFolders?.[0]?.uri.fsPath;
+
           // 更新状态并触发延时落盘，会自动通知左侧树视图刷新
-          this.selectionStateManager.updateSelection(sourceId, paths, true);
+          this.selectionStateManager.updateSelection(sourceId, paths, true, workspacePath);
 
           Logger.debug('Selection changed from webview', {
             sourceId,

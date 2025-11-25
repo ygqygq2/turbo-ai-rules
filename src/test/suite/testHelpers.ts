@@ -12,9 +12,13 @@ import { SelectionStateManager } from '../../services/SelectionStateManager';
  * @description 为测试源初始化选择状态（全选所有规则）
  * 这是为了确保在 CI 环境中测试能够正常运行，因为默认情况下新源是全不选的
  * @param sourceId {string} 规则源 ID
+ * @param workspacePath {string} 工作区路径
  * @return {Promise<void>}
  */
-export async function initializeTestSourceSelection(sourceId: string): Promise<void> {
+export async function initializeTestSourceSelection(
+  sourceId: string,
+  workspacePath: string,
+): Promise<void> {
   const rulesManager = RulesManager.getInstance();
   const selectionStateManager = SelectionStateManager.getInstance();
 
@@ -32,13 +36,15 @@ export async function initializeTestSourceSelection(sourceId: string): Promise<v
   // 初始化选择状态为全选
   await selectionStateManager.initializeState(sourceId, allRules.length, allPaths);
 
-  // 更新选择状态为全选
-  selectionStateManager.updateSelection(sourceId, allPaths, true);
+  // 更新选择状态为全选（禁用延时持久化，直接持久化）
+  selectionStateManager.updateSelection(sourceId, allPaths, false, workspacePath);
 
   // 立即持久化到磁盘（确保状态保存）
-  await selectionStateManager.persistToDisk(sourceId);
+  await selectionStateManager.persistToDisk(sourceId, workspacePath);
 
-  console.log(`[Test] Source ${sourceId} selection initialized: ${allRules.length} rules selected`);
+  console.log(
+    `[Test] Source ${sourceId} selection initialized: ${allRules.length} rules selected in ${workspacePath}`,
+  );
 }
 
 /**
@@ -59,9 +65,10 @@ export async function initializeAllTestSourcesSelection(
 
   // 只为启用的源初始化选择状态
   const enabledSources = sources.filter((s) => s.enabled);
+  const workspacePath = workspaceFolder.uri.fsPath;
 
   for (const source of enabledSources) {
-    await initializeTestSourceSelection(source.id);
+    await initializeTestSourceSelection(source.id, workspacePath);
   }
 
   console.log(

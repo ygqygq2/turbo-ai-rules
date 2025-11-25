@@ -528,13 +528,22 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
         await import('../services/SelectionStateManager')
       ).SelectionStateManager.getInstance();
 
+      // 获取工作区路径
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      const workspacePath = workspaceFolders?.[0]?.uri.fsPath;
+
       for (const [sourceId, filePaths] of rulesBySource.entries()) {
         // 获取当前已选择的规则
         const currentSelection = selectionManager.getSelection(sourceId);
         const mergedSelection = new Set([...currentSelection, ...filePaths]);
 
         // 更新选择状态（自动触发 TreeView 刷新）
-        selectionManager.updateSelection(sourceId, Array.from(mergedSelection), true);
+        selectionManager.updateSelection(
+          sourceId,
+          Array.from(mergedSelection),
+          true,
+          workspacePath,
+        );
 
         Logger.debug('[SearchWebview] Rules checked in TreeView', {
           sourceId,
