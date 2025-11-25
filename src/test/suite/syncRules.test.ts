@@ -3,12 +3,12 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { SelectionStateManager } from '../../services/SelectionStateManager';
-import { initializeAllTestSourcesSelection } from './testHelpers';
+// 通过扩展获取服务实例，避免模块重复加载
+let rulesManager: any;
+let selectionStateManager: any;
 
 describe('Sync Rules Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
-  let selectionStateManager: SelectionStateManager;
 
   beforeEach(async () => {
     const folders = vscode.workspace.workspaceFolders;
@@ -17,8 +17,17 @@ describe('Sync Rules Tests', () => {
     // 使用第一个测试工作区（rules-for-cursor）
     workspaceFolder = folders[0];
 
-    // 初始化选择状态管理器
-    selectionStateManager = SelectionStateManager.getInstance();
+    // 从扩展获取服务实例
+    const ext = vscode.extensions.getExtension('ygqygq2.turbo-ai-rules');
+    if (ext && !ext.isActive) {
+      await ext.activate();
+    }
+    const api = ext?.exports;
+    rulesManager = api?.rulesManager;
+    selectionStateManager = api?.selectionStateManager;
+
+    assert.ok(rulesManager, 'RulesManager should be available from extension');
+    assert.ok(selectionStateManager, 'SelectionStateManager should be available from extension');
   });
 
   afterEach(async () => {
@@ -94,15 +103,52 @@ describe('Sync Rules Tests', () => {
     const doc = await vscode.workspace.openTextDocument(readmePath);
     await vscode.window.showTextDocument(doc);
 
-    // 执行同步
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
 
-    // 等待同步完成和规则加载到 RulesManager
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    // 等待同步完成和规则加载到 RulesManager（轮询检查，最多等待 10 秒）
+    let allRulesAfterSync: any[] = [];
+    let attempts = 0;
+    const maxAttempts = 20; // 20 次 * 500ms = 10 秒
 
-    // 同步后初始化选择状态（全选所有规则）
-    // 这是为了模拟用户在 UI 中勾选规则的行为
-    await initializeAllTestSourcesSelection(workspaceFolder);
+    while (allRulesAfterSync.length === 0 && attempts < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      allRulesAfterSync = rulesManager.getAllRules();
+      attempts++;
+      if (allRulesAfterSync.length > 0) {
+        break;
+      }
+    }
+
+    assert.ok(allRulesAfterSync.length > 0, 'Rules should be loaded after sync');
+
+    // 模拟用户选择规则：获取所有源并选中所有规则
+    const configForSelection = vscode.workspace.getConfiguration(
+      'turbo-ai-rules',
+      workspaceFolder.uri,
+    );
+    const sourcesForSelection =
+      configForSelection.get<Array<{ id: string; enabled: boolean }>>('sources');
+    assert.ok(
+      sourcesForSelection && sourcesForSelection.length > 0,
+      'Should have configured sources',
+    );
+
+    for (const source of sourcesForSelection.filter((s: any) => s.enabled)) {
+      const sourceRules = rulesManager.getRulesBySource(source.id);
+      if (sourceRules.length > 0) {
+        const allPaths = sourceRules.map((rule: any) => rule.filePath);
+        // 直接设置选择状态（模拟用户全选）
+        selectionStateManager.updateSelection(
+          source.id,
+          allPaths,
+          false,
+          workspaceFolder.uri.fsPath,
+        );
+      }
+    }
+
+    // 等待选择状态持久化
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // 初始化选择状态后，重新生成配置文件
     await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
@@ -151,11 +197,45 @@ describe('Sync Rules Tests', () => {
     // 执行同步
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
 
-    // 等待同步完成和规则加载
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    // 等待同步完成和规则加载（轮询检查）
+    let allRules: any[] = [];
+    for (let i = 0; i < 20; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      allRules = rulesManager.getAllRules();
+      if (allRules.length > 0) {
+        break;
+      }
+    }
 
-    // 同步后初始化选择状态（全选所有规则）
-    await initializeAllTestSourcesSelection(workspaceFolder);
+    assert.ok(allRules.length > 0, 'Rules should be loaded after sync');
+
+    // 模拟用户选择规则：获取所有源并选中所有规则
+    const configForGenerate = vscode.workspace.getConfiguration(
+      'turbo-ai-rules',
+      workspaceFolder.uri,
+    );
+    const sourcesForGenerate =
+      configForGenerate.get<Array<{ id: string; enabled: boolean }>>('sources');
+    assert.ok(
+      sourcesForGenerate && sourcesForGenerate.length > 0,
+      'Should have configured sources',
+    );
+
+    for (const source of sourcesForGenerate.filter((s: any) => s.enabled)) {
+      const sourceRules = rulesManager.getRulesBySource(source.id);
+      if (sourceRules.length > 0) {
+        const allPaths = sourceRules.map((rule: any) => rule.filePath);
+        selectionStateManager.updateSelection(
+          source.id,
+          allPaths,
+          false,
+          workspaceFolder.uri.fsPath,
+        );
+      }
+    }
+
+    // 等待选择状态持久化
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // 重新生成配置文件
     await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');

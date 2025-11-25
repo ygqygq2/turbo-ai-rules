@@ -64,8 +64,19 @@ export class MdcParser {
       // 读取文件内容
       const content = await safeReadFile(filePath);
 
-      // 解析 frontmatter
-      const parsed = matter(content);
+      // 解析 frontmatter（捕获 YAML 解析错误）
+      let parsed;
+      try {
+        parsed = matter(content);
+      } catch (yamlError) {
+        const errorMsg = yamlError instanceof Error ? yamlError.message : String(yamlError);
+        throw new ParseError(
+          `Invalid YAML frontmatter: ${errorMsg}. Common issues: unquoted special characters (*, &, etc.)`,
+          ErrorCodes.PARSE_INVALID_FORMAT,
+          filePath,
+          yamlError as Error,
+        );
+      }
 
       // 检查是否要求 frontmatter
       const hasFrontmatter = parsed.data && Object.keys(parsed.data).length > 0;

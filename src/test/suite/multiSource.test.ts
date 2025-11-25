@@ -3,12 +3,12 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { SelectionStateManager } from '../../services/SelectionStateManager';
-import { initializeAllTestSourcesSelection } from './testHelpers';
+// 通过扩展获取服务实例
+let rulesManager: any;
+let selectionStateManager: any;
 
 describe('Multi-Source Integration Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
-  let selectionStateManager: SelectionStateManager;
 
   beforeEach(async () => {
     const folders = vscode.workspace.workspaceFolders;
@@ -17,8 +17,14 @@ describe('Multi-Source Integration Tests', () => {
     // 查找 multi-source 测试工作区
     workspaceFolder = folders.find((f) => f.name.includes('Multi-Source')) || folders[0];
 
-    // 初始化选择状态管理器
-    selectionStateManager = SelectionStateManager.getInstance();
+    // 从扩展获取服务实例
+    const ext = vscode.extensions.getExtension('ygqygq2.turbo-ai-rules');
+    if (ext && !ext.isActive) {
+      await ext.activate();
+    }
+    const api = ext?.exports;
+    rulesManager = api?.rulesManager;
+    selectionStateManager = api?.selectionStateManager;
   });
 
   afterEach(async () => {
@@ -78,15 +84,41 @@ describe('Multi-Source Integration Tests', () => {
       const doc = await vscode.workspace.openTextDocument(readmePath);
       await vscode.window.showTextDocument(doc);
 
-      console.log('Starting multi-source sync...');
+      // 获取配置的源
+      const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+      const sources = config.get<Array<{ id: string; enabled: boolean }>>('sources');
+      assert.ok(sources && sources.length > 0, 'Should have configured sources');
+
       await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
-      console.log('Multi-source sync completed');
 
-      // 等待规则加载到 RulesManager
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      // 等待规则加载到 RulesManager（轮询检查）
+      let allRules: any[] = [];
+      for (let i = 0; i < 20; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        allRules = rulesManager.getAllRules();
+        if (allRules.length > 0) {
+          break;
+        }
+      }
 
-      // 同步后初始化选择状态（全选所有规则）
-      await initializeAllTestSourcesSelection(workspaceFolder);
+      assert.ok(allRules.length > 0, 'Rules should be loaded after multi-source sync');
+
+      // 模拟用户选择规则：获取所有源并选中所有规则
+      for (const source of sources!.filter((s: any) => s.enabled)) {
+        const sourceRules = rulesManager.getRulesBySource(source.id);
+        if (sourceRules.length > 0) {
+          const allPaths = sourceRules.map((rule: any) => rule.filePath);
+          selectionStateManager.updateSelection(
+            source.id,
+            allPaths,
+            false,
+            workspaceFolder.uri.fsPath,
+          );
+        }
+      }
+
+      // 等待选择状态持久化
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // 重新生成配置文件
       await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');

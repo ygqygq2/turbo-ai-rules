@@ -121,7 +121,11 @@ async function loadRulesFromCache(
 /**
  * 扩展激活入口
  */
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+export async function activate(context: vscode.ExtensionContext): Promise<{
+  rulesManager: RulesManager;
+  selectionStateManager: SelectionStateManager;
+  configManager: ConfigManager;
+}> {
   try {
     // 初始化 Logger
     Logger.init();
@@ -416,6 +420,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
 
     Logger.info(`${EXTENSION_NAME} activated successfully`);
+
+    // 返回服务实例供测试使用
+    return {
+      rulesManager,
+      selectionStateManager,
+      configManager,
+    };
   } catch (error) {
     Logger.error('Failed to activate extension', error instanceof Error ? error : undefined);
     notify(

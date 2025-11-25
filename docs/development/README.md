@@ -24,6 +24,8 @@
 - **[43-webview-best-practices.md](./43-webview-best-practices.md)** - Webview 最佳实践
 - **[44-webview-css-guide.md](./44-webview-css-guide.md)** - Webview CSS 规范
 - **[45-codicons-guide.md](./45-codicons-guide.md)** - Codicons 使用指南
+- **[50-test-cache-cleanup.md](./50-test-cache-cleanup.md)** - 测试缓存清理指南
+- **[51-test-commands.md](./51-test-commands.md)** - 测试命令速查表
 
 ## 文档分层
 
