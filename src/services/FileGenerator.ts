@@ -328,21 +328,24 @@ export class FileGenerator {
   }
 
   /**
-   * 确保生成的文件在 .gitignore 中
+   * 确保生成的文件在 .gitignore 中（动态管理）
    * @param workspaceRoot 工作区根目录
    */
   private async ensureGitIgnore(workspaceRoot: string): Promise<void> {
     try {
       const patterns: string[] = [];
 
-      // 收集所有适配器的文件路径
+      // 收集所有已启用适配器的文件路径
       for (const adapter of this.adapters.values()) {
         patterns.push(adapter.getFilePath());
       }
 
       if (patterns.length > 0) {
         await ensureIgnored(workspaceRoot, patterns);
-        Logger.debug('Updated .gitignore', { patterns });
+        Logger.debug('Updated .gitignore with enabled adapters', {
+          patterns,
+          count: patterns.length,
+        });
       }
     } catch (error) {
       // .gitignore 失败不影响主流程

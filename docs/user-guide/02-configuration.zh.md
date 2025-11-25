@@ -173,6 +173,39 @@ Turbo AI Rules **完全遵循 VS Code 原生配置系统**，配置优先级从�
 | Cursor   | `cursor.enabled`   | `false` | `.cursorrules`                    |
 | Continue | `continue.enabled` | `false` | `.continuerules`                  |
 
+**Continue 目录支持说明**:
+
+Continue 也支持从 `.continue/rules/` 目录加载规则，**完全支持递归子目录扫描**：
+
+- ✅ 单文件：`.continuerules` (根目录)
+- ✅ 目录：`.continue/rules/*.md` (支持递归子目录扫描)
+- ✅ 示例：`.continue/rules/backend/api/rules.md` 完全支持
+
+**💡 推荐做法**：对于多文件或目录结构的规则，**推荐使用自定义适配器**而非内置 Continue 适配器：
+
+- 自定义适配器支持 `directory` 输出类型和按源组织
+- 更好地控制文件结构和索引生成
+- 可以过滤特定文件类型并生成索引文件
+- 配置示例：
+
+```json
+{
+  "turbo-ai-rules.adapters.continue.enabled": false,
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "continue-rules",
+      "name": "Continue 规则目录",
+      "enabled": true,
+      "outputPath": ".continue/rules",
+      "outputType": "directory",
+      "fileExtensions": [".md"],
+      "organizeBySource": true,
+      "generateIndex": true
+    }
+  ]
+}
+```
+
 **示例**:
 
 ```json

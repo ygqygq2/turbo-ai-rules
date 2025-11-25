@@ -10,7 +10,7 @@ import { Logger } from './logger';
 import { notify } from './notifications';
 
 /**
- * 确保指定的模式已添加到 .gitignore
+ * 确保指定的模式已添加到 .gitignore（动态管理）
  * @param workspacePath 工作区路径
  * @param patterns 要忽略的模式列表
  */
@@ -24,44 +24,64 @@ export async function ensureIgnored(workspacePath: string, patterns: string[]): 
       content = await safeReadFile(gitignorePath);
     }
 
-    // 检查是否已经包含我们的标记
-    const hasMarker = content.includes(GITIGNORE_MARKER);
+    const lines = content.split('\n');
+    const markerIndex = lines.findIndex((line) => line.includes(GITIGNORE_MARKER));
 
-    if (hasMarker) {
-      Logger.debug('.gitignore already contains turbo-ai-rules patterns');
-      return;
-    }
+    let newLines: string[];
+    const existingPatterns: string[] = [];
 
-    // 检查哪些模式还未添加
-    const linesToAdd: string[] = [];
-    const existingLines = content.split('\n').map((line) => line.trim());
-
-    for (const pattern of patterns) {
-      if (!existingLines.includes(pattern)) {
-        linesToAdd.push(pattern);
+    if (markerIndex !== -1) {
+      // 找到标记，提取当前管理的模式
+      newLines = lines.slice(0, markerIndex);
+      for (let i = markerIndex + 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line === '') break; // 遇到空行停止
+        existingPatterns.push(line);
       }
+      // 保留空行后的内容
+      const emptyLineIndex = lines.slice(markerIndex + 1).findIndex((l) => l.trim() === '');
+      if (emptyLineIndex !== -1) {
+        newLines.push(...lines.slice(markerIndex + 1 + emptyLineIndex + 1));
+      }
+    } else {
+      // 没有标记，初始化
+      newLines = [...lines];
     }
 
-    // 如果没有需要添加的模式，直接返回
-    if (linesToAdd.length === 0) {
-      Logger.debug('All patterns already in .gitignore');
+    // 计算需要添加和删除的模式
+    const patternsToAdd = patterns.filter((p) => !existingPatterns.includes(p));
+    const patternsToRemove = existingPatterns.filter((p) => !patterns.includes(p));
+
+    // 如果没有变化，直接返回
+    if (patternsToAdd.length === 0 && patternsToRemove.length === 0) {
+      Logger.debug('.gitignore patterns are up to date');
       return;
     }
 
-    // 添加新的模式
-    const newContent = [content.trimEnd(), '', GITIGNORE_MARKER, ...linesToAdd, ''].join('\n');
+    // 重新构建内容：原有内容 + 标记 + 新模式列表
+    const finalLines = [
+      ...newLines.map((l) => l.trimEnd()).filter((_, i, arr) => i < arr.length - 1 || _ !== ''),
+      '',
+      GITIGNORE_MARKER,
+      ...patterns,
+      '',
+    ];
 
-    await safeWriteFile(gitignorePath, newContent);
+    await safeWriteFile(gitignorePath, finalLines.join('\n'));
 
     Logger.info('Updated .gitignore with turbo-ai-rules patterns', {
-      patternsAdded: linesToAdd.length,
+      patternsAdded: patternsToAdd.length,
+      patternsRemoved: patternsToRemove.length,
+      totalPatterns: patterns.length,
     });
 
-    // 显示瞬时通知（自动消失）
-    notify(
-      `Updated .gitignore to exclude AI rules cache (${linesToAdd.length} patterns added)`,
-      'info',
-    );
+    // 显示瞬时通知（仅在有变化时）
+    if (patternsToAdd.length > 0 || patternsToRemove.length > 0) {
+      const message = [];
+      if (patternsToAdd.length > 0) message.push(`+${patternsToAdd.length}`);
+      if (patternsToRemove.length > 0) message.push(`-${patternsToRemove.length}`);
+      notify(`Updated .gitignore (${message.join(', ')} patterns)`, 'info');
+    }
   } catch (error) {
     Logger.error('Failed to update .gitignore', error as Error, {
       workspacePath,
@@ -74,10 +94,10 @@ export async function ensureIgnored(workspacePath: string, patterns: string[]): 
 }
 
 /**
- * 从 .gitignore 中移除 turbo-ai-rules 的模式
+ * 从 .gitignore 中移除 turbo-ai-rules 的所有模式
  * @param workspacePath 工作区路径
  */
-export async function removeIgnorePatterns(workspacePath: string): Promise<void> {
+export async function removeAllIgnorePatterns(workspacePath: string): Promise<void> {
   try {
     const gitignorePath = path.join(workspacePath, '.gitignore');
 
@@ -119,7 +139,7 @@ export async function removeIgnorePatterns(workspacePath: string): Promise<void>
     const newContent = newLines.join('\n');
     await safeWriteFile(gitignorePath, newContent);
 
-    Logger.info('Removed turbo-ai-rules patterns from .gitignore');
+    Logger.info('Removed all turbo-ai-rules patterns from .gitignore');
   } catch (error) {
     Logger.error('Failed to remove patterns from .gitignore', error as Error, {
       workspacePath,

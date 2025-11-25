@@ -52,6 +52,8 @@
   "Failed to copy rule": "Failed to copy rule: {0}",
   "Rule exported to {0}": "Rule exported to {0}",
   "Failed to export rule": "Failed to export rule: {0}",
+  "Add \"{0}\" template as a rule source?": "Add \"{0}\" template as a rule source?",
+  "Add Source": "Add Source",
   "Are you sure you want to ignore rule \"{0}\"? This will uncheck it and exclude from generated configs.": "Are you sure you want to ignore rule \"{0}\"? This will uncheck it and exclude from generated configs.",
   "Ignore Rule": "Ignore Rule",
   "Rule \"{0}\" unchecked and will be excluded": "Rule \"{0}\" unchecked and will be excluded from config generation",

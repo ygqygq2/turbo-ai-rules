@@ -49,6 +49,7 @@ import { WorkspaceDataManager } from './services/WorkspaceDataManager';
 import { WorkspaceStateManager } from './services/WorkspaceStateManager';
 import type { RuleSource } from './types/config';
 import { EXTENSION_NAME } from './utils/constants';
+import { ensureIgnored } from './utils/gitignore';
 import { Logger } from './utils/logger';
 import { notify } from './utils/notifications';
 
@@ -394,10 +395,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     // 7. 监听配置变化
     context.subscriptions.push(
-      vscode.workspace.onDidChangeConfiguration((e) => {
+      vscode.workspace.onDidChangeConfiguration(async (e) => {
         if (e.affectsConfiguration('turbo-ai-rules')) {
           Logger.info('Configuration changed, refreshing UI');
           treeProvider.refresh();
+
+          // 如果适配器配置变更，同步更新 .gitignore
+          if (e.affectsConfiguration('turbo-ai-rules.adapters')) {
+            try {
+              await updateGitignoreForAdapters();
+              Logger.debug('Updated .gitignore for adapter configuration changes');
+            } catch (error) {
+              Logger.warn('Failed to update .gitignore on config change', {
+                error: error instanceof Error ? error.message : String(error),
+              });
+            }
+          }
         }
       }),
     );
@@ -421,4 +434,68 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
  */
 export function deactivate(): void {
   Logger.info(`Deactivating ${EXTENSION_NAME}`);
+}
+
+/**
+ * 根据当前启用的适配器动态更新 .gitignore
+ */
+async function updateGitignoreForAdapters(): Promise<void> {
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+  if (!workspaceFolder) {
+    return;
+  }
+
+  const workspaceRoot = workspaceFolder.uri.fsPath;
+  const configManager = ConfigManager.getInstance();
+  const config = await configManager.getConfig();
+  const fileGenerator = FileGenerator.getInstance();
+
+  // 初始化适配器以获取文件路径
+  fileGenerator.initializeAdapters(config.adapters);
+
+  // 收集所有启用的适配器的文件路径
+  const patterns: string[] = [];
+  const enabledAdapters = fileGenerator.getEnabledAdapters();
+
+  for (const adapterName of enabledAdapters) {
+    try {
+      // 通过适配器名称获取文件路径
+      const { ContinueAdapter, CopilotAdapter, CursorAdapter, CustomAdapter } = await import(
+        './adapters'
+      );
+
+      let filePath: string | undefined;
+
+      if (adapterName === 'cursor') {
+        filePath = new CursorAdapter(true).getFilePath();
+      } else if (adapterName === 'copilot') {
+        filePath = new CopilotAdapter(true).getFilePath();
+      } else if (adapterName === 'continue') {
+        filePath = new ContinueAdapter(true).getFilePath();
+      } else if (adapterName.startsWith('custom-')) {
+        // 自定义适配器需要从配置中获取
+        const customId = adapterName.replace('custom-', '');
+        const customConfig = config.adapters.custom?.find((c) => c.id === customId);
+        if (customConfig) {
+          filePath = new CustomAdapter(customConfig).getFilePath();
+        }
+      }
+
+      if (filePath) {
+        patterns.push(filePath);
+      }
+    } catch (error) {
+      Logger.warn(`Failed to get file path for adapter: ${adapterName}`, {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  // 更新 .gitignore
+  await ensureIgnored(workspaceRoot, patterns);
+
+  Logger.debug('Updated .gitignore with enabled adapter patterns', {
+    patterns,
+    count: patterns.length,
+  });
 }

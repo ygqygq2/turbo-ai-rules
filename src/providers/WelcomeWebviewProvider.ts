@@ -264,6 +264,18 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
       return;
     }
 
+    // 显示确认对话框
+    const confirmed = await vscode.window.showInformationMessage(
+      vscode.l10n.t('Add "{0}" template as a rule source?', template.name),
+      { modal: true },
+      vscode.l10n.t('Add Source'),
+      vscode.l10n.t('Cancel'),
+    );
+
+    if (confirmed !== vscode.l10n.t('Add Source')) {
+      return;
+    }
+
     try {
       // 显示进度提示
       await vscode.window.withProgress(

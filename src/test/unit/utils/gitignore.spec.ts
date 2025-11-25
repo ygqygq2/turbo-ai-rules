@@ -7,7 +7,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { ensureIgnored, isPatternIgnored, removeIgnorePatterns } from '@/utils/gitignore';
+import { ensureIgnored, isPatternIgnored, removeAllIgnorePatterns } from '@/utils/gitignore';
 
 describe('gitignore 单元测试', () => {
   let testDir: string;
@@ -38,48 +38,68 @@ describe('gitignore 单元测试', () => {
       expect(content).toContain('*.cache');
     });
 
-    it('应该追加到已存在的 .gitignore', async () => {
+    it('应该动态更新模式（替换而非追加）', async () => {
       const gitignorePath = path.join(testDir, '.gitignore');
       await fs.writeFile(gitignorePath, 'node_modules/\n.env\n');
 
-      const patterns = ['.turbo-ai-rules/', '*.cache'];
-      await ensureIgnored(testDir, patterns);
+      // 第一次添加模式
+      const patterns1 = ['.cursorrules', '.continue/config.json'];
+      await ensureIgnored(testDir, patterns1);
 
-      const content = await fs.readFile(gitignorePath, 'utf-8');
+      let content = await fs.readFile(gitignorePath, 'utf-8');
+      expect(content).toContain('.cursorrules');
+      expect(content).toContain('.continue/config.json');
+
+      // 第二次更新模式（移除 .continue/config.json，添加 .github/copilot-instructions.md）
+      const patterns2 = ['.cursorrules', '.github/copilot-instructions.md'];
+      await ensureIgnored(testDir, patterns2);
+
+      content = await fs.readFile(gitignorePath, 'utf-8');
+      expect(content).toContain('.cursorrules');
+      expect(content).toContain('.github/copilot-instructions.md');
+      expect(content).not.toContain('.continue/config.json');
+
+      // 确保用户内容仍然存在
       expect(content).toContain('node_modules/');
       expect(content).toContain('.env');
+    });
+
+    it('应该在模式未变化时不修改文件', async () => {
+      const gitignorePath = path.join(testDir, '.gitignore');
+      const patterns = ['.cursorrules', '.continue/config.json'];
+
+      await ensureIgnored(testDir, patterns);
+      const stat1 = await fs.stat(gitignorePath);
+
+      // 等待确保时间戳不同
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // 再次使用相同模式
+      await ensureIgnored(testDir, patterns);
+      const stat2 = await fs.stat(gitignorePath);
+
+      // 文件修改时间应该相同（未被修改）
+      expect(stat1.mtimeMs).toBe(stat2.mtimeMs);
+    });
+
+    it('应该支持空模式列表（移除所有模式但保留标记）', async () => {
+      const gitignorePath = path.join(testDir, '.gitignore');
+      await fs.writeFile(gitignorePath, 'node_modules/\n');
+
+      // 先添加一些模式
+      await ensureIgnored(testDir, ['.cursorrules', '.continue/config.json']);
+
+      let content = await fs.readFile(gitignorePath, 'utf-8');
+      expect(content).toContain('.cursorrules');
+
+      // 传入空数组应该移除所有模式但保留标记区域
+      await ensureIgnored(testDir, []);
+
+      content = await fs.readFile(gitignorePath, 'utf-8');
       expect(content).toContain('# Turbo AI Rules - Auto-generated files');
-      expect(content).toContain('.turbo-ai-rules/');
-    });
-
-    it('应该跳过已存在的模式', async () => {
-      const gitignorePath = path.join(testDir, '.gitignore');
-      await fs.writeFile(gitignorePath, 'node_modules/\n.turbo-ai-rules/\n');
-
-      const patterns = ['.turbo-ai-rules/', '*.cache'];
-      await ensureIgnored(testDir, patterns);
-
-      const content = await fs.readFile(gitignorePath, 'utf-8');
-      const turboRulesCount = (content.match(/\.turbo-ai-rules\//g) || []).length;
-
-      // 应该只有原有的一个(因为已存在不会重复添加)
-      expect(turboRulesCount).toBe(1);
-      // 应该添加新的 *.cache 模式
-      expect(content).toContain('*.cache');
-    });
-
-    it('应该在已有标记时跳过', async () => {
-      const gitignorePath = path.join(testDir, '.gitignore');
-      await fs.writeFile(
-        gitignorePath,
-        '# Turbo AI Rules - Auto-generated files\n.turbo-ai-rules/\n',
-      );
-
-      const patterns = ['*.cache'];
-      await ensureIgnored(testDir, patterns);
-
-      const content = await fs.readFile(gitignorePath, 'utf-8');
-      expect(content).not.toContain('*.cache'); // 不应该添加新模式
+      expect(content).not.toContain('.cursorrules');
+      expect(content).not.toContain('.continue/config.json');
+      expect(content).toContain('node_modules/');
     });
 
     it('应该处理空模式列表', async () => {
@@ -91,7 +111,7 @@ describe('gitignore 单元测试', () => {
     });
   });
 
-  describe('removeIgnorePatterns', () => {
+  describe('removeAllIgnorePatterns', () => {
     it('应该移除 turbo-ai-rules 模式', async () => {
       const gitignorePath = path.join(testDir, '.gitignore');
       await fs.writeFile(
@@ -99,7 +119,7 @@ describe('gitignore 单元测试', () => {
         'node_modules/\n\n# Turbo AI Rules - Auto-generated files\n.turbo-ai-rules/\n*.cache\n\n.env\n',
       );
 
-      await removeIgnorePatterns(testDir);
+      await removeAllIgnorePatterns(testDir);
 
       const content = await fs.readFile(gitignorePath, 'utf-8');
       expect(content).toContain('node_modules/');
@@ -109,14 +129,14 @@ describe('gitignore 单元测试', () => {
     });
 
     it('应该处理不存在的 .gitignore', async () => {
-      await expect(removeIgnorePatterns(testDir)).resolves.toBeUndefined();
+      await expect(removeAllIgnorePatterns(testDir)).resolves.toBeUndefined();
     });
 
     it('应该处理没有标记的 .gitignore', async () => {
       const gitignorePath = path.join(testDir, '.gitignore');
       await fs.writeFile(gitignorePath, 'node_modules/\n.env\n');
 
-      await removeIgnorePatterns(testDir);
+      await removeAllIgnorePatterns(testDir);
 
       const content = await fs.readFile(gitignorePath, 'utf-8');
       expect(content).toContain('node_modules/');
@@ -130,7 +150,7 @@ describe('gitignore 单元测试', () => {
         'node_modules/\n\n# Turbo AI Rules - Auto-generated files\n.turbo-ai-rules/',
       );
 
-      await removeIgnorePatterns(testDir);
+      await removeAllIgnorePatterns(testDir);
 
       const content = await fs.readFile(gitignorePath, 'utf-8');
       expect(content).toContain('node_modules/');
@@ -179,7 +199,7 @@ describe('gitignore 单元测试', () => {
       expect(await isPatternIgnored(testDir, '.turbo-ai-rules/')).toBe(true);
 
       // 移除
-      await removeIgnorePatterns(testDir);
+      await removeAllIgnorePatterns(testDir);
       expect(await isPatternIgnored(testDir, '.turbo-ai-rules/')).toBe(false);
 
       // 再次添加
@@ -194,7 +214,7 @@ describe('gitignore 单元测试', () => {
 
       const patterns = ['.turbo-ai-rules/'];
       await ensureIgnored(testDir, patterns);
-      await removeIgnorePatterns(testDir);
+      await removeAllIgnorePatterns(testDir);
 
       const content = await fs.readFile(gitignorePath, 'utf-8');
       expect(content).toContain('# My custom rules');

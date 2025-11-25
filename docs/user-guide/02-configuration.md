@@ -173,6 +173,39 @@ Add to `.vscode/settings.json` or VS Code settings:
 | Cursor   | `cursor.enabled`   | `false` | `.cursorrules`                    |
 | Continue | `continue.enabled` | `false` | `.continuerules`                  |
 
+**Continue Directory Support**:
+
+Continue also supports loading rules from `.continue/rules/` directory with **full recursive subdirectory support**:
+
+- ✅ Single file: `.continuerules` (root level)
+- ✅ Directory: `.continue/rules/*.md` (with recursive subdirectory scanning)
+- ✅ Example: `.continue/rules/backend/api/rules.md` is fully supported
+
+**💡 Recommendation**: For multi-file or directory-based rules, use **Custom Adapters** instead of the built-in Continue adapter:
+
+- Custom adapters support `directory` output type with source organization
+- Better control over file structure and indexing
+- Can filter specific file types and generate index files
+- Example configuration:
+
+```json
+{
+  "turbo-ai-rules.adapters.continue.enabled": false,
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "continue-rules",
+      "name": "Continue Rules Directory",
+      "enabled": true,
+      "outputPath": ".continue/rules",
+      "outputType": "directory",
+      "fileExtensions": [".md"],
+      "organizeBySource": true,
+      "generateIndex": true
+    }
+  ]
+}
+```
+
 **Example**:
 
 ```json
