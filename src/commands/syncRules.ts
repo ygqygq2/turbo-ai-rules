@@ -19,6 +19,7 @@ import type { RuleSource } from '../types/config';
 import type { ConflictStrategy, ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
+import { ProgressManager } from '../utils/progressManager';
 
 /**
  * 按仓库分组源，确保同一仓库的不同分支/目录串行处理
@@ -123,27 +124,13 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
         cancellable: false,
       },
       async (progress) => {
+        const pm = new ProgressManager({ progress, verbose: false });
         let totalRules = 0;
         let successCount = 0;
-        let currentProgress = 0;
-
-        /**
-         * @description 报告进度增量并更新当前进度
-         * @return default {void}
-         * @param increment {number}
-         * @param message {string}
-         */
-        const reportProgress = (increment: number, message?: string) => {
-          currentProgress += increment;
-          progress.report({
-            message,
-            increment,
-          });
-        };
 
         // 4. 初始化适配器
         fileGenerator.initializeAdapters(config.adapters);
-        reportProgress(5, 'Initializing adapters...');
+        pm.report(5, 'Initializing adapters...');
 
         // 5. 按仓库分组，确保同一仓库的不同分支/目录串行处理
         const sourcesByRepo = groupSourcesByRepository(enabledSources);
@@ -180,7 +167,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
             const sourceName = source.name || source.gitUrl;
             const currentIndex = successCount + 1;
 
-            reportProgress(
+            pm.report(
               progressPerSource * 0.3,
               vscode.l10n.t('Syncing', `${sourceName} (${currentIndex}/${enabledSources.length})`),
             );
@@ -189,10 +176,10 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
               // 同步单个源
               const allRules = await syncSingleSource(source, gitManager, parser, validator);
 
-              reportProgress(progressPerSource * 0.3);
+              pm.report(progressPerSource * 0.3);
 
               // 初始化选择状态（从磁盘加载）
-              // 如果是新源，默认不选择任何规则（传入空数组）
+              // 如果是新源，默认全不选（传入空数组）
               await selectionStateManager.initializeState(source.id, allRules.length, []);
 
               // 添加所有规则到规则管理器（树视图需要显示所有规则供用户选择）
@@ -227,7 +214,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
                 selectedRules: selectedCount,
               });
 
-              reportProgress(progressPerSource * 0.4);
+              pm.report(progressPerSource * 0.4);
             } catch (error) {
               Logger.error(
                 `Failed to sync source ${source.id}`,
@@ -245,22 +232,22 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
               });
 
               // 即使失败也要增加进度
-              reportProgress(progressPerSource * 0.7);
+              pm.report(progressPerSource * 0.7);
             }
           }
         }
 
         // 确保同步阶段进度达到预期值
-        const syncProgressUsed = currentProgress - 5; // 减去初始化的5%
+        const syncProgressUsed = pm.getCurrentProgress() - 5; // 减去初始化的5%
         if (syncProgressUsed < syncProgressTotal) {
-          reportProgress(syncProgressTotal - syncProgressUsed);
+          pm.report(syncProgressTotal - syncProgressUsed);
         }
 
         // 6. 持久化规则索引到磁盘
         const workspaceDataManager = WorkspaceDataManager.getInstance();
         const allRules = rulesManager.getAllRules();
 
-        reportProgress(2, 'Saving rules index...');
+        pm.report(2, 'Saving rules index...');
 
         try {
           await workspaceDataManager.writeRulesIndex(workspaceRoot, allRules);
@@ -273,17 +260,17 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
           // 不阻断流程，继续生成配置文件
         }
 
-        reportProgress(saveIndexProgress - 2);
+        pm.report(saveIndexProgress - 2);
 
         // 7. 根据选择状态过滤规则（生成配置时只使用选中的规则）
-        reportProgress(2, 'Filtering selected rules...');
+        pm.report(2, 'Filtering selected rules...');
 
         const selectedRules: ParsedRule[] = [];
 
         for (const rule of allRules) {
           const selectedPaths = selectionStateManager.getSelection(rule.sourceId);
 
-          // 只包含用户勾选的规则
+          // 只包含用户主动勾选的规则（空数组 = 全不选）
           if (selectedPaths.length > 0 && selectedPaths.includes(rule.filePath)) {
             selectedRules.push(rule);
           }
@@ -312,28 +299,9 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
           config.sync.conflictStrategy || 'priority',
         );
 
-        reportProgress(generateConfigProgress - 2);
+        pm.report(generateConfigProgress - 4, 'Saving metadata...');
 
-        // 确保进度达到100%
-        const remaining = 100 - currentProgress;
-        if (remaining > 0) {
-          reportProgress(remaining, 'Completing...');
-        }
-
-        Logger.debug('Progress tracking completed', {
-          finalProgress: currentProgress + remaining,
-          sources: successCount,
-          totalRules,
-        });
-
-        // 8. 显示结果
-        Logger.info('Sync complete', {
-          sources: successCount,
-          totalRules,
-          generatedFiles: generateResult.success.length,
-        });
-
-        // 持久化同步时间和统计信息到 workspaceState
+        // 8. 持久化同步时间和统计信息到 workspaceState（在进度条完成前）
         const workspaceStateManager = WorkspaceStateManager.getInstance();
         const syncTime = new Date().toISOString();
 
@@ -352,6 +320,8 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
             syncStatus: 'success',
           });
         }
+
+        pm.report(2, 'Calculating stats...');
 
         // 聚合统计：计算所有源的已同步规则总数
         const allSourceSyncStats = await workspaceStateManager.getAllSourceSyncStats();
@@ -381,6 +351,22 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
           totalRules: allRules.length,
           totalSyncedRules,
           syncedSourceCount,
+        });
+
+        // 确保进度达到100%（所有操作完成后）
+        await pm.ensureComplete('Sync complete!');
+
+        Logger.debug('Progress tracking completed', {
+          finalProgress: pm.getCurrentProgress(),
+          sources: successCount,
+          totalRules,
+        });
+
+        // 9. 显示结果（进度条完成后）
+        Logger.info('Sync complete', {
+          sources: successCount,
+          totalRules,
+          generatedFiles: generateResult.success.length,
         });
 
         // 更新状态栏为成功

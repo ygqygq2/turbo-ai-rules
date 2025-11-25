@@ -9,6 +9,7 @@ import { ConfigManager } from '../services/ConfigManager';
 import type { ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
+import { ProgressManager } from '../utils/progressManager';
 
 /**
  * 编辑规则源
@@ -95,23 +96,9 @@ export async function testConnectionCommand(
         cancellable: false,
       },
       async (progress) => {
-        let currentProgress = 0;
+        const pm = new ProgressManager({ progress, verbose: false });
 
-        /**
-         * @description 报告进度增量并更新当前进度
-         * @return default {void}
-         * @param increment {number}
-         * @param message {string}
-         */
-        const reportProgress = (increment: number, message?: string) => {
-          currentProgress += increment;
-          progress.report({
-            message,
-            increment,
-          });
-        };
-
-        reportProgress(10, 'Connecting...');
+        pm.report(10, 'Connecting...');
 
         try {
           // 调用 GitManager 测试连接
@@ -119,25 +106,19 @@ export async function testConnectionCommand(
           const gitManager = GitManager.getInstance();
           await gitManager.testConnection(source.gitUrl);
 
-          reportProgress(80, 'Connection successful');
+          pm.report(80, 'Connection successful');
 
           // 确保进度达到100%
-          const remaining = 100 - currentProgress;
-          if (remaining > 0) {
-            reportProgress(remaining, 'Completed');
-          }
+          pm.ensureComplete('Completed');
 
           notify(`✓ Successfully connected to ${source.name || source.gitUrl}`, 'info');
 
           Logger.debug('Connection test progress completed', {
-            finalProgress: currentProgress,
+            finalProgress: pm.getCurrentProgress(),
           });
         } catch (error) {
           // 即使失败也要完成进度
-          const remaining = 100 - currentProgress;
-          if (remaining > 0) {
-            reportProgress(remaining);
-          }
+          await pm.ensureComplete();
 
           const errorMsg = error instanceof Error ? error.message : 'Unknown error';
           notify(`✗ Failed to connect to ${source.name || source.gitUrl}: ${errorMsg}`, 'error');
@@ -308,6 +289,10 @@ export async function exportRuleCommand(
  * - 该规则将不会包含在生成的配置文件中
  * - 不影响源文件，只影响选择状态
  * - 可以随时通过重新选中复选框来恢复
+ *
+ * 设计说明：
+ * - 当前实现使用 include 模式：从选中列表中移除该规则
+ * - 未来优化：如果大部分规则被选中，可考虑自动切换到 exclude 模式
  */
 export async function ignoreRuleCommand(
   ruleOrItem?: ParsedRule | { data?: { rule?: ParsedRule } },

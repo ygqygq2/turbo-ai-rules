@@ -62,14 +62,6 @@ All notable changes to the "turbo-ai-rules" extension will be documented in this
 - **feat: SelectionStateManager** - 规则选择状态管理
 - **feat: 搜索历史持久化** - 自动保存和恢复搜索记录
 
-### 快捷键
-
-- `Cmd/Ctrl+Shift+R` - 同步规则
-- `Cmd/Ctrl+Shift+A` - 添加规则源
-- `Cmd/Ctrl+Shift+G` - 生成配置文件
-- `Cmd/Ctrl+Shift+S` - 查看统计
-- `Cmd/Ctrl+Shift+Alt+F` - 高级搜索
-
 ## 🐛 问题修复
 
 - **fix: TreeView 始终显示所有规则** - 直接从 Git 缓存目录加载,不依赖内存缓存

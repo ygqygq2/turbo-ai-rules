@@ -164,7 +164,7 @@ describe('generateConfigs 命令单元测试', () => {
       expect(mockFileGenerator.generateAll).toHaveBeenCalled();
     });
 
-    it('应该支持空数组表示全选', async () => {
+    it('应该正确处理选中的规则', async () => {
       const mockRules: ParsedRule[] = [
         {
           id: 'rule-1',
@@ -177,8 +177,8 @@ describe('generateConfigs 命令单元测试', () => {
       ];
 
       mockRulesManager.getAllRules.mockReturnValue(mockRules);
-      // 空数组 = 全选
-      mockSelectionStateManager.getSelection.mockReturnValue([]);
+      // 明确返回选中的路径（非空数组）
+      mockSelectionStateManager.getSelection.mockReturnValue(['/test/rule1.md']);
 
       mockRulesManager.mergeRules.mockReturnValue(mockRules);
 
@@ -206,7 +206,7 @@ describe('generateConfigs 命令单元测试', () => {
       ];
 
       mockRulesManager.getAllRules.mockReturnValue(mockRules);
-      mockSelectionStateManager.getSelection.mockReturnValue([]);
+      mockSelectionStateManager.getSelection.mockReturnValue(['/test/rule1.md']); // 明确选中
       mockRulesManager.mergeRules.mockReturnValue(mockRules);
 
       await generateConfigsCommand();
@@ -231,7 +231,7 @@ describe('generateConfigs 命令单元测试', () => {
       ];
 
       mockRulesManager.getAllRules.mockReturnValue(mockRules);
-      mockSelectionStateManager.getSelection.mockReturnValue([]);
+      mockSelectionStateManager.getSelection.mockReturnValue(['/test/rule1.md']); // 明确选中
       mockRulesManager.mergeRules.mockReturnValue(mockRules);
 
       await generateConfigsCommand();
@@ -254,7 +254,7 @@ describe('generateConfigs 命令单元测试', () => {
       ];
 
       mockRulesManager.getAllRules.mockReturnValue(mockRules);
-      mockSelectionStateManager.getSelection.mockReturnValue([]);
+      mockSelectionStateManager.getSelection.mockReturnValue(['/test/rule1.md']); // 明确选中
       mockRulesManager.mergeRules.mockReturnValue(mockRules);
 
       await generateConfigsCommand();
@@ -286,7 +286,7 @@ describe('generateConfigs 命令单元测试', () => {
       ];
 
       mockRulesManager.getAllRules.mockReturnValue(mockRules);
-      mockSelectionStateManager.getSelection.mockReturnValue([]);
+      mockSelectionStateManager.getSelection.mockReturnValue(['/test/rule1.md']); // 明确选中
       mockRulesManager.mergeRules.mockReturnValue(mockRules);
       mockFileGenerator.generateAll.mockRejectedValue(mockError);
 
@@ -322,7 +322,12 @@ describe('generateConfigs 命令单元测试', () => {
       ];
 
       mockRulesManager.getAllRules.mockReturnValue(mockRules);
-      mockSelectionStateManager.getSelection.mockReturnValue([]);
+      // 为不同源返回对应的选中路径
+      mockSelectionStateManager.getSelection.mockImplementation((sourceId: string) => {
+        if (sourceId === 'source-1') return ['/test/rule1.md'];
+        if (sourceId === 'source-2') return ['/test/rule2.md'];
+        return [];
+      });
       mockRulesManager.mergeRules.mockReturnValue(mockRules);
 
       await generateConfigsCommand();

@@ -6,6 +6,7 @@
 import * as vscode from 'vscode';
 
 import { Logger } from '../utils/logger';
+import { toAbsolutePaths, toRelativePaths } from '../utils/rulePath';
 import type { RuleSelection } from './WorkspaceDataManager';
 import { WorkspaceDataManager } from './WorkspaceDataManager';
 
@@ -67,12 +68,13 @@ export class SelectionStateManager {
    * @description 初始化源的选择状态（从磁盘加载）
    * @param sourceId {string} 规则源 ID
    * @param totalCount {number} 规则总数
+   * @param _allRulePaths {string[]} 保留参数以兼容旧代码（不再使用）
    * @return {Promise<string[]>} 选择的路径列表
    */
   public async initializeState(
     sourceId: string,
     totalCount: number,
-    allRulePaths?: string[],
+    _allRulePaths?: string[],
   ): Promise<string[]> {
     // 缓存规则总数
     this.totalCountCache.set(sourceId, totalCount);
@@ -89,15 +91,24 @@ export class SelectionStateManager {
 
       if (selection) {
         if (selection.mode === 'include') {
-          paths = selection.paths || [];
-        } else {
-          // exclude 模式暂不支持，默认全选
-          Logger.warn('Exclude mode not supported, defaulting to all selected');
-          paths = allRulePaths || [];
+          const savedPaths = selection.paths || [];
+
+          // 使用工具函数批量转换相对路径为绝对路径（向后兼容）
+          paths = toAbsolutePaths(savedPaths, sourceId);
+        } else if (selection.mode === 'exclude') {
+          // exclude 模式：存储排除的路径，返回时需要特殊标记
+          // 这里我们存储为负数标记，在其他地方处理
+          Logger.info('Loaded selection in exclude mode', {
+            sourceId,
+            excludePathsCount: selection.excludePaths?.length || 0,
+          });
+          // 返回空数组表示使用 exclude 模式
+          paths = [];
+          // TODO: 需要在 getSelection 时根据 exclude 计算实际选中的规则
         }
       } else {
-        // 如果没有保存的选择状态，默认全选（使用所有规则路径）
-        paths = allRulePaths || [];
+        // 如果没有保存的选择状态，默认全不选（等待用户主动勾选）
+        paths = [];
       }
 
       this.memoryState.set(sourceId, new Set(paths));
@@ -112,10 +123,9 @@ export class SelectionStateManager {
       return paths;
     } catch (error) {
       Logger.error('Failed to initialize selection state', error as Error, { sourceId });
-      // 出错时默认全选（如果提供了规则路径）
-      const defaultPaths = allRulePaths || [];
-      this.memoryState.set(sourceId, new Set(defaultPaths));
-      return defaultPaths;
+      // 出错时默认全不选（等待用户主动勾选）
+      this.memoryState.set(sourceId, new Set([]));
+      return [];
     }
   }
 
@@ -199,16 +209,20 @@ export class SelectionStateManager {
     const workspacePath = workspaceFolders[0].uri.fsPath;
 
     try {
+      // 使用工具函数批量转换绝对路径为相对路径（减少存储空间）
+      const relativePaths = toRelativePaths(Array.from(selectedPaths), sourceId);
+
       const selection: RuleSelection = {
         mode: 'include',
-        paths: Array.from(selectedPaths),
+        paths: relativePaths,
       };
 
       await this.workspaceDataManager.setRuleSelection(workspacePath, sourceId, selection);
 
-      Logger.info('Selection persisted to disk', {
+      Logger.info('Selection persisted to disk (relative paths)', {
         sourceId,
-        selectedCount: selectedPaths.size,
+        selectedCount: relativePaths.length,
+        samplePath: relativePaths[0],
       });
     } catch (error) {
       Logger.error('Failed to persist selection', error as Error, { sourceId });

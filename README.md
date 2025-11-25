@@ -35,7 +35,6 @@
 - **Batch Operations** - Bulk enable/disable/export/delete rules
 - **Tree View** - Priority icons, tooltips, context menus (edit/test/toggle/copy/export)
 - **Status Bar** - Multi-state indicator with progress feedback and quick actions
-- **Keyboard Shortcuts** - Fast access: `Cmd+Shift+R` (refresh), `Cmd+Shift+S` (statistics), `Cmd+Shift+Alt+F` (search)
 
 ---
 

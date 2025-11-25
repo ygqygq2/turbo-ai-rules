@@ -573,45 +573,7 @@
           "description": "%turboAiRules.sync.conflictStrategy.description%"
         }
       }
-    },
-    "keybindings": [
-      {
-        "command": "turbo-ai-rules.syncRules",
-        "key": "ctrl+shift+r",
-        "mac": "cmd+shift+r",
-        "when": "!terminalFocus"
-      },
-      {
-        "command": "turbo-ai-rules.addSource",
-        "key": "ctrl+shift+a",
-        "mac": "cmd+shift+a",
-        "when": "view == turboAiRulesExplorer"
-      },
-      {
-        "command": "turbo-ai-rules.generateConfigs",
-        "key": "ctrl+shift+g",
-        "mac": "cmd+shift+g",
-        "when": "!terminalFocus"
-      },
-      {
-        "command": "turbo-ai-rules.showMenu",
-        "key": "ctrl+shift+m",
-        "mac": "cmd+shift+m",
-        "when": "!terminalFocus"
-      },
-      {
-        "command": "turbo-ai-rules.showStatistics",
-        "key": "ctrl+shift+s",
-        "mac": "cmd+shift+s",
-        "when": "view == turboAiRulesExplorer"
-      },
-      {
-        "command": "turbo-ai-rules.advancedSearch",
-        "key": "ctrl+shift+alt+f",
-        "mac": "cmd+shift+alt+f",
-        "when": "view == turboAiRulesExplorer"
-      }
-    ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run build:webview && rm -rf out/extension && npm run esbuild-base -- --minify",

@@ -56,14 +56,14 @@ describe('SelectionStateManager 单元测试', () => {
       expect(selection).toEqual(['/path/rule1.md']);
     });
 
-    it('应该在无保存状态时使用默认全选', async () => {
+    it('应该在无保存状态时默认全不选（空数组）', async () => {
       mockWorkspaceStateManager.getRuleSelection.mockResolvedValue(null);
 
       const allPaths = ['/path/rule1.md', '/path/rule2.md'];
       await selectionStateManager.initializeState('source-1', 2, allPaths);
 
       const selection = selectionStateManager.getSelection('source-1');
-      expect(selection).toEqual(allPaths);
+      expect(selection).toEqual([]); // 新设计：无保存状态时默认全不选，等待用户勾选
     });
 
     it('应该在已初始化时直接返回', async () => {
@@ -134,7 +134,7 @@ describe('SelectionStateManager 单元测试', () => {
 
     it('应该在未初始化时自动初始化', () => {
       const selection = selectionStateManager.getSelection('new-source');
-      expect(selection).toEqual([]); // 默认空数组（全选）
+      expect(selection).toEqual([]); // 默认空数组（全不选）
     });
   });
 
@@ -285,9 +285,9 @@ describe('SelectionStateManager 单元测试', () => {
 
       expect(Logger.error).toHaveBeenCalled();
 
-      // 应该使用默认值
+      // 新设计：出错时默认全不选，等待用户主动勾选
       const selection = selectionStateManager.getSelection('source-1');
-      expect(selection).toEqual(['/path/rule1.md']);
+      expect(selection).toEqual([]);
     });
   });
 });

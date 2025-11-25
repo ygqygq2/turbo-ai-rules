@@ -11,6 +11,7 @@ import { SelectionStateManager } from '../services/SelectionStateManager';
 import type { ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
+import { ProgressManager } from '../utils/progressManager';
 
 /**
  * 生成配置文件命令处理器
@@ -50,8 +51,8 @@ export async function generateConfigsCommand(): Promise<void> {
     for (const rule of allRules) {
       const selectedPaths = selectionStateManager.getSelection(rule.sourceId);
 
-      // 空数组表示全选
-      if (selectedPaths.length === 0 || selectedPaths.includes(rule.filePath)) {
+      // 只包含用户主动勾选的规则（空数组 = 全不选）
+      if (selectedPaths.length > 0 && selectedPaths.includes(rule.filePath)) {
         selectedRules.push(rule);
       }
     }
@@ -93,28 +94,14 @@ export async function generateConfigsCommand(): Promise<void> {
         cancellable: false,
       },
       async (progress) => {
-        let currentProgress = 0;
+        const pm = new ProgressManager({ progress, verbose: false });
 
-        /**
-         * @description 报告进度增量并更新当前进度
-         * @return default {void}
-         * @param increment {number}
-         * @param message {string}
-         */
-        const reportProgress = (increment: number, message?: string) => {
-          currentProgress += increment;
-          progress.report({
-            message,
-            increment,
-          });
-        };
-
-        reportProgress(10, 'Initializing adapters...');
+        pm.report(10, 'Initializing adapters...');
 
         // 初始化适配器
         fileGenerator.initializeAdapters(config.adapters);
 
-        reportProgress(30, 'Generating files...');
+        pm.report(30, 'Generating files...');
 
         // 生成配置文件
         const result = await fileGenerator.generateAll(
@@ -123,7 +110,7 @@ export async function generateConfigsCommand(): Promise<void> {
           config.sync.conflictStrategy || 'priority',
         );
 
-        reportProgress(50, 'Finalizing...');
+        pm.report(50, 'Finalizing...');
 
         // 显示结果
         await fileGenerator.showGenerationNotification(result);
@@ -134,13 +121,10 @@ export async function generateConfigsCommand(): Promise<void> {
         });
 
         // 确保进度达到100%
-        const remaining = 100 - currentProgress;
-        if (remaining > 0) {
-          reportProgress(remaining, 'Completed');
-        }
+        await pm.ensureComplete('Completed');
 
         Logger.debug('Progress tracking completed', {
-          finalProgress: currentProgress + remaining,
+          finalProgress: pm.getCurrentProgress(),
         });
       },
     );

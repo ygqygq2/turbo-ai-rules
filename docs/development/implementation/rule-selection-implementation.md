@@ -33,11 +33,17 @@
 
 **核心功能**：
 
-- **状态初始化**：从磁盘加载已保存的选择状态
+- **状态初始化**：从磁盘加载已保存的选择状态，**新源默认全不选（空数组）**
 - **状态读取**：获取指定源的选择路径列表和选择数量
 - **状态更新**：更新选择状态，触发监听器，安排持久化
 - **事件监听**：注册监听器响应状态变更
 - **持久化**：将选择状态保存到磁盘
+
+**设计原则**：
+
+- **空数组 = 全不选**：新添加的规则源默认不选择任何规则
+- **用户主动选择**：用户需要主动勾选规则才会包含在同步和配置生成中
+- **持久化优先**：已保存的选择状态优先级高于默认状态
 
 **实现文件**: `src/services/SelectionStateManager.ts`
 
@@ -181,15 +187,23 @@
    ↓
 3. 对每个规则源:
    ├─ syncSingleSource() → 获取所有规则
-   ├─ selectionStateManager.initializeState(sourceId, totalCount)
-   ├─ selectionStateManager.getSelection(sourceId) → 获取选择的路径
-   ├─ 过滤规则: selectedRules = allRules.filter(r => selectedPaths.has(r.filePath))
-   └─ rulesManager.addRules(sourceId, selectedRules) → 只添加选中的规则
+   ├─ selectionStateManager.initializeState(sourceId, totalCount, []) → 默认空数组（全不选）
+   ├─ rulesManager.addRules(sourceId, allRules) → 添加所有规则到树视图
+   ├─ selectionStateManager.getSelection(sourceId) → 获取选择的路径（新源为空）
+   ├─ 过滤规则: selectedRules = allRules.filter(r => selectedPaths.includes(r.filePath))
+   └─ 只有用户勾选的规则才会用于生成配置
    ↓
 4. 生成配置文件
-   ├─ 只包含选中的规则
+   ├─ 只包含用户主动勾选的规则
+   ├─ 新源未勾选任何规则时，不生成配置内容
    └─ 写入 .cursorrules / copilot-instructions.md 等
 ```
+
+**重要说明**：
+
+- **新源默认行为**：添加规则源后，默认全不选（空数组），用户需要主动勾选
+- **树视图显示**：所有规则都会显示在树视图中，但复选框默认未勾选
+- **同步过滤**：只有勾选的规则才会包含在配置文件生成中
 
 **实现文件**: `src/commands/syncRules.ts`
 
