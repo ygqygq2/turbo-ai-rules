@@ -11,22 +11,19 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm i -g @vscode/vsce pnpm
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        id: cache
-        with:
-          path: |
-            **/node_modules
-          key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
+          cache: 'pnpm'
+      - name: Install global dependencies
+        run: npm install -g @vscode/vsce
+        timeout-minutes: 5
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: pnpm i --frozen-lockfile --ignore-scripts || pnpm i --ignore-scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts || pnpm install --ignore-scripts
+        timeout-minutes: 10
       - run: |
           export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket
           sudo systemctl start dbus
@@ -37,4 +34,6 @@ jobs:
         if: runner.os != 'Linux'
         timeout-minutes: 15
       - run: pnpm run test:coverage
+        timeout-minutes: 10
       - run: vsce package --no-dependencies
+        timeout-minutes: 5
