@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { ConfigManager } from '../services/ConfigManager';
 import { CONFIG_KEYS, CONFIG_PREFIX, EXTENSION_ICON_PATH } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
@@ -263,22 +264,79 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
       return;
     }
 
-    // 确认添加模板源
-    const confirmed = await (notify(
-      `Add "${template.name}" template as a rule source?`,
-      'info',
-      undefined,
-      'Add Source',
-      true,
-    ) as Promise<boolean>);
+    try {
+      // 显示进度提示
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: vscode.l10n.t('Adding template source...'),
+          cancellable: false,
+        },
+        async (progress) => {
+          progress.report({ message: vscode.l10n.t('Adding source...') });
 
-    if (confirmed) {
-      // TODO: 实现自动添加预配置源的逻辑
-      // 可以调用 ConfigManager 或命令来添加源
-      notify(`Template "${template.name}" will be added. Repository: ${template.url}`, 'info');
+          // 1. 添加规则源到配置
+          const configManager = ConfigManager.getInstance();
 
-      // 这里应该调用添加源的逻辑
-      // await configManager.addSource({ gitUrl: template.url, name: template.name, branch: template.branch });
+          // 生成唯一的 source ID (使用 git url 的最后一部分作为 ID)
+          const sourceId =
+            template.url
+              .replace(/\.git$/, '')
+              .split('/')
+              .pop() || templateId;
+
+          // 检查源是否已存在
+          const existingSource = configManager.getSourceById(sourceId);
+          if (existingSource) {
+            notify(vscode.l10n.t('Source "{0}" already exists', existingSource.name), 'warning');
+            return;
+          }
+
+          // 创建规则源对象
+          const source: import('../types/config').RuleSource = {
+            id: sourceId,
+            name: template.name,
+            gitUrl: template.url,
+            branch: template.branch || 'main',
+            enabled: true,
+            auth: {
+              type: 'none',
+            },
+          };
+
+          // 添加到配置
+          await configManager.addSource(source);
+
+          Logger.info('Template source added', {
+            sourceId,
+            name: template.name,
+            gitUrl: template.url,
+          });
+
+          progress.report({ message: vscode.l10n.t('Syncing rules...') });
+
+          // 2. 触发同步规则（这会克隆仓库并解析规则）
+          await vscode.commands.executeCommand('turbo-ai-rules.syncRules', sourceId);
+
+          // 3. 刷新树视图（同步完成后会自动刷新，但这里再次确保）
+          await vscode.commands.executeCommand('turbo-ai-rules.refresh');
+
+          Logger.info('Template setup complete', { sourceId });
+
+          // 4. 通知用户成功
+          notify(vscode.l10n.t('Successfully added template "{0}"', template.name), 'info');
+
+          // 5. 更新前端状态：现在有规则源了，可以启用步骤2
+          this.postMessage({
+            type: 'rulesSelectionState',
+            payload: { enabled: true },
+          });
+        },
+      );
+    } catch (error) {
+      Logger.error('Failed to add template source', error instanceof Error ? error : undefined);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      notify(vscode.l10n.t('Failed to add template: {0}', errorMessage), 'error');
     }
   }
 

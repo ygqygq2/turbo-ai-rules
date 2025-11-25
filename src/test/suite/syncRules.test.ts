@@ -71,14 +71,10 @@ describe('Sync Rules Tests', () => {
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
     const sources = config.get<Array<{ id: string; name: string }>>('sources');
 
-    console.log(`Testing in workspace: ${workspaceFolder.name}`);
-    console.log(`Found ${sources?.length || 0} pre-configured sources`);
-
     assert.ok(sources && sources.length > 0, 'Should have pre-configured sources');
 
     // 检查适配器配置
     const cursorEnabled = config.get<boolean>('adapters.cursor.enabled');
-    console.log(`Cursor adapter enabled: ${cursorEnabled}`);
 
     // 打开当前 workspace folder 中的 README 文件，确保 activeEditor 在正确的 folder
     const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
@@ -86,25 +82,20 @@ describe('Sync Rules Tests', () => {
     await vscode.window.showTextDocument(doc);
 
     // 执行同步
-    console.log('Starting sync...');
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
-    console.log('Sync completed');
 
-    // 等待文件系统写入
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // 等待同步和文件生成完成
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    // 验证至少生成了配置文件
+    // 验证：检查是否生成了配置文件（Cursor adapter 应该生成 .cursorrules 文件）
     const cursorRulesPath = path.join(workspaceFolder.uri.fsPath, '.cursorrules');
-    const exists = await fs.pathExists(cursorRulesPath);
+    const cursorFileExists = await fs.pathExists(cursorRulesPath);
 
-    if (!exists) {
-      console.error(`Expected path does not exist: ${cursorRulesPath}`);
-      // 列出工作区根目录内容
-      const rootFiles = await fs.readdir(workspaceFolder.uri.fsPath);
-      console.log('Workspace root contents:', rootFiles);
-    }
-
-    assert.ok(exists, 'Cursor rules file should be generated');
+    // 断言：应该成功同步并生成了配置文件
+    assert.ok(
+      cursorFileExists,
+      'Should generate .cursorrules file after sync (indicating rules were synced)',
+    );
   });
 
   it('Should handle sync without errors', async function () {
@@ -117,14 +108,11 @@ describe('Sync Rules Tests', () => {
 
     // 执行同步，应该使用预配置的源
     try {
-      console.log('Starting sync in Should handle sync without errors test...');
       await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
-      console.log('Sync completed successfully');
       // 验证同步成功完成
       assert.ok(true, 'Sync completed without errors');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error('Sync error:', errorMessage);
       assert.fail(`Sync should not throw error: ${errorMessage}`);
     }
   });
@@ -138,34 +126,26 @@ describe('Sync Rules Tests', () => {
     await vscode.window.showTextDocument(doc);
 
     // 执行同步
-    console.log('Starting sync for adapter output test...');
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
-    console.log('Sync completed, checking for output files...');
 
-    // 等待文件系统写入
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // 等待文件生成
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // 验证 Cursor 配置文件生成
-    const cursorRulesPath = path.join(workspaceFolder.uri.fsPath, '.cursorrules');
-    const exists = await fs.pathExists(cursorRulesPath);
+    const cursorFilePath = path.join(workspaceFolder.uri.fsPath, '.cursorrules');
+    const fileExists = await fs.pathExists(cursorFilePath);
 
-    if (!exists) {
-      console.error(`Cursor rules path does not exist: ${cursorRulesPath}`);
-    }
-
-    assert.ok(exists, 'Cursor rules file should be generated');
+    assert.ok(fileExists, 'Cursor rules file should be generated after sync');
 
     // 检查 .cursorrules 是否是文件且有内容
-    if (exists) {
-      const stat = await fs.stat(cursorRulesPath);
+    if (fileExists) {
+      const stat = await fs.stat(cursorFilePath);
       if (stat.isFile()) {
-        const content = await fs.readFile(cursorRulesPath, 'utf-8');
-        console.log(`.cursorrules file size: ${stat.size} bytes`);
+        const content = await fs.readFile(cursorFilePath, 'utf-8');
         assert.ok(content.length > 0, 'Cursor rules file should have content');
       } else if (stat.isDirectory()) {
         // 如果是目录（某些配置可能生成目录）
-        const files = await fs.readdir(cursorRulesPath);
-        console.log(`Found files in .cursorrules directory: ${files.join(', ')}`);
+        const files = await fs.readdir(cursorFilePath);
         const mdFiles = files.filter((f) => f.endsWith('.md') || f.endsWith('.mdc'));
         assert.ok(mdFiles.length > 0, 'Should have generated rule files');
       }

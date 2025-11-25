@@ -105,7 +105,7 @@ src/
 
 ---
 
-## 消息协议设计（2025-11-10 更新）
+## 消息协议设计（2025-11-25 更新）
 
 ### Webview → Extension
 
@@ -138,6 +138,7 @@ src/
 - Extension 侧根据消息类型调用相应命令
 - 支持双向通信（Extension 可主动更新 UI 状态）
 - **VSCode 最佳实践**: 前端发送 `ready` 消息，后端响应 `initialState`，避免时序问题
+- **快速开始模板**: 点击模板自动添加规则源、同步 Git 缓存、刷新树视图
 
 ---
 
@@ -202,25 +203,33 @@ src/
 - 用户知道进度
 - 鼓励完成流程
 
-### 4. 模板库设计
+### 4. 模板库设计（2025-11-25 更新）
 
 **模板内容**:
 
-- TypeScript 最佳实践
-- React 开发规则
-- Python 风格指南
+- ygqygy2's AI Rules（通用编程规则）
 
 **实现方式**:
 
-- 模板预定义在配置中
-- 点击后直接调用添加源命令
-- 预填充 Git URL 和分支
+- 模板预定义在配置中（`handleUseTemplate` 方法）
+- 点击后自动执行：
+  1. 添加规则源到 workspace 配置（使用 ConfigManager）
+  2. 克隆 Git 仓库并解析规则（调用 syncRules 命令）
+  3. 刷新左侧树视图（调用 refresh 命令）
+  4. 更新前端状态，启用步骤 2（发送 rulesSelectionState 消息）
+- 显示进度通知，用户体验流畅
 
 **好处**:
 
-- 降低学习成本
-- 快速体验功能
+- 一键完成配置，降低学习成本
+- 快速体验功能，提升用户留存
 - 推广优质规则源
+- 自动化流程，无需手动操作
+
+**实现位置**:
+
+- 前端: `App.tsx` 的 `handleTemplateClick` 函数
+- 后端: `WelcomeWebviewProvider.ts` 的 `handleUseTemplate` 方法
 
 ---
 
@@ -286,6 +295,54 @@ src/
 - 使用 CSS 类名控制显示
 
 **效果**: 状态实时反馈
+
+### 问题 5: 模板点击无实际功能（2025-11-25 修复）
+
+**现象**: 点击"ygqygq2's AI Rules"模板后只显示通知，没有实际添加规则源
+
+**原因**: `handleUseTemplate` 方法中只有 TODO 注释，未实现实际逻辑
+
+**解决方案**:
+
+1. 使用 `ConfigManager.addSource()` 添加规则源到配置
+2. 调用 `turbo-ai-rules.syncRules` 命令同步规则（克隆 Git 仓库）
+3. 调用 `turbo-ai-rules.refresh` 命令刷新树视图
+4. 发送 `rulesSelectionState` 消息启用步骤 2
+5. 显示进度通知和错误处理
+
+**实现位置**:
+
+- `WelcomeWebviewProvider.ts` 的 `handleUseTemplate()` 方法
+- 添加 `ConfigManager` 导入
+
+**效果**: 用户点击模板后，规则源自动添加、同步并在左侧树视图中显示，真正实现一键快速开始
+
+**关键代码**:
+
+```typescript
+// 1. 添加规则源
+const source: RuleSource = {
+  id: sourceId,
+  name: template.name,
+  gitUrl: template.url,
+  branch: template.branch || 'main',
+  enabled: true,
+  auth: { type: 'none' },
+};
+await configManager.addSource(source);
+
+// 2. 同步规则
+await vscode.commands.executeCommand('turbo-ai-rules.syncRules', sourceId);
+
+// 3. 刷新树视图
+await vscode.commands.executeCommand('turbo-ai-rules.refresh');
+
+// 4. 更新前端状态
+this.postMessage({
+  type: 'rulesSelectionState',
+  payload: { enabled: true },
+});
+```
 
 ---
 

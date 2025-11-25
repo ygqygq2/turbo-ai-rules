@@ -421,9 +421,7 @@ async function syncSingleSource(
   }
 
   // 2. 获取本地仓库路径
-  const localPath = gitManager.getSourcePath(source.id);
-
-  // 3. 验证 subPath（必须以 / 开头）
+  const localPath = gitManager.getSourcePath(source.id); // 3. 验证 subPath（必须以 / 开头）
   let subPath = source.subPath || '/';
   if (!subPath.startsWith('/')) {
     Logger.warn('subPath does not start with /, prepending /', {
