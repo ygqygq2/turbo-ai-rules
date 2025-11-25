@@ -71,7 +71,8 @@ describe('path 单元测试', () => {
     it('应该使用 XDG_CACHE_HOME 环境变量', () => {
       process.env.XDG_CACHE_HOME = '/custom/cache';
       const result = resolveCachePath(undefined, 'test-app');
-      expect(result).toBe('/custom/cache/test-app');
+      const expected = path.join('/custom/cache', 'test-app');
+      expectNormalizedPathToBe(result, expected);
     });
 
     it('应该在 macOS 上使用 ~/Library/Caches', () => {
@@ -122,7 +123,8 @@ describe('path 单元测试', () => {
     it('应该使用 XDG_CONFIG_HOME 环境变量', () => {
       process.env.XDG_CONFIG_HOME = '/custom/config';
       const result = resolveConfigPath(undefined, 'test-app');
-      expect(result).toBe('/custom/config/test-app');
+      const expected = path.join('/custom/config', 'test-app');
+      expectNormalizedPathToBe(result, expected);
     });
 
     it('应该在 macOS 上使用 ~/Library/Application Support', () => {
