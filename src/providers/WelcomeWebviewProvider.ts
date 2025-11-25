@@ -299,7 +299,7 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
             gitUrl: template.url,
             branch: template.branch || 'main',
             enabled: true,
-            auth: {
+            authentication: {
               type: 'none',
             },
           };
