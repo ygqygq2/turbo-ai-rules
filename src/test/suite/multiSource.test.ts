@@ -82,8 +82,14 @@ describe('Multi-Source Integration Tests', () => {
       await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
       console.log('Multi-source sync completed');
 
+      // 等待规则加载到 RulesManager
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
       // 同步后初始化选择状态（全选所有规则）
       await initializeAllTestSourcesSelection(workspaceFolder);
+
+      // 重新生成配置文件
+      await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
 
       // 等待文件系统写入
       await new Promise((resolve) => setTimeout(resolve, 2000));

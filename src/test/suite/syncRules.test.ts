@@ -97,11 +97,17 @@ describe('Sync Rules Tests', () => {
     // 执行同步
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
 
+    // 等待同步完成和规则加载到 RulesManager
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
     // 同步后初始化选择状态（全选所有规则）
     // 这是为了模拟用户在 UI 中勾选规则的行为
     await initializeAllTestSourcesSelection(workspaceFolder);
 
-    // 等待同步和文件生成完成
+    // 初始化选择状态后，重新生成配置文件
+    await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+
+    // 等待文件生成完成
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // 验证：检查是否生成了配置文件（Cursor adapter 应该生成 .cursorrules 文件）
@@ -145,8 +151,14 @@ describe('Sync Rules Tests', () => {
     // 执行同步
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
 
+    // 等待同步完成和规则加载
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
     // 同步后初始化选择状态（全选所有规则）
     await initializeAllTestSourcesSelection(workspaceFolder);
+
+    // 重新生成配置文件
+    await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
 
     // 等待文件生成
     await new Promise((resolve) => setTimeout(resolve, 2000));
