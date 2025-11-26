@@ -171,7 +171,7 @@ All notable changes to the "turbo-ai-rules" extension will be documented in this
 
 ## ⚠️ 破坏性变更
 
-- 最低 VSCode 版本要求: `^1.105.0`
+- 最低 VSCode 版本要求: `^1.88.0`
 - Node.js 版本要求: `>=18.0.0`
 - 配置结构无变化,完全向后兼容 1.x
 

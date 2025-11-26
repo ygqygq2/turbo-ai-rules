@@ -163,7 +163,7 @@ GitHub Actions CI 环境默认是干净的，每次运行都会：
 ```
 .vscode-test/
 ├── extensions/              # 扩展状态
-└── vscode-linux-x64-1.105.0/  # VSCode 实例
+└── vscode-linux-x64-1.88.0/  # VSCode 实例
 ```
 
 **作用**：

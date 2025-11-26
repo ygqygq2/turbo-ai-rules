@@ -10,7 +10,7 @@
     "url": "https://github.com/ygqygq2/turbo-ai-rules.git"
   },
   "engines": {
-    "vscode": "^1.60.0"
+    "vscode": "^1.88.0"
   },
   "categories": [
     "Other",
@@ -617,7 +617,7 @@
     "@types/react-dom": "^19.2.2",
     "@types/sinon": "^17.0.4",
     "@types/tmp": "^0.2.6",
-    "@types/vscode": "^1.105.0",
+    "@types/vscode": "^1.88.0",
     "@vitejs/plugin-react": "^5.1.0",
     "@vitest/coverage-v8": "^3.2.4",
     "@vscode/l10n": "^0.0.18",

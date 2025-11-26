@@ -24,7 +24,7 @@ async function main(): Promise<void> {
 
     // 下载 VS Code, 解压并运行集成测试
     await runTests({
-      version: '1.105.0', // 指定版本，确保一致性
+      version: '1.88.0', // 指定版本，确保一致性
       extensionDevelopmentPath,
       extensionTestsPath,
       launchArgs: [workspacePath]
