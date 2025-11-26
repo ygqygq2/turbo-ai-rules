@@ -282,15 +282,15 @@ Detailed configuration → [Configuration Guide - Custom Adapters](#4-custom-ada
 
 **Method 1: Directory Mode (e.g., `.cursor/rules/`) - Filename Prefix Avoidance**
 
-**Core Mechanism**: The extension only manages files with `000-799` prefixes. Files with `800-999` prefixes won't be modified or deleted.
+**Core Mechanism**: The extension only manages files with `00000-79999` prefixes. Files with `80000-99999` prefixes won't be modified or deleted.
 
-**Why recommend 800-999 prefix?**
+**Why recommend 80000-99999 prefix?**
 
-- 🛡️ **Avoid Conflicts**: Auto-generated files use `000-799` prefix, your files use `800-999` prefix, completely no conflict
+- 🛡️ **Avoid Conflicts**: Auto-generated files use `00000-79999` prefix, your files use `80000-99999` prefix, completely no conflict
 - 📋 **Clear Management**: Easily distinguish which are auto-generated and which are user-defined
-- 🔒 **Automatic Protection**: Sync automatically skips files with `800-999` prefix, no additional configuration needed
+- 🔒 **Automatic Protection**: Sync automatically skips files with `80000-99999` prefix, no additional configuration needed
 
-> 💡 **Note**: The `800-999` prefix is **not mandatory**, it's just a **recommended naming convention** to avoid conflicts with auto-generated files.
+> 💡 **Note**: The `80000-99999` prefix is **not mandatory**, it's just a **recommended naming convention** to avoid conflicts with auto-generated files.
 > If `protectUserRules` configuration is enabled (disabled by default), the extension will more intelligently detect user files.
 
 **Steps**:
@@ -299,33 +299,33 @@ Detailed configuration → [Configuration Guide - Custom Adapters](#4-custom-ada
 # 1. Enter rules directory
 cd .cursor/rules
 
-# 2. Create custom rule file (using 800-999 prefix)
-touch 850-my-team-rules.mdc
+# 2. Create custom rule file (using 80000-99999 prefix)
+touch 85000-my-team-rules.mdc
 
 # 3. Edit the file
-code 850-my-team-rules.mdc
+code 85000-my-team-rules.mdc
 ```
 
 **Naming Recommendations**:
 
-| Prefix Range | Purpose                                             | Priority   | Example                    |
-| ------------ | --------------------------------------------------- | ---------- | -------------------------- |
-| `000-799`    | 🤖 Auto-generated (**will be overwritten/deleted**) | Auto rules | `200-typescript.mdc`       |
-| `800-849`    | ✍️ High-priority custom (can override auto rules)   | Highest    | `820-team-overrides.mdc`   |
-| `850-899`    | ✍️ Regular custom rules                             | High       | `850-project-specific.mdc` |
-| `900-949`    | ✍️ Supplementary rules                              | Medium     | `900-code-review.mdc`      |
-| `950-999`    | ✍️ FAQ, references                                  | Low        | `990-faq.mdc`              |
+| Prefix Range  | Purpose                                             | Priority   | Example                      |
+| ------------- | --------------------------------------------------- | ---------- | ---------------------------- |
+| `00000-79999` | 🤖 Auto-generated (**will be overwritten/deleted**) | Auto rules | `00200-typescript.mdc`       |
+| `80000-84999` | ✍️ High-priority custom (can override auto rules)   | Highest    | `82000-team-overrides.mdc`   |
+| `85000-89999` | ✍️ Regular custom rules                             | High       | `85000-project-specific.mdc` |
+| `90000-94999` | ✍️ Supplementary rules                              | Medium     | `90000-code-review.mdc`      |
+| `95000-99999` | ✍️ FAQ, references                                  | Low        | `99000-faq.mdc`              |
 
 **Example File Structure**:
 
 ```
 .cursor/rules/
-├── 001-project-overview.mdc        ← 🤖 Auto-generated
-├── 200-typescript.mdc              ← 🤖 Auto-generated
-├── 300-react.mdc                   ← 🤖 Auto-generated
-├── 820-team-overrides.mdc          ← ✍️ You created (safe)
-├── 850-api-conventions.mdc         ← ✍️ You created (safe)
-└── 900-code-review-checklist.mdc   ← ✍️ You created (safe)
+├── 00001-project-overview.mdc        ← 🤖 Auto-generated
+├── 00200-typescript.mdc              ← 🤖 Auto-generated
+├── 00300-react.mdc                   ← 🤖 Auto-generated
+├── 82000-team-overrides.mdc          ← ✍️ You created (safe)
+├── 85000-api-conventions.mdc         ← ✍️ You created (safe)
+└── 90000-code-review-checklist.mdc   ← ✍️ You created (safe)
 ```
 
 **⚠️ Important Notes**:
@@ -344,7 +344,7 @@ code 850-my-team-rules.mdc
 > 📌 **Design Strategy Explanation**:
 >
 > - Although **Cursor's** "lower number = higher priority" is widely circulated in the community, **no official documentation has been found to confirm this**
-> - This extension adopts a **conservative strategy**: use `800-999` prefix to protect user-defined files
+> - This extension adopts a **conservative strategy**: use `80000-99999` prefix to protect user-defined files
 > - Even if Cursor's actual priority differs from community rumors, this strategy still effectively protects user files from being overwritten
 > - Recommend **actual testing** of your AI tool's priority behavior, and **explicitly declare priority** in rule content
 
@@ -461,7 +461,7 @@ const userId = getUserId(); // ❌ Incorrect
 **A**: Check the following:
 
 **Directory Mode**:
-1. ✅ Did you use `800-999` prefix for file name?
+1. ✅ Did you use `80000-99999` prefix for file name?
 2. ✅ Is file format correct (MDC format with frontmatter)?
 3. ✅ Is file encoding UTF-8?
 4. ✅ Is rule content clear and specific?
@@ -514,7 +514,7 @@ Then ask the AI: "Did you read the test marker？"to verify if the rules are loa
 
 **Default Behavior (`protectUserRules: false`)**:
 
-- ✅ Simple and direct: Only judges by filename prefix (`800-999` = user files)
+- ✅ Simple and direct: Only judges by filename prefix (`80000-99999` = user files)
 - ✅ Better performance: Doesn't need to read file content
 - ✅ Sufficient: Suitable for most use cases
 
@@ -571,7 +571,7 @@ This allows you to safely add custom content outside the markers without being o
 
 **Usage Recommendations**:
 
-- 🆕 New users: Keep default disabled, just follow `800-999` prefix naming
+- 🆕 New users: Keep default disabled, just follow `80000-99999` prefix naming
 - 👥 Team collaboration: Enable if team members might not follow naming conventions
 - 🔧 Complex scenarios: Enable when finer-grained protection control is needed
 

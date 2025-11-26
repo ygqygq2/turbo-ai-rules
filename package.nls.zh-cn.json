@@ -22,7 +22,7 @@
   "configuration.title": "Turbo AI Rules",
   "turboAiRules.storage.autoGitignore.description": "自动将生成的文件添加到 .gitignore",
   "turboAiRules.protectUserRules.description": "保护用户自定义规则，防止在同步时被覆盖（推荐开启）",
-  "turboAiRules.userPrefixRange.description": "目录模式下用户自定义规则的文件前缀范围（默认: 800-999）",
+  "turboAiRules.userPrefixRange.description": "目录模式下用户自定义规则的文件前缀范围（默认: 80000-99999）",
   "turboAiRules.userPrefixRange.min.description": "用户自定义文件的最小前缀",
   "turboAiRules.userPrefixRange.max.description": "用户自定义文件的最大前缀",
   "turboAiRules.blockMarkers.description": "单文件模式下用于分隔自动生成和用户内容的块标记",

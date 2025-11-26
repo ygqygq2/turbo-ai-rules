@@ -22,7 +22,7 @@
   "configuration.title": "Turbo AI Rules",
   "turboAiRules.storage.autoGitignore.description": "Automatically add generated files to .gitignore",
   "turboAiRules.protectUserRules.description": "Protect user-defined rules from being overwritten during sync (recommended)",
-  "turboAiRules.userPrefixRange.description": "File prefix range for user-defined rules in directory mode (default: 800-999)",
+  "turboAiRules.userPrefixRange.description": "File prefix range for user-defined rules in directory mode (default: 80000-99999)",
   "turboAiRules.userPrefixRange.min.description": "Minimum prefix for user-defined files",
   "turboAiRules.userPrefixRange.max.description": "Maximum prefix for user-defined files",
   "turboAiRules.blockMarkers.description": "Block markers for single-file mode to separate auto-generated and user content",

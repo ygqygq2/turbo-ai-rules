@@ -3,7 +3,7 @@
  *
  * Provides functions to protect user-defined rules from being overwritten
  * during sync operations. Supports two modes:
- * 1. Directory mode: File prefix avoidance (800-999 range)
+ * 1. Directory mode: File prefix avoidance (80000-99999 range)
  * 2. Single-file mode: Block marker protection
  */
 

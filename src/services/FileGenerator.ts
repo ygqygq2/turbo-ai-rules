@@ -49,7 +49,7 @@ export class FileGenerator {
     const config = vscode.workspace.getConfiguration('turboAIRules');
     return {
       enabled: config.get<boolean>('protectUserRules', true),
-      userPrefixRange: config.get('userPrefixRange', { min: 800, max: 999 }),
+      userPrefixRange: config.get('userPrefixRange', { min: 80000, max: 99999 }),
       blockMarkers: config.get('blockMarkers'),
     };
   }
@@ -400,7 +400,7 @@ export class FileGenerator {
       Logger.warn('Skipping user-defined file', { filename });
       vscode.window.showWarningMessage(
         vscode.l10n.t(
-          'File "{0}" is in user-defined range (800-999). Skipped to protect your custom rules.',
+          'File "{0}" is in user-defined range (80000-99999). Skipped to protect your custom rules.',
           filename,
         ),
       );

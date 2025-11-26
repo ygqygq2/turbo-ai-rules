@@ -387,13 +387,13 @@
             "min": {
               "type": "number",
               "minimum": 0,
-              "maximum": 999,
+              "maximum": 99999,
               "description": "%turboAiRules.userPrefixRange.min.description%"
             },
             "max": {
               "type": "number",
               "minimum": 0,
-              "maximum": 999,
+              "maximum": 99999,
               "description": "%turboAiRules.userPrefixRange.max.description%"
             }
           },
@@ -599,6 +599,7 @@
     "test:suite": "node out/test/runTests.js",
     "test:unit": "vitest unit --watch=false",
     "test:coverage": "vitest run --coverage",
+    "download:vscode": "node scripts/download-vscode.js",
     "lint": "eslint src",
     "lint-fix": "eslint --fix src",
     "prepush": "pnpm run lint",
