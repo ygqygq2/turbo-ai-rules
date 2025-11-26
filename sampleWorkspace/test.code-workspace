@@ -22,7 +22,7 @@
     },
     {
       "path": "rules-with-user-rules",
-      "name": "Test: User Rules Protection"
+      "name": "Test: Multi-Adapter + User Protection"
     }
   ],
   "settings": {

@@ -2,7 +2,7 @@
   "name": "turbo-ai-rules",
   "displayName": "Turbo AI Rules",
   "description": "%description%",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "publisher": "ygqygq2",
   "icon": "resources/images/logo.png",
   "repository": {
@@ -374,14 +374,14 @@
         },
         "turbo-ai-rules.protectUserRules": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "%turboAiRules.protectUserRules.description%"
         },
         "turbo-ai-rules.userPrefixRange": {
           "type": "object",
           "default": {
-            "min": 800,
-            "max": 999
+            "min": 80000,
+            "max": 99999
           },
           "properties": {
             "min": {

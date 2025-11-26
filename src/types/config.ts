@@ -102,6 +102,14 @@ export interface CustomAdapterConfig extends AdapterConfig {
   generateIndex?: boolean;
   /** 索引文件名(默认 'index.md') */
   indexFileName?: string;
+
+  // Skills 专用配置
+  /** 是否为技能适配器（技能文件直接复制，不进行规则解析和合并） */
+  skills?: boolean;
+  /** 复用的规则源 ID（复用其 Git 仓库、分支、认证等配置） */
+  sourceId?: string;
+  /** 技能文件在源仓库中的子目录（相对于仓库根目录，如 '/skills'，独立于源的 subPath） */
+  subPath?: string;
 }
 
 /**

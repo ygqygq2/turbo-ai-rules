@@ -524,6 +524,7 @@ Then ask the AI: "Did you read the test marker？"to verify if the rules are loa
 - 🛡️ **Double Protection**: Checks both prefix + content markers
 - 📦 **Block Marker Generation**: Single file mode (`.cursorrules`, `copilot-instructions.md`, etc.) automatically adds block markers to separate auto-generated and user-defined areas
 - ⚠️ **Conflict Alerts**: Shows warnings when potential conflicts detected
+- 🎯 **First-Time Protection**: If file exists without block markers (first time using extension), **entire existing file content is treated as user rules and preserved**
 
 **Block Marker Example** (Single File Mode):
 
@@ -531,14 +532,31 @@ When enabled, generated files will include block markers:
 
 ```markdown
 <!-- TURBO-AI-RULES:BEGIN -->
-<!-- Auto-generated content -->
+<!-- ⚠️  WARNING: Auto-generated content - Will be overwritten on sync -->
+<!-- Last Sync: 2024-11-26 10:30:00 -->
 
-...
+(Auto-generated rules content here)
 
 <!-- TURBO-AI-RULES:END -->
 
-<!-- Add your custom rules here -->
+<!-- ============================================== -->
+<!-- 👤 User-Defined Rules Section -->
+<!-- ============================================== -->
+<!-- Add your custom rules below this line -->
+
+## Your Custom Rules
+
+(Add your custom content here, won't be overwritten on sync)
 ```
+
+**First-Time Usage Scenario**:
+
+If you already have a `.cursorrules` or `copilot-instructions.md` file and enable `protectUserRules: true`:
+
+1. ✅ **First generation**: Extension detects file has no block markers
+2. ✅ **Preserve existing content**: Entire existing file content is treated as user-defined rules
+3. ✅ **Add block markers**: Block markers and new generated rules are inserted at the top
+4. ✅ **Original content moves down**: Your original content is moved after the block markers, fully preserved
 
 This allows you to safely add custom content outside the markers without being overwritten during sync.
 

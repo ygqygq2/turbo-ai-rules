@@ -9,7 +9,7 @@
 3. **rules-for-continue** - Continue 适配器 + 单一公开源
 4. **rules-for-default** - 自定义适配器 (rules/ 目录) + 单一公开源
 5. **rules-multi-source** - 多规则源 + 冲突解决策略
-6. **rules-with-user-rules** - 用户自定义规则保护功能
+6. **rules-with-user-rules** - 多适配器同时启用 + 用户规则保护功能
 
 所有测试场景已预配置规则源，**无需交互输入**，可直接运行自动化测试。
 
@@ -214,36 +214,57 @@ GitHub Actions 会自动运行所有测试（包括 xvfb-run for Linux headless 
 - 多个配置文件同时生成
 - 无重复规则 ID 错误
 
-### 场景 6: 用户自定义规则保护（rules-with-user-rules）
+### 场景 6: 多适配器 + 用户规则保护（rules-with-user-rules）
 
 **测试目标**：
 
-- 用户手动创建的规则文件保护
-- 同步时不覆盖用户规则
-- `.gitignore` 正确配置
-- 混合规则源管理
+- 所有适配器同时启用（Cursor、Copilot、Continue、Custom）
+- `protectUserRules: true` 保护所有配置文件的用户内容
+- 首次生成时保留现有文件内容
+- 后续同步时只更新自动生成部分
 
 **预配置源**：
 
 ```json
 {
-  "id": "test-user-rules",
-  "gitUrl": "https://github.com/ygqygq2/ai-rules.git"
+  "id": "ai-rules-7008d805",
+  "name": "Test User Rules",
+  "gitUrl": "https://github.com/ygqygq2/ai-rules.git",
+  "branch": "main",
+  "subPath": "/"
 }
 ```
 
-**预创建用户规则**：
+**启用适配器**：
+
+- Cursor: ✅
+- Copilot: ✅
+- Continue: ✅
+- Custom (rules/ 目录): ✅
+
+**关键配置**：
+
+```json
+{
+  "turbo-ai-rules.protectUserRules": true
+}
+```
+
+**可预创建的用户文件**（用于测试保护功能）：
 
 ```
-.cursorrules/custom-user-rule.md
+.cursorrules                         # Cursor 用户自定义规则
+.github/copilot-instructions.md      # Copilot 用户自定义指令
+.continue/config.json                # Continue 用户自定义配置（注意：JSON 格式需特殊处理）
 ```
 
 **验证点**：
 
-- 同步后用户规则仍然存在
-- 用户规则内容未被修改
-- 新同步的规则正确添加
-- `.cursorrules/.gitignore` 包含正确的忽略模式
+- 首次同步：所有现有文件内容被完全保留
+- 自动生成的内容使用块标记包裹：`<!-- TURBO-AI-RULES:BEGIN/END -->`
+- 后续同步：块标记外的用户内容保持不变，块标记内的内容被更新
+- 多个适配器同时工作，配置文件互不干扰
+- 规则源只克隆一次，被所有适配器共享
 
 ## 手动测试
 

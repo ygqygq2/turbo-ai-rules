@@ -265,6 +265,9 @@ Custom adapters are one of the core features of Turbo AI Rules,
 | `organizeBySource` | boolean  | ❌       | `true`     | (`directory` mode only) Whether to create subdirectories by source ID                        |
 | `generateIndex`    | boolean  | ❌       | `true`     | (`directory` mode only) Whether to generate index file                                       |
 | `indexFileName`    | string   | ❌       | `index.md` | (`directory` mode only) Index filename                                                       |
+| `skills`           | boolean  | ❌       | `false`    | (Skills mode) Whether this is a skills adapter, files are copied directly without parsing    |
+| `sourceId`         | string   | ❌       | -          | (Skills mode) Source ID to reuse its Git repo, branch, and auth config                       |
+| `subPath`          | string   | ❌       | `/`        | (Skills mode) Skills subdirectory in repo (relative to repo root, e.g., `/skills`)           |
 
 ---
 
@@ -377,7 +380,56 @@ docs/ai-rules/
 
 ---
 
-**Scenario 5: Multi AI Tool Support**
+**Scenario 5: AI Skills Knowledge Base Sync**
+
+```json
+{
+  "id": "claude-skills",
+  "name": "Claude Skills",
+  "enabled": true,
+  "autoUpdate": true,
+  "outputPath": ".claude/skills",
+  "outputType": "directory",
+  "organizeBySource": false,
+  "generateIndex": false,
+  // Skills-specific configuration
+  "skills": true,
+  "sourceId": "my-ai-repo",
+  "subPath": "/skills"
+}
+```
+
+**How It Works**:
+
+- ✅ Reuses existing rule source Git config (repo URL, branch, auth) via `sourceId`
+- ✅ Specifies skills location in repo (relative to repo root) via `subPath`
+- ✅ Skills files are copied directly without parsing or merging
+- ✅ Ideal for AI tool knowledge bases (e.g., Claude Skills, Cursor Skills)
+
+**Output**:
+
+```
+.claude/skills/
+├── python-expert.md
+├── database-design.md
+├── api-integration.md
+└── ...
+```
+
+**Skills vs Rules Comparison**:
+
+| Feature           | Rules                                 | Skills                                |
+| ----------------- | ------------------------------------- | ------------------------------------- |
+| Content Type      | Coding standards, project conventions | Domain knowledge, skill modules       |
+| File Processing   | Parse frontmatter, merge rules        | Copy files directly                   |
+| Output Format     | Can merge into single file or dir     | Usually keep as separate files        |
+| Config Reuse      | Via rule source config                | Via `sourceId` to reuse Git config    |
+| Path Config       | Use source's `subPath`                | Use adapter's `subPath` (independent) |
+| Typical Use Cases | `.cursorrules`, `.github/copilot-*`   | `.claude/skills/`, `.cursor/skills/`  |
+
+---
+
+**Scenario 6: Multi-AI-Tool Support**
 
 ```json
 {

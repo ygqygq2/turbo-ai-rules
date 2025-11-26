@@ -9,14 +9,15 @@ import * as vscode from 'vscode';
 
 import type { AIToolAdapter, GeneratedConfig } from '../adapters';
 import { ContinueAdapter, CopilotAdapter, CursorAdapter, CustomAdapter } from '../adapters';
-import type { AdaptersConfig } from '../types/config';
+import type { AdaptersConfig, CustomAdapterConfig } from '../types/config';
 import { GenerateError, SystemError } from '../types/errors';
 import type { ConflictStrategy, ParsedRule } from '../types/rules';
-import { ensureDir, safeWriteFile } from '../utils/fileSystem';
+import { ensureDir, pathExists, readDir, safeReadFile, safeWriteFile } from '../utils/fileSystem';
 import { ensureIgnored } from '../utils/gitignore';
 import { Logger } from '../utils/logger';
 import type { UserRulesProtectionConfig } from '../utils/userRulesProtection';
 import { extractUserContent, isUserDefinedFile, mergeContent } from '../utils/userRulesProtection';
+import { GitManager } from './GitManager';
 
 /**
  * 生成结果
@@ -47,7 +48,7 @@ export class FileGenerator {
   private loadProtectionConfig(): UserRulesProtectionConfig {
     const config = vscode.workspace.getConfiguration('turboAIRules');
     return {
-      enabled: config.get<boolean>('protectUserRules', false),
+      enabled: config.get<boolean>('protectUserRules', true),
       userPrefixRange: config.get('userPrefixRange', { min: 800, max: 999 }),
       blockMarkers: config.get('blockMarkers'),
     };
@@ -146,7 +147,22 @@ export class FileGenerator {
     // 为每个适配器生成配置
     for (const [name, adapter] of this.adapters.entries()) {
       try {
-        const config = await this.generateForAdapter(adapter, rules, workspaceRoot);
+        // 检查是否为 skills 适配器
+        let adapterRules = rules;
+        if (adapter instanceof CustomAdapter) {
+          const customConfig = adapter.config;
+          if (customConfig.skills && customConfig.sourceId) {
+            // Skills 适配器：从指定源路径读取文件作为规则
+            adapterRules = await this.getSkillsRules(customConfig);
+            Logger.debug(`Loaded skills for adapter: ${name}`, {
+              sourceId: customConfig.sourceId,
+              subPath: customConfig.subPath,
+              skillsCount: adapterRules.length,
+            });
+          }
+        }
+
+        const config = await this.generateForAdapter(adapter, adapterRules, workspaceRoot);
         result.success.push(config);
 
         Logger.debug(`Generated config for ${name}`, {
@@ -173,6 +189,115 @@ export class FileGenerator {
     });
 
     return result;
+  }
+
+  /**
+   * @description 从源仓库读取技能文件作为规则
+   * @return default {Promise<ParsedRule[]>}
+   * @param config {CustomAdapterConfig}
+   */
+  private async getSkillsRules(config: CustomAdapterConfig): Promise<ParsedRule[]> {
+    const gitManager = GitManager.getInstance();
+    const sourceId = config.sourceId!;
+    const subPath = config.subPath || '/';
+
+    // 获取源仓库路径
+    const repoPath = gitManager.getSourcePath(sourceId);
+    const skillsPath = path.join(repoPath, subPath);
+
+    Logger.debug(`Reading skills from: ${skillsPath}`, {
+      sourceId,
+      subPath,
+      repoPath,
+    });
+
+    // 检查路径是否存在
+    if (!(await pathExists(skillsPath))) {
+      Logger.warn(`Skills path does not exist: ${skillsPath}`);
+      return [];
+    }
+
+    // 读取所有文件（递归）
+    const fileExtensions = config.fileExtensions || ['.md', '.mdc'];
+    const skillFiles = await this.readSkillsFiles(skillsPath, fileExtensions);
+
+    Logger.info(`Found ${skillFiles.length} skill files`, {
+      sourceId,
+      subPath,
+    });
+
+    // 将文件转换为 ParsedRule 格式
+    const rules: ParsedRule[] = [];
+    for (const filePath of skillFiles) {
+      try {
+        const content = await safeReadFile(filePath);
+        const relativePath = path.relative(repoPath, filePath);
+        const fileName = path.basename(filePath, path.extname(filePath));
+
+        // 创建简单的规则对象（skills 不需要解析 frontmatter）
+        const rule: ParsedRule = {
+          id: fileName,
+          title: fileName,
+          content: content,
+          rawContent: content,
+          sourceId: sourceId,
+          filePath: relativePath,
+          metadata: {},
+        };
+
+        rules.push(rule);
+        Logger.debug(`Loaded skill file: ${relativePath}`);
+      } catch (error) {
+        Logger.warn(
+          `Failed to read skill file: ${filePath}`,
+          error instanceof Error
+            ? { error: error.message, stack: error.stack }
+            : { error: String(error) },
+        );
+      }
+    }
+
+    return rules;
+  }
+
+  /**
+   * @description 递归读取技能文件
+   * @return default {Promise<string[]>}
+   * @param dirPath {string}
+   * @param extensions {string[]}
+   */
+  private async readSkillsFiles(dirPath: string, extensions: string[]): Promise<string[]> {
+    const files: string[] = [];
+
+    try {
+      const entries = await readDir(dirPath);
+
+      for (const entry of entries) {
+        const fullPath = path.join(dirPath, entry);
+        const stat = await fs.promises.stat(fullPath);
+
+        if (stat.isDirectory()) {
+          // 递归读取子目录
+          const subFiles = await this.readSkillsFiles(fullPath, extensions);
+          files.push(...subFiles);
+        } else if (stat.isFile()) {
+          // 检查文件扩展名
+          const ext = path.extname(entry);
+          if (extensions.length === 0 || extensions.includes(ext)) {
+            files.push(fullPath);
+          }
+        }
+      }
+    } catch (error) {
+      Logger.warn(
+        `Failed to read directory: ${dirPath}`,
+        error instanceof Error
+          ? { error: error.message, stack: error.stack }
+          : { error: String(error) },
+      );
+    }
+
+    return files;
   }
 
   /**
@@ -313,7 +438,31 @@ export class FileGenerator {
     // 如果文件存在，提取用户内容
     let mergedContent = newContent;
     if (existingContent) {
-      const { userContent } = extractUserContent(existingContent, this.protectionConfig);
+      // 检查是否已经有块标记（说明之前已被此扩展管理）
+      const markers = this.protectionConfig.blockMarkers || {
+        begin: '<!-- TURBO-AI-RULES:BEGIN -->',
+        end: '<!-- TURBO-AI-RULES:END -->',
+      };
+      const hasBlockMarkers = existingContent.includes(markers.begin);
+
+      let userContent = '';
+      if (hasBlockMarkers) {
+        // 已有块标记：提取块外内容作为用户规则
+        const extracted = extractUserContent(existingContent, this.protectionConfig);
+        userContent = extracted.userContent;
+        Logger.debug('Extracted user content from existing file (with markers)', {
+          userContentLength: userContent.length,
+          filePath,
+        });
+      } else {
+        // 第一次使用扩展且文件已存在：将整个现有内容视为用户规则
+        userContent = existingContent;
+        Logger.info('First-time protection: treating entire existing file as user rules', {
+          existingContentLength: existingContent.length,
+          filePath,
+        });
+      }
+
       mergedContent = mergeContent(newContent, userContent, this.protectionConfig);
       Logger.debug('Merged user content with generated content', {
         userContentLength: userContent.length,

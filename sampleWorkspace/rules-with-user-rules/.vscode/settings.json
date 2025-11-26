@@ -1,9 +1,8 @@
 {
-  // 用户自定义规则保护测试场景
-  // 使用 custom adapter 生成 rules/ 目录，避免与用户的 .cursorrules/ 目录冲突
-  "turbo-ai-rules.adapters.cursor.enabled": false,
-  "turbo-ai-rules.adapters.copilot.enabled": false,
-  "turbo-ai-rules.adapters.continue.enabled": false,
+  // 多适配器同时启用 + 用户规则保护测试场景
+  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.copilot.enabled": true,
+  "turbo-ai-rules.adapters.continue.enabled": true,
   "turbo-ai-rules.adapters.custom": [
     {
       "id": "default-rules",
@@ -14,6 +13,7 @@
       "fileExtension": ".md"
     }
   ],
+  "turbo-ai-rules.protectUserRules": true, // 关键配置：保护用户规则
   "turbo-ai-rules.sync.auto": false,
   "turbo-ai-rules.sync.onStartup": false,
 

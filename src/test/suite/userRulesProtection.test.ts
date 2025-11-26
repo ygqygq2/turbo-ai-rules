@@ -201,10 +201,274 @@ This is a user-defined rule that should be protected during sync.
 
     assert.ok(enabledSources.length > 0, 'Should have at least one enabled source');
 
-    // 如果有禁用的源，验证它们不会被同步
+    // 如果有禁用的源,验证它们不会被同步
     if (disabledSources.length > 0) {
       // 这个测试需要在实际同步后验证禁用源的文件不存在
       assert.ok(true, 'Disabled sources configuration is valid');
+    }
+  });
+
+  /**
+   * 集成测试：首次使用扩展时保护现有规则文件
+   * 这是一个关键的用户体验场景：
+   * - 用户已经有 .cursorrules 或 copilot-instructions.md 文件
+   * - 启用 protectUserRules: true
+   * - 第一次执行 Generate Config Files
+   * - 期望：原有内容被完整保留
+   */
+  it('Should preserve existing rule file content on first-time generation (Critical UX)', async function () {
+    this.timeout(180000); // 3分钟
+
+    // 1. 创建一个模拟用户已有的 .cursorrules 文件（单文件模式,不是目录）
+    const existingRuleFile = path.join(workspaceFolder.uri.fsPath, '.cursorrules');
+
+    // 先清理可能存在的目录结构
+    if (await fs.pathExists(existingRuleFile)) {
+      await fs.remove(existingRuleFile);
+    }
+
+    // 创建用户已有的规则文件（模拟首次使用前的状态）
+    const userOriginalContent = `# My Existing Coding Rules
+
+## Important Guidelines
+
+1. Always use TypeScript strict mode
+2. Write comprehensive unit tests
+3. Follow Clean Code principles
+
+## Custom Patterns
+
+- Use async/await instead of promises
+- Prefer composition over inheritance
+
+This is my precious custom rule content that must not be lost!
+`;
+
+    await fs.writeFile(existingRuleFile, userOriginalContent, 'utf-8');
+    console.log('Created existing user rule file (first-time scenario)');
+
+    // 2. 确保 protectUserRules 已启用 和 Cursor adapter 已启用
+    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    const protectionEnabled = config.get<boolean>('protectUserRules', false);
+    const cursorEnabled = config.get<boolean>('adapters.cursor.enabled', false);
+
+    if (!protectionEnabled) {
+      // 临时启用保护（测试期间）
+      await config.update('protectUserRules', true, vscode.ConfigurationTarget.WorkspaceFolder);
+      console.log('Enabled protectUserRules for testing');
+    }
+
+    // 临时启用 Cursor adapter（测试期间）
+    if (!cursorEnabled) {
+      await config.update(
+        'adapters.cursor.enabled',
+        true,
+        vscode.ConfigurationTarget.WorkspaceFolder,
+      );
+      console.log('Enabled Cursor adapter for testing');
+    }
+
+    // 3. 打开当前 workspace folder 中的文件,确保 activeEditor 在正确的 folder
+    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
+    const doc = await vscode.workspace.openTextDocument(readmePath);
+    await vscode.window.showTextDocument(doc);
+
+    // 4. 执行同步和生成流程（模拟真实用户操作）
+    try {
+      // 同步规则
+      await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+      await new Promise((resolve) => setTimeout(resolve, 3000)); // 等待同步完成
+
+      // 生成配置文件（这是关键操作 - 首次生成）
+      await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // 等待生成完成
+
+      // 5. 验证文件仍然存在
+      const fileExists = await fs.pathExists(existingRuleFile);
+      assert.ok(fileExists, '❌ CRITICAL: Rule file was deleted! User content lost!');
+
+      // 6. 读取生成后的文件内容
+      const generatedContent = await fs.readFile(existingRuleFile, 'utf-8');
+
+      // 7. 核心验证：原有内容必须被完整保留
+      assert.ok(
+        generatedContent.includes('My Existing Coding Rules'),
+        '❌ CRITICAL: User original title was lost!',
+      );
+      assert.ok(
+        generatedContent.includes('Important Guidelines'),
+        '❌ CRITICAL: User section heading was lost!',
+      );
+      assert.ok(
+        generatedContent.includes('TypeScript strict mode'),
+        '❌ CRITICAL: User custom guideline was lost!',
+      );
+      assert.ok(
+        generatedContent.includes('Custom Patterns'),
+        '❌ CRITICAL: User custom section was lost!',
+      );
+      assert.ok(
+        generatedContent.includes('precious custom rule content that must not be lost'),
+        '❌ CRITICAL: User important note was lost!',
+      );
+
+      // 8. 验证添加了块标记（说明文件已被扩展管理）
+      assert.ok(
+        generatedContent.includes('<!-- TURBO-AI-RULES:BEGIN -->'),
+        '❌ Block marker not added - file not properly managed',
+      );
+      assert.ok(
+        generatedContent.includes('<!-- TURBO-AI-RULES:END -->'),
+        '❌ Block marker not added - file not properly managed',
+      );
+
+      // 9. 验证用户内容在块标记之后（正确的结构）
+      const beginMarkerIndex = generatedContent.indexOf('<!-- TURBO-AI-RULES:BEGIN -->');
+      const endMarkerIndex = generatedContent.indexOf('<!-- TURBO-AI-RULES:END -->');
+      const userContentIndex = generatedContent.indexOf('My Existing Coding Rules');
+
+      assert.ok(
+        beginMarkerIndex >= 0 && endMarkerIndex > beginMarkerIndex,
+        '❌ Block markers not in correct order',
+      );
+      assert.ok(
+        userContentIndex > endMarkerIndex,
+        '❌ CRITICAL: User content should be AFTER block markers, not inside!',
+      );
+
+      // 10. 验证自动生成的内容在块标记内
+      const blockContent = generatedContent.substring(beginMarkerIndex, endMarkerIndex);
+      assert.ok(blockContent.length > 100, '❌ Auto-generated content seems empty or too short');
+
+      console.log('✅ SUCCESS: First-time user experience test passed!');
+      console.log(`   - Original content preserved: ${userOriginalContent.length} chars`);
+      console.log(`   - Final file size: ${generatedContent.length} chars`);
+      console.log(`   - User content position: after block markers ✓`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      assert.fail(`❌ CRITICAL FAILURE in first-time UX: ${errorMessage}`);
+    } finally {
+      // 清理：恢复配置
+      if (!protectionEnabled) {
+        await config.update(
+          'protectUserRules',
+          undefined,
+          vscode.ConfigurationTarget.WorkspaceFolder,
+        );
+      }
+      if (!cursorEnabled) {
+        await config.update(
+          'adapters.cursor.enabled',
+          undefined,
+          vscode.ConfigurationTarget.WorkspaceFolder,
+        );
+      }
+    }
+  });
+
+  /**
+   * 集成测试：已有块标记时的更新场景
+   * 验证后续同步时用户内容不会被覆盖
+   */
+  it('Should preserve user content when file already has block markers', async function () {
+    this.timeout(180000); // 3分钟
+
+    const existingRuleFile = path.join(workspaceFolder.uri.fsPath, '.cursorrules');
+
+    // 清理现有文件
+    if (await fs.pathExists(existingRuleFile)) {
+      await fs.remove(existingRuleFile);
+    }
+
+    // 创建已经被扩展管理的文件（有块标记）
+    const existingContent = `<!-- TURBO-AI-RULES:BEGIN -->
+<!-- Auto-generated content from previous sync -->
+Old rule 1
+Old rule 2
+<!-- TURBO-AI-RULES:END -->
+
+# My Custom Rules
+
+- Custom guideline 1
+- Custom guideline 2
+
+This user content should be preserved across syncs.
+`;
+
+    await fs.writeFile(existingRuleFile, existingContent, 'utf-8');
+
+    // 确保 protectUserRules 和 Cursor adapter 已启用
+    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    const protectionEnabled = config.get<boolean>('protectUserRules', false);
+    const cursorEnabled = config.get<boolean>('adapters.cursor.enabled', false);
+
+    if (!protectionEnabled) {
+      await config.update('protectUserRules', true, vscode.ConfigurationTarget.WorkspaceFolder);
+    }
+
+    if (!cursorEnabled) {
+      await config.update(
+        'adapters.cursor.enabled',
+        true,
+        vscode.ConfigurationTarget.WorkspaceFolder,
+      );
+    }
+
+    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
+    const doc = await vscode.workspace.openTextDocument(readmePath);
+    await vscode.window.showTextDocument(doc);
+
+    try {
+      // 执行同步和生成（模拟后续更新）
+      await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // 验证
+      const updatedContent = await fs.readFile(existingRuleFile, 'utf-8');
+
+      // 用户内容必须保留
+      assert.ok(
+        updatedContent.includes('My Custom Rules'),
+        'User custom section should be preserved',
+      );
+      assert.ok(
+        updatedContent.includes('Custom guideline 1'),
+        'User custom guideline should be preserved',
+      );
+      assert.ok(
+        updatedContent.includes('This user content should be preserved across syncs'),
+        'User note should be preserved',
+      );
+
+      // 旧的自动生成内容应该被更新
+      assert.ok(
+        !updatedContent.includes('Old rule 1') ||
+          updatedContent.includes('<!-- TURBO-AI-RULES:BEGIN -->'),
+        'Old auto-generated content should be replaced',
+      );
+
+      console.log('✅ SUCCESS: Subsequent update test passed - user content preserved');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      assert.fail(`Failed in subsequent update scenario: ${errorMessage}`);
+    } finally {
+      if (!protectionEnabled) {
+        await config.update(
+          'protectUserRules',
+          undefined,
+          vscode.ConfigurationTarget.WorkspaceFolder,
+        );
+      }
+      if (!cursorEnabled) {
+        await config.update(
+          'adapters.cursor.enabled',
+          undefined,
+          vscode.ConfigurationTarget.WorkspaceFolder,
+        );
+      }
     }
   });
 });

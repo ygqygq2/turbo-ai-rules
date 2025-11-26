@@ -14,12 +14,12 @@ import { BaseAdapter, GeneratedConfig } from './AIToolAdapter';
 
 /**
  * 自定义适配器
- * 根据配置生成文件或目录结构
+ * 支持灵活的输出配置: 文件/目录、文件过滤、源组织等
  */
 export class CustomAdapter extends BaseAdapter {
   public readonly name: string;
   public readonly enabled: boolean;
-  private readonly config: CustomAdapterConfig;
+  public readonly config: CustomAdapterConfig;
 
   constructor(config: CustomAdapterConfig) {
     super();
