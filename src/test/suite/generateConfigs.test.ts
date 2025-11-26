@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { CONFIG_KEYS } from '../../utils/constants';
 
 // 通过扩展获取服务实例
 let rulesManager: any;
@@ -33,7 +34,7 @@ describe('Generate Config Files Tests', () => {
 
     // 清理选择状态
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const sources = config.get<Array<{ id: string }>>('sources');
+    const sources = config.get<Array<{ id: string }>>(CONFIG_KEYS.SOURCES);
     if (sources) {
       for (const source of sources) {
         selectionStateManager.clearState(source.id);
@@ -79,7 +80,7 @@ describe('Generate Config Files Tests', () => {
 
     // 模拟用户选择规则：获取所有源并选中所有规则
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const sources = config.get<Array<{ id: string; enabled: boolean }>>('sources');
+    const sources = config.get<Array<{ id: string; enabled: boolean }>>(CONFIG_KEYS.SOURCES);
 
     for (const source of sources!.filter((s: any) => s.enabled)) {
       const sourceRules = rulesManager.getRulesBySource(source.id);

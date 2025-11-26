@@ -9,7 +9,18 @@
       "name": "Default Rules",
       "enabled": true,
       "outputType": "directory",
-      "outputPath": "rules",
+      "outputPath": "/rules",
+      "fileExtension": ".md"
+    },
+    {
+      "id": "skills",
+      "name": "skills",
+      "enabled": true,
+      "skills": true,
+      "sourceId": "ai-rules-7008d805",
+      "subPath": "/skills",
+      "outputType": "directory",
+      "outputPath": "/skills",
       "fileExtension": ".md"
     }
   ],

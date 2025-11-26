@@ -3,6 +3,7 @@ import * as fs from 'fs-extra';
 import { before, describe, it } from 'mocha';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { CONFIG_KEYS } from '../../utils/constants';
 
 describe('User Rules Protection Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
@@ -164,7 +165,7 @@ This is a user-defined rule that should be protected during sync.
     this.timeout(180000); // 3分钟
 
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const autoGitignore = config.get<boolean>('storage.autoGitignore', true);
+    const autoGitignore = config.get<boolean>(CONFIG_KEYS.STORAGE_AUTO_GITIGNORE, true);
 
     if (!autoGitignore) {
       this.skip(); // 如果禁用自动 gitignore，跳过此测试
@@ -194,7 +195,7 @@ This is a user-defined rule that should be protected during sync.
 
   it('Should not sync disabled sources', async () => {
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const sources = config.get<Array<{ id: string; enabled?: boolean }>>('sources', []);
+    const sources = config.get<Array<{ id: string; enabled?: boolean }>>(CONFIG_KEYS.SOURCES, []);
 
     const enabledSources = sources.filter((s) => s.enabled !== false);
     const disabledSources = sources.filter((s) => s.enabled === false);
@@ -249,19 +250,23 @@ This is my precious custom rule content that must not be lost!
 
     // 2. 确保 protectUserRules 已启用 和 Cursor adapter 已启用
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const protectionEnabled = config.get<boolean>('protectUserRules', false);
-    const cursorEnabled = config.get<boolean>('adapters.cursor.enabled', false);
+    const protectionEnabled = config.get<boolean>(CONFIG_KEYS.PROTECT_USER_RULES, false);
+    const cursorEnabled = config.get<boolean>(CONFIG_KEYS.ADAPTERS_CURSOR_ENABLED, false);
 
     if (!protectionEnabled) {
       // 临时启用保护（测试期间）
-      await config.update('protectUserRules', true, vscode.ConfigurationTarget.WorkspaceFolder);
+      await config.update(
+        CONFIG_KEYS.PROTECT_USER_RULES,
+        true,
+        vscode.ConfigurationTarget.WorkspaceFolder,
+      );
       console.log('Enabled protectUserRules for testing');
     }
 
     // 临时启用 Cursor adapter（测试期间）
     if (!cursorEnabled) {
       await config.update(
-        'adapters.cursor.enabled',
+        CONFIG_KEYS.ADAPTERS_CURSOR_ENABLED,
         true,
         vscode.ConfigurationTarget.WorkspaceFolder,
       );
@@ -351,14 +356,14 @@ This is my precious custom rule content that must not be lost!
       // 清理：恢复配置
       if (!protectionEnabled) {
         await config.update(
-          'protectUserRules',
+          CONFIG_KEYS.PROTECT_USER_RULES,
           undefined,
           vscode.ConfigurationTarget.WorkspaceFolder,
         );
       }
       if (!cursorEnabled) {
         await config.update(
-          'adapters.cursor.enabled',
+          CONFIG_KEYS.ADAPTERS_CURSOR_ENABLED,
           undefined,
           vscode.ConfigurationTarget.WorkspaceFolder,
         );
@@ -399,16 +404,20 @@ This user content should be preserved across syncs.
 
     // 确保 protectUserRules 和 Cursor adapter 已启用
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const protectionEnabled = config.get<boolean>('protectUserRules', false);
-    const cursorEnabled = config.get<boolean>('adapters.cursor.enabled', false);
+    const protectionEnabled = config.get<boolean>(CONFIG_KEYS.PROTECT_USER_RULES, false);
+    const cursorEnabled = config.get<boolean>(CONFIG_KEYS.ADAPTERS_CURSOR_ENABLED, false);
 
     if (!protectionEnabled) {
-      await config.update('protectUserRules', true, vscode.ConfigurationTarget.WorkspaceFolder);
+      await config.update(
+        CONFIG_KEYS.PROTECT_USER_RULES,
+        true,
+        vscode.ConfigurationTarget.WorkspaceFolder,
+      );
     }
 
     if (!cursorEnabled) {
       await config.update(
-        'adapters.cursor.enabled',
+        CONFIG_KEYS.ADAPTERS_CURSOR_ENABLED,
         true,
         vscode.ConfigurationTarget.WorkspaceFolder,
       );

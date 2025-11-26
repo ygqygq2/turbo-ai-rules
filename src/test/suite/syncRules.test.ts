@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { CONFIG_KEYS } from '../../utils/constants';
 
 // 通过扩展获取服务实例，避免模块重复加载
 let rulesManager: any;
@@ -37,7 +38,7 @@ describe('Sync Rules Tests', () => {
 
     // 清理选择状态（避免影响其他测试）
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const sources = config.get<Array<{ id: string }>>('sources');
+    const sources = config.get<Array<{ id: string }>>(CONFIG_KEYS.SOURCES);
     if (sources) {
       for (const source of sources) {
         selectionStateManager.clearState(source.id);

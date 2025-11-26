@@ -10,6 +10,7 @@ import type {
   ValidationResult,
   ValidationWarning,
 } from '../types/rules';
+import { CONFIG_KEYS } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { validateRuleId } from '../utils/validator';
 
@@ -23,8 +24,8 @@ export class RulesValidator {
   private getParserConfig(): { strictMode: boolean; requireFrontmatter: boolean } {
     const config = vscode.workspace.getConfiguration('turbo-ai-rules.parser');
     return {
-      strictMode: config.get<boolean>('strictMode', false),
-      requireFrontmatter: config.get<boolean>('requireFrontmatter', false),
+      strictMode: config.get<boolean>(CONFIG_KEYS.PARSER_STRICT_MODE, false),
+      requireFrontmatter: config.get<boolean>(CONFIG_KEYS.PARSER_REQUIRE_FRONTMATTER, false),
     };
   }
 

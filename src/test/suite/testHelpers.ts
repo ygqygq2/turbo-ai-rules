@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 import { RulesManager } from '../../services/RulesManager';
 import { SelectionStateManager } from '../../services/SelectionStateManager';
 import { WorkspaceDataManager } from '../../services/WorkspaceDataManager';
+import { CONFIG_KEYS } from '../../utils/constants';
 
 /**
  * @description 为测试源初始化选择状态（全选所有规则）
@@ -69,7 +70,7 @@ export async function initializeAllTestSourcesSelection(
   workspaceFolder: vscode.WorkspaceFolder,
 ): Promise<void> {
   const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-  const sources = config.get<Array<{ id: string; enabled: boolean }>>('sources');
+  const sources = config.get<Array<{ id: string; enabled: boolean }>>(CONFIG_KEYS.SOURCES);
 
   if (!sources || sources.length === 0) {
     console.warn('[Test] No sources configured for test workspace');

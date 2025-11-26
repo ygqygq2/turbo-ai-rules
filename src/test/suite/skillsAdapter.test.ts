@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { CONFIG_KEYS } from '../../utils/constants';
 
 /**
  * Skills 适配器集成测试
@@ -45,7 +46,7 @@ describe('Skills Adapter Tests', () => {
 
     // 获取配置
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const customAdapters = config.get<any[]>('adapters.custom', []);
+    const customAdapters = config.get<any[]>(CONFIG_KEYS.ADAPTERS_CUSTOM, []);
 
     // 检查是否有 skills 适配器配置
     const skillsAdapter = customAdapters.find((adapter) => adapter.skills === true);
@@ -119,13 +120,17 @@ describe('Skills Adapter Tests', () => {
       subPath: '/skills',
     };
 
-    const currentAdapters = config.get<any[]>('adapters.custom', []);
+    const currentAdapters = config.get<any[]>(CONFIG_KEYS.ADAPTERS_CUSTOM, []);
     const newAdapters = [
       ...currentAdapters.filter((a) => a.id !== invalidAdapter.id),
       invalidAdapter,
     ];
 
-    await config.update('adapters.custom', newAdapters, vscode.ConfigurationTarget.WorkspaceFolder);
+    await config.update(
+      CONFIG_KEYS.ADAPTERS_CUSTOM,
+      newAdapters,
+      vscode.ConfigurationTarget.WorkspaceFolder,
+    );
 
     // 尝试生成配置
     try {

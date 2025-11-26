@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import type { RuleSource } from '../../types';
+import { CONFIG_KEYS } from '../../utils/constants';
 import { restoreAllMocks } from './mocks';
 
 describe('Remove Source Tests', () => {
@@ -23,7 +24,7 @@ describe('Remove Source Tests', () => {
 
     // 直接从配置读取，不依赖 ConfigManager
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const sources = config.get<RuleSource[]>('sources', []);
+    const sources = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);
 
     console.log(`Found ${sources.length} sources in workspace ${workspaceFolder.name}`);
 
@@ -54,7 +55,7 @@ describe('Remove Source Tests', () => {
     await vscode.window.showTextDocument(doc);
 
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const sourcesBefore = config.get<RuleSource[]>('sources', []);
+    const sourcesBefore = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);
 
     // 尝试删除不存在的源
     const nonExistentId = 'non-existent-source-12345';
@@ -63,7 +64,7 @@ describe('Remove Source Tests', () => {
       await vscode.commands.executeCommand('turbo-ai-rules.removeSource', nonExistentId);
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      const sourcesAfter = config.get<RuleSource[]>('sources', []);
+      const sourcesAfter = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);
 
       // 源列表不应该改变
       assert.strictEqual(

@@ -1,5 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
+import { CONFIG_PREFIX, CONFIG_KEYS } from '../../utils/constants';
 
 describe('Pre-configured Sources Tests', () => {
   it('Should read pre-configured sources from workspace settings', async () => {
@@ -9,7 +10,10 @@ describe('Pre-configured Sources Tests', () => {
     // 测试每个工作区文件夹
     for (const folder of folders) {
       const config = vscode.workspace.getConfiguration('turbo-ai-rules', folder.uri);
-      const configSources = config.get<Array<{ id: string; name: string }>>('sources', []);
+      const configSources = config.get<Array<{ id: string; name: string }>>(
+        CONFIG_KEYS.SOURCES,
+        [],
+      );
 
       if (configSources.length > 0) {
         console.log(
@@ -33,7 +37,7 @@ describe('Pre-configured Sources Tests', () => {
     let totalSources = 0;
     for (const folder of folders) {
       const config = vscode.workspace.getConfiguration('turbo-ai-rules', folder.uri);
-      const sources = config.get<Array<{ id: string }>>('sources', []);
+      const sources = config.get<Array<{ id: string }>>(CONFIG_KEYS.SOURCES, []);
       totalSources += sources.length;
     }
 
@@ -46,8 +50,8 @@ describe('Pre-configured Sources Tests', () => {
     assert.ok(folders && folders.length > 0, 'Workspace folders should exist');
 
     // 检查全局工作区配置
-    const config = vscode.workspace.getConfiguration('turbo-ai-rules');
-    const onStartup = config.get<boolean>('sync.onStartup');
+    const config = vscode.workspace.getConfiguration(CONFIG_PREFIX);
+    const onStartup = config.get<boolean>(CONFIG_KEYS.SYNC_ON_STARTUP);
 
     console.log(`sync.onStartup is set to: ${onStartup}`);
 

@@ -10,7 +10,12 @@ import * as vscode from 'vscode';
 
 import { ErrorCodes, ParseError } from '../types/errors';
 import type { ParsedRule, RuleMetadata } from '../types/rules';
-import { MAX_PARSE_DEPTH, MAX_PARSE_FILES, RULE_FILE_EXTENSIONS } from '../utils/constants';
+import {
+  MAX_PARSE_DEPTH,
+  MAX_PARSE_FILES,
+  RULE_FILE_EXTENSIONS,
+  CONFIG_KEYS,
+} from '../utils/constants';
 import { safeReadFile } from '../utils/fileSystem';
 import { Logger } from '../utils/logger';
 import { validateRuleId } from '../utils/validator';
@@ -43,9 +48,13 @@ export class MdcParser {
   } {
     const config = vscode.workspace.getConfiguration('turbo-ai-rules.parser');
     return {
-      strictMode: config.get<boolean>('strictMode', false),
-      requireFrontmatter: config.get<boolean>('requireFrontmatter', false),
-      excludeFiles: config.get<string[]>('excludeFiles', ['README.md', 'readme.md', 'README.MD']),
+      strictMode: config.get<boolean>(CONFIG_KEYS.PARSER_STRICT_MODE, false),
+      requireFrontmatter: config.get<boolean>(CONFIG_KEYS.PARSER_REQUIRE_FRONTMATTER, false),
+      excludeFiles: config.get<string[]>(CONFIG_KEYS.PARSER_EXCLUDE_FILES, [
+        'README.md',
+        'readme.md',
+        'README.MD',
+      ]),
     };
   }
 

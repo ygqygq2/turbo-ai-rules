@@ -16,7 +16,7 @@ import type {
 import { DEFAULT_CONFIG } from '../types/config';
 import { ConfigError, ErrorCodes } from '../types/errors';
 import { mergeById } from '../utils/configMerge';
-import { CONFIG_PREFIX } from '../utils/constants';
+import { CONFIG_PREFIX, CONFIG_KEYS } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { validateConfig } from '../utils/validator';
 
@@ -64,7 +64,10 @@ export class ConfigManager {
       const sources = this.getSources(resource);
 
       // 先按 VS Code 默认合并规则获取适配器对象
-      const adapters = vscodeConfig.get<AdaptersConfig>('adapters', DEFAULT_CONFIG.adapters);
+      const adapters = vscodeConfig.get<AdaptersConfig>(
+        CONFIG_KEYS.ADAPTERS,
+        DEFAULT_CONFIG.adapters,
+      );
 
       // 对 adapters.custom（数组）执行显式合并：Folder > Workspace > Global
       const customInspection = vscodeConfig.inspect<CustomAdapterConfig[]>('adapters.custom');
@@ -81,10 +84,10 @@ export class ConfigManager {
 
       const config: ExtensionConfig = {
         sources,
-        storage: vscodeConfig.get<StorageConfig>('storage', DEFAULT_CONFIG.storage),
+        storage: vscodeConfig.get<StorageConfig>(CONFIG_KEYS.STORAGE, DEFAULT_CONFIG.storage),
         adapters,
-        sync: vscodeConfig.get<SyncConfig>('sync', DEFAULT_CONFIG.sync),
-        parser: vscodeConfig.get<ParserConfig>('parser', DEFAULT_CONFIG.parser),
+        sync: vscodeConfig.get<SyncConfig>(CONFIG_KEYS.SYNC, DEFAULT_CONFIG.sync),
+        parser: vscodeConfig.get<ParserConfig>(CONFIG_KEYS.PARSER, DEFAULT_CONFIG.parser),
       };
 
       // 验证配置

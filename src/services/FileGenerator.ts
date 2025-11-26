@@ -15,6 +15,7 @@ import type { ConflictStrategy, ParsedRule } from '../types/rules';
 import { ensureDir, pathExists, readDir, safeReadFile, safeWriteFile } from '../utils/fileSystem';
 import { ensureIgnored } from '../utils/gitignore';
 import { Logger } from '../utils/logger';
+import { CONFIG_PREFIX, CONFIG_KEYS } from '../utils/constants';
 import type { UserRulesProtectionConfig } from '../utils/userRulesProtection';
 import { extractUserContent, isUserDefinedFile, mergeContent } from '../utils/userRulesProtection';
 import { GitManager } from './GitManager';
@@ -46,11 +47,11 @@ export class FileGenerator {
    * 加载用户规则保护配置
    */
   private loadProtectionConfig(): UserRulesProtectionConfig {
-    const config = vscode.workspace.getConfiguration('turboAIRules');
+    const config = vscode.workspace.getConfiguration(CONFIG_PREFIX);
     return {
-      enabled: config.get<boolean>('protectUserRules', true),
-      userPrefixRange: config.get('userPrefixRange', { min: 80000, max: 99999 }),
-      blockMarkers: config.get('blockMarkers'),
+      enabled: config.get<boolean>(CONFIG_KEYS.PROTECT_USER_RULES, true),
+      userPrefixRange: config.get(CONFIG_KEYS.USER_PREFIX_RANGE, { min: 80000, max: 99999 }),
+      blockMarkers: config.get(CONFIG_KEYS.BLOCK_MARKERS),
     };
   }
 

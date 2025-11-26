@@ -4,6 +4,9 @@
   "description": "%description%",
   "version": "2.0.2",
   "publisher": "ygqygq2",
+  "sponsor": {
+    "url": "https://github.com/sponsors/ygqygq2"
+  },
   "icon": "resources/images/logo.png",
   "repository": {
     "type": "git",
@@ -475,6 +478,7 @@
         "turbo-ai-rules.adapters.custom": {
           "type": "array",
           "default": [],
+          "scope": "resource",
           "items": {
             "type": "object",
             "required": [

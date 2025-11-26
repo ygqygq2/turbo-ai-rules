@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import type { RuleSource } from '../../types';
+import { CONFIG_KEYS } from '../../utils/constants';
 import { mockShowInputBox, mockShowQuickPick, restoreAllMocks } from './mocks';
 
 describe('Add Source Tests', () => {
@@ -36,14 +37,14 @@ describe('Add Source Tests', () => {
     await vscode.window.showTextDocument(doc);
 
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const sourcesBefore = config.get<RuleSource[]>('sources', []);
+    const sourcesBefore = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);
     const countBefore = sourcesBefore.length;
 
     // 执行添加命令
     await vscode.commands.executeCommand('turbo-ai-rules.addSource');
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const sourcesAfter = config.get<RuleSource[]>('sources', []);
+    const sourcesAfter = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);
     const added = sourcesAfter.find((s: RuleSource) => s.gitUrl === sourceUrl);
 
     console.log(`Sources before: ${countBefore}, after: ${sourcesAfter.length}`);
@@ -75,14 +76,14 @@ describe('Add Source Tests', () => {
     await vscode.window.showTextDocument(doc);
 
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const sourcesBefore = config.get<RuleSource[]>('sources', []);
+    const sourcesBefore = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);
     const countBefore = sourcesBefore.length;
 
     // 尝试添加相同的源
     await vscode.commands.executeCommand('turbo-ai-rules.addSource');
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const sourcesAfter = config.get<RuleSource[]>('sources', []);
+    const sourcesAfter = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);
     const countAfter = sourcesAfter.filter((s: RuleSource) => s.gitUrl === sourceUrl).length;
     const countBeforeUrl = sourcesBefore.filter((s: RuleSource) => s.gitUrl === sourceUrl).length;
 
@@ -107,14 +108,14 @@ describe('Add Source Tests', () => {
     await vscode.window.showTextDocument(doc);
 
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const sourcesBefore = config.get<RuleSource[]>('sources', []);
+    const sourcesBefore = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);
 
     try {
       // 尝试添加无效 URL
       await vscode.commands.executeCommand('turbo-ai-rules.addSource');
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const sourcesAfter = config.get<RuleSource[]>('sources', []);
+      const sourcesAfter = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);
 
       // 无效 URL 应该被拒绝，源列表不变
       assert.strictEqual(

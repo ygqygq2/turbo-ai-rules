@@ -4,7 +4,7 @@ import { RulesManager } from '../services/RulesManager';
 import { SelectionStateManager } from '../services/SelectionStateManager';
 import { RuleSource } from '../types/config';
 import { ParsedRule } from '../types/rules';
-import { CONFIG_PREFIX } from '../utils/constants';
+import { CONFIG_PREFIX, CONFIG_KEYS } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 
@@ -31,7 +31,7 @@ export async function batchDisableRulesCommand(rules: ParsedRule[]): Promise<voi
 
   try {
     const vsConfig = vscode.workspace.getConfiguration(CONFIG_PREFIX);
-    const ignorePatterns = new Set(vsConfig.get<string[]>('ignorePatterns', []));
+    const ignorePatterns = new Set(vsConfig.get<string[]>(CONFIG_KEYS.IGNORE_PATTERNS, []));
 
     // 添加规则路径到忽略模式
     for (const rule of rules) {
@@ -82,7 +82,7 @@ export async function batchEnableRulesCommand(rules: ParsedRule[]): Promise<void
 
   try {
     const vsConfig = vscode.workspace.getConfiguration(CONFIG_PREFIX);
-    const ignorePatterns = new Set(vsConfig.get<string[]>('ignorePatterns', []));
+    const ignorePatterns = new Set(vsConfig.get<string[]>(CONFIG_KEYS.IGNORE_PATTERNS, []));
 
     // 从忽略模式中移除规则路径
     for (const rule of rules) {

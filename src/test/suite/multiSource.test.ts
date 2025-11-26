@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { CONFIG_KEYS, CONFIG_PREFIX, EXTENSION_ID } from '../../utils/constants';
 
 // 通过扩展获取服务实例
 let rulesManager: any;
@@ -18,7 +19,7 @@ describe('Multi-Source Integration Tests', () => {
     workspaceFolder = folders.find((f) => f.name.includes('Multi-Source')) || folders[0];
 
     // 从扩展获取服务实例
-    const ext = vscode.extensions.getExtension('ygqygq2.turbo-ai-rules');
+    const ext = vscode.extensions.getExtension(EXTENSION_ID);
     if (ext && !ext.isActive) {
       await ext.activate();
     }
@@ -33,8 +34,8 @@ describe('Multi-Source Integration Tests', () => {
     }
 
     // 清理选择状态
-    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const sources = config.get<Array<{ id: string }>>('sources');
+    const config = vscode.workspace.getConfiguration(CONFIG_PREFIX, workspaceFolder.uri);
+    const sources = config.get<Array<{ id: string }>>(CONFIG_KEYS.SOURCES);
     if (sources) {
       for (const source of sources) {
         selectionStateManager.clearState(source.id);
@@ -57,8 +58,8 @@ describe('Multi-Source Integration Tests', () => {
   });
 
   it('Should handle multiple rule sources', async () => {
-    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const sources = config.get<Array<{ id: string; name: string }>>('sources');
+    const config = vscode.workspace.getConfiguration(CONFIG_PREFIX, workspaceFolder.uri);
+    const sources = config.get<Array<{ id: string; name: string }>>(CONFIG_KEYS.SOURCES);
 
     assert.ok(sources, 'Sources should be defined');
     assert.strictEqual(sources!.length, 2, 'Should have 2 sources configured');
@@ -67,8 +68,8 @@ describe('Multi-Source Integration Tests', () => {
   });
 
   it('Should respect conflict resolution strategy', async () => {
-    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const strategy = config.get<string>('sync.conflictStrategy');
+    const config = vscode.workspace.getConfiguration(CONFIG_PREFIX, workspaceFolder.uri);
+    const strategy = config.get<string>(CONFIG_KEYS.SYNC_CONFLICT_STRATEGY);
 
     assert.strictEqual(strategy, 'priority', 'Conflict strategy should be priority');
   });
@@ -85,8 +86,8 @@ describe('Multi-Source Integration Tests', () => {
       await vscode.window.showTextDocument(doc);
 
       // 获取配置的源
-      const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-      const sources = config.get<Array<{ id: string; enabled: boolean }>>('sources');
+      const config = vscode.workspace.getConfiguration(CONFIG_PREFIX, workspaceFolder.uri);
+      const sources = config.get<Array<{ id: string; enabled: boolean }>>(CONFIG_KEYS.SOURCES);
       assert.ok(sources && sources.length > 0, 'Should have configured sources');
 
       await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
@@ -159,9 +160,9 @@ describe('Multi-Source Integration Tests', () => {
   });
 
   it('Should enable multiple adapters simultaneously', async () => {
-    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const cursorEnabled = config.get<boolean>('adapters.cursor.enabled');
-    const copilotEnabled = config.get<boolean>('adapters.copilot.enabled');
+    const config = vscode.workspace.getConfiguration(CONFIG_PREFIX, workspaceFolder.uri);
+    const cursorEnabled = config.get<boolean>(CONFIG_KEYS.ADAPTERS_CURSOR_ENABLED);
+    const copilotEnabled = config.get<boolean>(CONFIG_KEYS.ADAPTERS_COPILOT_ENABLED);
 
     console.log(`Cursor adapter enabled: ${cursorEnabled}`);
     console.log(`Copilot adapter enabled: ${copilotEnabled}`);

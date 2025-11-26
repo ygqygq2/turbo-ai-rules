@@ -31,14 +31,41 @@ export const CONFIG_PREFIX = 'turbo-ai-rules';
 export const CONFIG_KEYS = {
   /** 规则源列表 */
   SOURCES: 'sources',
-  /** 同步策略 */
-  SYNC_STRATEGY: 'syncStrategy',
-  /** 默认适配器 */
-  DEFAULT_ADAPTER: 'defaultAdapter',
-  /** 自动同步 */
-  AUTO_SYNC: 'autoSync',
+
+  /** 顶层配置节点 */
+  STORAGE: 'storage',
+  SYNC: 'sync',
+  PARSER: 'parser',
+  ADAPTERS: 'adapters',
+  IGNORE_PATTERNS: 'ignorePatterns',
+
+  /** 存储配置 */
+  STORAGE_AUTO_GITIGNORE: 'storage.autoGitignore',
+
   /** 用户规则保护 */
-  USER_RULES_PROTECTION: 'userRulesProtection',
+  PROTECT_USER_RULES: 'protectUserRules',
+  USER_PREFIX_RANGE: 'userPrefixRange',
+  BLOCK_MARKERS: 'blockMarkers',
+
+  /** 解析器配置 */
+  PARSER_STRICT_MODE: 'parser.strictMode',
+  PARSER_REQUIRE_FRONTMATTER: 'parser.requireFrontmatter',
+  PARSER_EXCLUDE_FILES: 'parser.excludeFiles',
+
+  /** 适配器配置 */
+  ADAPTERS_CURSOR_ENABLED: 'adapters.cursor.enabled',
+  ADAPTERS_CURSOR_AUTO_UPDATE: 'adapters.cursor.autoUpdate',
+  ADAPTERS_COPILOT_ENABLED: 'adapters.copilot.enabled',
+  ADAPTERS_COPILOT_AUTO_UPDATE: 'adapters.copilot.autoUpdate',
+  ADAPTERS_CONTINUE_ENABLED: 'adapters.continue.enabled',
+  ADAPTERS_CONTINUE_AUTO_UPDATE: 'adapters.continue.autoUpdate',
+  ADAPTERS_CUSTOM: 'adapters.custom',
+
+  /** 同步配置 */
+  SYNC_AUTO: 'sync.auto',
+  SYNC_INTERVAL: 'sync.interval',
+  SYNC_ON_STARTUP: 'sync.onStartup',
+  SYNC_CONFLICT_STRATEGY: 'sync.conflictStrategy',
 } as const;
 
 /**
