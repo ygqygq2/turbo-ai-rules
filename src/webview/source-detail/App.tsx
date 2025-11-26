@@ -4,13 +4,14 @@ import { vscodeApi } from '../utils/vscode-api';
 import { t } from '../utils/i18n';
 
 import { Card } from '../components/Card';
-import { Badge } from '../components/Badge';
 import { Toolbar } from '../components/Toolbar';
 import { PriorityIcon } from '../components/PriorityIcon';
 import { StatusDot } from '../components/StatusDot';
 import { EmptyState } from '../components/EmptyState';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { Tag, TagsContainer } from '../components/Tag';
+import { Section } from '../components/Section';
 import '../global.css';
 import './source-detail.css';
 
@@ -225,23 +226,20 @@ const App: React.FC = () => {
 
         {/* Tags */}
         {statistics.topTags && statistics.topTags.length > 0 && (
-          <div className="tags-section">
-            <h3>Top Tags</h3>
-            <div className="tags-list">
-              {statistics.topTags.map((tag: { tag: string; count: number }) => (
-                <span
-                  key={tag.tag}
-                  className={`badge ${
-                    selectedTag === tag.tag ? 'badge-primary' : 'badge-secondary'
-                  }`}
-                  onClick={() => setSelectedTag(selectedTag === tag.tag ? null : tag.tag)}
-                  style={{ cursor: 'pointer' }}
+          <Section title="Top Tags" icon="🏷️">
+            <TagsContainer>
+              {statistics.topTags.map((tagItem: { tag: string; count: number }) => (
+                <Tag
+                  key={tagItem.tag}
+                  onClick={() => setSelectedTag(selectedTag === tagItem.tag ? null : tagItem.tag)}
+                  active={selectedTag === tagItem.tag}
+                  count={tagItem.count}
                 >
-                  {tag.tag} ({tag.count})
-                </span>
+                  {tagItem.tag}
+                </Tag>
               ))}
-            </div>
-          </div>
+            </TagsContainer>
+          </Section>
         )}
 
         {/* Rules List */}
@@ -269,20 +267,22 @@ const App: React.FC = () => {
               {filteredRules.map((rule: RuleData, index: number) => (
                 <Card key={index} className="rule-card">
                   <div className="rule-header">
-                    <h3>{rule.metadata?.title || 'Untitled Rule'}</h3>
-                    <PriorityIcon priority={rule.metadata?.priority || 'medium'} />
+                    <h3>
+                      {rule.metadata?.title || 'Untitled Rule'}
+                      <PriorityIcon priority={rule.metadata?.priority || 'medium'} />
+                    </h3>
                   </div>
                   {rule.metadata?.description && (
                     <p className="rule-description">{rule.metadata.description}</p>
                   )}
                   {rule.metadata?.tags && rule.metadata.tags.length > 0 && (
-                    <div className="rule-tags">
+                    <TagsContainer className="rule-tags">
                       {rule.metadata.tags.map((tag: string) => (
-                        <Badge key={tag} className="badge-secondary">
+                        <Tag key={tag} onClick={() => setSelectedTag(tag)}>
                           {tag}
-                        </Badge>
+                        </Tag>
                       ))}
-                    </div>
+                    </TagsContainer>
                   )}
                   <Button
                     type="secondary"

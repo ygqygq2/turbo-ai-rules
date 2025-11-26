@@ -160,6 +160,7 @@ export class MdcParser {
         id: normalizedId,
         title,
         content: trimmedContent,
+        rawContent: content, // 保存包含 frontmatter 的原始内容
         metadata: {
           ...metadata,
           id: normalizedId,

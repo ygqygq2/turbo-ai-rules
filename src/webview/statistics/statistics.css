@@ -197,34 +197,3 @@
   background-color: var(--vscode-descriptionForeground);
   color: white;
 }
-
-/* 标签容器 */
-.tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-sm);
-}
-
-.tag-item {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 12px;
-  background-color: var(--vscode-badge-background);
-  color: var(--vscode-badge-foreground);
-  border-radius: 12px;
-  font-size: 0.9em;
-  font-weight: 500;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tag-item:hover {
-  background-color: var(--vscode-button-hoverBackground);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.tag-item:active {
-  transform: translateY(0);
-}

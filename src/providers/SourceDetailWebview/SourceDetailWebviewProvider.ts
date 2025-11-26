@@ -104,6 +104,7 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider implements 
       viewType: 'turboAiRules.sourceDetail',
       title: vscode.l10n.t('Source Details'),
       viewColumn: vscode.ViewColumn.One,
+      iconPath: EXTENSION_ICON_PATH,
     });
 
     if (this.webviewReady) {

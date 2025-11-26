@@ -73,20 +73,12 @@ export class CursorAdapter extends BaseAdapter {
   private formatRulesForCursor(rules: ParsedRule[]): string {
     return rules
       .map((rule) => {
-        let section = `## ${rule.title}\n\n`;
-
-        // 基础元数据（使用统一格式）
-        const metadata = this.formatRuleMetadata(rule);
-        if (metadata) {
-          section += metadata + '\n\n';
-        }
-
-        // 添加规则内容
-        section += `${rule.content.trim()}\n`;
-
-        return section;
+        // 直接使用规则的原始内容，不添加额外的标题和元数据
+        // rawContent 已经包含了完整的 frontmatter 和内容
+        const content = (rule.rawContent || rule.content)?.trim() || '';
+        return content;
       })
-      .join('\n---\n\n');
+      .join('\n\n---\n\n');
   }
 
   /**

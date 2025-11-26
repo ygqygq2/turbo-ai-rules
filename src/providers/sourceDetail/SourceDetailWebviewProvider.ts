@@ -4,6 +4,7 @@
  */
 import * as vscode from 'vscode';
 
+import { EXTENSION_ICON_PATH } from '../../utils/constants';
 import { BaseWebviewProvider, type WebviewMessage } from '../BaseWebviewProvider';
 import { getSourceDetailHtmlContent } from './getSourceDetailHtmlContent.js';
 import { handleSourceDetailMessage } from './handleSourceDetailMessage.js';
@@ -27,8 +28,9 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
     this.currentSourceId = sourceId;
     await this.show({
       viewType: 'turboAiRules.sourceDetail',
-      title: sourceId === 'new' ? 'Add New Rule Source' : 'Source Details',
+      title: vscode.l10n.t('Source Details'),
       viewColumn: vscode.ViewColumn.One,
+      iconPath: EXTENSION_ICON_PATH,
     });
   }
 

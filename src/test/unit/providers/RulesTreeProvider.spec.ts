@@ -82,6 +82,8 @@ describe('RulesTreeProvider 单元测试', () => {
     id: 'test-rule',
     title: 'Test Rule',
     content: 'Test content',
+    rawContent:
+      '---\nid: test-rule\ntitle: Test Rule\nversion: 1.0.0\ntags: [test]\npriority: medium\n---\n\nTest content',
     sourceId: 'test-source',
     filePath: '/rules/test.md',
     metadata: {

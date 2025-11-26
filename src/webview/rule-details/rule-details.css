@@ -1,3 +1,9 @@
+/**
+ * rule-details 页面专属样式
+ * 通用样式已迁移到组件：Tag.css, MetadataGrid.css, Section.css
+ */
+
+/* 页面头部 */
 .header {
   display: flex;
   justify-content: space-between;
@@ -23,6 +29,7 @@
   gap: var(--spacing-sm);
 }
 
+/* 工具栏按钮 */
 .button-icon {
   background: var(--vscode-button-secondaryBackground);
   color: var(--vscode-button-secondaryForeground);
@@ -44,69 +51,7 @@
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
-.metadata-section {
-  margin-bottom: var(--spacing-lg);
-}
-
-.metadata-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--spacing-md);
-  background-color: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-editorWidget-border);
-  border-radius: var(--border-radius);
-  padding: var(--spacing-md);
-}
-
-.metadata-item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.metadata-label {
-  font-size: 0.85em;
-  color: var(--vscode-descriptionForeground);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.metadata-value {
-  font-weight: 500;
-  word-break: break-all;
-  display: flex;
-  align-items: center;
-}
-
-.priority-text {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.95em;
-  font-weight: 600;
-}
-
-.priority-high {
-  color: var(--vscode-errorForeground);
-}
-
-.priority-medium {
-  color: var(--vscode-editorWarning-foreground);
-}
-
-.priority-low {
-  color: var(--vscode-charts-blue);
-}
-
-.section {
-  margin-bottom: var(--spacing-lg);
-  min-height: 60px;
-}
-
-.section h2 {
-  margin-bottom: var(--spacing-md);
-}
-
+/* 描述框 */
 .description-box {
   background-color: var(--vscode-editorWidget-background);
   border: 1px solid var(--vscode-editorWidget-border);
@@ -116,61 +61,14 @@
   white-space: pre-wrap;
 }
 
-.tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 8px 0;
-  min-height: 40px;
-}
-
-.tag {
-  background: linear-gradient(
-    135deg,
-    var(--vscode-badge-background),
-    var(--vscode-button-secondaryBackground)
-  );
-  color: var(--vscode-badge-foreground);
-  padding: 6px 14px;
-  border-radius: 16px;
-  font-size: 0.85em;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.tag:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  border-color: var(--vscode-focusBorder);
-  background: linear-gradient(
-    135deg,
-    var(--vscode-button-background),
-    var(--vscode-button-hoverBackground)
-  );
-  color: var(--vscode-button-foreground);
-}
-
-.content-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-md);
-  padding: 8px 0;
-}
-
-.content-header h2 {
-  margin: 0;
-}
-
+/* 内容操作区 */
 .content-actions {
   display: flex;
   gap: 8px;
   align-items: center;
 }
 
+/* 内容预览 */
 .content-preview {
   background-color: var(--vscode-editor-background);
   border: 1px solid var(--vscode-editorWidget-border);
@@ -198,6 +96,7 @@
   font-family: inherit;
 }
 
+/* 渲染后的 Markdown 内容 */
 .rendered-content {
   padding: var(--spacing-md);
   line-height: 1.8;
@@ -217,11 +116,13 @@
   border-bottom: 2px solid var(--vscode-editorWidget-border);
   padding-bottom: 0.3em;
 }
+
 .rendered-content h2 {
   font-size: 1.5em;
   border-bottom: 1px solid var(--vscode-editorWidget-border);
   padding-bottom: 0.2em;
 }
+
 .rendered-content h3 {
   font-size: 1.25em;
 }
@@ -283,16 +184,12 @@
   font-weight: 600;
 }
 
+/* 额外元数据 */
 .additional-metadata {
   background-color: var(--vscode-editorWidget-background);
   border: 1px solid var(--vscode-editorWidget-border);
   border-radius: var(--border-radius);
   padding: var(--spacing-md);
-}
-
-.additional-metadata h3 {
-  margin-top: 0;
-  margin-bottom: var(--spacing-md);
 }
 
 .metadata-list {
@@ -323,8 +220,23 @@
   word-break: break-all;
 }
 
-.empty-state {
-  text-align: center;
-  padding: var(--spacing-xl);
-  color: var(--vscode-descriptionForeground);
+/* 优先级样式（需要保留，因为在 metadata 中使用） */
+.priority-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95em;
+  font-weight: 600;
+}
+
+.priority-high {
+  color: var(--vscode-errorForeground);
+}
+
+.priority-medium {
+  color: var(--vscode-editorWarning-foreground);
+}
+
+.priority-low {
+  color: var(--vscode-charts-blue);
 }

@@ -38,6 +38,7 @@ describe('CursorAdapter', () => {
           id: 'test-rule',
           title: 'Test Rule',
           content: 'Test content',
+          rawContent: 'Test content',
           sourceId: 'test-source',
           metadata: {
             priority: 'high',
@@ -51,10 +52,7 @@ describe('CursorAdapter', () => {
 
       expect(result.filePath).toBe('.cursorrules');
       expect(result.content).toContain('# AI Coding Rules for Cursor');
-      expect(result.content).toContain('Test Rule');
       expect(result.content).toContain('Test content');
-      expect(result.content).toContain('**Priority:** high');
-      expect(result.content).toContain('**Tags:** test, example');
       expect(result.ruleCount).toBe(1);
     });
 
@@ -72,6 +70,7 @@ describe('CursorAdapter', () => {
           id: 'low-rule',
           title: 'Low Priority',
           content: 'Low content',
+          rawContent: 'Low content',
           sourceId: 'source',
           metadata: { priority: 'low' },
           filePath: '/low.md',
@@ -80,6 +79,7 @@ describe('CursorAdapter', () => {
           id: 'high-rule',
           title: 'High Priority',
           content: 'High content',
+          rawContent: 'High content',
           sourceId: 'source',
           metadata: { priority: 'high' },
           filePath: '/high.md',
@@ -88,6 +88,7 @@ describe('CursorAdapter', () => {
           id: 'medium-rule',
           title: 'Medium Priority',
           content: 'Medium content',
+          rawContent: 'Medium content',
           sourceId: 'source',
           metadata: { priority: 'medium' },
           filePath: '/medium.md',

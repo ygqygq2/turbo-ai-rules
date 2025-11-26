@@ -55,8 +55,8 @@ export class RulesAdapter extends BaseAdapter {
           const relativePath = path.join('rules', sourceId, `${rule.id}.md`);
           const absolutePath = path.join(workspaceRoot, relativePath);
 
-          // 使用完整内容（title + content）
-          const fullContent = `# ${rule.title}\n\n${rule.content}`;
+          // 使用原始内容（包含 frontmatter）
+          const fullContent = rule.rawContent;
 
           // 写入文件
           await safeWriteFile(absolutePath, fullContent);

@@ -1,0 +1,107 @@
+/**
+ * Tag 组件样式
+ * 基于规则详情页的最佳实践统一所有标签样式
+ */
+
+/* 标签容器 */
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 0;
+  min-height: 40px;
+}
+
+/* 基础标签样式 */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(
+    135deg,
+    var(--vscode-badge-background),
+    var(--vscode-button-secondaryBackground)
+  );
+  color: var(--vscode-badge-foreground);
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 0.85em;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 可点击状态 */
+.tag-clickable {
+  cursor: pointer;
+}
+
+.tag-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-color: var(--vscode-focusBorder);
+  background: linear-gradient(
+    135deg,
+    var(--vscode-button-background),
+    var(--vscode-button-hoverBackground)
+  );
+  color: var(--vscode-button-foreground);
+}
+
+.tag-clickable:focus {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
+/* 标签内部元素 */
+.tag-icon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 1em;
+}
+
+.tag-text {
+  white-space: nowrap;
+}
+
+.tag-count {
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+/* 变体：过滤按钮 */
+.tag-filter {
+  background: var(--vscode-button-secondaryBackground);
+  border: 1px solid var(--vscode-input-border);
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  box-shadow: none;
+}
+
+.tag-filter:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* 激活状态 */
+.tag-filter.tag-active,
+.tag-active {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border-color: var(--vscode-button-background);
+}
+
+/* 变体：Chip（带计数，更紧凑） */
+.tag-chip {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.tag-chip .tag-count {
+  padding: 1px 5px;
+  background: var(--vscode-editor-background);
+  font-size: 10px;
+}

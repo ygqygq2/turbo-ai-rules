@@ -1,0 +1,35 @@
+/**
+ * Section 组件样式
+ * 用于统一页面区块的标题和布局
+ */
+
+.section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1em;
+  font-weight: 600;
+  margin: 0;
+}
+
+.section-title-icon {
+  font-size: 1em;
+  opacity: 0.9;
+}
+
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}

@@ -26,7 +26,7 @@
 
 /* Header */
 .header {
-  margin-bottom: var(--spacing-md); /* 从 lg 改为 md */
+  margin-bottom: var(--spacing-lg); /* 与 rule-details 保持一致 */
 }
 
 .header-top {
@@ -90,11 +90,43 @@
   background-color: rgba(255, 0, 0, 0.1);
 }
 
+/* Statistics Grid - 与统计仪表板保持一致 */
+.statistics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.stat-value {
+  font-size: 2em;
+  font-weight: bold;
+  color: var(--vscode-foreground);
+}
+
+.priority-dist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.priority-dist > div {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.sync-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
 /* Main Grid */
 .main-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--spacing-md); /* 从 lg 改为 md */
+  gap: var(--spacing-lg); /* 与 rule-details 保持一致 */
 }
 
 @media (min-width: 768px) {
@@ -110,7 +142,7 @@
 /* Configuration */
 .config-grid {
   display: grid;
-  gap: var(--spacing-sm); /* 从 md 改为 sm，更紧凑 */
+  gap: var(--spacing-md); /* 配置项内部保持紧凑 */
   font-size: 0.875rem;
 }
 
@@ -218,32 +250,6 @@
 
 .percentage {
   font-size: 0.9em;
-}
-
-/* Tags */
-.tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-sm);
-}
-
-.tag {
-  background-color: var(--vscode-badge-background);
-  color: var(--vscode-badge-foreground);
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.tag:hover {
-  opacity: 0.8;
-}
-
-.tag-selected {
-  background-color: var(--vscode-button-background);
-  color: var(--vscode-button-foreground);
 }
 
 /* Rules Section */

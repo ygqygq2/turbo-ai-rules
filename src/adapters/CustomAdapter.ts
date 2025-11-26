@@ -141,14 +141,8 @@ export class CustomAdapter extends BaseAdapter {
     for (const rule of rules) {
       content += `## ${rule.title}\n\n`;
 
-      // 使用统一的元数据格式
-      const metadata = this.formatRuleMetadata(rule);
-      if (metadata) {
-        content += metadata + '\n\n';
-      }
-
-      // 添加规则内容
-      content += `${rule.content.trim()}\n`;
+      // 使用原始内容（包含 frontmatter）
+      content += `${rule.rawContent.trim()}\n`;
     }
 
     // 添加最后的分隔符
@@ -224,7 +218,8 @@ export class CustomAdapter extends BaseAdapter {
       for (const rule of sourceRules) {
         const relativePath = path.join(this.config.outputPath, sourceId, `${rule.id}.md`);
         const absolutePath = path.join(workspaceRoot, relativePath);
-        const content = `# ${rule.title}\n\n${rule.content}`;
+        // 使用原始内容（包含 frontmatter）
+        const content = rule.rawContent;
 
         await safeWriteFile(absolutePath, content);
         files.set(relativePath, content);
@@ -246,7 +241,8 @@ export class CustomAdapter extends BaseAdapter {
       const fileName = `${rule.sourceId}-${rule.id}.md`;
       const relativePath = path.join(this.config.outputPath, fileName);
       const absolutePath = path.join(workspaceRoot, relativePath);
-      const content = `# ${rule.title}\n\n${rule.content}`;
+      // 使用原始内容（包含 frontmatter）
+      const content = rule.rawContent;
 
       await safeWriteFile(absolutePath, content);
       files.set(relativePath, content);

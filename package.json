@@ -10,7 +10,7 @@
     "url": "https://github.com/ygqygq2/turbo-ai-rules.git"
   },
   "engines": {
-    "vscode": "^1.105.0"
+    "vscode": "^1.60.0"
   },
   "categories": [
     "Other",
@@ -20,6 +20,7 @@
   "keywords": [
     "ai",
     "rules",
+    "skills",
     "cursor",
     "copilot",
     "continue",

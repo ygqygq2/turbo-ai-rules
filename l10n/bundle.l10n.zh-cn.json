@@ -93,7 +93,7 @@
   "All sources removed": "所有规则源已删除 ({0})",
   "Confirm Remove All": "确定要删除所有 {0} 个规则源吗？此操作无法撤销。",
   "Confirm Disable All": "确定要禁用所有 {0} 个规则源吗？",
-  "Source Details": "规则源详情: {0}",
+  "Source Details": "规则源详情",
   "Source ID": "ID",
   "Source URL": "地址",
   "Source Branch": "分支",

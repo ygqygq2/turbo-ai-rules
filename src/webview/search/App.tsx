@@ -5,6 +5,7 @@ import { Input } from '../components/Input';
 import { Toolbar } from '../components/Toolbar';
 import { PriorityIcon } from '../components/PriorityIcon';
 import { EmptyState } from '../components/EmptyState';
+import { Tag, TagsContainer } from '../components/Tag';
 import { vscodeApi } from '../utils/vscode-api';
 import { t } from '../utils/i18n';
 import '../global.css';
@@ -241,35 +242,32 @@ export const App: React.FC = () => {
 
         <div className="quick-filters">
           <div className="section-title">{t('search.quickFilters')}</div>
-          <div className="filter-buttons">
-            <button
-              className={`quick-filter priority-high ${
-                (criteria.priorities || []).includes('high') ? 'active' : ''
-              }`}
+          <TagsContainer className="filter-buttons">
+            <Tag
+              variant="filter"
+              active={(criteria.priorities || []).includes('high')}
               onClick={() => handleQuickFilter('high')}
               title={t('search.filter.high')}
             >
               {t('search.filter.high')}
-            </button>
-            <button
-              className={`quick-filter priority-medium ${
-                (criteria.priorities || []).includes('medium') ? 'active' : ''
-              }`}
+            </Tag>
+            <Tag
+              variant="filter"
+              active={(criteria.priorities || []).includes('medium')}
               onClick={() => handleQuickFilter('medium')}
               title={t('search.filter.medium')}
             >
               {t('search.filter.medium')}
-            </button>
-            <button
-              className={`quick-filter priority-low ${
-                (criteria.priorities || []).includes('low') ? 'active' : ''
-              }`}
+            </Tag>
+            <Tag
+              variant="filter"
+              active={(criteria.priorities || []).includes('low')}
               onClick={() => handleQuickFilter('low')}
               title={t('search.filter.low')}
             >
               {t('search.filter.low')}
-            </button>
-          </div>
+            </Tag>
+          </TagsContainer>
         </div>
       </Card>
 

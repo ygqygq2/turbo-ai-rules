@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { vscodeApi } from '../utils/vscode-api';
+import { Tag, TagsContainer } from '../components/Tag';
+import { Section } from '../components/Section';
+import { MetadataGrid, MetadataItem } from '../components/MetadataGrid';
+import { PriorityIcon } from '../components/PriorityIcon';
 import '../global.css';
 import './rule-details.css';
 
@@ -91,30 +95,6 @@ export const App: React.FC = () => {
     setIsRenderedView(!isRenderedView);
   };
 
-  const renderMetadataItem = (label: string, value: string) => (
-    <div className="metadata-item" key={label}>
-      <div className="metadata-label">{label}</div>
-      <div className="metadata-value">{value}</div>
-    </div>
-  );
-
-  const renderPriorityItem = (priority: string) => {
-    const priorityClass = `priority-${priority.toLowerCase()}`;
-    const priorityEmoji = priority === 'high' ? '🔥' : priority === 'medium' ? '⭐' : 'ℹ️';
-
-    return (
-      <div className="metadata-item" key="priority">
-        <div className="metadata-label">PRIORITY</div>
-        <div className="metadata-value">
-          <span className={`priority-text ${priorityClass}`}>
-            <span>{priorityEmoji}</span>
-            <span>{priority}</span>
-          </span>
-        </div>
-      </div>
-    );
-  };
-
   const renderAdditionalMetadata = (metadata: RuleMetadata) => {
     const excludeKeys = ['version', 'author', 'priority', 'description', 'tags'];
     const additionalKeys = Object.keys(metadata).filter((key) => !excludeKeys.includes(key));
@@ -122,9 +102,8 @@ export const App: React.FC = () => {
     if (additionalKeys.length === 0) return null;
 
     return (
-      <div className="section">
+      <Section title="Additional Metadata" icon="📋">
         <div className="additional-metadata">
-          <h3>📋 Additional Metadata</h3>
           <div className="metadata-list">
             {additionalKeys.map((key) => (
               <div className="metadata-list-item" key={key}>
@@ -136,7 +115,7 @@ export const App: React.FC = () => {
             ))}
           </div>
         </div>
-      </div>
+      </Section>
     );
   };
 
@@ -188,48 +167,51 @@ export const App: React.FC = () => {
       </div>
 
       {/* 元数据卡片 */}
-      <div className="metadata-section">
-        <h2>📊 Metadata</h2>
-        <div className="metadata-grid">
-          {renderMetadataItem('Source', rule.sourceId)}
-          {renderMetadataItem('File Path', rule.filePath)}
-          {rule.metadata.version && renderMetadataItem('Version', rule.metadata.version)}
-          {rule.metadata.author && renderMetadataItem('Author', rule.metadata.author)}
-          {rule.metadata.priority && renderPriorityItem(rule.metadata.priority)}
-        </div>
-      </div>
+      <Section title="Metadata" icon="📊">
+        <MetadataGrid>
+          <MetadataItem label="SOURCE" value={rule.sourceId} />
+          <MetadataItem label="FILE PATH" value={rule.filePath} />
+          {rule.metadata.version && <MetadataItem label="VERSION" value={rule.metadata.version} />}
+          {rule.metadata.author && <MetadataItem label="AUTHOR" value={rule.metadata.author} />}
+          {rule.metadata.priority && (
+            <MetadataItem
+              label="PRIORITY"
+              value={
+                <span className={`priority-text priority-${rule.metadata.priority.toLowerCase()}`}>
+                  <PriorityIcon priority={rule.metadata.priority as 'high' | 'medium' | 'low'} />
+                  <span>{rule.metadata.priority}</span>
+                </span>
+              }
+            />
+          )}
+        </MetadataGrid>
+      </Section>
 
       {/* 描述区域 */}
       {rule.metadata.description && (
-        <div className="section">
-          <h2>📝 Description</h2>
+        <Section title="Description" icon="📝">
           <div className="description-box">{rule.metadata.description}</div>
-        </div>
+        </Section>
       )}
 
       {/* 标签区域 */}
       {rule.metadata.tags && rule.metadata.tags.length > 0 && (
-        <div className="section">
-          <h2>🏷️ Tags</h2>
-          <div className="tags-container">
+        <Section title="Tags" icon="🏷️">
+          <TagsContainer>
             {rule.metadata.tags.map((tag) => (
-              <span
-                key={tag}
-                className="tag"
-                onClick={() => handleSearchByTag(tag)}
-                title="Click to search"
-              >
+              <Tag key={tag} onClick={() => handleSearchByTag(tag)} title="Click to search">
                 {tag}
-              </span>
+              </Tag>
             ))}
-          </div>
-        </div>
+          </TagsContainer>
+        </Section>
       )}
 
       {/* 内容预览 */}
-      <div className="section">
-        <div className="content-header">
-          <h2>📄 Content Preview</h2>
+      <Section
+        title="Content Preview"
+        icon="📄"
+        actions={
           <div className="content-actions">
             <button
               className="button-icon"
@@ -242,7 +224,8 @@ export const App: React.FC = () => {
               📋
             </button>
           </div>
-        </div>
+        }
+      >
         <div className="content-preview">
           {!isRenderedView ? (
             <pre className="code-block">
@@ -255,7 +238,7 @@ export const App: React.FC = () => {
             />
           )}
         </div>
-      </div>
+      </Section>
 
       {/* 其他元数据 */}
       {renderAdditionalMetadata(rule.metadata)}

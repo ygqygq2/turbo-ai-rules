@@ -7,7 +7,8 @@
 🚀 **Sync AI coding rules from external Git repositories and automatically generate configuration files for various AI tools**
 
 [![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/ygqygq2.turbo-ai-rules.svg?color=07c160&label=turbo-ai-rules&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=ygqygq2.turbo-ai-rules)
-![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/ygqygq2.turbo-ai-rules)
+![VS Code Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/ygqygq2.turbo-ai-rules?label=VS%20Code%20Installs)
+![OpenVSX Downloads](https://img.shields.io/open-vsx/dt/ygqygq2/turbo-ai-rules?label=OpenVSX%20Downloads)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
 [English](./README.md) | [中文文档](./README.zh.md)

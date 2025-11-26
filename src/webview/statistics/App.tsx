@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { EmptyState } from '../components/EmptyState';
+import { Tag, TagsContainer } from '../components/Tag';
+import { Section } from '../components/Section';
 import { vscodeApi } from '../utils/vscode-api';
 import { t } from '../utils/i18n';
+import '../global.css';
 import './statistics.css';
 
 interface StatisticsData {
@@ -214,25 +217,24 @@ export const App: React.FC = () => {
       </div>
 
       {/* 热门标签 */}
-      <div className="section">
-        <h2 className="section-title">{t('statistics.topTags')}</h2>
-        <div className="tags-container">
-          {stats.topTags.length === 0 ? (
-            <p className="empty-state">{t('statistics.noTagsFound')}</p>
-          ) : (
-            stats.topTags.slice(0, 20).map((tag) => (
-              <button
+      <Section title={t('statistics.topTags')} icon="🏷️">
+        {stats.topTags.length === 0 ? (
+          <p className="empty-state">{t('statistics.noTagsFound')}</p>
+        ) : (
+          <TagsContainer>
+            {stats.topTags.slice(0, 20).map((tag) => (
+              <Tag
                 key={tag.tag}
-                className="tag-item"
                 onClick={() => handleTagClick(tag.tag)}
                 title={t('statistics.clickToSearch', tag.tag)}
+                count={tag.count}
               >
-                {tag.tag} {tag.count}
-              </button>
-            ))
-          )}
-        </div>
-      </div>
+                {tag.tag}
+              </Tag>
+            ))}
+          </TagsContainer>
+        )}
+      </Section>
     </div>
   );
 };

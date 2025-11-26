@@ -206,7 +206,8 @@ export async function copyRuleContentCommand(
       return;
     }
 
-    const content = `# ${rule.title}\n\n${rule.content}`;
+    // 使用原始内容（包含 frontmatter）
+    const content = rule.rawContent;
     await vscode.env.clipboard.writeText(content);
     notify(vscode.l10n.t('Rule "{0}" copied to clipboard', rule.title), 'info');
   } catch (error) {
@@ -248,20 +249,8 @@ export async function exportRuleCommand(
     });
 
     if (uri) {
-      const frontmatter = [
-        '---',
-        `id: ${rule.id}`,
-        `title: ${rule.title}`,
-        ...(rule.metadata.priority ? [`priority: ${rule.metadata.priority}`] : []),
-        ...(rule.metadata.tags && rule.metadata.tags.length > 0
-          ? [`tags: [${rule.metadata.tags.map((t: string) => `"${t}"`).join(', ')}]`]
-          : []),
-        ...(rule.metadata.description ? [`description: ${rule.metadata.description}`] : []),
-        '---',
-        '',
-      ].join('\n');
-
-      const content = frontmatter + rule.content;
+      // 直接使用原始内容（包含 frontmatter）
+      const content = rule.rawContent;
 
       await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf8'));
       notify(vscode.l10n.t('Rule exported to {0}', uri.fsPath), 'info');

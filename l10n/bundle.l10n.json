@@ -93,7 +93,7 @@
   "All sources removed": "All sources removed ({0})",
   "Confirm Remove All": "Are you sure you want to remove ALL {0} source(s)? This cannot be undone.",
   "Confirm Disable All": "Are you sure you want to disable ALL {0} source(s)?",
-  "Source Details": "Source Details: {0}",
+  "Source Details": "Source Details",
   "Source ID": "ID",
   "Source URL": "URL",
   "Source Branch": "Branch",

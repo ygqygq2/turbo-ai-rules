@@ -1,0 +1,34 @@
+/**
+ * MetadataGrid 组件样式
+ * 用于统一元数据的网格展示
+ */
+
+.metadata-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+  background-color: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+}
+
+.metadata-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.metadata-label {
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metadata-value {
+  font-weight: 500;
+  word-break: break-all;
+  display: flex;
+  align-items: center;
+}

@@ -39,6 +39,8 @@ export interface ParsedRule {
   title: string;
   /** Markdown 内容（不含 frontmatter） */
   content: string;
+  /** 原始完整内容（包含 frontmatter，用于适配器输出） */
+  rawContent: string;
   /** 元数据 */
   metadata: RuleMetadata;
   /** 来源的 RuleSource.id */
