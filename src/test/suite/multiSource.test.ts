@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
+
 import { CONFIG_KEYS, CONFIG_PREFIX, EXTENSION_ID } from '../../utils/constants';
 
 // 通过扩展获取服务实例

@@ -102,14 +102,6 @@ export interface CustomAdapterConfig extends AdapterConfig {
   generateIndex?: boolean;
   /** 索引文件名(默认 'index.md') */
   indexFileName?: string;
-
-  // Skills 专用配置
-  /** 是否为技能适配器（技能文件直接复制，不进行规则解析和合并） */
-  skills?: boolean;
-  /** 复用的规则源 ID（复用其 Git 仓库、分支、认证等配置） */
-  sourceId?: string;
-  /** 技能文件在源仓库中的子目录（相对于仓库根目录，如 '/skills'，独立于源的 subPath） */
-  subPath?: string;
 }
 
 /**
@@ -215,3 +207,69 @@ export const DEFAULT_CONFIG: ExtensionConfig = {
     requireFrontmatter: false,
   },
 };
+
+/**
+ * 规则同步相关数据结构 (v2.0.3 新增)
+ */
+
+/**
+ * 规则同步配置（临时状态，用于规则同步页）
+ */
+export interface RuleSyncConfig {
+  /** 选中的规则（按源组织） */
+  selectedRules: {
+    /** 规则源 ID */
+    sourceId: string;
+    /** 文件路径列表（相对于源目录） */
+    filePaths: string[];
+  }[];
+  /** 目标适配器 ID 列表 */
+  targetAdapters: string[];
+}
+
+/**
+ * 适配器状态（用于 UI 展示）
+ */
+export interface AdapterState {
+  /** 适配器 ID */
+  id: string;
+  /** 适配器名称 */
+  name: string;
+  /** 适配器类型 */
+  type: 'preset' | 'custom';
+  /** 是否启用 */
+  enabled: boolean;
+  /** 是否被勾选（用于同步） */
+  checked: boolean;
+  /** 输出路径 */
+  outputPath: string;
+  /** 当前规则数量 */
+  ruleCount: number;
+}
+
+/**
+ * 规则树节点（用于多源树形展示）
+ */
+export interface RuleTreeNode {
+  /** 节点类型 */
+  type: 'source' | 'directory' | 'file';
+  /** 节点唯一 ID */
+  id: string;
+  /** 显示名称 */
+  name: string;
+  /** 文件路径（仅 file 类型） */
+  path?: string;
+  /** 所属规则源 ID */
+  sourceId?: string;
+  /** 是否被选中 */
+  checked?: boolean;
+  /** 是否展开（目录节点） */
+  expanded?: boolean;
+  /** 子节点 */
+  children?: RuleTreeNode[];
+  /** 已选/总数 */
+  stats?: {
+    selected: number;
+    total: number;
+  };
+}

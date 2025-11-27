@@ -4,7 +4,7 @@ import { RulesManager } from '../services/RulesManager';
 import { SelectionStateManager } from '../services/SelectionStateManager';
 import { RuleSource } from '../types/config';
 import { ParsedRule } from '../types/rules';
-import { CONFIG_PREFIX, CONFIG_KEYS } from '../utils/constants';
+import { CONFIG_KEYS, CONFIG_PREFIX } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 

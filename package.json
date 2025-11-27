@@ -2,7 +2,7 @@
   "name": "turbo-ai-rules",
   "displayName": "Turbo AI Rules",
   "description": "%description%",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "publisher": "ygqygq2",
   "sponsor": {
     "url": "https://github.com/sponsors/ygqygq2"
@@ -156,6 +156,24 @@
         "title": "Show Welcome",
         "category": "Turbo AI Rules",
         "icon": "$(home)"
+      },
+      {
+        "command": "turbo-ai-rules.openDashboard",
+        "title": "Open Dashboard",
+        "category": "Turbo AI Rules",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "turbo-ai-rules.manageAdapters",
+        "title": "Manage Adapters",
+        "category": "Turbo AI Rules",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "turbo-ai-rules.openRuleSyncPage",
+        "title": "Open Rule Sync Page",
+        "category": "Turbo AI Rules",
+        "icon": "$(sync)"
       },
       {
         "command": "turbo-ai-rules.showStatistics",

@@ -1,9 +1,21 @@
 # Turbo AI Rules - 整体 UI 设计
 
-> 目标：把“安装 → 同步 → 浏览/搜索 → 查看 → 编辑 → 生成配置 → 复查/诊断”的完整闭环以清晰的“页面/交互流”呈现；每个页面的详细交互与 HTML 由 `.superdesign/design_docs/*` 维护。
+> 目标：把"安装 → 同步 → 选择规则并同步到适配器 → 浏览/搜索 → 查看 → 编辑 → 复查/诊断"的完整闭环以清晰的"页面/交互流"呈现。
 
-- 版本：3.0（SuperDesign 协作）
-- 更新：2025-11-10
+- 版本：2.0.3
+- 更新内容：
+  - 规范文件命名：规则选择器 → 规则同步页
+  - 统一设计文档和实施文档命名
+  - 同步版本号到软件版本
+
+---
+
+**v2.0.2（2025-11-27 重大更新）**
+
+- 新增 Dashboard 首页
+- 新增适配器管理页
+- 规则选择器改为规则同步页（支持适配器映射）
+- 简化 Skills 处理（作为普通自定义适配器）
 
 相关：
 
@@ -14,7 +26,17 @@
 
 ## 一、用户旅程（功能闭环）
 
-1. 初次安装与引导
+### 1. 初次安装与引导
+
+- **事件**：扩展激活后首启展示"欢迎页"
+- **页面**：01 欢迎页（WelcomeWebviewProvider）
+- **关键操作**：
+  - 按钮「添加规则源」→ 进入添加流程
+  - 按钮「了解规则格式」→ 打开官方文档
+  - 按钮「查看示例」→ 一键导入示例源
+  - **首次之后不再默认显示**
+
+### 2. 扩展主入口 - Dashboard (新增)
 
 - 事件：扩展激活后首启展示“欢迎页”。
 - 页面：01 欢迎页（WelcomeWebviewProvider）
@@ -78,58 +100,138 @@
 
 ## 二、信息架构（页面与提供者）
 
-- 欢迎页（01）：`WelcomeWebviewProvider`（已实现）
-- 统计仪表板（02）：`StatisticsWebviewProvider`（已实现）
-- 规则详情（03）：`RuleDetailsWebviewProvider`（已实现）
-- 高级搜索（04）：`SearchWebviewProvider`（已实现）
-- 规则树（05）：VS Code TreeView（`RulesTreeProvider`，已实现）
-- 状态栏（06）：`StatusBarProvider`（已实现）
-- 源详情（07）：`SourceDetailWebviewProvider`（已实现）
-- 配置管理（08）：`SuperDesign Config Manager`（文档已存在）
+**核心页面**（按使用频率排序）:
+
+1. **Dashboard（12）**：`DashboardWebviewProvider`（新增 v4.0，默认首页）
+2. **规则同步页（05）**：`RuleSyncPageWebviewProvider`（升级 v4.0，原规则选择器）
+3. **适配器管理（13）**：`AdapterManagerWebviewProvider`（新增 v4.0）
+4. **规则树（05）**：VS Code TreeView（`RulesTreeProvider`）
+5. **规则详情（03）**：`RuleDetailsWebviewProvider`
+6. **源详情（07）**：`SourceDetailWebviewProvider`
+7. **欢迎页（01）**：`WelcomeWebviewProvider`（首次启动或手动打开）
+
+**辅助页面**：
+
+- 统计仪表板（02）：`StatisticsWebviewProvider`
+- 高级搜索（04）：`SearchWebviewProvider`
+- 状态栏（06）：`StatusBarProvider`
+- 配置管理（08）：集成在适配器管理页
 - 规则编辑器（09）：`RuleEditorWebviewProvider`（待实现）
 - 冲突解决（10）：`ConflictResolutionWebviewProvider`（待实现）
 - 同步进度（11）：`SyncProgressWebviewProvider`（待实现，可与通知结合）
 
-> 详细页面规范与 HTML/CSS/消息协议请见 `.superdesign/design_docs`。本文件只负责“是什么/为什么/流程”而不包含实现细节。
+> 详细页面规范与 HTML/CSS/消息协议请见 `.superdesign/design_docs`。
 
 ---
 
 ## 三、关键交互设计（摘要）
 
-1. 规则树单击行为（可配置）
+### 1. Dashboard 主入口
 
-- 默认：打开“规则详情”Webview。
+**规则源快捷操作**：
+
+- "同步至所有启用适配器"：快速同步所有规则到所有启用的适配器
+- "添加规则源"：打开添加规则源向导
+- "管理规则源"：跳转到规则源详情页
+
+**适配器状态概览**：
+
+- 显示所有启用的适配器及其规则数量
+- 点击"管理适配器"：跳转到适配器管理页
+
+**快速操作**：
+
+- "规则同步页"：精细控制规则和适配器映射
+- "统计面板"、"高级搜索"等其他功能入口
+
+### 2. 规则同步页（核心功能）
+
+**左侧规则树**：
+
+- 统一展示所有规则源的规则树（不需要切换源）
+- 文件级复选框选择规则
+- 支持跨规则源选择规则
+- 搜索和过滤功能
+
+**右侧适配器列表**：
+
+- 显示所有适配器（预置 + 自定义）
+- 复选框勾选目标适配器
+- 实时显示每个适配器将同步的规则数
+
+**同步流程**：
+
+1. 用户勾选左侧规则
+2. 用户勾选右侧适配器
+3. 点击"同步"按钮
+4. 系统将选中的规则生成到勾选的适配器配置文件
+5. 显示同步进度和结果
+
+### 3. 适配器管理
+
+**预置适配器**：
+
+- 复选框启用/禁用（Copilot、Cursor、Continue）
+- 展开详细配置（自动更新、包含元数据等）
+
+**自定义适配器**：
+
+- 添加/编辑/删除自定义适配器
+- 配置输出路径、输出类型（文件/目录）
+- 文件过滤规则（可选）
+- Skills 适配器：作为普通自定义适配器处理
+
+### 4. 规则树单击行为（可配置）
+
+- 默认：打开"规则详情"Webview
 - 右键菜单：
   - 打开源文件（在编辑器中）
   - 在规则编辑器中编辑（Webview）
   - 复制内容 / 导出 / 忽略
 
-2. 规则编辑器保存流程
+### 5. 规则编辑器保存流程
 
-- 编辑 → 校验（MDC/frontmatter）→ 写入临时文件 → 覆盖源文件 → 刷新解析缓存 → 详情/树自动刷新。
-- 错误码：`TAI-300x`（解析/校验）、`TAI-400x`（写入）、`TAI-500x`（系统）。
-
-3. 同步与冲突
-
-- 同步时显示进度；若发现冲突，提供“查看详情”入口到冲突面板。
-- 冲突面板显示来源、版本、优先级、建议方案，支持一键采纳策略说明。
+- 编辑 → 校验（MDC/frontmatter）→ 写入临时文件 → 覆盖源文件 → 刷新解析缓存 → 详情/树自动刷新
+- 错误码：`TAI-300x`（解析/校验）、`TAI-400x`（写入）、`TAI-500x`（系统）
 
 ---
 
 ## 四、导航与命令一览（对外）
 
-- Activity Bar：Turbo AI Rules → Rules Explorer（TreeView）
-- 顶部菜单（视图标题）：欢迎页/添加源/刷新缓存/生成配置/统计/搜索
-- 命令面板：`turbo-ai-rules.*` 系列（见 package.json）
-- 新增命令（规划）：
-  - `turbo-ai-rules.openRuleFile`（在编辑器中打开 md/mdc）
-  - `turbo-ai-rules.editRule`（打开规则编辑器）
+**Activity Bar**:
+
+- Turbo AI Rules → Rules Explorer（TreeView）
+
+**顶部菜单（视图标题）**:
+
+- Dashboard/欢迎页/添加源/刷新缓存/统计/搜索
+
+**核心命令**（`turboAiRules.*`）:
+
+- `openDashboard` - 打开 Dashboard 首页（新增）
+- `openRuleSyncPage` - 打开规则同步页（原 openRuleSelector，升级）
+- `manageAdapters` - 打开适配器管理页（新增）
+- `addSource` - 添加规则源
+- `syncRules` - 同步规则（快捷同步至所有启用适配器）
+- `syncToAdapters` - 规则同步页的同步操作（新增）
+- `generateConfigs` - 生成配置文件
+- `openWelcome` - 打开欢迎页（手动）
+- `openRuleFile` - 在编辑器中打开规则文件
+- `editRule` - 打开规则编辑器（待实现）
 
 ---
 
 ## 五、与 SuperDesign 文档的对应关系
 
-本文件是“总设计”，逐页的实现设计请见：
+本文件是"总设计"，逐页的实现设计请见：
+
+**v4.0 新增/更新页面**:
+
+- 12 Dashboard → `.superdesign/design_docs/12-dashboard.md`（新增）
+- 13 适配器管理 → `.superdesign/design_docs/13-adapter-manager.md`（新增）
+- 05 规则同步页 → `.superdesign/design_docs/05-rule-sync-page.md`（重大升级）
+
+**现有页面**:
 
 - 01 欢迎页 → `.superdesign/design_docs/01-welcome-page.md`
 - 02 统计仪表板 → `.superdesign/design_docs/02-statistics-dashboard.md`
@@ -138,23 +240,90 @@
 - 05 规则树 → `.superdesign/design_docs/05-tree-view.md`
 - 06 状态栏 → `.superdesign/design_docs/06-status-bar.md`
 - 07 源详情 → `.superdesign/design_docs/07-source-details-page.md`
-- 08 配置管理 → `.superdesign/design_docs/08-superdesign-config-manager.md`
-- 09 规则编辑器（新） → `.superdesign/design_docs/09-rule-editor.md`
-- 10 冲突解决（新） → `.superdesign/design_docs/10-conflict-resolution.md`
-- 11 同步进度（新） → `.superdesign/design_docs/11-sync-progress.md`
-
-> 说明：设计文档序号将作为实施文档的编号前缀，二者需保持一致；现存重复编号（如 05/07 的两个版本）在后续清理阶段合并保留一个。
+- 09 规则编辑器（待实现） → `.superdesign/design_docs/09-rule-editor.md`
+- 10 冲突解决（待实现） → `.superdesign/design_docs/10-conflict-resolution.md`
+- 11 同步进度（待实现） → `.superdesign/design_docs/11-sync-progress.md`
 
 ---
 
-## 六、后续实施顺序（建议）
+## 六、核心设计变更总结（v4.0）
 
-1. 新增“在编辑器中打开规则文件”命令与右键菜单；
-2. 新增“规则编辑器”页面与 Provider 框架；
-3. 同步进度面板（可先用通知/状态栏，再补面板）；
-4. 冲突解决面板；
-5. 清理并统一 `.superdesign/design_docs` 编号与内容。
+### 1. 首页体验优化
+
+**变更前**：欢迎页作为默认首页，对老用户无用
+**变更后**：Dashboard 作为默认首页，欢迎页仅首次或手动打开
+**优势**：提供所有功能的快捷入口，提升老用户效率
+
+### 2. 规则同步机制升级
+
+**变更前**：
+
+- 规则选择器只能选择规则
+- 同步时所有规则同步到所有启用的适配器
+- 缺乏灵活性
+
+**变更后**：
+
+- 规则同步页支持规则 + 适配器双向选择
+- 左侧：所有规则源统一展示（不需要切换源）
+- 右侧：勾选目标适配器
+- 支持精细控制：不同规则同步到不同适配器
+  **优势**：灵活的规则-适配器映射关系
+
+### 3. 适配器管理独立
+
+**变更前**：适配器配置分散在设置中
+**变更后**：独立的适配器管理页
+**优势**：集中管理预置和自定义适配器，UI 更友好
+
+### 4. Skills 处理简化
+
+**变更前**：Skills 需要特殊字段（skills/sourceId/subPath）
+**变更后**：Skills 作为普通自定义适配器
+**优势**：
+
+- 简化数据结构和实现
+- 用户通过命名和输出路径识别
+- 推荐使用 `skill` 标签配合过滤
+
+### 5. 同步策略双轨制
+
+**快捷同步**（Dashboard）：
+
+- 同步所有规则到所有启用的适配器
+- 适合初始设置和日常更新
+
+**精细同步**（规则同步页）：
+
+- 选择特定规则同步到特定适配器
+- 适合复杂场景和个性化配置
+
+---
+
+## 七、后续实施建议
+
+**优先级 P0**（核心功能）:
+
+1. 实现 Dashboard 首页
+2. 升级规则选择器为规则同步页
+3. 实现适配器管理页
+4. 更新 ConfigManager 移除 Skills 相关字段
+
+**优先级 P1**（增强功能）:
+
+1. 规则同步页的搜索和过滤
+2. 适配器详细配置选项
+3. 同步进度展示优化
+
+**优先级 P2**（高级功能）:
+
+1. 规则编辑器
+2. 冲突解决面板
+3. 同步进度独立页面
 
 ---
 
 如需补充或调整流程，请在 PR 中同步更新本文件与对应的 SuperDesign 页面文档（保持设计-实现一致）。
+
+**最后更新**: 2025-11-27  
+**版本**: 4.0 - 重大架构升级

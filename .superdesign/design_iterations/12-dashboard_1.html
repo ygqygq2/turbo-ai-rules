@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net; script-src 'nonce-{{nonce}}';"
+    />
+    <title>Dashboard - Turbo AI Rules</title>
+    <!-- Codicons 图标库 -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.35/dist/codicon.css"
+    />
+    <style>
+      :root {
+        /* VS Code 主题变量 */
+        --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+          Arial, sans-serif;
+        --vscode-font-weight: 400;
+        --vscode-font-size: 13px;
+        --vscode-foreground: #cccccc;
+        --vscode-descriptionForeground: #8c8c8c;
+        --vscode-errorForeground: #f48771;
+        --vscode-editorWarning-foreground: #cca700;
+
+        /* 背景色 */
+        --vscode-editor-background: #1e1e1e;
+        --vscode-editorWidget-background: #252526;
+        --vscode-input-background: #3c3c3c;
+
+        /* 边框 */
+        --vscode-editorWidget-border: #454545;
+        --vscode-focusBorder: #007fd4;
+
+        /* 按钮 */
+        --vscode-button-background: #0e639c;
+        --vscode-button-foreground: #ffffff;
+        --vscode-button-hoverBackground: #1177bb;
+        --vscode-button-secondaryBackground: #3a3d41;
+        --vscode-button-secondaryForeground: #ffffff;
+        --vscode-button-secondaryHoverBackground: #45494e;
+
+        /* 列表 */
+        --vscode-list-hoverBackground: #2a2d2e;
+
+        /* 测试图标颜色 */
+        --vscode-testing-iconPassed: #73c991;
+        --vscode-testing-iconFailed: #f48771;
+
+        /* 图标 */
+        --vscode-icon-foreground: #c5c5c5;
+
+        /* 间距系统 */
+        --spacing-xs: 4px;
+        --spacing-sm: 8px;
+        --spacing-md: 12px;
+        --spacing-lg: 16px;
+        --spacing-xl: 20px;
+        --border-radius: 4px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: var(--vscode-font-family);
+        font-weight: var(--vscode-font-weight);
+        font-size: var(--vscode-font-size);
+        color: var(--vscode-foreground);
+        background-color: var(--vscode-editor-background);
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+      }
+
+      /* 容器 */
+      .dashboard-container {
+        padding: var(--spacing-lg);
+        max-width: 1000px;
+        margin: 0 auto;
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* 头部 */
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--spacing-xl);
+      }
+
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+      }
+
+      .header-title {
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .header-right {
+        display: flex;
+        gap: var(--spacing-xs);
+      }
+
+      /* 功能卡片 */
+      .feature-card {
+        background-color: var(--vscode-editorWidget-background);
+        border: 1px solid var(--vscode-editorWidget-border);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-lg);
+      }
+
+      .feature-card-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: var(--spacing-md);
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .feature-card-header .codicon {
+        margin-right: var(--spacing-sm);
+        font-size: 16px;
+      }
+
+      /* 统计信息 */
+      .stats-info {
+        color: var(--vscode-descriptionForeground);
+        font-size: 13px;
+        margin-bottom: var(--spacing-sm);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+      }
+
+      .stats-info .codicon {
+        font-size: 14px;
+      }
+
+      /* 按钮组 */
+      .button-group {
+        display: flex;
+        gap: var(--spacing-sm);
+        flex-wrap: wrap;
+        margin-top: var(--spacing-md);
+      }
+
+      .btn {
+        border: none;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+        font-size: 13px;
+        font-family: inherit;
+        transition: background-color 0.1s;
+      }
+
+      .btn .codicon {
+        font-size: 14px;
+      }
+
+      .btn-primary {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+      }
+
+      .btn-primary:hover {
+        background-color: var(--vscode-button-hoverBackground);
+      }
+
+      .btn-secondary {
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+      }
+
+      .btn-secondary:hover {
+        background-color: var(--vscode-button-secondaryHoverBackground);
+      }
+
+      .btn-icon {
+        padding: var(--spacing-sm);
+        background-color: transparent;
+        color: var(--vscode-icon-foreground);
+      }
+
+      .btn-icon:hover {
+        background-color: var(--vscode-list-hoverBackground);
+      }
+
+      /* 状态列表 */
+      .status-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .status-item {
+        padding: var(--spacing-md) 0;
+        border-bottom: 1px solid var(--vscode-editorWidget-border);
+      }
+
+      .status-item:last-child {
+        border-bottom: none;
+      }
+
+      .status-header {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-xs);
+      }
+
+      .status-icon {
+        font-size: 16px;
+      }
+
+      .status-icon.enabled {
+        color: var(--vscode-testing-iconPassed);
+      }
+
+      .status-icon.disabled {
+        color: var(--vscode-descriptionForeground);
+      }
+
+      .status-name {
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .status-count {
+        margin-left: auto;
+        color: var(--vscode-descriptionForeground);
+        font-size: 13px;
+      }
+
+      .status-details {
+        color: var(--vscode-descriptionForeground);
+        font-size: 12px;
+        margin-left: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      /* 快速操作网格 */
+      .quick-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: var(--spacing-sm);
+      }
+
+      .quick-action-btn {
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+        border: none;
+        padding: var(--spacing-md);
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--spacing-xs);
+        font-size: 12px;
+        font-family: inherit;
+        transition: background-color 0.1s;
+      }
+
+      .quick-action-btn:hover {
+        background-color: var(--vscode-button-secondaryHoverBackground);
+      }
+
+      .quick-action-btn .codicon {
+        font-size: 20px;
+      }
+
+      /* 快速入门链接 */
+      .quick-start-links {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .quick-start-links li {
+        margin-bottom: var(--spacing-sm);
+      }
+
+      .quick-start-link {
+        color: var(--vscode-foreground);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+        font-size: 13px;
+        transition: color 0.1s;
+      }
+
+      .quick-start-link:hover {
+        color: var(--vscode-button-background);
+      }
+
+      .quick-start-link .codicon {
+        font-size: 14px;
+      }
+
+      /* 响应式布局 */
+      @media (max-width: 600px) {
+        .dashboard-container {
+          padding: var(--spacing-md);
+        }
+
+        .header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: var(--spacing-sm);
+        }
+
+        .button-group {
+          width: 100%;
+        }
+
+        .btn {
+          flex: 1;
+          justify-content: center;
+        }
+
+        .quick-actions-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <!-- 头部 -->
+      <div class="header">
+        <div class="header-left">
+          <i class="codicon codicon-dashboard"></i>
+          <h1 class="header-title">Turbo AI Rules</h1>
+        </div>
+        <div class="header-right">
+          <button class="btn btn-icon" title="设置">
+            <i class="codicon codicon-settings-gear"></i>
+          </button>
+          <button class="btn btn-icon" title="帮助">
+            <i class="codicon codicon-question"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 规则源管理 -->
+      <div class="feature-card">
+        <div class="feature-card-header">
+          <i class="codicon codicon-archive"></i>
+          规则源管理
+        </div>
+        <div class="stats-info">
+          <i class="codicon codicon-graph-line"></i>
+          <span><strong>2</strong> 个源已启用，共 <strong>45</strong> 条规则</span>
+        </div>
+        <div class="stats-info">
+          <i class="codicon codicon-history"></i>
+          <span>最后同步: 2 分钟前</span>
+        </div>
+
+        <div class="button-group">
+          <button class="btn btn-primary">
+            <i class="codicon codicon-sync"></i>
+            同步至所有启用适配器
+          </button>
+          <button class="btn btn-secondary">
+            <i class="codicon codicon-add"></i>
+            添加规则源
+          </button>
+          <button class="btn btn-secondary">
+            <i class="codicon codicon-list-tree"></i>
+            管理规则源
+          </button>
+          <button class="btn btn-secondary">
+            <i class="codicon codicon-search"></i>
+            浏览/搜索规则
+          </button>
+        </div>
+      </div>
+
+      <!-- 适配器状态 -->
+      <div class="feature-card">
+        <div class="feature-card-header">
+          <i class="codicon codicon-extensions"></i>
+          适配器状态
+        </div>
+
+        <ul class="status-list">
+          <li class="status-item">
+            <div class="status-header">
+              <i class="codicon codicon-pass-filled status-icon enabled"></i>
+              <span class="status-name">GitHub Copilot</span>
+              <span class="status-count">15 条规则</span>
+            </div>
+            <div class="status-details">
+              <span>输出: .github/copilot-instructions.md</span>
+              <span>最后生成: 2 分钟前</span>
+            </div>
+          </li>
+
+          <li class="status-item">
+            <div class="status-header">
+              <i class="codicon codicon-pass-filled status-icon enabled"></i>
+              <span class="status-name">Cursor</span>
+              <span class="status-count">20 条规则</span>
+            </div>
+            <div class="status-details">
+              <span>输出: .cursorrules</span>
+              <span>最后生成: 2 分钟前</span>
+            </div>
+          </li>
+
+          <li class="status-item">
+            <div class="status-header">
+              <i class="codicon codicon-circle-slash status-icon disabled"></i>
+              <span class="status-name">Continue</span>
+              <span class="status-count">未启用</span>
+            </div>
+          </li>
+
+          <li class="status-item">
+            <div class="status-header">
+              <i class="codicon codicon-pass-filled status-icon enabled"></i>
+              <span class="status-name">Default Rules</span>
+              <span class="status-count">45 条规则</span>
+            </div>
+            <div class="status-details">
+              <span>输出: rules/</span>
+              <span>最后生成: 2 分钟前</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="button-group">
+          <button class="btn btn-primary">
+            <i class="codicon codicon-settings-gear"></i>
+            管理适配器
+          </button>
+          <button class="btn btn-secondary">
+            <i class="codicon codicon-export"></i>
+            重新生成所有配置
+          </button>
+        </div>
+      </div>
+
+      <!-- 快速操作 -->
+      <div class="feature-card">
+        <div class="feature-card-header">
+          <i class="codicon codicon-zap"></i>
+          快速操作
+        </div>
+
+        <div class="quick-actions-grid">
+          <button class="quick-action-btn">
+            <i class="codicon codicon-symbol-namespace"></i>
+            <span>规则同步页</span>
+          </button>
+          <button class="quick-action-btn">
+            <i class="codicon codicon-graph"></i>
+            <span>统计面板</span>
+          </button>
+          <button class="quick-action-btn">
+            <i class="codicon codicon-search"></i>
+            <span>高级搜索</span>
+          </button>
+          <button class="quick-action-btn">
+            <i class="codicon codicon-file-text"></i>
+            <span>规则详情</span>
+          </button>
+          <button class="quick-action-btn">
+            <i class="codicon codicon-list-tree"></i>
+            <span>规则树视图</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 快速入门 -->
+      <div class="feature-card">
+        <div class="feature-card-header">
+          <i class="codicon codicon-lightbulb"></i>
+          快速入门
+        </div>
+
+        <ul class="quick-start-links">
+          <li>
+            <a href="#" class="quick-start-link">
+              <i class="codicon codicon-notebook"></i>
+              查看欢迎页和快速入门指南
+            </a>
+          </li>
+          <li>
+            <a href="#" class="quick-start-link">
+              <i class="codicon codicon-book"></i>
+              了解规则格式和编写规范
+            </a>
+          </li>
+          <li>
+            <a href="#" class="quick-start-link">
+              <i class="codicon codicon-library"></i>
+              浏览示例规则库
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <script nonce="{{nonce}}">
+      // 获取 VS Code API
+      const vscode = acquireVsCodeApi();
+
+      // 按钮点击事件处理
+      document.querySelectorAll('button').forEach((button) => {
+        button.addEventListener('click', (e) => {
+          const buttonText = button.textContent.trim();
+          console.log('Button clicked:', buttonText);
+
+          // 根据按钮文本发送不同消息
+          if (buttonText.includes('同步至所有启用适配器')) {
+            vscode.postMessage({ command: 'syncAll' });
+          } else if (buttonText.includes('添加规则源')) {
+            vscode.postMessage({ command: 'addSource' });
+          } else if (buttonText.includes('管理规则源')) {
+            vscode.postMessage({ command: 'manageSources' });
+          } else if (buttonText.includes('浏览/搜索规则')) {
+            vscode.postMessage({ command: 'searchRules' });
+          } else if (buttonText.includes('管理适配器')) {
+            vscode.postMessage({ command: 'manageAdapters' });
+          } else if (buttonText.includes('重新生成所有配置')) {
+            vscode.postMessage({ command: 'regenerateAll' });
+          } else if (buttonText.includes('规则同步页')) {
+            vscode.postMessage({ command: 'openRuleSyncPage' });
+          } else if (buttonText.includes('统计面板')) {
+            vscode.postMessage({ command: 'openStatistics' });
+          } else if (buttonText.includes('高级搜索')) {
+            vscode.postMessage({ command: 'openAdvancedSearch' });
+          } else if (buttonText.includes('规则详情')) {
+            vscode.postMessage({ command: 'openRuleDetails' });
+          } else if (buttonText.includes('规则树视图')) {
+            vscode.postMessage({ command: 'openRuleTree' });
+          }
+        });
+      });
+
+      // 链接点击事件处理
+      document.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const linkText = link.textContent.trim();
+
+          if (linkText.includes('欢迎页')) {
+            vscode.postMessage({ command: 'openWelcome' });
+          } else if (linkText.includes('规则格式')) {
+            vscode.postMessage({ command: 'openRuleFormat' });
+          } else if (linkText.includes('示例规则库')) {
+            vscode.postMessage({ command: 'openExamples' });
+          }
+        });
+      });
+
+      // 接收来自扩展的消息
+      window.addEventListener('message', (event) => {
+        const message = event.data;
+        switch (message.command) {
+          case 'updateStats':
+            // 更新统计信息
+            console.log('Updating stats:', message.data);
+            break;
+        }
+      });
+    </script>
+  </body>
+</html>

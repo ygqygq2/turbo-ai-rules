@@ -1,6 +1,7 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { CONFIG_PREFIX, CONFIG_KEYS } from '../../utils/constants';
+
+import { CONFIG_KEYS, CONFIG_PREFIX } from '../../utils/constants';
 
 describe('Pre-configured Sources Tests', () => {
   it('Should read pre-configured sources from workspace settings', async () => {

@@ -48,8 +48,9 @@
 **状态说明**:
 
 - 所有从规则源同步的规则都会被解析并存储在 RulesManager 中
-- 只有被用户勾选的规则才会被包含在配置文件生成中
-- 规则的选择状态独立于规则内容，存储在 SelectionStateManager 中
+- 用户在"规则同步页"中选择规则并指定同步到哪些适配器
+- 同步时只将选中的规则生成到对应勾选的适配器配置文件中
+- 规则的选择状态独立于规则内容，临时存储在 Webview 状态中
 
 **关键字段**:
 
@@ -57,7 +58,7 @@
 - `title`: 规则标题（用于显示）
 - `version`: 语义化版本号（x.y.z）
 - `content`: Markdown 内容（不含 frontmatter）
-- `tags`: 标签数组（用于分类和过滤）
+- `tags`: 标签数组（用于分类和过滤，**推荐使用 "skill" 标签标记技能类规则**）
 - `priority`: 优先级（1-10，用于冲突解决）
 - `author`: 作者信息（可选）
 - `lastModified`: 最后修改时间（ISO 8601）
@@ -70,6 +71,7 @@
 - `id` 在规则源内唯一，跨源可能冲突（由冲突解决策略处理）
 - `priority` 用于冲突解决时决定优先级
 - `sourceId` 和 `filePath` 用于追溯规则来源
+- **推荐**: 技能类规则使用 `tags: ["skill"]` 标记，便于在 UI 中区分和过滤
 
 ---
 
@@ -117,23 +119,44 @@
 
 **字段**:
 
-- `cursor`: Cursor 适配器配置（CursorAdapterConfig）
-- `copilot`: GitHub Copilot 适配器配置（CopilotAdapterConfig）
-- `continue`: Continue.dev 适配器配置（ContinueAdapterConfig）
+- `cursor`: Cursor 适配器配置（AdapterConfig）
+- `copilot`: GitHub Copilot 适配器配置（AdapterConfig）
+- `continue`: Continue.dev 适配器配置（AdapterConfig）
 - `custom`: 自定义适配器配置数组（CustomAdapterConfig[]）
 
-**通用适配器配置**:
+**预置适配器配置 (AdapterConfig)**:
 
 - `enabled`: 是否启用（默认 false）
 - `autoUpdate`: 是否自动更新配置文件（默认 true）
-- `targetFile`: 目标文件路径（可选，使用默认值）
-- `template`: 模板路径（可选，使用内置模板）
+- `includeMetadata`: 是否在生成的文件中包含元数据（可选）
+
+**自定义适配器配置 (CustomAdapterConfig)**:
+
+继承所有 AdapterConfig 字段，额外包含：
+
+- `id`: 适配器唯一标识（kebab-case）
+- `name`: 适配器显示名称
+- `outputPath`: 输出目标路径（相对于工作区根目录）
+- `outputType`: 输出类型（'file' | 'directory'）
+  - `file`: 合并所有规则到单个文件
+  - `directory`: 保持原有目录结构
+- `fileExtensions`: 文件过滤规则（可选，如 `['.md', '.mdc']`）
+  - 为空或不设置时同步所有文件
+- `organizeBySource`: 是否按源 ID 组织子目录（仅 directory 类型，默认 true）
+- `generateIndex`: 是否生成索引文件（仅 directory 类型，默认 true）
+- `indexFileName`: 索引文件名（默认 'index.md'）
 
 **设计考量**:
 
 - 每个适配器独立配置，互不影响
 - 自定义适配器支持数组，允许多个自定义工具
+- **Skills 适配器**: 作为普通自定义适配器处理
+  - 用户通过命名识别（如 "AI Skills"）
+  - 通过 `outputPath` 指定独立目录（如 `skills/`）
+  - 不需要特殊的 `skills`/`sourceId`/`subPath` 字段
+  - 推荐配合规则的 `skill` 标签使用
 - `autoUpdate` 控制是否随同步自动生成配置
+- 移除了 `skills`/`sourceId`/`subPath` 字段（简化设计）
 
 ---
 
@@ -169,7 +192,119 @@
 
 ---
 
-## 3. UI 相关数据结构
+## 3. 规则同步相关数据结构 (v2.0 新增)
+
+### 3.1 RuleSyncConfig (规则同步配置)
+
+用于"规则同步页"的临时状态，不持久化到配置文件：
+
+**职责**:
+
+- 存储用户在同步页中的规则选择
+- 存储用户勾选的目标适配器
+- 支持跨规则源选择规则
+
+**字段**:
+
+```typescript
+interface RuleSyncConfig {
+  // 选中的规则（跨规则源）
+  selectedRules: {
+    sourceId: string; // 规则源 ID
+    filePaths: string[]; // 选中的规则文件路径（相对于源根目录）
+  }[];
+
+  // 勾选的目标适配器
+  targetAdapters: string[]; // 适配器 ID 列表
+}
+```
+
+**使用场景**:
+
+1. 用户打开"规则同步页"
+2. 左侧选择规则（可跨多个规则源）
+3. 右侧勾选适配器
+4. 点击"同步"按钮
+5. 系统读取 `RuleSyncConfig` 执行同步
+6. 将选中的规则生成到勾选的适配器配置文件
+
+**设计考量**:
+
+- 临时状态，不持久化（每次打开页面重新选择）
+- 支持跨源选择：`selectedRules` 按源分组
+- 灵活的映射关系：同一批规则可同步到多个适配器
+
+---
+
+### 3.2 AdapterState (适配器状态)
+
+用于 UI 展示适配器状态和统计信息：
+
+**字段**:
+
+```typescript
+interface AdapterState {
+  id: string; // 适配器 ID
+  name: string; // 适配器名称
+  type: 'preset' | 'custom'; // 预置/自定义
+  enabled: boolean; // 是否启用（来自配置）
+  checked: boolean; // 是否勾选（用户在同步页的临时操作）
+  outputPath: string; // 输出路径
+  ruleCount: number; // 将同步的规则数（实时统计）
+}
+```
+
+**使用场景**:
+
+- 规则同步页右侧适配器列表展示
+- 显示每个适配器将同步的规则数
+- 区分启用/禁用和勾选/未勾选状态
+
+**设计考量**:
+
+- `enabled`: 从配置读取，禁用的适配器无法勾选
+- `checked`: 用户临时操作，决定是否同步到该适配器
+- `ruleCount`: 根据左侧选中的规则实时计算
+
+---
+
+### 3.3 RuleTreeNode (规则树节点)
+
+用于"规则同步页"左侧展示所有规则源的规则树：
+
+**字段**:
+
+```typescript
+interface RuleTreeNode {
+  type: 'source' | 'directory' | 'file';
+  id: string; // 唯一标识
+  name: string; // 显示名称
+  path?: string; // 相对路径（仅 file/directory）
+  sourceId?: string; // 所属规则源 ID
+  checked?: boolean; // 是否选中（仅 file）
+  indeterminate?: boolean; // 半选状态（仅 directory，未来 P1）
+  expanded?: boolean; // 是否展开（仅 source/directory）
+  children?: RuleTreeNode[]; // 子节点
+  totalRules?: number; // 总规则数（统计）
+  selectedRules?: number; // 已选规则数（统计）
+}
+```
+
+**使用场景**:
+
+- 规则同步页左侧树形结构展示
+- 支持多源统一展示（不需要切换）
+- 文件级复选框选择
+
+**设计考量**:
+
+- 三层结构：源 → 目录 → 文件
+- 源作为顶层节点，展示所有规则源
+- 统计信息用于显示选择进度
+
+---
+
+## 4. UI 相关数据结构
 
 ### 3.1 TreeViewItem (树视图项)
 
@@ -191,7 +326,7 @@
 
 ---
 
-### 3.2 StatusBarInfo (状态栏信息)
+### 4.2 StatusBarInfo (状态栏信息)
 
 **字段**:
 
@@ -231,9 +366,9 @@
 
 ---
 
-## 4. 验证与错误类型
+## 5. 验证与错误类型
 
-### 4.1 ValidationResult (验证结果)
+### 5.1 ValidationResult (验证结果)
 
 **字段**:
 

@@ -304,7 +304,7 @@ Git 规则仓库 ──→ [Turbo AI Rules] ──→ AI 工具配置文件
 - 统计信息（总数/已选/排除）
 - 保存和取消按钮
 
-详见: [.superdesign/design_docs/05-rule-selector.md](../../.superdesign/design_docs/05-rule-selector.md)
+详见: [.superdesign/design_docs/05-rule-sync-page.md](../../.superdesign/design_docs/05-rule-sync-page.md)
 
 ---
 

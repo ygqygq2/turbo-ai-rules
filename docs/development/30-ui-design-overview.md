@@ -58,7 +58,7 @@ Turbo AI Rules 包含以下主要 UI 组件：
 ### 2. 规则选择器（Webview）
 
 **文件**: `src/providers/RuleSelectorWebviewProvider.ts`  
-**设计文档**: `.superdesign/design_docs/05-rule-selector.md`  
+**设计文档**: `.superdesign/design_docs/05-rule-sync-page.md`  
 **实施文档**: `docs/development/webview/02-rule-selector-realtime-sync.md`
 
 **核心功能**:
@@ -358,7 +358,7 @@ Turbo AI Rules 包含以下主要 UI 组件：
 ### Webview 实施文档
 
 - [欢迎页面实施](../webview/01-welcome-page-implementation.md)
-- [规则选择器实施](../webview/05-rule-selector-implementation.md)
+- [规则同步页实施](../webview/05-rule-sync-page-implementation.md)
 - [Webview 开发指南](./43-webview-best-practices.md)
 - [CSS 规范](./44-webview-css-guide.md)
 - [Codicons 使用指南](./45-codicons-guide.md)

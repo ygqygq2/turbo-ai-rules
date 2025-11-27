@@ -30,8 +30,11 @@ import { MdcParser } from './parsers/MdcParser';
 import { RulesValidator } from './parsers/RulesValidator';
 // Providers
 import {
+  AdapterManagerWebviewProvider,
+  DashboardWebviewProvider,
   RuleDetailsWebviewProvider,
   RulesTreeProvider,
+  RuleSyncPageWebviewProvider,
   SearchWebviewProvider,
   StatisticsWebviewProvider,
   StatusBarProvider,
@@ -310,6 +313,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<{
       vscode.commands.registerCommand('turbo-ai-rules.showWelcome', async () => {
         const welcomeProvider = WelcomeWebviewProvider.getInstance(context);
         await welcomeProvider.showWelcome();
+      }),
+
+      vscode.commands.registerCommand('turbo-ai-rules.openDashboard', async () => {
+        const dashboardProvider = DashboardWebviewProvider.getInstance(context);
+        await dashboardProvider.showDashboard();
+      }),
+
+      vscode.commands.registerCommand('turbo-ai-rules.manageAdapters', async () => {
+        const adapterManagerProvider = AdapterManagerWebviewProvider.getInstance(context);
+        await adapterManagerProvider.showAdapterManager();
+      }),
+
+      vscode.commands.registerCommand('turbo-ai-rules.openRuleSyncPage', async () => {
+        const ruleSyncPageProvider = RuleSyncPageWebviewProvider.getInstance(context);
+        await ruleSyncPageProvider.showRuleSyncPage();
       }),
 
       vscode.commands.registerCommand('turbo-ai-rules.showStatistics', async () => {

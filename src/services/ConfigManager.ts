@@ -16,7 +16,7 @@ import type {
 import { DEFAULT_CONFIG } from '../types/config';
 import { ConfigError, ErrorCodes } from '../types/errors';
 import { mergeById } from '../utils/configMerge';
-import { CONFIG_PREFIX, CONFIG_KEYS } from '../utils/constants';
+import { CONFIG_KEYS, CONFIG_PREFIX } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { validateConfig } from '../utils/validator';
 

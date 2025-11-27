@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net; script-src 'nonce-{{nonce}}';"
+    />
+    <title>规则同步页 - Turbo AI Rules</title>
+    <!-- Codicons 图标库 -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.35/dist/codicon.css"
+    />
+    <style>
+      :root {
+        /* VS Code 主题变量 */
+        --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+          Arial, sans-serif;
+        --vscode-font-weight: 400;
+        --vscode-font-size: 13px;
+        --vscode-foreground: #cccccc;
+        --vscode-descriptionForeground: #8c8c8c;
+
+        /* 背景色 */
+        --vscode-editor-background: #1e1e1e;
+        --vscode-editorWidget-background: #252526;
+        --vscode-input-background: #3c3c3c;
+
+        /* 边框 */
+        --vscode-editorWidget-border: #454545;
+        --vscode-focusBorder: #007fd4;
+
+        /* 按钮 */
+        --vscode-button-background: #0e639c;
+        --vscode-button-foreground: #ffffff;
+        --vscode-button-hoverBackground: #1177bb;
+        --vscode-button-secondaryBackground: #3a3d41;
+        --vscode-button-secondaryForeground: #ffffff;
+        --vscode-button-secondaryHoverBackground: #45494e;
+
+        /* 列表 */
+        --vscode-list-hoverBackground: #2a2d2e;
+
+        /* 测试图标颜色 */
+        --vscode-testing-iconPassed: #73c991;
+        --vscode-charts-blue: #75beff;
+
+        /* 图标 */
+        --vscode-icon-foreground: #c5c5c5;
+
+        /* 间距系统 */
+        --spacing-xs: 4px;
+        --spacing-sm: 8px;
+        --spacing-md: 12px;
+        --spacing-lg: 16px;
+        --spacing-xl: 20px;
+        --border-radius: 4px;
+        --tree-node-height: 28px;
+        --tree-indent: 20px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: var(--vscode-font-family);
+        font-weight: var(--vscode-font-weight);
+        font-size: var(--vscode-font-size);
+        color: var(--vscode-foreground);
+        background-color: var(--vscode-editor-background);
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* Header */
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--spacing-md) var(--spacing-lg);
+        border-bottom: 1px solid var(--vscode-editorWidget-border);
+        background: var(--vscode-editorWidget-background);
+      }
+
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+      }
+
+      .header-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      /* Statistics */
+      .statistics {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-lg);
+        padding: var(--spacing-sm) var(--spacing-lg);
+        background: var(--vscode-editorWidget-background);
+        border-bottom: 1px solid var(--vscode-editorWidget-border);
+        font-size: 12px;
+        color: var(--vscode-descriptionForeground);
+      }
+
+      .statistics span {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+      }
+
+      .statistics strong {
+        color: var(--vscode-foreground);
+      }
+
+      /* Main Content - 双面板布局 */
+      .main-content {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+      }
+
+      /* 左侧面板 - 规则树 */
+      .left-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid var(--vscode-editorWidget-border);
+        min-width: 300px;
+      }
+
+      .left-panel-header {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-bottom: 1px solid var(--vscode-editorWidget-border);
+      }
+
+      .search-input {
+        flex: 1;
+        background-color: var(--vscode-input-background);
+        color: var(--vscode-foreground);
+        border: 1px solid var(--vscode-editorWidget-border);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: 13px;
+        font-family: inherit;
+      }
+
+      .search-input:focus {
+        outline: none;
+        border-color: var(--vscode-focusBorder);
+      }
+
+      .left-panel-actions {
+        display: flex;
+        gap: var(--spacing-xs);
+      }
+
+      /* 规则树容器 */
+      .rules-tree-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: var(--spacing-sm);
+      }
+
+      /* 树节点 */
+      .tree-node {
+        user-select: none;
+      }
+
+      .tree-node-item {
+        display: flex;
+        align-items: center;
+        height: var(--tree-node-height);
+        padding-right: var(--spacing-sm);
+        cursor: pointer;
+        transition: background-color 0.1s;
+      }
+
+      .tree-node-item:hover {
+        background-color: var(--vscode-list-hoverBackground);
+      }
+
+      .tree-node-indent {
+        width: var(--tree-indent);
+        flex-shrink: 0;
+      }
+
+      .tree-node-chevron {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        color: var(--vscode-icon-foreground);
+        flex-shrink: 0;
+      }
+
+      .tree-node-chevron:hover {
+        color: var(--vscode-foreground);
+      }
+
+      .tree-node-chevron.empty {
+        visibility: hidden;
+      }
+
+      .tree-node-chevron .codicon {
+        font-size: 12px;
+        transition: transform 0.2s;
+      }
+
+      .tree-node-chevron.expanded .codicon {
+        transform: rotate(90deg);
+      }
+
+      .tree-node-checkbox {
+        margin: 0 var(--spacing-xs);
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      .tree-node-icon {
+        margin-right: var(--spacing-xs);
+        color: var(--vscode-icon-foreground);
+        flex-shrink: 0;
+      }
+
+      .tree-node-icon .codicon {
+        font-size: 14px;
+      }
+
+      .tree-node-label {
+        flex: 1;
+        font-size: 13px;
+      }
+
+      .tree-node-badge {
+        background-color: var(--vscode-badge-background, #4d4d4d);
+        color: var(--vscode-badge-foreground, #ffffff);
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 11px;
+        margin-left: var(--spacing-xs);
+      }
+
+      .tree-node.hidden {
+        display: none;
+      }
+
+      /* 源节点特殊样式 */
+      .tree-node.source {
+        font-weight: 600;
+        margin-bottom: var(--spacing-xs);
+      }
+
+      /* 右侧面板 - 适配器列表 */
+      .right-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 300px;
+      }
+
+      .right-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-bottom: 1px solid var(--vscode-editorWidget-border);
+        font-weight: 600;
+      }
+
+      .right-panel-actions {
+        display: flex;
+        gap: var(--spacing-xs);
+      }
+
+      /* 适配器容器 */
+      .adapters-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: var(--spacing-md);
+      }
+
+      /* 适配器卡片 */
+      .adapter-card {
+        background-color: var(--vscode-editorWidget-background);
+        border: 1px solid var(--vscode-editorWidget-border);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-sm);
+        cursor: pointer;
+        transition: all 0.1s;
+      }
+
+      .adapter-card:hover {
+        border-color: var(--vscode-focusBorder);
+      }
+
+      .adapter-card.checked {
+        border-left: 3px solid var(--vscode-testing-iconPassed);
+      }
+
+      .adapter-card-header {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-xs);
+      }
+
+      .adapter-card-checkbox {
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      .adapter-card-icon {
+        color: var(--vscode-icon-foreground);
+        flex-shrink: 0;
+      }
+
+      .adapter-card-icon .codicon {
+        font-size: 16px;
+      }
+
+      .adapter-card-name {
+        flex: 1;
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .adapter-card-details {
+        margin-left: 40px;
+        color: var(--vscode-descriptionForeground);
+        font-size: 12px;
+      }
+
+      .adapter-card-detail-item {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+        margin-bottom: 2px;
+      }
+
+      .adapter-card-detail-item .codicon {
+        font-size: 12px;
+      }
+
+      /* Footer */
+      .footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--spacing-md) var(--spacing-lg);
+        border-top: 1px solid var(--vscode-editorWidget-border);
+        background: var(--vscode-editorWidget-background);
+      }
+
+      .footer-info {
+        color: var(--vscode-descriptionForeground);
+        font-size: 13px;
+      }
+
+      .footer-info strong {
+        color: var(--vscode-foreground);
+      }
+
+      .footer-actions {
+        display: flex;
+        gap: var(--spacing-sm);
+      }
+
+      /* 按钮 */
+      .btn {
+        border: none;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+        font-size: 13px;
+        font-family: inherit;
+        transition: background-color 0.1s;
+      }
+
+      .btn .codicon {
+        font-size: 14px;
+      }
+
+      .btn-primary {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        background-color: var(--vscode-button-hoverBackground);
+      }
+
+      .btn-secondary {
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+      }
+
+      .btn-secondary:hover {
+        background-color: var(--vscode-button-secondaryHoverBackground);
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn-small {
+        padding: 4px 8px;
+        font-size: 12px;
+      }
+
+      /* 响应式 */
+      @media (max-width: 768px) {
+        .main-content {
+          flex-direction: column;
+        }
+
+        .left-panel,
+        .right-panel {
+          min-width: unset;
+        }
+
+        .right-panel {
+          border-top: 1px solid var(--vscode-editorWidget-border);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <i class="codicon codicon-symbol-namespace"></i>
+        <h1 class="header-title">规则同步页</h1>
+      </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="statistics">
+      <span>
+        <i class="codicon codicon-file"></i>
+        总规则: <strong id="totalRules">45</strong>
+      </span>
+      <span>
+        <i class="codicon codicon-check"></i>
+        已选规则: <strong id="selectedRules">0</strong>
+      </span>
+      <span>
+        <i class="codicon codicon-extensions"></i>
+        目标适配器: <strong id="targetAdapters">0</strong>
+      </span>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- 左侧面板 - 规则树 -->
+      <div class="left-panel">
+        <div class="left-panel-header">
+          <input type="text" class="search-input" placeholder="搜索规则..." id="searchInput" />
+          <div class="left-panel-actions">
+            <button class="btn btn-secondary btn-small" id="selectAllRules">全选</button>
+            <button class="btn btn-secondary btn-small" id="clearAllRules">清除</button>
+          </div>
+        </div>
+
+        <div class="rules-tree-container" id="rulesTree">
+          <!-- 规则源 A -->
+          <div class="tree-node source">
+            <div class="tree-node-item">
+              <div class="tree-node-chevron expanded">
+                <i class="codicon codicon-chevron-right"></i>
+              </div>
+              <div class="tree-node-icon">
+                <i class="codicon codicon-archive"></i>
+              </div>
+              <div class="tree-node-label">my-team-rules</div>
+              <div class="tree-node-badge">0/20</div>
+            </div>
+          </div>
+
+          <!-- 子目录 -->
+          <div class="tree-node">
+            <div class="tree-node-item">
+              <div class="tree-node-indent"></div>
+              <div class="tree-node-chevron">
+                <i class="codicon codicon-chevron-right"></i>
+              </div>
+              <div class="tree-node-icon">
+                <i class="codicon codicon-folder"></i>
+              </div>
+              <div class="tree-node-label">001-general-standards</div>
+              <div class="tree-node-badge">0/2</div>
+            </div>
+          </div>
+
+          <!-- 文件 -->
+          <div class="tree-node hidden">
+            <div class="tree-node-item">
+              <div class="tree-node-indent"></div>
+              <div class="tree-node-indent"></div>
+              <div class="tree-node-chevron empty"></div>
+              <input
+                type="checkbox"
+                class="tree-node-checkbox"
+                data-path="my-team-rules/001-general-standards/coding-standards.md"
+              />
+              <div class="tree-node-icon">
+                <i class="codicon codicon-file"></i>
+              </div>
+              <div class="tree-node-label">coding-standards.md</div>
+            </div>
+          </div>
+
+          <div class="tree-node hidden">
+            <div class="tree-node-item">
+              <div class="tree-node-indent"></div>
+              <div class="tree-node-indent"></div>
+              <div class="tree-node-chevron empty"></div>
+              <input
+                type="checkbox"
+                class="tree-node-checkbox"
+                data-path="my-team-rules/001-general-standards/naming-conventions.md"
+              />
+              <div class="tree-node-icon">
+                <i class="codicon codicon-file"></i>
+              </div>
+              <div class="tree-node-label">naming-conventions.md</div>
+            </div>
+          </div>
+
+          <!-- 规则源 B -->
+          <div class="tree-node source">
+            <div class="tree-node-item">
+              <div class="tree-node-chevron expanded">
+                <i class="codicon codicon-chevron-right"></i>
+              </div>
+              <div class="tree-node-icon">
+                <i class="codicon codicon-archive"></i>
+              </div>
+              <div class="tree-node-label">public-rules</div>
+              <div class="tree-node-badge">0/25</div>
+            </div>
+          </div>
+
+          <!-- 更多示例... -->
+        </div>
+      </div>
+
+      <!-- 右侧面板 - 适配器列表 -->
+      <div class="right-panel">
+        <div class="right-panel-header">
+          <span>
+            <i class="codicon codicon-extensions"></i>
+            选择目标适配器
+          </span>
+          <div class="right-panel-actions">
+            <button class="btn btn-secondary btn-small" id="selectAllAdapters">全选</button>
+            <button class="btn btn-secondary btn-small" id="clearAllAdapters">清除</button>
+          </div>
+        </div>
+
+        <div class="adapters-container" id="adaptersContainer">
+          <!-- GitHub Copilot -->
+          <div class="adapter-card">
+            <div class="adapter-card-header">
+              <input type="checkbox" class="adapter-card-checkbox" data-adapter="copilot" />
+              <div class="adapter-card-icon">
+                <i class="codicon codicon-hubot"></i>
+              </div>
+              <div class="adapter-card-name">GitHub Copilot</div>
+            </div>
+            <div class="adapter-card-details">
+              <div class="adapter-card-detail-item">
+                <i class="codicon codicon-file"></i>
+                <span>输出: .github/copilot-instructions.md</span>
+              </div>
+              <div class="adapter-card-detail-item">
+                <i class="codicon codicon-check"></i>
+                <span>将同步 <strong>0</strong> 条规则</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cursor -->
+          <div class="adapter-card">
+            <div class="adapter-card-header">
+              <input type="checkbox" class="adapter-card-checkbox" data-adapter="cursor" />
+              <div class="adapter-card-icon">
+                <i class="codicon codicon-symbol-class"></i>
+              </div>
+              <div class="adapter-card-name">Cursor</div>
+            </div>
+            <div class="adapter-card-details">
+              <div class="adapter-card-detail-item">
+                <i class="codicon codicon-file"></i>
+                <span>输出: .cursorrules</span>
+              </div>
+              <div class="adapter-card-detail-item">
+                <i class="codicon codicon-check"></i>
+                <span>将同步 <strong>0</strong> 条规则</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Continue -->
+          <div class="adapter-card">
+            <div class="adapter-card-header">
+              <input type="checkbox" class="adapter-card-checkbox" data-adapter="continue" />
+              <div class="adapter-card-icon">
+                <i class="codicon codicon-debug-continue"></i>
+              </div>
+              <div class="adapter-card-name">Continue</div>
+            </div>
+            <div class="adapter-card-details">
+              <div class="adapter-card-detail-item">
+                <i class="codicon codicon-file"></i>
+                <span>输出: .continuerules</span>
+              </div>
+              <div class="adapter-card-detail-item">
+                <i class="codicon codicon-check"></i>
+                <span>将同步 <strong>0</strong> 条规则</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Default Rules -->
+          <div class="adapter-card">
+            <div class="adapter-card-header">
+              <input type="checkbox" class="adapter-card-checkbox" data-adapter="default" />
+              <div class="adapter-card-icon">
+                <i class="codicon codicon-folder"></i>
+              </div>
+              <div class="adapter-card-name">Default Rules</div>
+            </div>
+            <div class="adapter-card-details">
+              <div class="adapter-card-detail-item">
+                <i class="codicon codicon-folder"></i>
+                <span>输出: rules/</span>
+              </div>
+              <div class="adapter-card-detail-item">
+                <i class="codicon codicon-check"></i>
+                <span>将同步 <strong>0</strong> 条规则</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="footer-info">
+        💡 已选择 <strong id="footerSelectedRules">0</strong> 条规则，将同步到
+        <strong id="footerTargetAdapters">0</strong> 个适配器
+      </div>
+      <div class="footer-actions">
+        <button class="btn btn-secondary" id="cancelBtn">取消</button>
+        <button class="btn btn-primary" id="syncBtn" disabled>
+          <i class="codicon codicon-sync"></i>
+          同步
+        </button>
+      </div>
+    </div>
+
+    <script nonce="{{nonce}}">
+      const vscode = acquireVsCodeApi();
+
+      // 状态管理
+      const state = {
+        selectedRules: new Set(),
+        selectedAdapters: new Set(),
+      };
+
+      // 更新统计信息
+      function updateStats() {
+        const selectedRulesCount = state.selectedRules.size;
+        const selectedAdaptersCount = state.selectedAdapters.size;
+
+        // 更新头部统计
+        document.getElementById('selectedRules').textContent = selectedRulesCount;
+        document.getElementById('targetAdapters').textContent = selectedAdaptersCount;
+
+        // 更新底部统计
+        document.getElementById('footerSelectedRules').textContent = selectedRulesCount;
+        document.getElementById('footerTargetAdapters').textContent = selectedAdaptersCount;
+
+        // 更新同步按钮状态
+        const syncBtn = document.getElementById('syncBtn');
+        syncBtn.disabled = selectedRulesCount === 0 || selectedAdaptersCount === 0;
+
+        // 更新适配器卡片的规则数量
+        document.querySelectorAll('.adapter-card').forEach((card) => {
+          const ruleCount = card.querySelector('.adapter-card-detail-item:last-child strong');
+          if (ruleCount) {
+            const checkbox = card.querySelector('.adapter-card-checkbox');
+            ruleCount.textContent = checkbox.checked ? selectedRulesCount : 0;
+          }
+        });
+      }
+
+      // 树节点展开/收起
+      document.querySelectorAll('.tree-node-chevron:not(.empty)').forEach((chevron) => {
+        chevron.addEventListener('click', (e) => {
+          e.stopPropagation();
+          chevron.classList.toggle('expanded');
+
+          // 切换子节点显示/隐藏
+          let nextNode = chevron.closest('.tree-node').nextElementSibling;
+          const level = chevron
+            .closest('.tree-node-item')
+            .querySelectorAll('.tree-node-indent').length;
+
+          while (nextNode && nextNode.classList.contains('tree-node')) {
+            const nextLevel = nextNode
+              .querySelector('.tree-node-item')
+              .querySelectorAll('.tree-node-indent').length;
+            if (nextLevel <= level) break;
+
+            if (nextLevel === level + 1) {
+              nextNode.classList.toggle('hidden');
+            }
+            nextNode = nextNode.nextElementSibling;
+          }
+        });
+      });
+
+      // 规则复选框
+      document.querySelectorAll('.tree-node-checkbox').forEach((checkbox) => {
+        checkbox.addEventListener('change', (e) => {
+          const path = checkbox.getAttribute('data-path');
+          if (checkbox.checked) {
+            state.selectedRules.add(path);
+          } else {
+            state.selectedRules.delete(path);
+          }
+          updateStats();
+        });
+      });
+
+      // 适配器复选框
+      document.querySelectorAll('.adapter-card-checkbox').forEach((checkbox) => {
+        checkbox.addEventListener('change', (e) => {
+          const adapter = checkbox.getAttribute('data-adapter');
+          const card = checkbox.closest('.adapter-card');
+
+          if (checkbox.checked) {
+            state.selectedAdapters.add(adapter);
+            card.classList.add('checked');
+          } else {
+            state.selectedAdapters.delete(adapter);
+            card.classList.remove('checked');
+          }
+          updateStats();
+        });
+      });
+
+      // 适配器卡片点击
+      document.querySelectorAll('.adapter-card').forEach((card) => {
+        card.addEventListener('click', (e) => {
+          if (e.target.classList.contains('adapter-card-checkbox')) return;
+          const checkbox = card.querySelector('.adapter-card-checkbox');
+          checkbox.checked = !checkbox.checked;
+          checkbox.dispatchEvent(new Event('change'));
+        });
+      });
+
+      // 全选/清除规则
+      document.getElementById('selectAllRules').addEventListener('click', () => {
+        document.querySelectorAll('.tree-node-checkbox').forEach((cb) => {
+          cb.checked = true;
+          state.selectedRules.add(cb.getAttribute('data-path'));
+        });
+        updateStats();
+      });
+
+      document.getElementById('clearAllRules').addEventListener('click', () => {
+        document.querySelectorAll('.tree-node-checkbox').forEach((cb) => {
+          cb.checked = false;
+        });
+        state.selectedRules.clear();
+        updateStats();
+      });
+
+      // 全选/清除适配器
+      document.getElementById('selectAllAdapters').addEventListener('click', () => {
+        document.querySelectorAll('.adapter-card-checkbox').forEach((cb) => {
+          cb.checked = true;
+          state.selectedAdapters.add(cb.getAttribute('data-adapter'));
+          cb.closest('.adapter-card').classList.add('checked');
+        });
+        updateStats();
+      });
+
+      document.getElementById('clearAllAdapters').addEventListener('click', () => {
+        document.querySelectorAll('.adapter-card-checkbox').forEach((cb) => {
+          cb.checked = false;
+          cb.closest('.adapter-card').classList.remove('checked');
+        });
+        state.selectedAdapters.clear();
+        updateStats();
+      });
+
+      // 同步按钮
+      document.getElementById('syncBtn').addEventListener('click', () => {
+        vscode.postMessage({
+          command: 'sync',
+          data: {
+            rules: Array.from(state.selectedRules),
+            adapters: Array.from(state.selectedAdapters),
+          },
+        });
+      });
+
+      // 取消按钮
+      document.getElementById('cancelBtn').addEventListener('click', () => {
+        vscode.postMessage({ command: 'cancel' });
+      });
+
+      // 搜索功能
+      document.getElementById('searchInput').addEventListener('input', (e) => {
+        const searchText = e.target.value.toLowerCase();
+        document.querySelectorAll('.tree-node').forEach((node) => {
+          const label = node.querySelector('.tree-node-label');
+          if (label) {
+            const text = label.textContent.toLowerCase();
+            if (searchText === '' || text.includes(searchText)) {
+              node.style.display = '';
+            } else {
+              node.style.display = 'none';
+            }
+          }
+        });
+      });
+
+      // 初始化
+      updateStats();
+    </script>
+  </body>
+</html>

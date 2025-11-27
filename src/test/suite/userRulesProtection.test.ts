@@ -3,6 +3,7 @@ import * as fs from 'fs-extra';
 import { before, describe, it } from 'mocha';
 import * as path from 'path';
 import * as vscode from 'vscode';
+
 import { CONFIG_KEYS } from '../../utils/constants';
 
 describe('User Rules Protection Tests', () => {

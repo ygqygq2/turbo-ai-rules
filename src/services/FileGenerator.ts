@@ -12,10 +12,10 @@ import { ContinueAdapter, CopilotAdapter, CursorAdapter, CustomAdapter } from '.
 import type { AdaptersConfig, CustomAdapterConfig } from '../types/config';
 import { GenerateError, SystemError } from '../types/errors';
 import type { ConflictStrategy, ParsedRule } from '../types/rules';
+import { CONFIG_KEYS, CONFIG_PREFIX } from '../utils/constants';
 import { ensureDir, pathExists, readDir, safeReadFile, safeWriteFile } from '../utils/fileSystem';
 import { ensureIgnored } from '../utils/gitignore';
 import { Logger } from '../utils/logger';
-import { CONFIG_PREFIX, CONFIG_KEYS } from '../utils/constants';
 import type { UserRulesProtectionConfig } from '../utils/userRulesProtection';
 import { extractUserContent, isUserDefinedFile, mergeContent } from '../utils/userRulesProtection';
 import { GitManager } from './GitManager';

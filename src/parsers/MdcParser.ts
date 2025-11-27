@@ -11,10 +11,10 @@ import * as vscode from 'vscode';
 import { ErrorCodes, ParseError } from '../types/errors';
 import type { ParsedRule, RuleMetadata } from '../types/rules';
 import {
+  CONFIG_KEYS,
   MAX_PARSE_DEPTH,
   MAX_PARSE_FILES,
   RULE_FILE_EXTENSIONS,
-  CONFIG_KEYS,
 } from '../utils/constants';
 import { safeReadFile } from '../utils/fileSystem';
 import { Logger } from '../utils/logger';
