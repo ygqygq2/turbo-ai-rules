@@ -10,7 +10,7 @@ import * as vscode from 'vscode';
 import { ConfigManager } from '../services/ConfigManager';
 import { GitManager } from '../services/GitManager';
 import { RulesManager } from '../services/RulesManager';
-import type { AdapterConfig, CustomAdapterConfig, RuleTreeNode } from '../types/config';
+import type { AdapterConfig, RuleTreeNode } from '../types/config';
 import { EXTENSION_ICON_PATH, RULE_FILE_EXTENSIONS } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
@@ -124,7 +124,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
    */
   protected async handleMessage(message: WebviewMessage): Promise<void> {
     try {
-      const messageType = message.type || (message as any).command;
+      const messageType = message.type || (message as { command?: string }).command;
       Logger.debug('Rule sync page message received', {
         type: messageType,
         payload: message.payload,
@@ -147,12 +147,14 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
           Logger.warn('Unknown rule sync page message type', { type: messageType });
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       Logger.error('Failed to handle rule sync page message', error as Error, {
         message: message.type,
         code: 'TAI-5018',
       });
-      notify(`Rule sync operation failed: ${errorMessage}`, 'error');
+      notify(
+        `Rule sync operation failed: ${error instanceof Error ? error.message : String(error)}`,
+        'error',
+      );
     }
   }
 
@@ -168,7 +170,6 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         payload: data,
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       Logger.error('Failed to send rule sync page initial data', error as Error, {
         code: 'TAI-5019',
       });
@@ -391,14 +392,25 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
   /**
    * @description 处理同步操作
    * @return default {Promise<void>}
-   * @param payload {any}
+   * @param payload {unknown}
    */
-  private async handleSync(payload: any): Promise<void> {
+  private async handleSync(payload: unknown): Promise<void> {
     try {
-      const { rules, adapters } = payload.data || payload;
+      let syncData: { rules: string[]; adapters: string[] };
 
-      if (!rules || !adapters) {
-        throw new Error('Invalid sync payload: missing rules or adapters');
+      if (typeof payload === 'object' && payload !== null) {
+        syncData =
+          'data' in payload
+            ? (payload as { data: { rules: string[]; adapters: string[] } }).data
+            : (payload as { rules: string[]; adapters: string[] });
+      } else {
+        throw new Error('Invalid sync payload format');
+      }
+
+      const { rules, adapters } = syncData;
+
+      if (!rules || !adapters || !Array.isArray(rules) || !Array.isArray(adapters)) {
+        throw new Error('Invalid sync payload: missing or invalid rules/adapters array');
       }
 
       Logger.info('Starting rule sync', {
@@ -481,15 +493,17 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         this.panel?.dispose();
       }, 1000);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       Logger.error('Failed to sync rules', error as Error, { code: 'TAI-5021' });
-      notify(`Failed to sync rules: ${errorMessage}`, 'error');
+      notify(
+        `Failed to sync rules: ${error instanceof Error ? error.message : String(error)}`,
+        'error',
+      );
 
       await this.postMessage({
         type: 'syncComplete',
         payload: {
           success: false,
-          error: errorMessage,
+          error: error instanceof Error ? error.message : String(error),
         },
       });
     }

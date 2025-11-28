@@ -15,7 +15,7 @@
         --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
           Arial, sans-serif;
         --vscode-foreground: #cccccc;
-        --vscode-statusBar-background: #007acc;
+        --vscode-statusBar-background: #1e1e1e;
         --vscode-statusBar-foreground: #ffffff;
         --vscode-statusBarItem-compactHoverBackground: rgba(255, 255, 255, 0.1);
         --vscode-statusBarItem-errorBackground: #c72e0f;
@@ -33,48 +33,151 @@
         display: flex;
         flex-direction: column;
         gap: 20px;
+        margin: 0;
       }
+
+      .status-bar-container {
+        background-color: var(--vscode-statusBar-background);
+        padding: 8px 16px;
+        border-radius: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      }
+
       .status-bar-item {
         display: inline-flex;
         align-items: center;
         gap: 4px;
         padding: 4px 8px;
         border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
       }
-      .idle {
-        background-color: transparent;
-      }
-      .syncing {
-        background-color: transparent;
-      }
-      .success {
+
+      .status-bar-item:hover {
         background-color: var(--vscode-statusBarItem-compactHoverBackground);
+      }
+
+      /* 初始状态 */
+      .initializing {
+        color: var(--vscode-foreground);
+      }
+
+      /* 空闲状态 */
+      .idle {
+        color: var(--vscode-foreground);
+      }
+
+      /* 同步中状态 */
+      .syncing {
+        color: var(--vscode-foreground);
+      }
+
+      /* 成功状态 */
+      .success {
         color: var(--vscode-charts-green);
       }
+
+      /* 错误状态 */
       .error {
         background-color: var(--vscode-statusBarItem-errorBackground);
         color: var(--vscode-statusBarItem-errorForeground);
       }
+
+      /* 冲突状态 */
       .conflict {
         background-color: var(--vscode-statusBarItem-warningBackground);
         color: var(--vscode-statusBarItem-warningForeground);
       }
+
       @keyframes spin {
         to {
           transform: rotate(360deg);
         }
       }
-      .codicon-sync ~ .spin,
-      .codicon-loading ~ .spin {
+
+      .codicon-sync.spin {
         animation: spin 1s linear infinite;
+      }
+
+      .status-label {
+        font-size: 12px;
+        color: var(--vscode-descriptionForeground);
+        margin-bottom: 8px;
       }
     </style>
   </head>
   <body>
-    <div class="status-bar-item idle"><i class="codicon codicon-file-code"></i> 156 Rules</div>
-    <div class="status-bar-item syncing"><i class="codicon codicon-sync spin"></i> Syncing 2/3</div>
-    <div class="status-bar-item success"><i class="codicon codicon-check"></i> ✓ 156 Rules</div>
-    <div class="status-bar-item error"><i class="codicon codicon-error"></i> Sync Failed</div>
-    <div class="status-bar-item conflict"><i class="codicon codicon-warning"></i> ⚠️ 156 Rules</div>
+    <!-- 初始状态 -->
+    <div>
+      <div class="status-label">Initializing:</div>
+      <div class="status-bar-container">
+        <div class="status-bar-item initializing">
+          <span class="codicon codicon-loading"></span> Loading...
+        </div>
+      </div>
+    </div>
+
+    <!-- 空闲状态 - 无规则 -->
+    <div>
+      <div class="status-label">Idle - No Rules:</div>
+      <div class="status-bar-container">
+        <div class="status-bar-item idle">
+          <span class="codicon codicon-file-code"></span> No Rules
+        </div>
+      </div>
+    </div>
+
+    <!-- 空闲状态 - 有规则 -->
+    <div>
+      <div class="status-label">Idle - With Rules:</div>
+      <div class="status-bar-container">
+        <div class="status-bar-item idle">
+          <span class="codicon codicon-file-code"></span> 156R·2/3S
+        </div>
+      </div>
+    </div>
+
+    <!-- 空闲状态 - 有冲突 -->
+    <div>
+      <div class="status-label">Idle - With Conflicts:</div>
+      <div class="status-bar-container">
+        <div class="status-bar-item conflict">
+          <span class="codicon codicon-warning"></span> 156R·2/3S
+        </div>
+      </div>
+    </div>
+
+    <!-- 同步中状态 -->
+    <div>
+      <div class="status-label">Syncing:</div>
+      <div class="status-bar-container">
+        <div class="status-bar-item syncing">
+          <span class="codicon codicon-sync spin"></span> Syncing 2/3
+        </div>
+      </div>
+    </div>
+
+    <!-- 同步成功状态 -->
+    <div>
+      <div class="status-label">Sync Success:</div>
+      <div class="status-bar-container">
+        <div class="status-bar-item success">
+          <span class="codicon codicon-check"></span> 156R·2/3S
+        </div>
+      </div>
+    </div>
+
+    <!-- 同步失败状态 -->
+    <div>
+      <div class="status-label">Sync Failed:</div>
+      <div class="status-bar-container">
+        <div class="status-bar-item error">
+          <span class="codicon codicon-error"></span> Sync Failed
+        </div>
+      </div>
+    </div>
   </body>
 </html>

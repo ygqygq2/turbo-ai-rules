@@ -97,19 +97,80 @@
       .header h1 {
         font-size: 20px;
         font-weight: 600;
+      }
+
+      .toolbar {
         display: flex;
-        align-items: center;
         gap: var(--spacing-sm);
       }
 
-      .header .actions .button {
-        background: none;
+      .button {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
         border: none;
-        color: var(--vscode-foreground);
-        padding: var(--spacing-xs);
+        padding: var(--spacing-xs) var(--spacing-sm);
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        font-size: var(--vscode-font-size);
+      }
+
+      .button:hover {
+        background-color: var(--vscode-button-hoverBackground);
+      }
+
+      .button-secondary {
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+      }
+
+      .button-secondary:hover {
+        background-color: var(--vscode-button-secondaryHoverBackground);
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-xl);
+      }
+
+      .stat-card {
+        background-color: var(--vscode-editorWidget-background);
+        border: 1px solid var(--vscode-editorWidget-border, transparent);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md);
+      }
+
+      .stat-icon {
+        font-size: 24px;
+      }
+
+      .stat-content {
+        flex: 1;
+      }
+
+      .stat-value {
+        font-size: 24px;
+        font-weight: 600;
+      }
+
+      .stat-label {
+        font-size: 12px;
+        color: var(--vscode-descriptionForeground);
+      }
+
+      .stat-warning {
+        border-color: var(--vscode-editorWarning-foreground);
       }
 
       .section {
+        background-color: var(--vscode-editorWidget-background);
+        border: 1px solid var(--vscode-editorWidget-border, transparent);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md);
         margin-bottom: var(--spacing-xl);
       }
 
@@ -119,51 +180,28 @@
         margin-bottom: var(--spacing-md);
       }
 
-      .overview-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: var(--spacing-md);
+      .chart-container {
+        margin-top: var(--spacing-md);
       }
 
-      .stat-card {
-        background-color: var(--vscode-editorWidget-background);
-        border: 1px solid var(--vscode-editorWidget-border, transparent);
-        border-radius: var(--border-radius);
-        padding: var(--spacing-md);
-        text-align: center;
-        opacity: 0;
-        transform: translateY(20px);
-        animation: fadeInUp 0.3s ease-out forwards;
-      }
-
-      .stat-card .value {
-        font-size: 28px;
-        font-weight: 600;
-      }
-
-      .stat-card .label {
-        font-size: 12px;
-        color: var(--vscode-descriptionForeground);
-        margin-top: var(--spacing-xs);
+      .bar-chart {
         display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: var(--spacing-xs);
+        flex-direction: column;
+        gap: var(--spacing-sm);
       }
 
-      .priority-grid .priority-item {
+      .bar-item {
         display: flex;
         align-items: center;
         gap: var(--spacing-md);
-        margin-bottom: var(--spacing-sm);
       }
 
-      .priority-grid .label {
+      .bar-label {
         width: 100px;
         font-size: 14px;
       }
 
-      .priority-grid .bar-container {
+      .bar-wrapper {
         flex-grow: 1;
         background-color: var(--vscode-input-background);
         border-radius: var(--border-radius);
@@ -175,56 +213,80 @@
         justify-content: center;
       }
 
-      .priority-grid .bar-fill {
+      .bar-fill {
         position: absolute;
         left: 0;
         top: 0;
         height: 100%;
-        animation: progressBar 0.6s ease-out forwards;
+        transition: width 0.3s ease;
       }
 
-      .priority-grid .bar-text {
+      .priority-high {
+        background-color: var(--vscode-charts-red);
+      }
+
+      .priority-medium {
+        background-color: var(--vscode-charts-yellow);
+      }
+
+      .priority-low {
+        background-color: var(--vscode-charts-blue);
+      }
+
+      .bar-text {
         position: relative;
         z-index: 1;
         font-size: 0.85em;
         font-weight: 600;
         white-space: nowrap;
-        /* 白色文字配合阴影，确保在所有颜色背景上都清晰可见 */
         color: #ffffff;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 0, 0, 0.6);
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
       }
 
-      .priority-high {
-        background-color: var(--vscode-errorForeground);
-      }
-      .priority-medium {
-        background-color: var(--vscode-editorWarning-foreground);
-      }
-      .priority-low {
-        background-color: var(--vscode-charts-blue);
+      .table-container {
+        overflow-x: auto;
+        margin-top: var(--spacing-md);
       }
 
-      .source-table {
+      .stats-table {
         width: 100%;
         border-collapse: collapse;
       }
 
-      .source-table th,
-      .source-table td {
+      .stats-table th,
+      .stats-table td {
         padding: var(--spacing-sm) var(--spacing-md);
         text-align: left;
         border-bottom: 1px solid var(--vscode-editorWidget-border);
       }
 
-      .source-table th {
+      .stats-table th {
         color: var(--vscode-descriptionForeground);
         font-weight: 600;
       }
 
-      .tag-cloud {
+      .status-badge {
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .status-enabled {
+        background-color: var(--vscode-charts-green);
+        color: #ffffff;
+      }
+
+      .status-disabled {
+        background-color: var(--vscode-descriptionForeground);
+        color: #ffffff;
+      }
+
+      .tags-container {
         display: flex;
         flex-wrap: wrap;
         gap: var(--spacing-sm);
+        margin-top: var(--spacing-md);
       }
 
       .tag {
@@ -238,13 +300,21 @@
         transition: all 0.2s ease;
         border: none;
       }
+
       .tag:hover {
         background-color: var(--vscode-button-hoverBackground);
         transform: translateY(-1px);
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
       }
+
       .tag:active {
         transform: translateY(0);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: var(--spacing-xl);
+        color: var(--vscode-descriptionForeground);
       }
 
       @keyframes fadeIn {
@@ -252,22 +322,13 @@
           opacity: 1;
         }
       }
-      @keyframes fadeInUp {
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      @keyframes progressBar {
-        from {
-          width: 0;
-        }
-      }
+
       @keyframes spin {
         to {
           transform: rotate(360deg);
         }
       }
+
       .refreshing .codicon-refresh {
         animation: spin 1s linear infinite;
       }
@@ -275,75 +336,92 @@
   </head>
   <body>
     <div class="container">
-      <header class="header">
-        <h1><i class="codicon codicon-dashboard"></i> Statistics Dashboard</h1>
-        <div class="actions">
-          <button class="button" onclick="sendMessage('refresh')" aria-label="Refresh Data">
-            <i class="codicon codicon-refresh"></i>
-          </button>
-          <button
-            class="button"
-            onclick="sendMessage('export', {format: 'json'})"
-            aria-label="Export Data"
-          >
-            <i class="codicon codicon-export"></i>
-          </button>
+      <div class="header">
+        <h1>Statistics Dashboard</h1>
+        <div class="toolbar">
+          <button class="button" onclick="sendMessage('refresh')">Refresh</button>
+          <button class="button button-secondary" onclick="sendMessage('export', {format: 'json'})">Export</button>
         </div>
-      </header>
+      </div>
 
-      <main>
-        <section class="section">
-          <h2 class="section-title">📚 Overview</h2>
-          <div class="overview-grid">
-            <div class="stat-card" style="animation-delay: 0s">
-              <div class="value">156</div>
-              <div class="label"><i class="codicon codicon-file-code"></i> Total Rules</div>
+      <!-- 概览卡片 -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <span class="codicon codicon-file"></span>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">156</div>
+            <div class="stat-label">Total Rules</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">
+            <span class="codicon codicon-package"></span>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">3</div>
+            <div class="stat-label">Total Sources</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">
+            <span class="codicon codicon-check"></span>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">2</div>
+            <div class="stat-label">Enabled Sources</div>
+          </div>
+        </div>
+
+        <div class="stat-card stat-warning">
+          <div class="stat-icon">
+            <span class="codicon codicon-warning"></span>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">2</div>
+            <div class="stat-label">Conflicts</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 优先级分布 -->
+      <div class="section">
+        <h2 class="section-title">Priority Distribution</h2>
+        <div class="chart-container">
+          <div class="bar-chart">
+            <div class="bar-item">
+              <div class="bar-label">High</div>
+              <div class="bar-wrapper">
+                <div class="bar-fill priority-high" style="width: 15%"></div>
+                <span class="bar-text">23 (15.0%)</span>
+              </div>
             </div>
-            <div class="stat-card" style="animation-delay: 0.1s">
-              <div class="value">2/3</div>
-              <div class="label"><i class="codicon codicon-package"></i> Sources</div>
+            <div class="bar-item">
+              <div class="bar-label">Medium</div>
+              <div class="bar-wrapper">
+                <div class="bar-fill priority-medium" style="width: 43%"></div>
+                <span class="bar-text">67 (43.0%)</span>
+              </div>
             </div>
-            <div class="stat-card" style="animation-delay: 0.2s">
-              <div class="value">2</div>
-              <div class="label"><i class="codicon codicon-warning"></i> Conflicts</div>
-            </div>
-            <div class="stat-card" style="animation-delay: 0.3s">
-              <div class="value">2.3 MB</div>
-              <div class="label"><i class="codicon codicon-database"></i> Cache Size</div>
+            <div class="bar-item">
+              <div class="bar-label">Low</div>
+              <div class="bar-wrapper">
+                <div class="bar-fill priority-low" style="width: 42%"></div>
+                <span class="bar-text">66 (42.0%)</span>
+              </div>
             </div>
           </div>
-        </section>
+        </div>
+      </div>
 
-        <section class="section">
-          <h2 class="section-title">📈 Priority Distribution</h2>
-          <div class="priority-grid">
-            <div class="priority-item">
-              <div class="label">🔥 High</div>
-              <div class="bar-container">
-                <div class="bar-fill priority-high" style="width: 15%; --target-width: 15%"></div>
-                <div class="bar-text">23 (15%)</div>
-              </div>
-            </div>
-            <div class="priority-item">
-              <div class="label">⚠️ Medium</div>
-              <div class="bar-container">
-                <div class="bar-fill priority-medium" style="width: 43%; --target-width: 43%"></div>
-                <div class="bar-text">67 (43%)</div>
-              </div>
-            </div>
-            <div class="priority-item">
-              <div class="label">ℹ️ Low</div>
-              <div class="bar-container">
-                <div class="bar-fill priority-low" style="width: 42%; --target-width: 42%"></div>
-                <div class="bar-text">66 (42%)</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="section">
-          <h2 class="section-title">📋 Source Statistics</h2>
-          <table class="source-table">
+      <!-- 源统计 -->
+      <div class="section">
+        <h2 class="section-title">Sources Overview</h2>
+        <div class="table-container">
+          <table class="stats-table">
             <thead>
               <tr>
                 <th>Source Name</th>
@@ -356,73 +434,56 @@
               <tr>
                 <td>company-rules</td>
                 <td>89</td>
-                <td>✅</td>
+                <td>
+                  <span class="status-badge status-enabled">Enabled</span>
+                </td>
                 <td>2m ago</td>
               </tr>
               <tr>
                 <td>personal-rules</td>
                 <td>67</td>
-                <td>✅</td>
+                <td>
+                  <span class="status-badge status-enabled">Enabled</span>
+                </td>
                 <td>5m ago</td>
               </tr>
               <tr>
                 <td>archived-rules</td>
                 <td>0</td>
-                <td>❌</td>
-                <td>-</td>
+                <td>
+                  <span class="status-badge status-disabled">Disabled</span>
+                </td>
+                <td>Never</td>
               </tr>
             </tbody>
           </table>
-        </section>
+        </div>
+      </div>
 
-        <section class="section">
-          <h2 class="section-title">🏷️ Top Tags</h2>
-          <div class="tag-cloud">
-            <button
-              class="tag"
-              onclick="sendMessage('searchByTag', {tag: 'typescript'})"
-              title="Click to search"
-            >
-              #typescript (45)
-            </button>
-            <button
-              class="tag"
-              onclick="sendMessage('searchByTag', {tag: 'react'})"
-              title="Click to search"
-            >
-              #react (32)
-            </button>
-            <button
-              class="tag"
-              onclick="sendMessage('searchByTag', {tag: 'eslint'})"
-              title="Click to search"
-            >
-              #eslint (28)
-            </button>
-            <button
-              class="tag"
-              onclick="sendMessage('searchByTag', {tag: 'naming'})"
-              title="Click to search"
-            >
-              #naming (24)
-            </button>
-            <button
-              class="tag"
-              onclick="sendMessage('searchByTag', {tag: 'security'})"
-              title="Click to search"
-            >
-              #security (18)
-            </button>
-            <button
-              class="tag"
-              onclick="sendMessage('searchByTag', {tag: 'testing'})"
-              title="Click to search"
-            >
-              #testing (15)
-            </button>
-          </div>
-        </section>
-      </main>
+      <!-- 热门标签 -->
+      <div class="section">
+        <h2 class="section-title">Top Tags</h2>
+        <div class="tags-container">
+          <button class="tag" onclick="sendMessage('searchByTag', {tag: 'typescript'})" title="Click to search">
+            typescript (45)
+          </button>
+          <button class="tag" onclick="sendMessage('searchByTag', {tag: 'react'})" title="Click to search">
+            react (32)
+          </button>
+          <button class="tag" onclick="sendMessage('searchByTag', {tag: 'eslint'})" title="Click to search">
+            eslint (28)
+          </button>
+          <button class="tag" onclick="sendMessage('searchByTag', {tag: 'naming'})" title="Click to search">
+            naming (24)
+          </button>
+          <button class="tag" onclick="sendMessage('searchByTag', {tag: 'security'})" title="Click to search">
+            security (18)
+          </button>
+          <button class="tag" onclick="sendMessage('searchByTag', {tag: 'testing'})" title="Click to search">
+            testing (15)
+          </button>
+        </div>
+      </div>
     </div>
 
     <script nonce="{{nonce}}">

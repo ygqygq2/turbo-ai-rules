@@ -24,7 +24,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│ ... | $(file-code) 156 Rules | $(warning) 2 conflicts │
+│ ... | $(file-code) 156R·2/3S | $(warning) 156R·2/3S │
 └──────────────────────────────────────────────────────┘
                 ↑                        ↑
             状态栏项                  冲突警告
@@ -34,11 +34,11 @@
 
 | 状态           | 图标              | 文本示例        | 颜色     |
 | -------------- | ----------------- | --------------- | -------- |
-| `idle`         | `$(file-code)`    | 156 Rules       | 默认     |
+| `idle`         | `$(file-code)`    | 156R·2/3S       | 默认     |
 | `syncing`      | `$(sync~spin)`    | Syncing 2/3     | 默认     |
-| `success`      | `$(check)`        | ✓ 156 Rules     | 绿色     |
+| `success`      | `$(check)`        | 156R·2/3S       | 绿色     |
 | `error`        | `$(error)`        | Sync Failed     | 红色背景 |
-| `conflict`     | `$(warning)`      | ⚠️ 156 Rules    | 黄色背景 |
+| `conflict`     | `$(warning)`      | 156R·2/3S       | 黄色背景 |
 | `initializing` | `$(loading~spin)` | Initializing... | 默认     |
 
 ### 颜色方案

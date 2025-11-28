@@ -117,7 +117,7 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
    */
   protected async handleMessage(message: WebviewMessage): Promise<void> {
     try {
-      const messageType = message.type || (message as any).command;
+      const messageType = message.type || (message as { command?: string }).command;
       Logger.debug('Adapter manager message received', {
         type: messageType,
         payload: message.payload,
@@ -148,12 +148,14 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
           Logger.warn('Unknown adapter manager message type', { type: messageType });
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       Logger.error('Failed to handle adapter manager message', error as Error, {
         message: message.type,
         code: 'TAI-5010',
       });
-      notify(`Adapter manager operation failed: ${errorMessage}`, 'error');
+      notify(
+        `Adapter manager operation failed: ${error instanceof Error ? error.message : String(error)}`,
+        'error',
+      );
     }
   }
 
@@ -169,7 +171,6 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         payload: adapters,
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       Logger.error('Failed to send adapter manager initial data', error as Error, {
         code: 'TAI-5011',
       });
@@ -214,9 +215,9 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
   /**
    * @description 处理保存所有配置
    * @return default {Promise<void>}
-   * @param payload {any}
+   * @param payload {unknown}
    */
-  private async handleSaveAll(payload: any): Promise<void> {
+  private async handleSaveAll(payload: unknown): Promise<void> {
     try {
       // TODO: 实现保存所有配置的逻辑
       // 从 payload 中提取预置适配器和自定义适配器的配置
@@ -228,7 +229,6 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
       // 刷新数据
       await this.sendInitialData();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       Logger.error('Failed to save all adapters', error as Error, { code: 'TAI-5012' });
       throw error;
     }
@@ -237,50 +237,64 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
   /**
    * @description 处理保存单个适配器
    * @return default {Promise<void>}
-   * @param data {any}
+   * @param data {unknown}
    */
-  private async handleSaveAdapter(data: any): Promise<void> {
+  private async handleSaveAdapter(data: unknown): Promise<void> {
     try {
       // 验证数据
-      if (!data || !data.id || !data.name) {
+      if (!data || typeof data !== 'object' || !('id' in data) || !('name' in data)) {
         throw new Error('Invalid adapter data: missing required fields (id, name)');
       }
 
+      const adapterData = data as {
+        id: string;
+        name: string;
+        isEdit?: boolean;
+        enabled?: boolean;
+        autoUpdate?: boolean;
+        includeMetadata?: boolean;
+        outputPath: string;
+        outputType?: 'file' | 'directory';
+        fileExtensions?: string[];
+        organizeBySource?: boolean;
+        generateIndex?: boolean;
+        indexFileName?: string;
+      };
       const config = this.configManager.getConfig();
 
       // 检查 ID 是否已存在（编辑模式除外）
-      const existingAdapter = config.adapters.custom?.find((a) => a.id === data.id);
-      if (existingAdapter && !data.isEdit) {
-        throw new Error(`Adapter with ID "${data.id}" already exists`);
+      const existingAdapter = config.adapters.custom?.find((a) => a.id === adapterData.id);
+      if (existingAdapter && !adapterData.isEdit) {
+        throw new Error(`Adapter with ID "${adapterData.id}" already exists`);
       }
 
       // 构建适配器配置
       const adapterConfig: CustomAdapterConfig = {
-        id: data.id,
-        name: data.name,
-        enabled: data.enabled ?? true,
-        autoUpdate: data.autoUpdate ?? true,
-        includeMetadata: data.includeMetadata ?? true,
-        outputPath: data.outputPath,
-        outputType: data.outputType || 'directory',
-        fileExtensions: data.fileExtensions || [],
-        organizeBySource: data.organizeBySource ?? true,
-        generateIndex: data.generateIndex ?? true,
-        indexFileName: data.indexFileName || 'index.md',
+        id: adapterData.id,
+        name: adapterData.name,
+        enabled: adapterData.enabled ?? true,
+        autoUpdate: adapterData.autoUpdate ?? true,
+        includeMetadata: adapterData.includeMetadata ?? true,
+        outputPath: adapterData.outputPath,
+        outputType: adapterData.outputType || 'directory',
+        fileExtensions: adapterData.fileExtensions || [],
+        organizeBySource: adapterData.organizeBySource ?? true,
+        generateIndex: adapterData.generateIndex ?? true,
+        indexFileName: adapterData.indexFileName || 'index.md',
       };
 
       // 更新或添加适配器
       const customAdapters = config.adapters.custom || [];
-      const index = customAdapters.findIndex((a) => a.id === data.id);
+      const index = customAdapters.findIndex((a) => a.id === adapterData.id);
 
       if (index >= 0) {
         // 更新现有适配器
         customAdapters[index] = adapterConfig;
-        Logger.info('Custom adapter updated', { id: data.id });
+        Logger.info('Custom adapter updated', { id: adapterData.id });
       } else {
         // 添加新适配器
         customAdapters.push(adapterConfig);
-        Logger.info('Custom adapter created', { id: data.id });
+        Logger.info('Custom adapter created', { id: adapterData.id });
       }
 
       // 保存配置
@@ -289,12 +303,11 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         custom: customAdapters,
       });
 
-      notify(`Adapter "${data.name}" saved successfully`, 'info');
+      notify(`Adapter "${adapterData.name}" saved successfully`, 'info');
 
       // 刷新数据
       await this.sendInitialData();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       Logger.error('Failed to save adapter', error as Error, { code: 'TAI-5013' });
       throw error;
     }
@@ -303,22 +316,25 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
   /**
    * @description 处理删除适配器
    * @return default {Promise<void>}
-   * @param data {any}
+   * @param data {unknown}
    */
-  private async handleDeleteAdapter(data: any): Promise<void> {
+  private async handleDeleteAdapter(data: unknown): Promise<void> {
     try {
-      if (!data || !data.name) {
+      if (!data || typeof data !== 'object' || !('name' in data)) {
         throw new Error('Invalid delete request: missing adapter name');
       }
 
+      const deleteData = data as { name: string };
       const config = this.configManager.getConfig();
       const customAdapters = config.adapters.custom || [];
 
       // 找到要删除的适配器
-      const index = customAdapters.findIndex((a) => a.name === data.name || a.id === data.name);
+      const index = customAdapters.findIndex(
+        (a) => a.name === deleteData.name || a.id === deleteData.name,
+      );
 
       if (index < 0) {
-        throw new Error(`Adapter "${data.name}" not found`);
+        throw new Error(`Adapter "${deleteData.name}" not found`);
       }
 
       const deletedAdapter = customAdapters[index];
@@ -336,7 +352,6 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
       // 刷新数据
       await this.sendInitialData();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       Logger.error('Failed to delete adapter', error as Error, { code: 'TAI-5014' });
       throw error;
     }

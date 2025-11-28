@@ -4,7 +4,7 @@
 
 **页面名称**: Advanced Search (高级搜索界面)  
 **页面类型**: Webview  
-**实现文件**: `src/providers/SearchWebviewProvider.ts`  
+**实现文件**: `src/webview/search/App.tsx`  
 **访问方式**: 工具栏搜索图标 / 快捷键 `Cmd/Ctrl+Shift+Alt+F`
 
 ---

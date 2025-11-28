@@ -131,7 +131,7 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
    */
   protected async handleMessage(message: WebviewMessage): Promise<void> {
     try {
-      const messageType = message.type || (message as any).command;
+      const messageType = message.type || (message as { command?: string }).command;
       Logger.debug('Dashboard message received', { type: messageType, payload: message.payload });
 
       switch (messageType) {
@@ -207,12 +207,14 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
           Logger.warn('Unknown dashboard message type', { type: messageType });
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       Logger.error('Failed to handle dashboard message', error as Error, {
         message: message.type,
         code: 'TAI-5004',
       });
-      notify(`Dashboard operation failed: ${errorMessage}`, 'error');
+      notify(
+        `Dashboard operation failed: ${error instanceof Error ? error.message : String(error)}`,
+        'error',
+      );
     }
   }
 
@@ -228,7 +230,6 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
         payload: state,
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       Logger.error('Failed to send dashboard initial state', error as Error, { code: 'TAI-5005' });
     }
   }
@@ -316,7 +317,6 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
         adapters,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       Logger.error('Failed to get dashboard state', error as Error, { code: 'TAI-5006' });
 
       // 返回空状态作为降级

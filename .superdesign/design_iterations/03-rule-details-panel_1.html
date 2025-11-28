@@ -8,7 +8,6 @@
       content="default-src 'none'; style-src 'unsafe-inline' https://microsoft.github.io; font-src https://microsoft.github.io; script-src 'nonce-{{nonce}}';"
     />
     <title>Rule Details</title>
-    <link rel="stylesheet" href="https://microsoft.github.io/vscode-codicons/dist/codicon.css" />
     <style>
       :root {
         /* VS Code 主题变量 - 暗色主题默认值（用于浏览器预览）*/
@@ -101,13 +100,22 @@
         border-bottom: 1px solid var(--vscode-editorWidget-border, transparent);
       }
 
-      .title-bar h1 {
-        font-size: 18px;
+      .title-section {
+        display: flex;
+        align-items: baseline;
+        gap: var(--spacing-sm);
+      }
+
+      .title-section h1 {
+        font-size: 20px;
         font-weight: 600;
         margin: 0;
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-sm);
+      }
+
+      .rule-id {
+        font-size: 14px;
+        color: var(--vscode-descriptionForeground);
+        font-weight: 400;
       }
 
       .toolbar {
@@ -115,19 +123,57 @@
         gap: var(--spacing-sm);
       }
 
-      .toolbar-button {
-        background: none;
-        border: none;
-        color: var(--vscode-foreground);
-        padding: 4px;
+      .button {
+        border: 1px solid transparent;
+        padding: 6px 12px;
         border-radius: var(--border-radius);
         cursor: pointer;
         transition: all 0.2s ease;
+        font-size: 13px;
+        font-family: var(--vscode-font-family);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
       }
 
-      .toolbar-button:hover {
+      .button-primary {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+      }
+
+      .button-primary:hover {
+        background-color: var(--vscode-button-hoverBackground);
+      }
+
+      .button-secondary {
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+      }
+
+      .button-secondary:hover {
+        background-color: var(--vscode-button-secondaryHoverBackground);
+      }
+
+      .button-icon {
+        background: none;
+        border: none;
+        color: var(--vscode-foreground);
+        padding: 4px 8px;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 13px;
+      }
+
+      .button-icon:hover {
         background-color: var(--vscode-toolbar-hoverBackground);
-        transform: scale(1.1);
+      }
+
+      /* Emoji 图标样式 */
+      .emoji-icon {
+        font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+        font-style: normal;
+        font-size: 14px;
       }
 
       .section {
@@ -135,12 +181,98 @@
         border-bottom: 1px solid var(--vscode-editorWidget-border, transparent);
       }
 
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-sm);
+      }
+
       .section-title {
         font-size: 14px;
         font-weight: 600;
         color: var(--vscode-descriptionForeground);
+        margin: 0 0 var(--spacing-sm) 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .content-actions {
+        display: flex;
+        gap: var(--spacing-xs);
+      }
+
+      .code-block {
+        background-color: var(--vscode-editor-background);
+        border: 1px solid var(--vscode-editorWidget-border);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md);
+        margin: 0;
+        overflow-x: auto;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .code-block code {
+        padding: 0;
+        background: none;
+      }
+
+      .rendered-content {
+        background-color: var(--vscode-editor-background);
+        border: 1px solid var(--vscode-editorWidget-border);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md);
+        line-height: 1.6;
+      }
+
+      .rendered-content h1,
+      .rendered-content h2,
+      .rendered-content h3 {
+        margin-top: var(--spacing-md);
         margin-bottom: var(--spacing-sm);
-        text-transform: uppercase;
+        color: var(--vscode-foreground);
+      }
+
+      .rendered-content h1 {
+        font-size: 1.5em;
+      }
+
+      .rendered-content h2 {
+        font-size: 1.3em;
+      }
+
+      .rendered-content h3 {
+        font-size: 1.1em;
+      }
+
+      .rendered-content p {
+        margin: var(--spacing-sm) 0;
+      }
+
+      .rendered-content code {
+        background-color: var(--vscode-textCodeBlock-background);
+        color: var(--vscode-textPreformat-foreground);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 0.9em;
+      }
+
+      .rendered-content pre {
+        background-color: var(--vscode-textCodeBlock-background);
+        border: 1px solid var(--vscode-editorWidget-border);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md);
+        overflow-x: auto;
+        margin: var(--spacing-sm) 0;
+      }
+
+      .rendered-content pre code {
+        background: none;
+        padding: 0;
       }
 
       .metadata-grid {
@@ -267,50 +399,42 @@
     <div class="details-container">
       <header class="header">
         <div class="title-bar">
-          <h1>
-            <i class="codicon codicon-file-text"></i>
-            <span id="rule-name">TypeScript Naming Conventions</span>
-          </h1>
+          <div class="title-section">
+            <h1 id="rule-name">Go 最佳实践</h1>
+            <div class="rule-id">#104</div>
+          </div>
           <div class="toolbar" role="toolbar" aria-label="Rule actions">
             <button
-              class="toolbar-button"
+              class="button button-primary"
               onclick="sendMessage('openMarkdownPreview')"
               aria-label="Preview markdown"
-              title="👁️ Preview"
+              title="Open in VSCode Markdown preview"
             >
-              <i class="codicon codicon-open-preview"></i>
+              <span class="emoji-icon">👁️</span> Preview
             </button>
             <button
-              class="toolbar-button"
+              class="button button-primary"
               onclick="sendMessage('copyContent')"
               aria-label="Copy content"
-              title="📋 Copy"
+              title="Copy content"
             >
-              <i class="codicon codicon-copy"></i>
+              <span class="emoji-icon">📋</span> Copy
             </button>
             <button
-              class="toolbar-button"
-              onclick="sendMessage('renderMarkdown')"
-              aria-label="Render markdown"
-              title="🔄 Render"
-            >
-              <i class="codicon codicon-preview"></i>
-            </button>
-            <button
-              class="toolbar-button"
+              class="button button-primary"
               onclick="sendMessage('exportRule')"
               aria-label="Export rule"
-              title="📥 Export"
+              title="Export rule"
             >
-              <i class="codicon codicon-export"></i>
+              <span class="emoji-icon">📥</span> Export
             </button>
             <button
-              class="toolbar-button"
+              class="button button-secondary"
               onclick="sendMessage('openInEditor')"
               aria-label="Edit in editor"
-              title="📝 Edit"
+              title="Open in editor"
             >
-              <i class="codicon codicon-edit"></i>
+              <span class="emoji-icon">📝</span> Edit
             </button>
           </div>
         </div>
@@ -320,79 +444,245 @@
         <section class="section">
           <h2 class="section-title">📊 Metadata</h2>
           <div class="metadata-grid">
-            <div class="metadata-label">Source</div>
-            <div class="metadata-value" id="meta-source">company-rules</div>
-            <div class="metadata-label">File Path</div>
-            <div class="metadata-value" id="meta-path">rules/ts-naming.mdc</div>
-            <div class="metadata-label">Version</div>
-            <div class="metadata-value" id="meta-version">1.2.0</div>
-            <div class="metadata-label">Author</div>
-            <div class="metadata-value" id="meta-author">Team Lead</div>
-            <div class="metadata-label">Priority</div>
+            <div class="metadata-label">SOURCE</div>
+            <div class="metadata-value" id="meta-source">ai-rules-7008d805</div>
+            <div class="metadata-label">FILE PATH</div>
+            <div class="metadata-value" id="meta-path">
+              /home/ygqygq2/.cache/turbo-ai-rules/sources/ai-rules-7008d805/100-programming-languages/104-go.mdc
+            </div>
+            <div class="metadata-label">VERSION</div>
+            <div class="metadata-value" id="meta-version">1.0.0</div>
+            <div class="metadata-label">AUTHOR</div>
+            <div class="metadata-value" id="meta-author">Turbo AI Rules</div>
+            <div class="metadata-label">PRIORITY</div>
             <div class="metadata-value">
-              <span class="priority-text priority-high">🔥 high</span>
+              <span class="priority-text priority-medium"
+                ><span class="emoji-icon">⭐</span> <span>medium</span></span
+              >
             </div>
           </div>
         </section>
 
         <section class="section">
           <h2 class="section-title">📝 Description</h2>
-          <p id="description">
-            Naming conventions for TypeScript projects, including variables, functions, classes, and
-            more.
-          </p>
+          <p id="description">Go 1.21+ 现代应用开发的函数式我们信用模式</p>
         </section>
 
         <section class="section">
           <h2 class="section-title">🏷️ Tags</h2>
           <div class="tag-cloud" id="tag-cloud">
-            <span class="tag">typescript</span>
-            <span class="tag">naming</span>
-            <span class="tag">style</span>
-            <span class="tag">conventions</span>
-            <span class="tag">best-practices</span>
+            <span class="tag" tabindex="0">go</span>
+            <span class="tag" tabindex="0">golang</span>
+            <span class="tag" tabindex="0">backend</span>
+            <span class="tag" tabindex="0">concurrency</span>
+            <span class="tag" tabindex="0">microservices</span>
           </div>
         </section>
 
-        <section class="content-preview" id="content-preview">
-          <h2 class="section-title">📄 Content Preview</h2>
-          <h1>Naming Conventions</h1>
-          <h2>Variables</h2>
-          <p>Use camelCase for variables:</p>
-          <pre><code>const userName = "John";</code></pre>
-          <h2>Classes</h2>
-          <p>Use PascalCase for classes:</p>
-          <pre><code>class UserAccount {}</code></pre>
+        <section class="section">
+          <div class="section-header">
+            <h2 class="section-title"><span class="emoji-icon">📄</span> Content Preview</h2>
+            <div class="content-actions">
+              <button
+                class="button-icon"
+                onclick="toggleContentView()"
+                title="Toggle between raw and rendered view"
+                id="view-toggle-btn"
+              >
+                <span id="view-toggle-text">🔄 Render</span>
+              </button>
+              <button class="button-icon" onclick="sendMessage('copyContent')" title="Copy content">
+                <span class="emoji-icon">📋</span>
+              </button>
+            </div>
+          </div>
+          <div id="content-area">
+            <pre class="code-block"><code># Go 最佳实践
+
+## 适用场景
+
+- Go 1.21+ 应用开发
+- 结构服务开发
+- 微服务架构
+- 命令行工具
+- 并发编程
+- 云原生应用
+
+## 核心内容
+
+Go 开发的核心原则和最佳实践，涵盖并发编程、代码风格、并发风格、性能优化、并且编程实践。
+
+## 关键要点</code></pre>
+          </div>
         </section>
       </main>
     </div>
 
     <script nonce="{{nonce}}">
       const vscode = acquireVsCodeApi();
+      let isRenderedView = false;
+      let renderedHtml = null;
 
       function sendMessage(type, payload) {
         vscode.postMessage({ type, payload });
+
+        // 按钮点击反馈
+        const button = event.target.closest('.button, .button-icon');
+        if (button) {
+          button.style.opacity = '0.6';
+          setTimeout(() => {
+            button.style.opacity = '1';
+          }, 200);
+        }
+
+        // 特殊处理复制操作
+        if (type === 'copyContent') {
+          showCopyFeedback(button);
+        }
       }
 
-      const contentPreview = document.getElementById('content-preview');
-      const toggleWrapBtn = document.getElementById('toggle-wrap');
-      toggleWrapBtn.addEventListener('click', () => {
-        contentPreview.classList.toggle('no-wrap');
-        sendMessage('toggleWrap', { wrap: !contentPreview.classList.contains('no-wrap') });
+      function toggleContentView() {
+        // 如果要切换到渲染视图且还没有渲染内容
+        if (!isRenderedView && renderedHtml === null) {
+          vscode.postMessage({ type: 'renderMarkdown' });
+          // 不立即切换视图，等待渲染完成后再切换
+          return;
+        }
+
+        // 如果已有渲染内容或要切回原始视图，立即切换
+        isRenderedView = !isRenderedView;
+        updateContentView();
+      }
+
+      function updateContentView() {
+        const contentArea = document.getElementById('content-area');
+        const toggleText = document.getElementById('view-toggle-text');
+
+        if (!isRenderedView) {
+          // 显示原始内容
+          toggleText.textContent = '🔄 Render';
+          const rule = JSON.parse(localStorage.getItem('currentRule') || '{}');
+          contentArea.innerHTML = `<pre class="code-block"><code>${escapeHtml(
+            rule.content || '',
+          )}</code></pre>`;
+        } else {
+          // 显示渲染后的内容
+          toggleText.textContent = '📝 Raw';
+          contentArea.innerHTML = `<div class="rendered-content">${renderedHtml || ''}</div>`;
+        }
+      }
+
+      function escapeHtml(text) {
+        const map = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;',
+        };
+        return text.replace(/[&<>"']/g, (m) => map[m]);
+      }
+
+      function showCopyFeedback(button) {
+        if (!button) return;
+        const originalContent = button.innerHTML;
+        button.innerHTML = '<span class="emoji-icon">✅</span>';
+        button.disabled = true;
+
+        setTimeout(() => {
+          button.innerHTML = originalContent;
+          button.disabled = false;
+        }, 2000);
+      }
+
+      // 标签点击事件
+      document.addEventListener('DOMContentLoaded', () => {
+        const tags = document.querySelectorAll('.tag');
+        tags.forEach((tag) => {
+          tag.addEventListener('click', () => {
+            const tagName = tag.textContent.trim();
+            sendMessage('searchByTag', { tag: tagName });
+          });
+
+          // 键盘支持
+          tag.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              tag.click();
+            }
+          });
+        });
+
+        // 发送 webview ready 消息
+        vscode.postMessage({ type: 'webviewReady' });
       });
 
       window.addEventListener('message', (event) => {
         const message = event.data;
-        if (message.type === 'loadRule') {
-          const rule = message.data;
-          document.getElementById('rule-name').textContent = rule.name;
-          document.getElementById('meta-source').textContent = rule.source;
-          document.getElementById('meta-path').textContent = rule.path;
-          document.getElementById('meta-version').textContent = rule.version || 'N/A';
-          document.getElementById('meta-author').textContent = rule.author || 'N/A';
+
+        if (message.type === 'setRule') {
+          const rule = message.rule;
+
+          // 保存当前规则
+          localStorage.setItem('currentRule', JSON.stringify(rule));
+
+          // 更新标题
+          document.getElementById('rule-name').textContent = rule.title || 'Unnamed Rule';
+          document.querySelector('.rule-id').textContent = `#${rule.id || ''}`;
+
+          // 更新元数据
+          document.getElementById('meta-source').textContent = rule.sourceId || 'N/A';
+          document.getElementById('meta-path').textContent = rule.filePath || 'N/A';
+          document.getElementById('meta-version').textContent = rule.metadata?.version || '1.0.0';
+          document.getElementById('meta-author').textContent = rule.metadata?.author || 'N/A';
+
+          // 更新优先级
+          const priorityElem = document.querySelector('.metadata-value .priority-text');
+          if (priorityElem) {
+            const priority = rule.metadata?.priority || 'medium';
+            priorityElem.className = `priority-text priority-${priority.toLowerCase()}`;
+
+            const iconMap = {
+              high: '🔥',
+              medium: '⭐',
+              low: 'ℹ️',
+            };
+            priorityElem.innerHTML = `<span class="emoji-icon">${
+              iconMap[priority.toLowerCase()]
+            }</span> <span>${priority}</span>`;
+          }
+
+          // 更新描述
           document.getElementById('description').textContent =
-            rule.description || 'No description provided.';
-          // ... and so on for other fields
+            rule.metadata?.description || 'No description available.';
+
+          // 更新标签
+          const tagCloud = document.getElementById('tag-cloud');
+          if (rule.metadata?.tags && rule.metadata.tags.length > 0) {
+            tagCloud.innerHTML = rule.metadata.tags
+              .map((tag) => `<span class="tag" tabindex="0">${tag}</span>`)
+              .join('');
+          } else {
+            tagCloud.innerHTML = '<span class="metadata-value">No tags</span>';
+          }
+
+          // 更新内容预览
+          const contentArea = document.getElementById('content-area');
+          contentArea.innerHTML = `<pre class="code-block"><code>${escapeHtml(
+            rule.content || '',
+          )}</code></pre>`;
+
+          // 重置渲染状态
+          isRenderedView = false;
+          renderedHtml = null;
+          document.getElementById('view-toggle-text').textContent = '🔄 Render';
+        }
+
+        if (message.type === 'renderedHtml') {
+          renderedHtml = message.html;
+          // 渲染完成后自动切换到渲染视图
+          isRenderedView = true;
+          updateContentView();
         }
       });
     </script>

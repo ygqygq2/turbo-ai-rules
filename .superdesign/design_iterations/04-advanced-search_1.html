@@ -66,6 +66,7 @@
         /* 间距系统 */
         --spacing-sm: 8px;
         --spacing-md: 12px;
+        --spacing-lg: 16px;
         --border-radius: 4px;
       }
 
@@ -73,20 +74,13 @@
         font-family: var(--vscode-font-family);
         color: var(--vscode-foreground);
         background-color: var(--vscode-editor-background);
-        padding: var(--spacing-sm);
+        padding: var(--spacing-md);
+        margin: 0;
       }
 
-      .search-container {
-        display: grid;
-        grid-template-columns: 350px 1fr;
-        gap: var(--spacing-md);
-        height: calc(100vh - 32px);
-      }
-
-      .search-sidebar,
-      .results-panel {
-        height: 100%;
-        overflow-y: auto;
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
       }
 
       .section {
@@ -103,10 +97,21 @@
         margin-bottom: var(--spacing-md);
       }
 
-      .form-grid label {
-        display: block;
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .form-label {
         font-size: 13px;
-        margin-bottom: 4px;
       }
 
       .form-grid input,
@@ -120,220 +125,353 @@
         box-sizing: border-box;
       }
 
-      .quick-filter-grid {
+      .toolbar {
+        display: flex;
+        gap: var(--spacing-sm);
+        justify-content: flex-end;
+      }
+
+      .button {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        padding: 6px 14px;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        font-size: var(--vscode-font-size);
+      }
+
+      .button:hover {
+        background-color: var(--vscode-button-hoverBackground);
+      }
+
+      .button-secondary {
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+      }
+
+      .button-secondary:hover {
+        background-color: var(--vscode-button-secondaryHoverBackground);
+      }
+
+      .quick-filters {
+        margin-top: var(--spacing-md);
+      }
+
+      .filter-buttons {
         display: flex;
         flex-wrap: wrap;
         gap: var(--spacing-sm);
       }
 
-      .quick-filter {
+      .tag {
+        display: inline-block;
+        background-color: var(--vscode-badge-background);
+        color: var(--vscode-badge-foreground);
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+      }
+
+      .tag:hover {
+        background-color: var(--vscode-button-hoverBackground);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .tag:active {
+        transform: translateY(0);
+      }
+
+      .tag.variant-filter {
         background-color: var(--vscode-button-secondaryBackground);
         color: var(--vscode-button-secondaryForeground);
-        border: none;
-        padding: 4px 8px;
-        border-radius: var(--border-radius);
-        cursor: pointer;
       }
-      .quick-filter.active {
+
+      .tag.variant-filter.active {
         background-color: var(--vscode-button-background);
         color: var(--vscode-button-foreground);
       }
 
-      .history-item {
-        padding: 4px 0;
-        cursor: pointer;
-        font-size: 13px;
-      }
-      .history-item:hover {
-        color: var(--vscode-textLink-activeForeground);
-      }
-      .history-item-chip {
-        display: inline-flex;
+      .history-section-compact {
+        display: flex;
         align-items: center;
-        gap: 6px;
-        padding: 4px 10px;
-        background: var(--vscode-badge-background);
-        color: var(--vscode-badge-foreground);
-        border-radius: 12px;
-        cursor: pointer;
-        font-size: 11px;
-        white-space: nowrap;
-        flex-shrink: 0;
-        transition: all 0.2s;
-      }
-      .history-item-chip:hover {
-        background: var(--vscode-list-activeSelectionBackground);
-        transform: translateY(-1px);
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+        padding: 8px 12px;
+        background-color: var(--vscode-editorWidget-background);
+        border: 1px solid var(--vscode-editorWidget-border, transparent);
+        border-radius: var(--border-radius);
       }
 
-      .result-card {
+      .history-label {
+        font-size: 12px;
+        color: var(--vscode-descriptionForeground);
+      }
+
+      .history-link {
+        color: var(--vscode-textLink-foreground);
+        cursor: pointer;
+        font-size: 12px;
+      }
+
+      .history-link:hover {
+        text-decoration: underline;
+      }
+
+      .history-separator {
+        color: var(--vscode-descriptionForeground);
+      }
+
+      .history-clear {
+        margin-left: auto;
+        cursor: pointer;
+        font-size: 16px;
+        color: var(--vscode-descriptionForeground);
+      }
+
+      .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-md);
+      }
+
+      .result-item {
         background-color: var(--vscode-editorWidget-background);
         border: 1px solid var(--vscode-editorWidget-border, transparent);
         border-radius: var(--border-radius);
         padding: var(--spacing-md);
         margin-bottom: var(--spacing-sm);
-        animation: slideInUp 0.3s ease-out forwards;
-        opacity: 0;
       }
 
-      @media (max-width: 900px) {
-        .search-container {
-          grid-template-columns: 1fr;
-        }
+      .result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
       }
 
-      @keyframes slideInUp {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+      .result-header-left {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+      }
+
+      .result-checkbox {
+        margin: 0;
+      }
+
+      .result-title {
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .result-meta {
+        font-size: 12px;
+        color: var(--vscode-descriptionForeground);
+        margin-bottom: 8px;
+        display: flex;
+        gap: var(--spacing-md);
+      }
+
+      .matched-fields {
+        font-size: 11px;
+        color: var(--vscode-descriptionForeground);
+        margin-bottom: 8px;
+        display: flex;
+        gap: 8px;
+      }
+
+      .matched {
+        color: var(--vscode-charts-green);
+      }
+
+      .unmatched {
+        color: var(--vscode-descriptionForeground);
+      }
+
+      .result-desc {
+        font-size: 12px;
+        margin-bottom: 8px;
+      }
+
+      .result-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .view-button {
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+        border: none;
+        padding: 4px 12px;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        font-size: 12px;
+      }
+
+      .view-button:hover {
+        background-color: var(--vscode-button-secondaryHoverBackground);
+      }
+
+      .batch-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-md);
+        padding: var(--spacing-sm);
+        background-color: var(--vscode-input-background);
+        border-radius: var(--border-radius);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: var(--spacing-xl);
+        color: var(--vscode-descriptionForeground);
+      }
+
+      /* Priority colors */
+      .priority-high {
+        border-left: 3px solid var(--vscode-charts-red);
+      }
+
+      .priority-medium {
+        border-left: 3px solid var(--vscode-charts-yellow);
+      }
+
+      .priority-low {
+        border-left: 3px solid var(--vscode-charts-blue);
       }
     </style>
   </head>
   <body>
-    <div class="search-container">
-      <div class="search-sidebar">
-        <div class="section">
-          <h2 class="section-title">Search Conditions</h2>
-          <div class="form-grid">
-            <div
-              style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px"
-            >
-              <div><label for="name-input">Name</label><input id="name-input" type="text" /></div>
-              <div>
-                <label for="content-input">Content</label><input id="content-input" type="text" />
-              </div>
-            </div>
-            <div
-              style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px"
-            >
-              <div><label for="tags-input">Tags</label><input id="tags-input" type="text" /></div>
-              <div>
-                <label for="source-input">Source (ID or Name)</label
-                ><input id="source-input" type="text" placeholder="Source ID or Name..." />
-              </div>
-            </div>
-            <div style="text-align: right; margin-top: 8px">
-              <button style="padding: 6px 14px; margin-right: 8px">🔍 Search</button>
-              <button style="padding: 6px 14px">⟲ Reset</button>
-            </div>
+    <div class="container">
+      <div class="section search-form">
+        <div class="section-title">Search Conditions</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Rule Name</label>
+            <input type="text" placeholder="Search by rule name..." />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Content</label>
+            <input type="text" placeholder="Search by rule content..." />
           </div>
         </div>
-        <div class="section">
-          <h2 class="section-title">⚡ 优先级过滤器（可多选）</h2>
-          <div class="quick-filter-grid">
-            <button class="quick-filter active" title="高优先级（可多选，点击已选中的按钮可取消）">
-              🔴 High
-            </button>
-            <button class="quick-filter" title="中优先级（可多选，点击已选中的按钮可取消）">
-              🟡 Medium
-            </button>
-            <button class="quick-filter" title="低优先级（可多选，点击已选中的按钮可取消）">
-              🔵 Low
-            </button>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tags</label>
+            <input type="text" placeholder="Comma-separated tags..." />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Source</label>
+            <input type="text" placeholder="Source ID or Name..." />
           </div>
         </div>
-        <div
-          style="
-            padding: 8px 12px;
-            margin-top: 8px;
-            font-size: 12px;
-            background: var(--vscode-editorWidget-background);
-            border: 1px solid var(--vscode-editorWidget-border);
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-          "
-        >
-          <span style="font-size: 14px">🕒</span>
-          <a style="color: var(--vscode-textLink-foreground); cursor: pointer">标题:"auth"</a>
-          <span style="opacity: 0.5"> · </span>
-          <a style="color: var(--vscode-textLink-foreground); cursor: pointer">内容:"jwt"</a>
-          <span style="opacity: 0.5"> · </span>
-          <a style="color: var(--vscode-textLink-foreground); cursor: pointer">优先级:high</a>
-          <a style="margin-left: auto; font-size: 18px; cursor: pointer" title="清空历史">×</a>
+        <div class="toolbar">
+          <button class="button">🔍 Search</button>
+          <button class="button button-secondary">⟲ Reset</button>
+        </div>
+
+        <div class="quick-filters">
+          <div class="section-title">⚡ Priority Filters (Multi-select)</div>
+          <div class="tags-container filter-buttons">
+            <button class="tag variant-filter active" title="High priority (multi-select, click to toggle)">
+              High
+            </button>
+            <button class="tag variant-filter" title="Medium priority (multi-select, click to toggle)">
+              Medium
+            </button>
+            <button class="tag variant-filter" title="Low priority (multi-select, click to toggle)">
+              Low
+            </button>
+          </div>
         </div>
       </div>
-      <div class="results-panel">
-        <div class="section-title" style="padding: 0 0 8px 0">Results (23 found)</div>
+
+      <div class="history-section-compact">
+        <span class="history-label">History:</span>
+        <a class="history-link" title="title:"auth" · content:"jwt" · priority:high (23 results)">
+          title:"auth"
+        </a>
+        <span class="history-separator"> · </span>
+        <a class="history-link" title="title:"auth" · content:"jwt" · priority:high (23 results)">
+          content:"jwt"
+        </a>
+        <span class="history-separator"> · </span>
+        <a class="history-link" title="title:"auth" · content:"jwt" · priority:high (23 results)">
+          priority:high
+        </a>
+        <a class="history-clear" title="Clear history">×</a>
+      </div>
+
+      <div class="section">
+        <div class="results-header">
+          <div class="section-title">Results (23 found)</div>
+          <button class="button button-secondary">Select All</button>
+        </div>
         <div id="results-list">
-          <div class="result-card" style="animation-delay: 0.05s">
-            <div
-              style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 6px;
-              "
-            >
-              <div>
-                <input type="checkbox" style="margin-right: 8px" />🔥 auth/jwt-validation.mdc
+          <div class="result-card result-item priority-high">
+            <div class="result-header">
+              <div class="result-header-left">
+                <input type="checkbox" className="result-checkbox" checked />
+                <span class="codicon codicon-warning"></span>
+                <div class="result-title">auth/jwt-validation.mdc</div>
               </div>
             </div>
-            <div
-              style="
-                font-size: 12px;
-                color: var(--vscode-descriptionForeground);
-                margin-bottom: 8px;
-              "
-            >
-              📦 Source: company-rules | 🏷️ Tags: auth, security, jwt
+            <div class="result-meta">
+              <span>📦 company-rules</span>
+              <span>🏷️ auth, security, jwt</span>
             </div>
-            <div
-              style="
-                font-size: 11px;
-                color: var(--vscode-descriptionForeground);
-                margin-bottom: 8px;
-              "
-            >
-              ✓ 匹配: name, tags
+            <div class="matched-fields">
+              Matched: 
+              <span class="matched">Name</span>
+              <span class="matched">Tags</span>
+              <span class="unmatched">Content</span>
+              <span class="unmatched">Priority</span>
+              <span class="unmatched">Source</span>
             </div>
-            <div style="display: flex; gap: 8px">
-              <button style="padding: 4px 12px; font-size: 12px">📄 预览 Markdown</button>
-              <button style="padding: 4px 12px; font-size: 12px">✅ 选中规则</button>
+            <div class="result-desc">JWT validation rule for authentication</div>
+            <div class="result-actions">
+              <button class="view-button">📄 View Markdown</button>
+              <button class="view-button">✅ Select Rule</button>
             </div>
           </div>
-          <div class="result-card" style="animation-delay: 0.1s">
-            <div
-              style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 6px;
-              "
-            >
-              <div>
-                <input type="checkbox" style="margin-right: 8px" />⚠️ security/input-sanitize.mdc
+          <div class="result-card result-item priority-medium">
+            <div class="result-header">
+              <div class="result-header-left">
+                <input type="checkbox" className="result-checkbox" />
+                <span class="codicon codicon-info"></span>
+                <div class="result-title">security/input-sanitize.mdc</div>
               </div>
             </div>
-            <div
-              style="
-                font-size: 12px;
-                color: var(--vscode-descriptionForeground);
-                margin-bottom: 8px;
-              "
-            >
-              📦 Source: best-practices | 🏷️ Tags: security, validation
+            <div class="result-meta">
+              <span>📦 best-practices</span>
+              <span>🏷️ security, validation</span>
             </div>
-            <div
-              style="
-                font-size: 11px;
-                color: var(--vscode-descriptionForeground);
-                margin-bottom: 8px;
-              "
-            >
-              ✓ 匹配: content, tags
+            <div class="matched-fields">
+              Matched: 
+              <span class="unmatched">Name</span>
+              <span class="matched">Tags</span>
+              <span class="matched">Content</span>
+              <span class="unmatched">Priority</span>
+              <span class="unmatched">Source</span>
             </div>
-            <div style="display: flex; gap: 8px">
-              <button style="padding: 4px 12px; font-size: 12px">📄 预览 Markdown</button>
-              <button style="padding: 4px 12px; font-size: 12px">✅ 选中规则</button>
+            <div class="result-desc">Input sanitization rule for security</div>
+            <div class="result-actions">
+              <button class="view-button">📄 View Markdown</button>
+              <button class="view-button">✅ Select Rule</button>
             </div>
           </div>
+        </div>
+        <div class="batch-actions">
+          <span>Selected: 1</span>
+          <button class="button">Batch Select</button>
+          <button class="button button-secondary">Batch Export</button>
         </div>
       </div>
     </div>

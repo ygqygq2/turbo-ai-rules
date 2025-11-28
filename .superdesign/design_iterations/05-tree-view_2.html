@@ -3,30 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>规则树视图 - v2 (当前实现)</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vscode/codicons@latest/dist/codicon.css">
+    <title>规则树视图 - v3 (规则列表视图)</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@vscode/codicons@latest/dist/codicon.css"
+    />
     <style>
       :root {
-        /* VS Code 主题变量 */
         --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
           Arial, sans-serif;
         --vscode-font-size: 13px;
         --vscode-foreground: #cccccc;
         --vscode-descriptionForeground: #8c8c8c;
-        --vscode-disabledForeground: #656565;
         --vscode-sideBar-background: #252526;
-        --vscode-sideBar-border: #2b2b2b;
         --vscode-list-hoverBackground: #2a2d2e;
-        --vscode-list-activeSelectionBackground: #094771;
-        --vscode-list-inactiveSelectionBackground: #37373d;
         --vscode-focusBorder: #007fd4;
         --vscode-errorForeground: #f48771;
         --vscode-warningForeground: #cca700;
-        --vscode-charts-blue: #75beff;
         --vscode-charts-green: #89d185;
-
-        /* 自定义变量 */
-        --tree-indent: 8px;
         --row-height: 22px;
       }
 
@@ -36,22 +30,19 @@
         color: var(--vscode-foreground);
         background-color: var(--vscode-sideBar-background);
         margin: 0;
-        padding: 0;
-        overflow: hidden;
+        padding: 2px 0;
       }
 
       .tree-container {
         height: 100vh;
         overflow-y: auto;
-        padding: 4px 0;
       }
 
-      /* 树节点 */
       .tree-item {
         display: flex;
         align-items: center;
         height: var(--row-height);
-        padding: 0 8px 0 0;
+        padding: 0 8px;
         cursor: pointer;
         user-select: none;
       }
@@ -60,544 +51,426 @@
         background-color: var(--vscode-list-hoverBackground);
       }
 
-      .tree-item.selected {
+      .tree-item.selected-row {
         background-color: var(--vscode-list-activeSelectionBackground);
       }
 
-      /* 展开/折叠箭头 */
       .tree-item-chevron {
         width: 16px;
-        height: var(--row-height);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
+        text-align: center;
+        margin-right: 4px;
       }
 
-      .tree-item-chevron .codicon {
-        font-size: 12px;
-        color: var(--vscode-foreground);
+      .tree-item input[type='checkbox'] {
+        margin: 0 6px 0 0;
+        cursor: pointer;
       }
 
-      .tree-item-chevron.collapsed .codicon-chevron-down {
-        transform: rotate(-90deg);
-      }
-
-      /* 图标 */
       .tree-item-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
         width: 16px;
-        height: var(--row-height);
+        text-align: center;
         margin-right: 6px;
-        flex-shrink: 0;
+        font-size: 14px;
+        font-style: normal;
+        line-height: 1;
       }
 
-      .tree-item-icon .codicon {
-        font-size: 16px;
+      /* 图标颜色 - 已选中 */
+      .icon-selected-high {
+        color: var(--vscode-errorForeground); /* 红色 */
       }
 
-      /* 源图标颜色 */
-      .icon-source-enabled {
-        color: var(--vscode-charts-blue);
+      .icon-selected-medium {
+        color: #75beff; /* 蓝色 */
       }
 
-      .icon-source-disabled {
-        color: var(--vscode-disabledForeground);
+      .icon-selected-normal {
+        color: var(--vscode-foreground); /* 默认 */
       }
 
-      /* 规则图标颜色 - 已选中 */
-      .icon-rule-selected-high {
-        color: var(--vscode-errorForeground);
+      /* 图标颜色 - 未选中 */
+      .icon-unselected-high {
+        color: var(--vscode-errorForeground); /* 红色 */
       }
 
-      .icon-rule-selected-medium {
-        color: var(--vscode-warningForeground);
+      .icon-unselected-medium {
+        color: var(--vscode-warningForeground); /* 黄色 */
       }
 
-      .icon-rule-selected-low {
-        color: var(--vscode-descriptionForeground);
+      .icon-unselected-normal {
+        color: var(--vscode-foreground); /* 默认 */
       }
 
-      .icon-rule-selected-normal {
-        color: var(--vscode-foreground);
+      /* 使用 emoji 作为备用图标 */
+      .emoji-icon {
+        font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
       }
-
-      /* 规则图标颜色 - 未选中 */
-      .icon-rule-unselected-high {
-        color: var(--vscode-errorForeground);
-      }
-
-      .icon-rule-unselected-medium {
-        color: var(--vscode-warningForeground);
-      }
-
-      .icon-rule-unselected-low {
-        color: var(--vscode-descriptionForeground);
-      }
-
-      .icon-rule-unselected-normal {
-        color: var(--vscode-foreground);
-      }
-
-      /* 标签 */
       .tree-item-label {
-        flex: 1;
+        flex-grow: 1;
+        white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap;
       }
 
-      /* 描述信息 */
       .tree-item-description {
         margin-left: 8px;
         color: var(--vscode-descriptionForeground);
-        font-size: 12px;
-        flex-shrink: 0;
+        font-size: 0.9em;
       }
 
-      /* 缩进 */
-      .indent-0 {
-        padding-left: 0;
-      }
-
-      .indent-1 {
-        padding-left: calc(var(--tree-indent) + 16px);
-      }
-
-      /* 空状态 */
-      .tree-item.empty {
-        color: var(--vscode-descriptionForeground);
-        cursor: default;
-      }
-
-      .tree-item.empty:hover {
-        background-color: transparent;
-      }
-
-      /* 子节点容器 */
-      .tree-children {
+      .tree-item-actions {
         display: none;
+        margin-left: auto;
       }
 
-      .tree-children.expanded {
-        display: block;
+      .tree-item:hover .tree-item-actions {
+        display: flex;
+        gap: 4px;
+      }
+
+      .indent-0 {
+        padding-left: 8px;
+      }
+      .indent-1 {
+        padding-left: 28px;
       }
     </style>
   </head>
   <body>
     <div class="tree-container">
-      <!-- 示例1: 已启用源 + 全部已选 -->
-      <div class="tree-source">
-        <div class="tree-item indent-0 selected" data-type="source">
-          <div class="tree-item-chevron">
-            <i class="codicon codicon-chevron-down"></i>
-          </div>
-          <div class="tree-item-icon icon-source-enabled">
-            <i class="codicon codicon-repo-check"></i>
-          </div>
-          <div class="tree-item-label">company-rules</div>
-          <div class="tree-item-description">✅ 已启用 • main • ✅ 全部已选 (25)</div>
-        </div>
-        <div class="tree-children expanded">
-          <!-- 规则1: 已选中 - 高优先级 -->
-          <div class="tree-item indent-1" data-type="rule">
-            <div class="tree-item-chevron"></div>
-            <div class="tree-item-icon icon-rule-selected-high">
-              <i class="codicon codicon-pass-filled"></i>
-            </div>
-            <div class="tree-item-label">JWT 验证规范</div>
-            <div class="tree-item-description">✓ 已选 • HIGH • auth, security</div>
-          </div>
-          <!-- 规则2: 已选中 - 中等优先级 -->
-          <div class="tree-item indent-1" data-type="rule">
-            <div class="tree-item-chevron"></div>
-            <div class="tree-item-icon icon-rule-selected-medium">
-              <i class="codicon codicon-pass-filled"></i>
-            </div>
-            <div class="tree-item-label">OAuth2 流程</div>
-            <div class="tree-item-description">✓ 已选 • MEDIUM • auth</div>
-          </div>
-          <!-- 规则3: 已选中 - 低优先级 -->
-          <div class="tree-item indent-1" data-type="rule">
-            <div class="tree-item-chevron"></div>
-            <div class="tree-item-icon icon-rule-selected-low">
-              <i class="codicon codicon-pass-filled"></i>
-            </div>
-            <div class="tree-item-label">密码策略</div>
-            <div class="tree-item-description">✓ 已选 • LOW • auth</div>
-          </div>
-        </div>
+      <!-- Source: my -->
+      <div class="tree-item indent-0 selected-row">
+        <div class="tree-item-chevron">▼</div>
+        <div class="tree-item-label">my</div>
+        <div class="tree-item-description">✓ 已启用 • main • 📊 2/31 已选</div>
+        <div class="tree-item-actions">🔄 🗑️</div>
       </div>
 
-      <!-- 示例2: 已启用源 + 部分已选 -->
-      <div class="tree-source">
-        <div class="tree-item indent-0" data-type="source">
-          <div class="tree-item-chevron">
-            <i class="codicon codicon-chevron-down"></i>
-          </div>
-          <div class="tree-item-icon icon-source-enabled">
-            <i class="codicon codicon-repo-check"></i>
-          </div>
-          <div class="tree-item-label">personal-rules</div>
-          <div class="tree-item-description">✅ 已启用 • develop • 📊 12/25 已选</div>
+      <!-- Rules -->
+      <div class="tree-children expanded">
+        <!-- 规则1: 未选中 - 普通 -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-normal emoji-icon">📄</div>
+          <div class="tree-item-label">AI 规则定 - Copilot 指导说明</div>
         </div>
-        <div class="tree-children expanded">
-          <!-- 规则1: 已选中 - 普通优先级 -->
-          <div class="tree-item indent-1" data-type="rule">
-            <div class="tree-item-chevron"></div>
-            <div class="tree-item-icon icon-rule-selected-normal">
-              <i class="codicon codicon-pass-filled"></i>
-            </div>
-            <div class="tree-item-label">输入验证规范</div>
-            <div class="tree-item-description">✓ 已选 • security</div>
-          </div>
-          <!-- 规则2: 未选中 - 高优先级 -->
-          <div class="tree-item indent-1" data-type="rule">
-            <div class="tree-item-chevron"></div>
-            <div class="tree-item-icon icon-rule-unselected-high">
-              <i class="codicon codicon-flame"></i>
-            </div>
-            <div class="tree-item-label">XSS 防护</div>
-            <div class="tree-item-description">HIGH • security</div>
-          </div>
-          <!-- 规则3: 未选中 - 中等优先级 -->
-          <div class="tree-item indent-1" data-type="rule">
-            <div class="tree-item-chevron"></div>
-            <div class="tree-item-icon icon-rule-unselected-medium">
-              <i class="codicon codicon-warning"></i>
-            </div>
-            <div class="tree-item-label">CSRF 防护</div>
-            <div class="tree-item-description">MEDIUM • security</div>
-          </div>
-          <!-- 规则4: 未选中 - 低优先级 -->
-          <div class="tree-item indent-1" data-type="rule">
-            <div class="tree-item-chevron"></div>
-            <div class="tree-item-icon icon-rule-unselected-low">
-              <i class="codicon codicon-info"></i>
-            </div>
-            <div class="tree-item-label">编码规范</div>
-            <div class="tree-item-description">LOW • style</div>
-          </div>
-        </div>
-      </div>
 
-      <!-- 示例3: 已启用源 + 未选择 -->
-      <div class="tree-source">
-        <div class="tree-item indent-0" data-type="source">
-          <div class="tree-item-chevron collapsed">
-            <i class="codicon codicon-chevron-down"></i>
-          </div>
-          <div class="tree-item-icon icon-source-enabled">
-            <i class="codicon codicon-repo-check"></i>
-          </div>
-          <div class="tree-item-label">test-rules</div>
-          <div class="tree-item-description">✅ 已启用 • main • ⚠️ 未选择</div>
+        <!-- 规则2: 未选中 - 中优先级（星星） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-medium emoji-icon">⭐</div>
+          <div class="tree-item-label">通用编码规范</div>
+          <div class="tree-item-description">general, coding-standards • +2</div>
         </div>
-        <div class="tree-children">
-          <!-- 折叠状态，不显示子节点 -->
-        </div>
-      </div>
 
-      <!-- 示例4: 已禁用源 -->
-      <div class="tree-source">
-        <div class="tree-item indent-0" data-type="source">
-          <div class="tree-item-chevron collapsed">
-            <i class="codicon codicon-chevron-down"></i>
-          </div>
-          <div class="tree-item-icon icon-source-disabled">
-            <i class="codicon codicon-repo"></i>
-          </div>
-          <div class="tree-item-label">archived-rules</div>
-          <div class="tree-item-description">❌ 已禁用 • main</div>
+        <!-- 规则3: 未选中 - 中优先级（星星） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-medium emoji-icon">⭐</div>
+          <div class="tree-item-label">Python 最佳实践</div>
+          <div class="tree-item-description">python, flask • +3</div>
         </div>
-        <div class="tree-children">
-          <!-- 折叠状态，不显示子节点 -->
-        </div>
-      </div>
 
-      <!-- 示例5: 已启用源 + 无规则 -->
-      <div class="tree-source">
-        <div class="tree-item indent-0" data-type="source">
-          <div class="tree-item-chevron collapsed">
-            <i class="codicon codicon-chevron-down"></i>
-          </div>
-          <div class="tree-item-icon icon-source-enabled">
-            <i class="codicon codicon-repo-check"></i>
-          </div>
-          <div class="tree-item-label">empty-source</div>
-          <div class="tree-item-description">✅ 已启用 • main • 📭 无规则</div>
+        <!-- 规则4: 未选中 - 中优先级（星星） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-medium emoji-icon">⭐</div>
+          <div class="tree-item-label">TypeScript 最佳实践</div>
+          <div class="tree-item-description">typescript, web-developm...</div>
         </div>
-        <div class="tree-children">
-          <div class="tree-item indent-1 empty" data-type="empty">
-            <div class="tree-item-chevron"></div>
-            <div class="tree-item-icon">
-              <i class="codicon codicon-info"></i>
-            </div>
-            <div class="tree-item-label">No rules (sync to fetch)</div>
-          </div>
+
+        <!-- 规则5: 未选中 - 中优先级（星星） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-medium emoji-icon">⭐</div>
+          <div class="tree-item-label">JavaScript 最佳实践</div>
+          <div class="tree-item-description">javascript, es6 • +2</div>
+        </div>
+
+        <!-- 规则6: 未选中 - 中优先级（星星） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-medium emoji-icon">⭐</div>
+          <div class="tree-item-label">Go 最佳实践</div>
+          <div class="tree-item-description">go, golang • +3</div>
+        </div>
+
+        <!-- 规则7: 未选中 - 中优先级（星星） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-medium emoji-icon">⭐</div>
+          <div class="tree-item-label">设计系统最佳实践</div>
+          <div class="tree-item-description">design-system, ui-ux • +4</div>
+        </div>
+
+        <!-- 规则8: 未选中 - 中优先级（星星） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-medium emoji-icon">⭐</div>
+          <div class="tree-item-label">Git 工作流最佳实践</div>
+          <div class="tree-item-description">git, version-control • +3</div>
+        </div>
+
+        <!-- 规则9: 未选中 - 中优先级（星星） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-medium emoji-icon">⭐</div>
+          <div class="tree-item-label">API 文档最佳实践</div>
+          <div class="tree-item-description">documentation, api-docs • +4</div>
+        </div>
+
+        <!-- 规则10: 未选中 - 中优先级（星星） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-medium emoji-icon">⭐</div>
+          <div class="tree-item-label">React 最佳实践</div>
+          <div class="tree-item-description">react, hooks • +3</div>
+        </div>
+
+        <!-- 规则11: 未选中 - 中优先级（星星） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-medium emoji-icon">⭐</div>
+          <div class="tree-item-label">Next.js 最佳实践</div>
+          <div class="tree-item-description">nextjs, react • +3</div>
+        </div>
+
+        <!-- 规则12: 已选中 - 高优先级 -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" checked />
+          <div class="tree-item-icon icon-selected-high emoji-icon">✅</div>
+          <div class="tree-item-label">TypeScript + React + Tailwind CSS 组合最佳…</div>
+          <div class="tree-item-description">✓ 已选</div>
+        </div>
+
+        <!-- 规则13: 已选中 - 高优先级 -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" checked />
+          <div class="tree-item-icon icon-selected-high emoji-icon">✅</div>
+          <div class="tree-item-label">Next.js + TypeScript + Tailwind CSS 组合最佳…</div>
+          <div class="tree-item-description">✓ 已选</div>
+        </div>
+
+        <!-- 规则14: 未选中 - 高优先级（火焰） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-high emoji-icon">🔥</div>
+          <div class="tree-item-label">VSCode 扩展架构最佳实践</div>
+          <div class="tree-item-description">vscode, extension • +...</div>
+        </div>
+
+        <!-- 规则15: 未选中 - 高优先级（火焰） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-high emoji-icon">🔥</div>
+          <div class="tree-item-label">VSCode 扩展编码规范</div>
+          <div class="tree-item-description">vscode, coding-standar...</div>
+        </div>
+
+        <!-- 规则16: 未选中 - 高优先级（火焰） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-high emoji-icon">🔥</div>
+          <div class="tree-item-label">VSCode 扩展错误处理规范</div>
+          <div class="tree-item-description">vscode, error-handlin...</div>
+        </div>
+
+        <!-- 规则17: 未选中 - 高优先级（火焰） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-high emoji-icon">🔥</div>
+          <div class="tree-item-label">VSCode 扩展安全规范</div>
+          <div class="tree-item-description">vscode, security • +2</div>
+        </div>
+
+        <!-- 规则18: 未选中 - 高优先级（火焰） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-high emoji-icon">🔥</div>
+          <div class="tree-item-label">VSCode 扩展测试规范</div>
+          <div class="tree-item-description">vscode, testing • +3</div>
+        </div>
+
+        <!-- 规则19: 未选中 - 高优先级（火焰） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-high emoji-icon">🔥</div>
+          <div class="tree-item-label">VSCode 扩展文档规范</div>
+          <div class="tree-item-description">vscode, documentatio...</div>
+        </div>
+
+        <!-- 规则20: 未选中 - 中优先级（星星） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-medium emoji-icon">⭐</div>
+          <div class="tree-item-label">PostgreSQL 最佳实践</div>
+          <div class="tree-item-description">postgresql, database • +3</div>
+        </div>
+
+        <!-- 规则21: 未选中 - 中优先级（星星） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-medium emoji-icon">⭐</div>
+          <div class="tree-item-label">MongoDB 最佳实践</div>
+          <div class="tree-item-description">mongodb, nosql • +3</div>
+        </div>
+
+        <!-- 规则22: 未选中 - 中优先级（星星） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-medium emoji-icon">⭐</div>
+          <div class="tree-item-label">RESTful API 最佳实践</div>
+          <div class="tree-item-description">rest, api • +3</div>
+        </div>
+
+        <!-- 规则23: 未选中 - 中优先级（星星） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-medium emoji-icon">⭐</div>
+          <div class="tree-item-label">Jest 测试最佳实践</div>
+          <div class="tree-item-description">jest, testing • +3</div>
+        </div>
+
+        <!-- 规则24: 未选中 - 中优先级（星星） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-medium emoji-icon">⭐</div>
+          <div class="tree-item-label">Web 应用安全最佳实践</div>
+          <div class="tree-item-description">security, web-security •...</div>
+        </div>
+
+        <!-- 规则25: 未选中 - 中优先级（星星） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-medium emoji-icon">⭐</div>
+          <div class="tree-item-label">Docker 最佳实践</div>
+          <div class="tree-item-description">docker, containers • +3</div>
+        </div>
+
+        <!-- 规则26: 未选中 - 中优先级（星星） -->
+        <div class="tree-item indent-1">
+          <input type="checkbox" />
+          <div class="tree-item-icon icon-unselected-medium emoji-icon">⭐</div>
+          <div class="tree-item-label">微服务架构最佳实践</div>
+          <div class="tree-item-description">microservices, architectur...</div>
         </div>
       </div>
     </div>
 
     <script>
       // 展开/折叠功能
-      document.querySelectorAll('.tree-item-chevron').forEach((chevron) => {
+      const chevron = document.querySelector('.tree-item-chevron');
+      if (chevron) {
         chevron.addEventListener('click', (e) => {
           e.stopPropagation();
-          const item = chevron.closest('.tree-item');
-          const source = item.closest('.tree-source');
-          const children = source.querySelector('.tree-children');
-
+          const text = chevron.textContent;
+          chevron.textContent = text === '▼' ? '▶' : '▼';
+          const children = document.querySelector('.tree-children');
           if (children) {
-            children.classList.toggle('expanded');
-            chevron.classList.toggle('collapsed');
+            children.style.display = children.style.display === 'none' ? 'block' : 'none';
           }
+        });
+      }
+
+      // 复选框功能
+      document.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+        checkbox.addEventListener('change', (e) => {
+          e.stopPropagation();
+          const item = checkbox.closest('.tree-item');
+          const iconWrapper = item.querySelector('.tree-item-icon');
+          const description = item.querySelector('.tree-item-description');
+
+          // 获取当前图标
+          const currentIcon = iconWrapper.textContent.trim();
+
+          if (checkbox.checked) {
+            // 选中：改为 ✅ 图标
+            if (currentIcon === '🔥') {
+              iconWrapper.className = 'tree-item-icon icon-selected-high emoji-icon';
+            } else if (currentIcon === '⭐') {
+              iconWrapper.className = 'tree-item-icon icon-selected-medium emoji-icon';
+            } else {
+              iconWrapper.className = 'tree-item-icon icon-selected-normal emoji-icon';
+            }
+            iconWrapper.textContent = '✅';
+
+            // 更新描述
+            if (description) {
+              const tags = description.textContent.trim();
+              description.textContent = tags ? `✓ 已选 • ${tags}` : '✓ 已选';
+            } else {
+              const newDesc = document.createElement('div');
+              newDesc.className = 'tree-item-description';
+              newDesc.textContent = '✓ 已选';
+              item.appendChild(newDesc);
+            }
+          } else {
+            // 取消选中：恢复原图标
+            const hasHighClass = iconWrapper.className.includes('high');
+            const hasMediumClass = iconWrapper.className.includes('medium');
+
+            if (hasHighClass) {
+              iconWrapper.className = 'tree-item-icon icon-unselected-high emoji-icon';
+              iconWrapper.textContent = '🔥';
+            } else if (hasMediumClass) {
+              iconWrapper.className = 'tree-item-icon icon-unselected-medium emoji-icon';
+              iconWrapper.textContent = '⭐';
+            } else {
+              iconWrapper.className = 'tree-item-icon icon-unselected-normal emoji-icon';
+              iconWrapper.textContent = '📄';
+            }
+
+            // 移除"✓ 已选"
+            if (description) {
+              const text = description.textContent
+                .replace(/✓ 已选\s*•\s*/, '')
+                .replace(/✓ 已选/, '');
+              if (text.trim()) {
+                description.textContent = text;
+              } else {
+                description.remove();
+              }
+            }
+          }
+
+          // 更新源节点的统计信息
+          updateSourceStats();
         });
       });
 
-      // 选中功能
-      document.querySelectorAll('.tree-item:not(.empty)').forEach((item) => {
-        item.addEventListener('click', () => {
+      // 更新源的统计信息
+      function updateSourceStats() {
+        const allCheckboxes = document.querySelectorAll('.tree-children input[type="checkbox"]');
+        const checkedCount = document.querySelectorAll(
+          '.tree-children input[type="checkbox"]:checked',
+        ).length;
+        const totalCount = allCheckboxes.length;
+
+        const sourceDesc = document.querySelector('.indent-0 .tree-item-description');
+        if (sourceDesc) {
+          const parts = sourceDesc.textContent.split('•');
+          if (parts.length >= 2) {
+            parts[2] = ` 📊 ${checkedCount}/${totalCount} 已选`;
+            sourceDesc.innerHTML = parts.join(' •');
+          }
+        }
+      }
+
+      // 行选中功能（点击行但不是复选框）
+      document.querySelectorAll('.tree-item').forEach((item) => {
+        item.addEventListener('click', (e) => {
+          // 如果点击的是复选框或chevron，不处理
+          if (e.target.tagName === 'INPUT' || e.target.closest('.tree-item-chevron')) return;
+
           // 移除所有选中状态
-          document.querySelectorAll('.tree-item.selected').forEach((selected) => {
-            selected.classList.remove('selected');
+          document.querySelectorAll('.tree-item.selected-row').forEach((selected) => {
+            selected.classList.remove('selected-row');
           });
+
           // 添加选中状态
-          item.classList.add('selected');
-
-          // 如果是规则项，模拟点击显示详情
-          if (item.dataset.type === 'rule') {
-            console.log('Show rule detail:', item.querySelector('.tree-item-label').textContent);
-          }
-        });
-      });
-
-      // 右键菜单模拟
-      document.querySelectorAll('.tree-item[data-type="source"]').forEach((item) => {
-        item.addEventListener('contextmenu', (e) => {
-          e.preventDefault();
-          const label = item.querySelector('.tree-item-label').textContent;
-          console.log(`右键菜单 - ${label}:`);
-          console.log('  • 编辑源配置');
-          console.log('  • 测试连接');
-          console.log('  • 启用/禁用');
-          console.log('  • 查看源详情');
-          console.log('  • 选择规则');
-          console.log('  • 删除源');
+          item.classList.add('selected-row');
         });
       });
     </script>
   </body>
-</html>
-        :root {
-            --vscode-editor-background: #1e1e1e;
-            --vscode-sideBar-background: #252526;
-            --vscode-foreground: #cccccc;
-            --vscode-descriptionForeground: #8b8b8b;
-            --vscode-focusBorder: #007fd4;
-            --vscode-list-hoverBackground: #2a2d2e;
-            --vscode-list-activeSelectionBackground: #094771;
-            --vscode-list-focusBackground: #062f4a;
-            --vscode-badge-background: #4d4d4d;
-            --vscode-badge-foreground: #ffffff;
-            --vscode-charts-green: #89d185;
-            --vscode-errorForeground: #f48771;
-            --vscode-editorWarning-foreground: #cca700;
-            --vscode-charts-blue: #3794ff;
-        }
-
-        body {
-            background-color: var(--vscode-editor-background);
-            color: var(--vscode-foreground);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            padding: 2px;
-        }
-
-        .tree-view-container {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .tree-item {
-            display: flex;
-            align-items: center;
-            padding: 2px 8px;
-            cursor: pointer;
-            user-select: none;
-            height: 22px; /* VSCode default tree item height */
-        }
-
-        .tree-item:hover {
-            background-color: var(--vscode-list-hoverBackground);
-        }
-        
-        .tree-item.is-focused {
-             background-color: var(--vscode-list-focusBackground);
-             outline: 1px solid var(--vscode-focusBorder);
-             outline-offset: -1px;
-        }
-
-        .tree-item .actions {
-            display: none;
-            margin-left: auto;
-        }
-
-        .tree-item:hover .actions, .tree-item.is-focused .actions {
-            display: flex;
-        }
-
-        .tree-item .actions .action-btn {
-            background: none; border: none; color: var(--vscode-foreground); padding: 2px 4px; cursor: pointer; border-radius: 4px;
-        }
-        .tree-item .actions .action-btn:hover { background-color: var(--vscode-badge-background); }
-
-        .chevron {
-            margin-right: 4px;
-            font-size: 16px;
-            width: 16px;
-            text-align: center;
-        }
-
-        .item-content {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .item-name {
-            font-weight: 500;
-        }
-
-        .item-description {
-            color: var(--vscode-descriptionForeground);
-            font-size: 0.9em;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .status-icon {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-        }
-        .status-icon.high {
-            background-color: var(--vscode-errorForeground);
-            color: #1e1e1e;
-        }
-        .status-icon.medium {
-            background-color: var(--vscode-editorWarning-foreground);
-            color: #1e1e1e;
-        }
-        .status-icon.low {
-            background-color: var(--vscode-descriptionForeground);
-            color: #1e1e1e;
-        }
-        .status-icon.default {
-            background-color: var(--vscode-charts-blue);
-            color: #1e1e1e;
-        }
-
-        .tag {
-            color: var(--vscode-descriptionForeground);
-        }
-
-    </style>
-</head>
-<body>
-
-<div class="tree-view-container">
-    <!-- Source: my -->
-    <div class="tree-item is-focused">
-        <div class="chevron"><i class="codicon codicon-chevron-down"></i></div>
-        <div class="item-content">
-            <span class="item-name">my</span>
-            <span class="item-description">
-                <i class="codicon codicon-check" style="color: var(--vscode-charts-green);"></i> 已启用 ・ main ・ 
-                <i class="codicon codicon-repo-sync"></i> 4/27 已选
-            </span>
-        </div>
-        <div class="actions">
-            <button class="action-btn" title="Sync"><i class="codicon codicon-sync"></i></button>
-            <button class="action-btn" title="Delete"><i class="codicon codicon-trash"></i></button>
-        </div>
-    </div>
-
-    <!-- Rule Items -->
-    <div class="tree-item" style="padding-left: 28px;">
-        <div class="item-content">
-            <div class="status-icon default"><i class="codicon codicon-check"></i></div>
-            <span class="item-name">AI Rules 规则库</span>
-            <span class="item-description">✓ 已选</span>
-        </div>
-    </div>
-    <div class="tree-item" style="padding-left: 28px;">
-        <div class="item-content">
-            <div class="status-icon default"><i class="codicon codicon-check"></i></div>
-            <span class="item-name">AI 规则库 - Copilot 指导说明</span>
-            <span class="item-description">✓ 已选</span>
-        </div>
-    </div>
-    <div class="tree-item" style="padding-left: 28px;">
-        <div class="item-content">
-            <div class="status-icon default"><i class="codicon codicon-check"></i></div>
-            <span class="item-name">通用标准和规范</span>
-            <span class="item-description">✓ 已选</span>
-        </div>
-    </div>
-    <div class="tree-item" style="padding-left: 28px;">
-        <div class="item-content">
-            <div class="status-icon high"><i class="codicon codicon-check"></i></div>
-            <span class="item-name">Python 最佳实践</span>
-            <span class="item-description">✓ 已选 ・ <span class="tag">HIGH ・ python, flask +3</span></span>
-        </div>
-    </div>
-    <div class="tree-item" style="padding-left: 28px;">
-        <div class="item-content">
-            <div class="status-icon high"><i class="codicon codicon-check"></i></div>
-            <span class="item-name">TypeScript 最佳实践</span>
-            <span class="item-description">✓ 已选 ・ <span class="tag">HIGH ・ typescript, web-devel...</span></span>
-        </div>
-    </div>
-    <div class="tree-item" style="padding-left: 28px;">
-        <div class="item-content">
-            <div class="status-icon default"><i class="codicon codicon-check"></i></div>
-            <span class="item-name">编程语言规范</span>
-            <span class="item-description">✓ 已选</span>
-        </div>
-    </div>
-    <div class="tree-item" style="padding-left: 28px;">
-        <div class="item-content">
-            <div class="status-icon default"><i class="codicon codicon-check"></i></div>
-            <span class="item-name">UI/UX 设计规范</span>
-            <span class="item-description">✓ 已选</span>
-        </div>
-    </div>
-    <div class="tree-item" style="padding-left: 28px;">
-        <div class="item-content">
-            <div class="status-icon high"><i class="codicon codicon-check"></i></div>
-            <span class="item-name">React 最佳实践</span>
-            <span class="item-description">✓ 已选 ・ <span class="tag">HIGH ・ react, hooks +3</span></span>
-        </div>
-    </div>
-     <div class="tree-item" style="padding-left: 28px;">
-        <div class="item-content">
-            <div class="status-icon high"><i class="codicon codicon-check"></i></div>
-            <span class="item-name">Next.js 最佳实践</span>
-            <span class="item-description">✓ 已选 ・ <span class="tag">HIGH ・ nextjs, app-router +3</span></span>
-        </div>
-    </div>
-
-</div>
-
-</body>
 </html>

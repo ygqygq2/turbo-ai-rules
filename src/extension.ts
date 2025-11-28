@@ -386,7 +386,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{
 
     Logger.info('Commands registered');
 
-    // 4. 首次启动显示欢迎页面
+    // 4. 首次启动显示快速开始页面
     const welcomeShown = context.globalState.get('welcomeShown', false);
     if (!welcomeShown) {
       const welcomeProvider = WelcomeWebviewProvider.getInstance(context);

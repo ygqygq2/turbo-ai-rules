@@ -209,7 +209,7 @@ export const DEFAULT_CONFIG: ExtensionConfig = {
 };
 
 /**
- * 规则同步相关数据结构 (v2.0.3 新增)
+ * 规则同步相关数据结构 (v2.0.2 新增)
  */
 
 /**
