@@ -154,7 +154,8 @@ const App: React.FC = () => {
     const matchesSearch =
       !searchQuery ||
       rule.metadata?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rule.content?.toLowerCase().includes(searchQuery.toLowerCase());
+      rule.metadata?.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      rule.metadata?.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesTag = !selectedTag || rule.metadata?.tags?.includes(selectedTag);
 
@@ -195,31 +196,152 @@ const App: React.FC = () => {
           </Toolbar>
         </div>
 
-        {/* Statistics */}
-        <div className="statistics-grid">
+        {/* Main Grid: Configuration + Statistics */}
+        <div className="main-grid">
           <Card>
-            <h3>Total Rules</h3>
-            <div className="stat-value">{statistics.totalRules}</div>
-          </Card>
-          <Card>
-            <h3>Priority Distribution</h3>
-            <div className="priority-dist">
-              <div>
-                <PriorityIcon priority="high" /> {statistics.priorityDistribution?.high || 0}
+            <h3>Configuration Details</h3>
+            <div className="config-list">
+              <div className="config-item">
+                <span className="config-label">Branch:</span>
+                <span>{((source as Record<string, unknown>).branch as string) || 'main'}</span>
               </div>
-              <div>
-                <PriorityIcon priority="medium" /> {statistics.priorityDistribution?.medium || 0}
+              <div className="config-item">
+                <span className="config-label">Sub Path:</span>
+                <span>{((source as Record<string, unknown>).subPath as string) || '/'}</span>
               </div>
-              <div>
-                <PriorityIcon priority="low" /> {statistics.priorityDistribution?.low || 0}
+              <div className="config-item">
+                <span className="config-label">Authentication:</span>
+                <span>
+                  {(source as Record<string, unknown>).authentication === 'token'
+                    ? 'Private (Token)'
+                    : (source as Record<string, unknown>).authentication === 'ssh'
+                      ? 'Private (SSH)'
+                      : 'Public'}
+                </span>
+              </div>
+            </div>
+            <h4 style={{ marginTop: 'var(--spacing-md)', marginBottom: 'var(--spacing-sm)' }}>
+              Sync Status
+            </h4>
+            <div className="config-list">
+              <div className="config-item">
+                <span className="config-label">Last Synced:</span>
+                <span>{syncInfo.lastSynced || 'Never'}</span>
+              </div>
+              <div className="config-item">
+                <span className="config-label">Status:</span>
+                <div className="sync-info">
+                  <StatusDot status={syncInfo.status || 'disabled'} />
+                  <span>{syncInfo.status === 'enabled' ? 'Ready' : 'Disabled'}</span>
+                </div>
               </div>
             </div>
           </Card>
+
           <Card>
-            <h3>Sync Status</h3>
-            <div className="sync-info">
-              <StatusDot status={syncInfo.status || 'disabled'} />
-              <span>{syncInfo.lastSynced || 'Never synced'}</span>
+            <h3>Statistics Overview</h3>
+            <div className="stat-item">
+              <span>Total Rules:</span>
+              <span className="stat-value">{statistics.totalRules}</span>
+            </div>
+            <h4 style={{ marginTop: 'var(--spacing-md)', marginBottom: 'var(--spacing-sm)' }}>
+              Priority Distribution
+            </h4>
+            <div className="priority-dist-bars">
+              <div className="priority-bar-item">
+                <div className="priority-bar-label">
+                  <PriorityIcon priority="high" /> High
+                </div>
+                <div className="progress-bar-bg">
+                  <div
+                    className="progress-bar bg-prio-high"
+                    style={{
+                      width: `${
+                        statistics.totalRules > 0
+                          ? ((statistics.priorityDistribution?.high || 0) / statistics.totalRules) *
+                            100
+                          : 0
+                      }%`,
+                    }}
+                  ></div>
+                </div>
+                <div className="priority-bar-value">
+                  {statistics.priorityDistribution?.high || 0}{' '}
+                  <span className="priority-bar-percent">
+                    (
+                    {statistics.totalRules > 0
+                      ? Math.round(
+                          ((statistics.priorityDistribution?.high || 0) / statistics.totalRules) *
+                            100,
+                        )
+                      : 0}
+                    %)
+                  </span>
+                </div>
+              </div>
+              <div className="priority-bar-item">
+                <div className="priority-bar-label">
+                  <PriorityIcon priority="medium" /> Medium
+                </div>
+                <div className="progress-bar-bg">
+                  <div
+                    className="progress-bar bg-prio-medium"
+                    style={{
+                      width: `${
+                        statistics.totalRules > 0
+                          ? ((statistics.priorityDistribution?.medium || 0) /
+                              statistics.totalRules) *
+                            100
+                          : 0
+                      }%`,
+                    }}
+                  ></div>
+                </div>
+                <div className="priority-bar-value">
+                  {statistics.priorityDistribution?.medium || 0}{' '}
+                  <span className="priority-bar-percent">
+                    (
+                    {statistics.totalRules > 0
+                      ? Math.round(
+                          ((statistics.priorityDistribution?.medium || 0) / statistics.totalRules) *
+                            100,
+                        )
+                      : 0}
+                    %)
+                  </span>
+                </div>
+              </div>
+              <div className="priority-bar-item">
+                <div className="priority-bar-label">
+                  <PriorityIcon priority="low" /> Low
+                </div>
+                <div className="progress-bar-bg">
+                  <div
+                    className="progress-bar bg-prio-low"
+                    style={{
+                      width: `${
+                        statistics.totalRules > 0
+                          ? ((statistics.priorityDistribution?.low || 0) / statistics.totalRules) *
+                            100
+                          : 0
+                      }%`,
+                    }}
+                  ></div>
+                </div>
+                <div className="priority-bar-value">
+                  {statistics.priorityDistribution?.low || 0}{' '}
+                  <span className="priority-bar-percent">
+                    (
+                    {statistics.totalRules > 0
+                      ? Math.round(
+                          ((statistics.priorityDistribution?.low || 0) / statistics.totalRules) *
+                            100,
+                        )
+                      : 0}
+                    %)
+                  </span>
+                </div>
+              </div>
             </div>
           </Card>
         </div>

@@ -50,16 +50,17 @@
 │  │  - 快捷操作按钮                                         │ │
 │  └────────────────────────────────────────────────────────┘ │
 │                                                              │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │  Configuration Section (配置详情)                      │ │
-│  │  - 分支、子路径、认证方式                               │ │
-│  │  - 最后同步时间、同步状态                               │ │
-│  └────────────────────────────────────────────────────────┘ │
+│  ┌────────────────────┬────────────────────────────────────┐ │
+│  │ Configuration      │  Statistics Overview              │ │
+│  │ Details            │  - 规则总数                        │ │
+│  │ - 分支、子路径      │  - 优先级分布（带百分比条）         │ │
+│  │ - 认证方式          │                                   │ │
+│  │ - 同步状态          │                                   │ │
+│  └────────────────────┴────────────────────────────────────┘ │
 │                                                              │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │  Statistics Section (统计数据)                         │ │
-│  │  - 规则总数、优先级分布                                 │ │
-│  │  - 标签云、最常用标签                                   │ │
+│  │  Top Tags Section (热门标签)                           │ │
+│  │  - 显示前6-8个最常用标签                                │ │
 │  └────────────────────────────────────────────────────────┘ │
 │                                                              │
 │  ┌────────────────────────────────────────────────────────┐ │
@@ -115,78 +116,45 @@
 
 ---
 
-### 2. Configuration Section (配置区域)
+---
 
-**目的**: 展示源的详细配置信息
+### 2. Main Grid: Configuration + Statistics (主网格区域)
 
-**布局**:
+**目的**: 以两栏布局展示配置详情和统计数据
+
+**布局**: 左右两栏，响应式设计
+
+#### 左栏: Configuration Details (配置详情)
 
 ```
 ┌──────────────────────────────────────────────────────────┐
 │  Configuration Details                                   │
 ├──────────────────────────────────────────────────────────┤
 │                                                          │
-│  🌿 Branch:        main                                  │
-│  📁 Sub Path:      /best-practices                       │
-│  🔑 Authentication: Private (Token configured)           │
-│  🆔 Source ID:     source-abc123                         │
+│  Branch:          main                                   │
+│  Sub Path:        /                                      │
+│  Authentication:  Public                                 │
 │                                                          │
-│  📊 Sync Status                                          │
-│  • Last Synced:    2025-10-29 14:30:25                   │
-│  • Status:         ✅ Success (156 rules)                │
-│  • Cache Size:     2.3 MB                                │
-│  • Next Auto Sync: in 45 minutes                         │
+│  Sync Status                                             │
+│  Last Synced:     2025-11-06 09:11:35                    │
+│  Status:          ● Disabled                             │
 │                                                          │
 └──────────────────────────────────────────────────────────┘
 ```
 
-**字段说明**:
-
-| 字段               | 说明                  | 数据来源                |
-| ------------------ | --------------------- | ----------------------- |
-| **Branch**         | Git 分支名称          | `source.branch`         |
-| **Sub Path**       | 规则文件所在子路径    | `source.subPath`        |
-| **Authentication** | 认证方式（公开/私有） | `source.authentication` |
-| **Source ID**      | 源的唯一标识符        | `source.id`             |
-| **Last Synced**    | 最后同步时间          | 从缓存或日志读取        |
-| **Status**         | 同步状态和规则数      | 实时计算                |
-| **Cache Size**     | 缓存占用大小          | 计算本地缓存文件夹大小  |
-| **Next Auto Sync** | 下次自动同步时间      | 根据配置计算            |
-
-**样式**:
-
-- 使用图标前缀增强可读性
-- 使用等宽字体显示 ID
-- 同步状态使用颜色编码（✅ 绿色, ⚠️ 橙色, ❌ 红色）
-
----
-
-### 3. Statistics Section (统计区域)
-
-**目的**: 展示该源的规则统计数据
-
-**布局**:
+#### 右栏: Statistics Overview (统计概览)
 
 ```
 ┌──────────────────────────────────────────────────────────┐
 │  Statistics Overview                                     │
 ├──────────────────────────────────────────────────────────┤
 │                                                          │
-│  📊 Total Rules: 156                                     │
+│  Total Rules: 31                                         │
 │                                                          │
-│  📈 Rules by Priority                                    │
-│  🔥 High:     23  ████████░░░░░░░░░░░░░░░ 15%           │
-│  ⚠️ Medium:   67  ██████████████████░░░░░ 43%           │
-│  ℹ️ Low:      66  █████████████████░░░░░░ 42%           │
-│                                                          │
-│  🏷️ Top Tags                                            │
-│  [typescript 45]  [react 32]  [eslint 28]               │
-│  [naming 24]  [security 18]  [testing 15]                │
-│                                                          │
-│  📅 Recent Activity                                      │
-│  • Created: 2024-03-15                                   │
-│  • Last Updated: 2025-10-29                              │
-│  • Total Syncs: 127                                      │
+│  Priority Distribution                                   │
+│  🔥 High    ████░░░░░░░░░░░░░░░░░░░░  9 (29%)           │
+│  ⭐ Medium  ████████████████████████  22 (71%)          │
+│  ℹ️ Low     ░░░░░░░░░░░░░░░░░░░░░░░░  0 (0%)            │
 │                                                          │
 └──────────────────────────────────────────────────────────┘
 ```
@@ -195,123 +163,82 @@
 
 1. **优先级分布条形图**:
 
-   - 使用文本块字符 (█) 绘制简单条形图
-   - 显示百分比和数量
-   - 颜色编码: 高=红色, 中=橙色, 低=蓝色
+   - 使用进度条 (progress bar) 显示百分比
+   - 显示数量和百分比
+   - 颜色编码: 高=红色 (errorForeground), 中=橙色 (warningForeground), 低=蓝色 (charts-blue)
 
-2. **标签云**:
+**响应式设计**:
 
-   - 显示前 6 个最常用标签
-   - 标签大小根据使用频率调整
-   - 可点击标签筛选规则
+- > = 768px: 两栏并排显示
+- < 768px: 单栏堆叠显示
 
-3. **活动时间线**:
-   - 显示源的创建时间、最后更新时间
-   - 显示总同步次数
+### 3. Top Tags Section (热门标签区域)
 
-**交互**:
-
-- 点击标签可筛选该标签的规则
-- 悬停在条形图上显示详细数字
-
----
-
-### 4. Rules List Section (规则列表区域)
-
-**目的**: 展示该源包含的所有规则，支持搜索和筛选
+**目的**: 展示该源的常用标签
 
 **布局**:
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│  Rules List (156)                         [Search: ___]  │
+│  🏷️ Top Tags                                            │
 ├──────────────────────────────────────────────────────────┤
-│  Filters: [All] [High Priority] [Medium] [Low]           │
-│           [#typescript] [#react] [#eslint] [Clear]       │
+│  [vscode 6] [typescript 5] [testing 4] [react 4]         │
+│  [performance 4] [microservices 3]                       │
+└──────────────────────────────────────────────────────────┘
+```
+
+**交互**:
+
+- 显示前 6-8 个最常用标签
+- 标签显示名称和使用次数
+- 点击标签可筛选该标签的规则
+
+---
+
+### 4. Rules List Section (规则列表区域)
+
+**目的**: 展示该源包含的所有规则，支持搜索
+
+**布局**:
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  规则 (31)                              [搜索规则...]    │
 ├──────────────────────────────────────────────────────────┤
 │                                                          │
-│  🔥 TypeScript Naming Conventions                 [View] │
-│     📁 rules/typescript/naming.mdc                       │
-│     🏷️ typescript, naming, style                         │
+│  ┌────────────────────────────────────────────────────┐ │
+│  │ AI 规则库 - Copilot 指导说明          ⭐          │ │
+│  │ 跨项目通用AI编码规则-GitHub Copilot               │ │
+│  │ [copilot]                                          │ │
+│  │                                [View Details]      │ │
+│  └────────────────────────────────────────────────────┘ │
 │                                                          │
-│  ⚠️ React Hooks Best Practices                   [View] │
-│     📁 rules/react/hooks.mdc                             │
-│     🏷️ react, hooks, patterns                            │
-│                                                          │
-│  ℹ️ ESLint Configuration Guide                   [View] │
-│     📁 rules/tools/eslint.mdc                            │
-│     🏷️ eslint, configuration, tools                      │
-│                                                          │
-│  ... (更多规则)                                          │
-│                                                          │
-│  [Load More] or [Show All 156 Rules]                     │
+│  ┌────────────────────────────────────────────────────┐ │
+│  │ 通用编码规范                          ⭐          │ │
+│  │ 跨项目通用编码规范                                 │ │
+│  │ [naming] [style]                                   │ │
+│  │                                [View Details]      │ │
+│  └────────────────────────────────────────────────────┘ │
 │                                                          │
 └──────────────────────────────────────────────────────────┘
 ```
 
 **功能特性**:
 
-1. **搜索框**: 实时搜索规则名称
-2. **快捷筛选器**:
-
-   - 按优先级筛选
-   - 按标签筛选（点击统计区的标签自动添加）
-   - 清除所有筛选
-
-3. **规则卡片**:
-
-   - 显示规则名称、优先级图标
-   - 显示文件路径
+1. **搜索框**: 实时搜索规则名称和内容
+2. **规则卡片**:
+   - 显示规则标题和优先级图标（⭐ 中优先级，🔥 高优先级，ℹ️ 低优先级）
+   - 显示描述
    - 显示标签列表
-   - [View] 按钮打开规则详情
-
-4. **分页加载**:
-   - 初始显示 20 条规则
-   - 提供"Load More"按钮加载更多
-   - 或提供"Show All"一次性显示所有规则
+   - [View Details] 按钮查看规则详情
 
 **样式设计**:
 
-```css
-.rule-item {
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 4px;
-  padding: 12px;
-  margin-bottom: 8px;
-  background: var(--vscode-editor-background);
-}
-
-.rule-item:hover {
-  background: var(--vscode-list-hoverBackground);
-  cursor: pointer;
-}
-
-.rule-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.rule-path {
-  font-size: 12px;
-  color: var(--vscode-descriptionForeground);
-  margin-bottom: 4px;
-}
-
-.rule-tags {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.tag {
-  background: var(--vscode-badge-background);
-  color: var(--vscode-badge-foreground);
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-}
-```
+- 规则卡片使用 Card 组件样式
+- 标题字体 16px，加粗
+- 描述使用 descriptionForeground 颜色
+- 标签使用 Tag 组件样式
+- 按钮靠右下角对齐
 
 ---
 

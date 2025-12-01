@@ -40,18 +40,32 @@ export function getLocale(): string {
 /**
  * @description 获取翻译文本
  * 支持层级化 key (如 'welcome.title') 和句子 key (如 'No sources configured')
+ * 支持位置参数 {0}, {1} 和命名参数 {name}, {count}
  * @return default {string}
  * @param key {string} - 翻译键
- * @param args {...(string | number)[]} - 格式化参数
+ * @param args {...(string | number | Record<string, string | number>)[]} - 格式化参数
  */
-export function t(key: string, ...args: (string | number)[]): string {
+export function t(
+  key: string,
+  ...args: (string | number | Record<string, string | number>)[]
+): string {
   const dict = translations[currentLocale] || translations.en;
   let text = dict[key] || key;
 
-  // 支持 {0}, {1} 等占位符
-  args.forEach((arg, index) => {
-    text = text.replace(`{${index}}`, String(arg));
-  });
+  // 支持命名占位符 {name}, {count} 等
+  if (args.length === 1 && typeof args[0] === 'object' && args[0] !== null) {
+    const params = args[0] as Record<string, string | number>;
+    Object.keys(params).forEach((paramKey) => {
+      text = text.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), String(params[paramKey]));
+    });
+  } else {
+    // 支持 {0}, {1} 等位置占位符
+    args.forEach((arg, index) => {
+      if (typeof arg !== 'object') {
+        text = text.replace(`{${index}}`, String(arg));
+      }
+    });
+  }
 
   return text;
 }

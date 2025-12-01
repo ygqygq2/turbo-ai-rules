@@ -90,6 +90,44 @@
   background-color: rgba(255, 0, 0, 0.1);
 }
 
+/* Main Grid - Two column layout */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+@media (min-width: 768px) {
+  .main-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.config-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.config-item {
+  display: flex;
+  gap: var(--spacing-sm);
+  font-size: 0.875rem;
+}
+
+.config-label {
+  color: var(--vscode-descriptionForeground);
+  min-width: 120px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
 /* Statistics Grid - 与统计仪表板保持一致 */
 .statistics-grid {
   display: grid;
@@ -114,6 +152,60 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+}
+
+/* Priority Distribution Bars */
+.priority-dist-bars {
+  display: grid;
+  gap: var(--spacing-sm);
+  font-size: 0.875rem;
+}
+
+.priority-bar-item {
+  display: grid;
+  grid-template-columns: 70px 1fr 80px;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.priority-bar-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.progress-bar-bg {
+  background-color: var(--vscode-input-background);
+  border-radius: 9999px;
+  height: 0.5rem;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.bg-prio-high {
+  background-color: var(--vscode-errorForeground);
+}
+
+.bg-prio-medium {
+  background-color: var(--vscode-warningForeground);
+}
+
+.bg-prio-low {
+  background-color: var(--vscode-charts-blue);
+}
+
+.priority-bar-value {
+  font-family: var(--vscode-editor-font-family);
+  color: var(--vscode-descriptionForeground);
+  text-align: right;
+}
+
+.priority-bar-percent {
+  font-size: 0.9em;
 }
 
 .sync-info {
@@ -254,14 +346,17 @@
 
 /* Rules Section */
 .rules-header {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--spacing-md);
   padding-bottom: var(--spacing-md);
   margin-bottom: var(--spacing-md);
   border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.rules-header h2 {
+  margin-bottom: var(--spacing-sm);
+}
+
+.rules-header .input-container {
+  width: 100%;
 }
 
 .search-box {

@@ -1,0 +1,242 @@
+/* Dashboard 容器 */
+.dashboard-container {
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-foreground);
+  padding: var(--spacing-lg);
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* Header */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+/* 规则源卡片 */
+.sources-card,
+.adapters-card,
+.quick-actions-card,
+.getting-started-card {
+  padding: var(--spacing-md);
+}
+
+/* 统计信息 */
+.stats-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: var(--border-radius);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.95rem;
+}
+
+/* 按钮组 */
+.button-group {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-md);
+}
+
+/* 适配器列表 */
+.adapters-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.adapter-item {
+  padding: var(--spacing-md);
+  background-color: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: var(--border-radius);
+}
+
+.adapter-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+}
+
+.adapter-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.adapter-name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.rule-count {
+  color: var(--vscode-descriptionForeground);
+  font-weight: normal;
+  font-size: 0.9rem;
+}
+
+.adapter-path {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.85rem;
+  font-family: var(--vscode-font-family);
+}
+
+.adapter-last-generated {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.85rem;
+}
+
+.status-enabled {
+  color: var(--vscode-testing-iconPassed);
+}
+
+.status-disabled {
+  color: var(--vscode-descriptionForeground);
+}
+
+/* 快速操作网格 */
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.quick-action-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  background-color: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: var(--border-radius);
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.quick-action-button:hover {
+  background-color: var(--vscode-list-hoverBackground);
+  border-color: var(--vscode-focusBorder);
+  transform: translateY(-2px);
+}
+
+.quick-action-button:active {
+  transform: translateY(0);
+}
+
+/* 快速入门 */
+.getting-started-content {
+  padding: var(--spacing-sm);
+}
+
+.getting-started-intro {
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--vscode-descriptionForeground);
+}
+
+.quick-start-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.quick-start-links li {
+  padding: var(--spacing-xs) 0;
+}
+
+.quick-start-links a {
+  color: var(--vscode-textLink-foreground);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.quick-start-links a::before {
+  content: '•';
+  color: var(--vscode-descriptionForeground);
+}
+
+.quick-start-links a:hover {
+  color: var(--vscode-textLink-activeForeground);
+  text-decoration: underline;
+}
+
+/* 响应式布局 */
+@media (max-width: 900px) {
+  .quick-actions-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-container {
+    padding: var(--spacing-md);
+  }
+
+  .dashboard-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+  .button-group .button {
+    width: 100%;
+  }
+
+  .quick-actions-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .quick-action-button {
+    padding: var(--spacing-md);
+  }
+}
+
+/* 加载动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-container > section {
+  animation: fadeIn 0.4s ease-out;
+}

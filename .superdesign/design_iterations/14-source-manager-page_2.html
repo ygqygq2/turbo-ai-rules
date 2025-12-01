@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Source Manager - Turbo AI Rules</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codicon/0.0.34/codicon.min.css"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        color: #cccccc;
+        background-color: #1e1e1e;
+        padding: 0;
+        margin: 0;
+        min-height: 100vh;
+      }
+
+      :root {
+        --vscode-foreground: #cccccc;
+        --vscode-editor-background: #1e1e1e;
+        --vscode-editorWidget-background: #252526;
+        --vscode-editorWidget-border: #454545;
+        --vscode-input-background: #3c3c3c;
+        --vscode-input-foreground: #cccccc;
+        --vscode-input-border: #3c3c3c;
+        --vscode-focusBorder: #007acc;
+        --vscode-button-background: #0e639c;
+        --vscode-button-foreground: #ffffff;
+        --vscode-button-hoverBackground: #1177bb;
+        --vscode-button-secondaryBackground: #3a3d41;
+        --vscode-button-secondaryForeground: #cccccc;
+        --vscode-button-secondaryHoverBackground: #45494e;
+        --vscode-descriptionForeground: #9d9d9d;
+        --vscode-textLink-foreground: #3794ff;
+        --vscode-testing-iconPassed: #73c991;
+        --vscode-errorForeground: #f48771;
+        --vscode-toolbar-hoverBackground: #3a3d41;
+        --border-radius: 4px;
+        --spacing-xs: 4px;
+        --spacing-sm: 8px;
+        --spacing-md: 16px;
+        --spacing-lg: 24px;
+        --spacing-xl: 32px;
+      }
+
+      /* 主容器 */
+      .source-manager-container {
+        padding: var(--spacing-xl);
+        background-color: var(--vscode-editor-background);
+        color: var(--vscode-foreground);
+        min-height: 100vh;
+      }
+
+      /* 页面标题 */
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: var(--spacing-xl);
+        padding-bottom: var(--spacing-lg);
+        border-bottom: 1px solid var(--vscode-editorWidget-border);
+      }
+
+      .page-header .header-content {
+        flex: 1;
+      }
+
+      .page-header h1 {
+        font-size: 1.8rem;
+        margin: 0 0 var(--spacing-sm) 0;
+        font-weight: 600;
+        color: var(--vscode-foreground);
+      }
+
+      .page-header .subtitle {
+        color: var(--vscode-descriptionForeground);
+        font-size: 0.95rem;
+        margin: 0;
+      }
+
+      /* 卡片网格布局 */
+      .source-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: var(--spacing-lg);
+        padding: var(--spacing-sm) 0;
+      }
+
+      /* 规则源卡片 */
+      .source-card {
+        background-color: var(--vscode-editorWidget-background);
+        border: 1px solid var(--vscode-editorWidget-border);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-lg);
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-md);
+        transition: all 0.2s ease;
+      }
+
+      .source-card:hover {
+        border-color: var(--vscode-focusBorder);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        transform: translateY(-2px);
+      }
+
+      /* 卡片头部 */
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+        padding-bottom: var(--spacing-md);
+        border-bottom: 1px solid var(--vscode-editorWidget-border);
+      }
+
+      .source-title {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        flex: 1;
+        min-width: 0;
+      }
+
+      .source-title h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--vscode-foreground);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .status-icon {
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+
+      .source-card.enabled .status-icon {
+        color: var(--vscode-testing-iconPassed);
+      }
+
+      .source-card.disabled .status-icon {
+        color: var(--vscode-descriptionForeground);
+        opacity: 0.6;
+      }
+
+      .source-card.disabled {
+        opacity: 0.7;
+      }
+
+      .source-card.disabled:hover {
+        opacity: 0.85;
+      }
+
+      /* 卡片内容 */
+      .card-body {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        flex: 1;
+      }
+
+      .info-row {
+        display: flex;
+        gap: var(--spacing-sm);
+        font-size: 0.9rem;
+        align-items: baseline;
+      }
+
+      .info-row .label {
+        color: var(--vscode-descriptionForeground);
+        flex-shrink: 0;
+        font-weight: 500;
+        min-width: 80px;
+      }
+
+      .info-row .value {
+        color: var(--vscode-foreground);
+        word-break: break-word;
+        flex: 1;
+      }
+
+      .info-row .value.truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .info-row .value.highlight {
+        color: var(--vscode-textLink-foreground);
+        font-weight: 600;
+      }
+
+      /* 卡片操作按钮 */
+      .card-actions {
+        display: flex;
+        gap: var(--spacing-sm);
+        padding-top: var(--spacing-md);
+        border-top: 1px solid var(--vscode-editorWidget-border);
+      }
+
+      /* 按钮样式 */
+      .button {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        padding: 8px 16px;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        font-size: inherit;
+        font-family: inherit;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+      }
+
+      .button:hover {
+        background-color: var(--vscode-button-hoverBackground);
+      }
+
+      .button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .button.primary {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+      }
+
+      .button.secondary {
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+      }
+
+      .button.secondary:hover {
+        background-color: var(--vscode-button-secondaryHoverBackground);
+      }
+
+      .button.danger {
+        background-color: var(--vscode-errorForeground);
+        color: #ffffff;
+      }
+
+      .button.danger:hover {
+        opacity: 0.8;
+      }
+
+      .card-actions .button {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--spacing-xs);
+        padding: var(--spacing-sm);
+        font-size: 0.85rem;
+      }
+
+      .card-actions .button:last-child {
+        flex: 0 0 auto;
+        padding: var(--spacing-sm) var(--spacing-md);
+      }
+
+      /* 图标按钮 */
+      .icon-button {
+        background: transparent;
+        border: none;
+        color: var(--vscode-foreground);
+        cursor: pointer;
+        padding: var(--spacing-xs);
+        border-radius: var(--border-radius);
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .icon-button:hover {
+        background-color: var(--vscode-toolbar-hoverBackground);
+        color: var(--vscode-textLink-foreground);
+      }
+
+      .icon-button .codicon {
+        font-size: 16px;
+      }
+
+      /* 空状态 */
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 60vh;
+        color: var(--vscode-descriptionForeground);
+        text-align: center;
+        padding: var(--spacing-xl);
+      }
+
+      .empty-state .icon {
+        font-size: 64px;
+        margin-bottom: var(--spacing-lg);
+        color: var(--vscode-descriptionForeground);
+        opacity: 0.6;
+      }
+
+      .empty-state .message {
+        margin-bottom: var(--spacing-lg);
+        font-size: 1.2rem;
+        color: var(--vscode-foreground);
+        max-width: 400px;
+        line-height: 1.6;
+      }
+
+      /* 响应式 */
+      @media (max-width: 768px) {
+        .source-cards-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .page-header {
+          flex-direction: column;
+          gap: var(--spacing-md);
+        }
+
+        .card-actions {
+          flex-wrap: wrap;
+        }
+
+        .card-actions .button {
+          flex: 1 1 calc(50% - var(--spacing-xs));
+          min-width: 100px;
+        }
+      }
+
+      @media (min-width: 1400px) {
+        .source-cards-grid {
+          grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="source-manager-container">
+      <!-- 页面标题 -->
+      <div class="page-header">
+        <div class="header-content">
+          <h1>规则源管理器</h1>
+          <p class="subtitle">查看和管理规则源配置</p>
+        </div>
+        <button class="button primary">
+          <i class="codicon codicon-add"></i>
+          添加规则源
+        </button>
+      </div>
+
+      <!-- 卡片网格 -->
+      <div class="source-cards-grid">
+        <!-- 规则源卡片 1 - 启用 -->
+        <div class="source-card enabled">
+          <div class="card-header">
+            <div class="source-title">
+              <i class="codicon codicon-pass-filled status-icon"></i>
+              <h3>Official Rules</h3>
+            </div>
+            <button class="icon-button" title="编辑">
+              <i class="codicon codicon-edit"></i>
+            </button>
+          </div>
+
+          <div class="card-body">
+            <div class="info-row">
+              <span class="label">Git URL:</span>
+              <span
+                class="value truncate"
+                title="https://github.com/ygqygq2/turbo-ai-rules-examples.git"
+              >
+                https://github.com/ygqygq2/turbo-ai-rules-examples.git
+              </span>
+            </div>
+            <div class="info-row">
+              <span class="label">Branch:</span>
+              <span class="value">main</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Subpath:</span>
+              <span class="value truncate" title="/rules"> /rules </span>
+            </div>
+            <div class="info-row">
+              <span class="label">规则数:</span>
+              <span class="value highlight">45</span>
+            </div>
+            <div class="info-row">
+              <span class="label">最后同步:</span>
+              <span class="value">2 分钟前</span>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button class="button secondary" title="禁用">
+              <i class="codicon codicon-debug-pause"></i>
+              禁用
+            </button>
+            <button class="button secondary" title="同步">
+              <i class="codicon codicon-sync"></i>
+              同步
+            </button>
+            <button class="button danger" title="删除">
+              <i class="codicon codicon-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 规则源卡片 2 - 启用 -->
+        <div class="source-card enabled">
+          <div class="card-header">
+            <div class="source-title">
+              <i class="codicon codicon-pass-filled status-icon"></i>
+              <h3>Company Rules</h3>
+            </div>
+            <button class="icon-button" title="编辑">
+              <i class="codicon codicon-edit"></i>
+            </button>
+          </div>
+
+          <div class="card-body">
+            <div class="info-row">
+              <span class="label">Git URL:</span>
+              <span class="value truncate" title="https://github.com/company/coding-rules.git">
+                https://github.com/company/coding-rules.git
+              </span>
+            </div>
+            <div class="info-row">
+              <span class="label">Branch:</span>
+              <span class="value">develop</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Subpath:</span>
+              <span class="value">/</span>
+            </div>
+            <div class="info-row">
+              <span class="label">规则数:</span>
+              <span class="value highlight">20</span>
+            </div>
+            <div class="info-row">
+              <span class="label">最后同步:</span>
+              <span class="value">1 小时前</span>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button class="button secondary" title="禁用">
+              <i class="codicon codicon-debug-pause"></i>
+              禁用
+            </button>
+            <button class="button secondary" title="同步">
+              <i class="codicon codicon-sync"></i>
+              同步
+            </button>
+            <button class="button danger" title="删除">
+              <i class="codicon codicon-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 规则源卡片 3 - 禁用 -->
+        <div class="source-card disabled">
+          <div class="card-header">
+            <div class="source-title">
+              <i class="codicon codicon-circle-large-outline status-icon"></i>
+              <h3>Custom Rules</h3>
+            </div>
+            <button class="icon-button" title="编辑">
+              <i class="codicon codicon-edit"></i>
+            </button>
+          </div>
+
+          <div class="card-body">
+            <div class="info-row">
+              <span class="label">Git URL:</span>
+              <span class="value truncate" title="https://github.com/user/custom-rules.git">
+                https://github.com/user/custom-rules.git
+              </span>
+            </div>
+            <div class="info-row">
+              <span class="label">Branch:</span>
+              <span class="value">main</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Subpath:</span>
+              <span class="value">/</span>
+            </div>
+            <div class="info-row">
+              <span class="label">规则数:</span>
+              <span class="value highlight">0</span>
+            </div>
+            <div class="info-row">
+              <span class="label">最后同步:</span>
+              <span class="value">从未同步</span>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button class="button primary" title="启用">
+              <i class="codicon codicon-debug-start"></i>
+              启用
+            </button>
+            <button class="button secondary" title="同步" disabled>
+              <i class="codicon codicon-sync"></i>
+              同步
+            </button>
+            <button class="button danger" title="删除">
+              <i class="codicon codicon-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 交互逻辑示例
+      document.addEventListener('DOMContentLoaded', () => {
+        console.log('Source Manager page loaded');
+
+        // 添加规则源
+        const addBtn = document.querySelector('.page-header .button');
+        if (addBtn) {
+          addBtn.addEventListener('click', () => {
+            alert('打开添加规则源对话框');
+          });
+        }
+
+        // 编辑按钮
+        document.querySelectorAll('.icon-button').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            alert('打开编辑规则源对话框');
+          });
+        });
+
+        // 卡片操作按钮
+        document.querySelectorAll('.card-actions .button').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            const action = btn.textContent.trim();
+            alert(`执行操作: ${action}`);
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

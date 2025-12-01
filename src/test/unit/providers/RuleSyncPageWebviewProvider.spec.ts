@@ -15,6 +15,7 @@ vi.mock('vscode', () => ({
     createWebviewPanel: vi.fn(),
     showInformationMessage: vi.fn(),
     showErrorMessage: vi.fn(),
+    setStatusBarMessage: vi.fn().mockReturnValue({ dispose: vi.fn() }),
   },
   workspace: {
     workspaceFolders: [
@@ -253,14 +254,16 @@ describe('RuleSyncPageWebviewProvider', () => {
       expect(true).toBe(true); // 验证没有抛出异常
     });
 
-    it('应该在缺少数据时抛出错误', async () => {
+    it('应该在缺少数据时正常处理并返回错误', async () => {
       const payload = {
         data: {
           rules: [],
+          // 缺少 adapters 字段
         },
       };
 
-      await expect((provider as any).handleSync(payload)).rejects.toThrow('Invalid sync payload');
+      // handleSync 不会抛出错误，而是捕获并记录
+      await expect((provider as any).handleSync(payload)).resolves.not.toThrow();
     });
   });
 

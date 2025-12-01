@@ -15,7 +15,7 @@
     />
     <style>
       :root {
-        /* VS Code 主题变量 */
+        /* VS Code 主题变量 - 暗色主题默认值（用于浏览器预览）*/
         --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
           Arial, sans-serif;
         --vscode-font-weight: 400;
@@ -23,7 +23,6 @@
         --vscode-foreground: #cccccc;
         --vscode-descriptionForeground: #8c8c8c;
         --vscode-errorForeground: #f48771;
-        --vscode-editorWarning-foreground: #cca700;
 
         /* 背景色 */
         --vscode-editor-background: #1e1e1e;
@@ -45,12 +44,12 @@
         /* 列表 */
         --vscode-list-hoverBackground: #2a2d2e;
 
-        /* 测试图标颜色 */
+        /* 测试状态 */
         --vscode-testing-iconPassed: #73c991;
-        --vscode-testing-iconFailed: #f48771;
 
-        /* 图标 */
-        --vscode-icon-foreground: #c5c5c5;
+        /* 其他 */
+        --vscode-textLink-foreground: #3794ff;
+        --vscode-textLink-activeForeground: #4daafc;
 
         /* 间距系统 */
         --spacing-xs: 4px;
@@ -61,10 +60,6 @@
         --border-radius: 4px;
       }
 
-      * {
-        box-sizing: border-box;
-      }
-
       body {
         font-family: var(--vscode-font-family);
         font-weight: var(--vscode-font-weight);
@@ -73,34 +68,24 @@
         background-color: var(--vscode-editor-background);
         margin: 0;
         padding: 0;
-        overflow-x: hidden;
+        box-sizing: border-box;
       }
 
-      /* 容器 */
+      /* Dashboard 容器 */
       .dashboard-container {
+        background-color: var(--vscode-editor-background);
+        color: var(--vscode-foreground);
         padding: var(--spacing-lg);
         max-width: 1000px;
         margin: 0 auto;
-        animation: fadeIn 0.3s ease-out;
       }
 
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      /* 头部 */
+      /* Header */
       .header {
         display: flex;
-        align-items: center;
         justify-content: space-between;
-        margin-bottom: var(--spacing-xl);
+        align-items: center;
+        margin-bottom: var(--spacing-lg);
       }
 
       .header-left {
@@ -110,14 +95,14 @@
       }
 
       .header-title {
-        font-size: 20px;
-        font-weight: 600;
         margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
       }
 
       .header-right {
         display: flex;
-        gap: var(--spacing-xs);
+        gap: var(--spacing-sm);
       }
 
       /* 功能卡片 */
@@ -133,37 +118,22 @@
         display: flex;
         align-items: center;
         margin-bottom: var(--spacing-md);
-        font-size: 15px;
+        font-size: 1.2rem;
         font-weight: 600;
-      }
-
-      .feature-card-header .codicon {
-        margin-right: var(--spacing-sm);
-        font-size: 16px;
+        gap: var(--spacing-sm);
       }
 
       /* 统计信息 */
       .stats-info {
         color: var(--vscode-descriptionForeground);
-        font-size: 13px;
+        font-size: 0.95rem;
         margin-bottom: var(--spacing-sm);
         display: flex;
         align-items: center;
         gap: var(--spacing-xs);
       }
 
-      .stats-info .codicon {
-        font-size: 14px;
-      }
-
-      /* 按钮组 */
-      .button-group {
-        display: flex;
-        gap: var(--spacing-sm);
-        flex-wrap: wrap;
-        margin-top: var(--spacing-md);
-      }
-
+      /* 按钮 */
       .btn {
         border: none;
         padding: var(--spacing-sm) var(--spacing-md);
@@ -173,12 +143,7 @@
         align-items: center;
         gap: var(--spacing-xs);
         font-size: 13px;
-        font-family: inherit;
-        transition: background-color 0.1s;
-      }
-
-      .btn .codicon {
-        font-size: 14px;
+        transition: background-color 0.2s;
       }
 
       .btn-primary {
@@ -200,13 +165,21 @@
       }
 
       .btn-icon {
-        padding: var(--spacing-sm);
         background-color: transparent;
-        color: var(--vscode-icon-foreground);
+        color: var(--vscode-foreground);
+        padding: var(--spacing-xs);
       }
 
       .btn-icon:hover {
         background-color: var(--vscode-list-hoverBackground);
+      }
+
+      /* 按钮组 */
+      .button-group {
+        display: flex;
+        gap: var(--spacing-sm);
+        flex-wrap: wrap;
+        margin-top: var(--spacing-md);
       }
 
       /* 状态列表 */
@@ -227,13 +200,12 @@
 
       .status-header {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: var(--spacing-sm);
-        margin-bottom: var(--spacing-xs);
       }
 
       .status-icon {
-        font-size: 16px;
+        margin-top: 2px;
       }
 
       .status-icon.enabled {
@@ -244,58 +216,61 @@
         color: var(--vscode-descriptionForeground);
       }
 
-      .status-name {
-        font-size: 14px;
-        font-weight: 500;
+      .status-info {
+        flex: 1;
       }
 
-      .status-count {
-        margin-left: auto;
-        color: var(--vscode-descriptionForeground);
-        font-size: 13px;
+      .status-name {
+        font-weight: 600;
+        margin-bottom: var(--spacing-xs);
       }
 
       .status-details {
         color: var(--vscode-descriptionForeground);
-        font-size: 12px;
-        margin-left: 24px;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
+        font-size: 0.9rem;
+      }
+
+      .status-path {
+        color: var(--vscode-descriptionForeground);
+        font-size: 0.85rem;
+        font-family: monospace;
       }
 
       /* 快速操作网格 */
       .quick-actions-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: var(--spacing-sm);
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: var(--spacing-md);
       }
 
       .quick-action-btn {
-        background-color: var(--vscode-button-secondaryBackground);
-        color: var(--vscode-button-secondaryForeground);
-        border: none;
-        padding: var(--spacing-md);
-        border-radius: var(--border-radius);
-        cursor: pointer;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: var(--spacing-xs);
-        font-size: 12px;
-        font-family: inherit;
-        transition: background-color 0.1s;
+        justify-content: center;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-lg);
+        background-color: var(--vscode-editorWidget-background);
+        border: 1px solid var(--vscode-editorWidget-border);
+        border-radius: var(--border-radius);
+        color: var(--vscode-foreground);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+        text-align: center;
       }
 
       .quick-action-btn:hover {
-        background-color: var(--vscode-button-secondaryHoverBackground);
+        background-color: var(--vscode-list-hoverBackground);
+        border-color: var(--vscode-focusBorder);
+        transform: translateY(-2px);
       }
 
-      .quick-action-btn .codicon {
-        font-size: 20px;
+      .quick-action-btn:active {
+        transform: translateY(0);
       }
 
-      /* 快速入门链接 */
+      /* 快速入门 */
       .quick-start-links {
         list-style: none;
         padding: 0;
@@ -303,51 +278,70 @@
       }
 
       .quick-start-links li {
-        margin-bottom: var(--spacing-sm);
+        padding: var(--spacing-xs) 0;
       }
 
       .quick-start-link {
-        color: var(--vscode-foreground);
+        color: var(--vscode-textLink-foreground);
         text-decoration: none;
         display: inline-flex;
         align-items: center;
         gap: var(--spacing-xs);
-        font-size: 13px;
-        transition: color 0.1s;
+      }
+
+      .quick-start-link::before {
+        content: '•';
+        color: var(--vscode-descriptionForeground);
       }
 
       .quick-start-link:hover {
-        color: var(--vscode-button-background);
-      }
-
-      .quick-start-link .codicon {
-        font-size: 14px;
+        color: var(--vscode-textLink-activeForeground);
+        text-decoration: underline;
       }
 
       /* 响应式布局 */
+      @media (max-width: 900px) {
+        .quick-actions-grid {
+          grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        }
+      }
+
       @media (max-width: 600px) {
         .dashboard-container {
           padding: var(--spacing-md);
         }
 
-        .header {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: var(--spacing-sm);
+        .header-title {
+          font-size: 1.2rem;
         }
 
         .button-group {
-          width: 100%;
-        }
-
-        .btn {
-          flex: 1;
-          justify-content: center;
+          flex-direction: column;
         }
 
         .quick-actions-grid {
-          grid-template-columns: repeat(2, 1fr);
+          grid-template-columns: 1fr 1fr;
         }
+
+        .quick-action-btn {
+          padding: var(--spacing-md);
+        }
+      }
+
+      /* 加载动画 */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .feature-card {
+        animation: fadeIn 0.4s ease-out;
       }
     </style>
   </head>
@@ -357,7 +351,7 @@
       <div class="header">
         <div class="header-left">
           <i class="codicon codicon-dashboard"></i>
-          <h1 class="header-title">Turbo AI Rules</h1>
+          <h1 class="header-title">Dashboard</h1>
         </div>
         <div class="header-right">
           <button class="btn btn-icon" title="设置">
@@ -477,25 +471,25 @@
         </div>
 
         <div class="quick-actions-grid">
-          <button class="quick-action-btn">
-            <i class="codicon codicon-symbol-namespace"></i>
-            <span>规则同步页</span>
+          <button class="quick-action-btn" data-action="showWelcome">
+            <i class="codicon codicon-book"></i>
+            <span>快速开始</span>
           </button>
-          <button class="quick-action-btn">
+          <button class="quick-action-btn" data-action="openStatistics">
             <i class="codicon codicon-graph"></i>
             <span>统计面板</span>
           </button>
-          <button class="quick-action-btn">
+          <button class="quick-action-btn" data-action="openAdvancedSearch">
             <i class="codicon codicon-search"></i>
             <span>高级搜索</span>
           </button>
-          <button class="quick-action-btn">
-            <i class="codicon codicon-file-text"></i>
-            <span>规则详情</span>
+          <button class="quick-action-btn" data-action="openRuleSyncPage">
+            <i class="codicon codicon-symbol-namespace"></i>
+            <span>规则同步页</span>
           </button>
-          <button class="quick-action-btn">
+          <button class="quick-action-btn" data-action="searchRules">
             <i class="codicon codicon-list-tree"></i>
-            <span>规则树视图</span>
+            <span>规则树</span>
           </button>
         </div>
       </div>
@@ -537,32 +531,29 @@
       // 按钮点击事件处理
       document.querySelectorAll('button').forEach((button) => {
         button.addEventListener('click', (e) => {
+          const action = button.getAttribute('data-action');
           const buttonText = button.textContent.trim();
-          console.log('Button clicked:', buttonText);
+          console.log('Button clicked:', buttonText, 'action:', action);
 
-          // 根据按钮文本发送不同消息
+          // 优先使用 data-action 属性
+          if (action) {
+            vscode.postMessage({ type: action });
+            return;
+          }
+
+          // 根据按钮文本发送不同消息（向后兼容）
           if (buttonText.includes('同步至所有启用适配器')) {
-            vscode.postMessage({ command: 'syncAll' });
+            vscode.postMessage({ type: 'syncAll' });
           } else if (buttonText.includes('添加规则源')) {
-            vscode.postMessage({ command: 'addSource' });
+            vscode.postMessage({ type: 'addSource' });
           } else if (buttonText.includes('管理规则源')) {
-            vscode.postMessage({ command: 'manageSources' });
+            vscode.postMessage({ type: 'manageSources' });
           } else if (buttonText.includes('浏览/搜索规则')) {
-            vscode.postMessage({ command: 'searchRules' });
+            vscode.postMessage({ type: 'searchRules' });
           } else if (buttonText.includes('管理适配器')) {
-            vscode.postMessage({ command: 'manageAdapters' });
+            vscode.postMessage({ type: 'manageAdapters' });
           } else if (buttonText.includes('重新生成所有配置')) {
-            vscode.postMessage({ command: 'regenerateAll' });
-          } else if (buttonText.includes('规则同步页')) {
-            vscode.postMessage({ command: 'openRuleSyncPage' });
-          } else if (buttonText.includes('统计面板')) {
-            vscode.postMessage({ command: 'openStatistics' });
-          } else if (buttonText.includes('高级搜索')) {
-            vscode.postMessage({ command: 'openAdvancedSearch' });
-          } else if (buttonText.includes('规则详情')) {
-            vscode.postMessage({ command: 'openRuleDetails' });
-          } else if (buttonText.includes('规则树视图')) {
-            vscode.postMessage({ command: 'openRuleTree' });
+            vscode.postMessage({ type: 'regenerateAll' });
           }
         });
       });

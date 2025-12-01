@@ -187,6 +187,12 @@
         "icon": "$(search)"
       },
       {
+        "command": "turbo-ai-rules.openSourceManager",
+        "title": "Open Source Manager",
+        "category": "Turbo AI Rules",
+        "icon": "$(settings-gear)"
+      },
+      {
         "command": "turbo-ai-rules.selectRules",
         "title": "%turboAiRules.selectRules.title%",
         "category": "Turbo AI Rules",
@@ -222,47 +228,37 @@
     ],
     "menus": {
       "view/title": [
-          {
-            "command": "turbo-ai-rules.openDashboard",
-            "when": "view == turboAiRulesExplorer",
-            "group": "navigation@0"
-          },
-          {
-            "command": "turbo-ai-rules.showWelcome",
-            "when": "view == turboAiRulesExplorer",
-            "group": "navigation@1"
-          },
-          {
-            "command": "turbo-ai-rules.addSource",
-            "when": "view == turboAiRulesExplorer",
-            "group": "navigation@2"
-          },
-          {
-            "command": "turbo-ai-rules.reloadSettings",
-            "when": "view == turboAiRulesExplorer",
-            "group": "navigation@3"
-          },
-          {
-            "command": "turbo-ai-rules.refreshGitCache",
-            "when": "view == turboAiRulesExplorer",
-            "group": "navigation@4"
-          },
-          {
-            "command": "turbo-ai-rules.generateConfigs",
-            "when": "view == turboAiRulesExplorer",
-            "group": "navigation@5"
-          },
-          {
-            "command": "turbo-ai-rules.showStatistics",
-            "when": "view == turboAiRulesExplorer",
-            "group": "navigation@6"
-          },
-          {
-            "command": "turbo-ai-rules.advancedSearch",
-            "when": "view == turboAiRulesExplorer",
-            "group": "navigation@7"
-          }
-        ],
+        {
+          "command": "turbo-ai-rules.openDashboard",
+          "when": "view == turboAiRulesExplorer",
+          "group": "navigation@0"
+        },
+        {
+          "command": "turbo-ai-rules.addSource",
+          "when": "view == turboAiRulesExplorer",
+          "group": "navigation@2"
+        },
+        {
+          "command": "turbo-ai-rules.reloadSettings",
+          "when": "view == turboAiRulesExplorer",
+          "group": "navigation@3"
+        },
+        {
+          "command": "turbo-ai-rules.refreshGitCache",
+          "when": "view == turboAiRulesExplorer",
+          "group": "navigation@4"
+        },
+        {
+          "command": "turbo-ai-rules.showStatistics",
+          "when": "view == turboAiRulesExplorer",
+          "group": "navigation@6"
+        },
+        {
+          "command": "turbo-ai-rules.advancedSearch",
+          "when": "view == turboAiRulesExplorer",
+          "group": "navigation@7"
+        }
+      ],
       "view/item/context": [
         {
           "command": "turbo-ai-rules.syncRules",

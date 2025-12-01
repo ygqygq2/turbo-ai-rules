@@ -119,20 +119,23 @@ describe('DashboardWebviewProvider', () => {
     });
 
     it('应该在发生错误时返回默认状态', async () => {
-      const ConfigManager = await import('@/services/ConfigManager');
-      vi.mocked(ConfigManager.ConfigManager.getInstance).mockReturnValueOnce({
+      // 临时替换 configManager 为一个会抛错的版本
+      const originalConfigManager = (provider as any).configManager;
+      (provider as any).configManager = {
         getConfig: vi.fn(() => {
           throw new Error('Test error');
         }),
-      } as any);
+      };
 
-      const newProvider = DashboardWebviewProvider.getInstance(mockContext);
-      const state = await (newProvider as any).getDashboardState();
+      const state = await (provider as any).getDashboardState();
 
       expect(state.sources.enabled).toBe(0);
       expect(state.sources.total).toBe(0);
       expect(state.sources.totalRules).toBe(0);
       expect(state.adapters.length).toBe(0);
+
+      // 恢复原始 configManager
+      (provider as any).configManager = originalConfigManager;
     });
   });
 

@@ -90,12 +90,15 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
    */
   protected async getHtmlContent(webview: vscode.Webview): Promise<string> {
     try {
-      // 读取设计迭代中的 HTML 文件
+      // 获取编译后的 webview 文件路径
       const htmlPath = path.join(
         this.context.extensionPath,
-        '.superdesign',
-        'design_iterations',
-        '12-dashboard_1.html',
+        'out',
+        'webview',
+        'src',
+        'webview',
+        'dashboard',
+        'index.html',
       );
 
       if (!fs.existsSync(htmlPath)) {
@@ -106,15 +109,42 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
         return this.getErrorHtml('Dashboard template not found');
       }
 
+      // 读取 HTML 文件
       let html = fs.readFileSync(htmlPath, 'utf-8');
 
-      // 替换 CSP nonce
-      const nonce = this.getNonce();
-      html = html.replace(/\{\{nonce\}\}/g, nonce);
-
-      // 替换 CSP source
+      // 替换 CSP 占位符
       const cspSource = this.getCspSource(webview);
       html = html.replace(/\{\{cspSource\}\}/g, cspSource);
+
+      // 转换资源路径为 webview URI
+      // 处理绝对路径和相对路径（相对于 HTML 文件）
+      const htmlDir = path.dirname(htmlPath);
+      html = html.replace(/(?:src|href)="([^"]+)"/g, (match, resourcePath) => {
+        try {
+          // 如果是绝对路径以 / 开头，则将其视为相对于 out/webview 根目录
+          let absPath: string;
+          if (resourcePath.startsWith('/')) {
+            absPath = path.join(
+              this.context.extensionPath,
+              'out',
+              'webview',
+              resourcePath.replace(/^\//, ''),
+            );
+          } else {
+            // 相对路径相对于 HTML 文件所在目录
+            absPath = path.resolve(htmlDir, resourcePath);
+          }
+
+          if (!fs.existsSync(absPath)) {
+            return match; // 文件不存在则保留原引用
+          }
+
+          const assetUri = webview.asWebviewUri(vscode.Uri.file(absPath));
+          return match.replace(resourcePath, assetUri.toString());
+        } catch (_e) {
+          return match;
+        }
+      });
 
       return html;
     } catch (error) {
@@ -147,9 +177,14 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
           await vscode.commands.executeCommand('turbo-ai-rules.addSource');
           break;
 
-        case 'manageSources':
-          await vscode.commands.executeCommand('turbo-ai-rules.manageSources');
+        case 'manageSources': {
+          // 打开 Source Manager 页面
+          const sourceManagerProvider = await import('./SourceManagerWebviewProvider');
+          await sourceManagerProvider.SourceManagerWebviewProvider.getInstance(
+            this.context,
+          ).showSourceManager();
           break;
+        }
 
         case 'searchRules':
           await vscode.commands.executeCommand('turbo-ai-rules.searchRules');
@@ -175,14 +210,19 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
           await vscode.commands.executeCommand('turbo-ai-rules.advancedSearch');
           break;
 
-        case 'openRuleDetails':
-          // TODO: 实现规则详情页
-          notify('Rule details feature coming soon', 'info');
-          break;
-
         case 'openRuleTree':
           // 显示侧边栏规则树视图
           await vscode.commands.executeCommand('turbo-ai-rules.rulesView.focus');
+          break;
+
+        case 'showWelcome':
+          // 显示欢迎页（快速开始）
+          await vscode.commands.executeCommand('turbo-ai-rules.showWelcome');
+          break;
+
+        case 'generateConfigs':
+          // 生成配置文件
+          await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
           break;
 
         case 'openWelcome':
@@ -192,14 +232,32 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
         case 'openRuleFormat':
           await vscode.commands.executeCommand(
             'vscode.open',
-            vscode.Uri.parse('https://github.com/ygqygq2/turbo-ai-rules#rule-format'),
+            vscode.Uri.parse(
+              'https://github.com/ygqygq2/turbo-ai-rules/blob/main/docs/user-guide/03-rule-format.md',
+            ),
           );
           break;
 
         case 'openExamples':
           await vscode.commands.executeCommand(
             'vscode.open',
-            vscode.Uri.parse('https://github.com/ygqygq2/turbo-ai-rules-examples'),
+            vscode.Uri.parse('https://github.com/ygqygq2/ai-rules'),
+          );
+          break;
+
+        case 'openSettings':
+          await vscode.commands.executeCommand(
+            'workbench.action.openSettings',
+            '@ext:ygqygq2.turbo-ai-rules',
+          );
+          break;
+
+        case 'openDocs':
+          await vscode.commands.executeCommand(
+            'vscode.open',
+            vscode.Uri.parse(
+              'https://github.com/ygqygq2/turbo-ai-rules/blob/main/docs/user-guide/README.md',
+            ),
           );
           break;
 

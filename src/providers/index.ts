@@ -11,6 +11,7 @@ export { RulesTreeProvider } from './RulesTreeProvider';
 export { RuleSyncPageWebviewProvider } from './RuleSyncPageWebviewProvider';
 export { SearchWebviewProvider } from './SearchWebviewProvider';
 export { SourceDetailWebviewProvider } from './SourceDetailWebview';
+export { SourceManagerWebviewProvider } from './SourceManagerWebviewProvider';
 export { StatisticsWebviewProvider } from './StatisticsWebviewProvider';
 export { StatusBarProvider } from './StatusBarProvider';
 export { WelcomeWebviewProvider } from './WelcomeWebviewProvider';

@@ -36,6 +36,7 @@ import {
   RulesTreeProvider,
   RuleSyncPageWebviewProvider,
   SearchWebviewProvider,
+  SourceManagerWebviewProvider,
   StatisticsWebviewProvider,
   StatusBarProvider,
   WelcomeWebviewProvider,
@@ -342,6 +343,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<{
       vscode.commands.registerCommand('turbo-ai-rules.advancedSearch', async () => {
         const searchProvider = SearchWebviewProvider.getInstance(context, rulesManager);
         await searchProvider.showSearch();
+      }),
+
+      vscode.commands.registerCommand('turbo-ai-rules.openSourceManager', async () => {
+        const sourceManagerProvider = SourceManagerWebviewProvider.getInstance(context);
+        await sourceManagerProvider.showSourceManager();
       }),
 
       vscode.commands.registerCommand(

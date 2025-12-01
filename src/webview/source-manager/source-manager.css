@@ -1,0 +1,322 @@
+/* Source Manager 样式 - 卡片网格布局 */
+/* 引入全局样式和CSS变量 */
+@import '../global.css';
+
+/* 主容器 */
+.source-manager-container {
+  padding: var(--spacing-xl);
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-foreground);
+  min-height: 100vh;
+}
+
+/* 页面标题 */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--vscode-editorWidget-border);
+}
+
+.page-header .header-content {
+  flex: 1;
+}
+
+.page-header h1 {
+  font-size: 1.8rem;
+  margin: 0 0 var(--spacing-sm) 0;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.page-header .subtitle {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* 卡片网格布局 */
+.source-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--spacing-lg);
+  padding: var(--spacing-sm) 0;
+}
+
+/* 规则源卡片 */
+.source-card {
+  background-color: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.source-card:hover {
+  border-color: var(--vscode-focusBorder);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* 卡片头部 */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--vscode-editorWidget-border);
+}
+
+.source-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+  min-width: 0; /* 允许内容截断 */
+}
+
+.source-title h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.source-card.enabled .status-icon {
+  color: var(--vscode-testing-iconPassed);
+}
+
+.source-card.disabled .status-icon {
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.6;
+}
+
+/* 禁用状态的卡片整体变灰 */
+.source-card.disabled {
+  opacity: 0.7;
+}
+
+.source-card.disabled:hover {
+  opacity: 0.85;
+}
+
+/* 卡片内容 */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  flex: 1;
+}
+
+.info-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  font-size: 0.9rem;
+  align-items: baseline;
+}
+
+.info-row .label {
+  color: var(--vscode-descriptionForeground);
+  flex-shrink: 0;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.info-row .value {
+  color: var(--vscode-foreground);
+  word-break: break-word;
+  flex: 1;
+}
+
+.info-row .value.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.info-row .value.highlight {
+  color: var(--vscode-textLink-foreground);
+  font-weight: 600;
+}
+
+/* 卡片操作按钮 */
+.card-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--vscode-editorWidget-border);
+}
+
+.card-actions .button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  font-size: 0.85rem;
+}
+
+.card-actions .button:last-child {
+  flex: 0 0 auto;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.card-actions .button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 图标按钮 */
+.icon-button {
+  background: transparent;
+  border: none;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon-button:hover {
+  background-color: var(--vscode-toolbar-hoverBackground);
+  color: var(--vscode-textLink-foreground);
+}
+
+.icon-button .codicon {
+  font-size: 16px;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  color: var(--vscode-descriptionForeground);
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+.empty-state .icon {
+  font-size: 64px;
+  margin-bottom: var(--spacing-lg);
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.6;
+}
+
+.empty-state .message {
+  margin-bottom: var(--spacing-lg);
+  font-size: 1.2rem;
+  color: var(--vscode-foreground);
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+.empty-state .button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+/* 加载状态 */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  color: var(--vscode-descriptionForeground);
+  min-height: 60vh;
+}
+
+.loading .codicon {
+  font-size: 48px;
+}
+
+.loading span {
+  font-size: 1.1rem;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.codicon-modifier-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* 错误消息 */
+.error-message {
+  background-color: var(--vscode-inputValidation-errorBackground);
+  color: var(--vscode-inputValidation-errorForeground);
+  border: 1px solid var(--vscode-inputValidation-errorBorder);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-lg);
+  font-size: 0.9rem;
+}
+
+/* 成功消息 */
+.success-message {
+  background-color: var(--vscode-terminal-ansiGreen);
+  color: var(--vscode-terminal-ansiBrightWhite);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-lg);
+  font-size: 0.9rem;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .source-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .card-actions {
+    flex-wrap: wrap;
+  }
+
+  .card-actions .button {
+    flex: 1 1 calc(50% - var(--spacing-xs));
+    min-width: 100px;
+  }
+}
+
+/* 超大屏幕优化 */
+@media (min-width: 1400px) {
+  .source-cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  }
+}

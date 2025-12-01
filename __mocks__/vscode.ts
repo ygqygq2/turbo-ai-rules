@@ -11,6 +11,11 @@ if (!vscode.window.withProgress) {
   });
 }
 
+// Add setStatusBarMessage to window mock
+if (!vscode.window.setStatusBarMessage) {
+  vscode.window.setStatusBarMessage = vi.fn().mockReturnValue({ dispose: vi.fn() });
+}
+
 // Add l10n mock
 if (!vscode.l10n) {
   vscode.l10n = {

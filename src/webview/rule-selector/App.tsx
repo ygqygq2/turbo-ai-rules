@@ -231,7 +231,7 @@ export const App: React.FC = () => {
           <Icon icon="circle-slash" /> {t('ruleSelector.deselectAll')}
         </button>
         <button className="button button-secondary" onClick={reset} disabled={!hasChanges}>
-          <Icon icon="refresh" /> {t('form.cancel')}
+          <Icon icon="refresh" /> {t('form.reset')}
         </button>
       </div>
       {/* Statistics */}

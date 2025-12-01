@@ -58,7 +58,7 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
     try {
       await this.show({
         viewType: 'turboAiRules.adapterManager',
-        title: 'Adapter Manager - Turbo AI Rules',
+        title: 'Adapter Manager',
         viewColumn: vscode.ViewColumn.One,
         iconPath: EXTENSION_ICON_PATH,
       });
