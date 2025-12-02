@@ -9,9 +9,12 @@ import * as vscode from 'vscode';
 
 import { ConfigManager } from '../services/ConfigManager';
 import { RulesManager } from '../services/RulesManager';
+import { WorkspaceStateManager } from '../services/WorkspaceStateManager';
+import { EXTENSION_ICON_PATH } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
+import { SourceDetailWebviewProvider } from './SourceDetailWebview';
 
 /**
  * Source Manager 提供者
@@ -23,7 +26,7 @@ export class SourceManagerWebviewProvider extends BaseWebviewProvider {
 
   private constructor(context: vscode.ExtensionContext) {
     super(context);
-    this.configManager = ConfigManager.getInstance();
+    this.configManager = ConfigManager.getInstance(context);
     this.rulesManager = RulesManager.getInstance();
   }
 
@@ -43,8 +46,9 @@ export class SourceManagerWebviewProvider extends BaseWebviewProvider {
   public async showSourceManager(): Promise<void> {
     await this.show({
       viewType: 'turboAiRules.sourceManager',
-      title: 'Source Manager',
+      title: vscode.l10n.t('sourceManager.title'),
       viewColumn: vscode.ViewColumn.One,
+      iconPath: EXTENSION_ICON_PATH,
     });
   }
 
@@ -52,26 +56,52 @@ export class SourceManagerWebviewProvider extends BaseWebviewProvider {
    * 生成 HTML 内容
    */
   protected async getHtmlContent(webview: vscode.Webview): Promise<string> {
-    // 获取编译后的 webview 文件路径
-    const htmlPath = path.join(
-      this.context.extensionPath,
-      'out',
-      'webview',
-      'src',
-      'webview',
-      'source-manager',
-      'index.html',
-    );
+    // 尝试多个可能的构建产物路径（兼容不同的构建输出布局）
+    const candidates = [
+      path.join(
+        this.context.extensionPath,
+        'out',
+        'webview',
+        'src',
+        'webview',
+        'source-manager',
+        'index.html',
+      ),
+      path.join(this.context.extensionPath, 'out', 'webview', 'source-manager', 'index.html'),
+      path.join(this.context.extensionPath, 'out', 'webview', 'source-manager.html'),
+      path.join(this.context.extensionPath, 'out', 'webview', 'source-manager', 'index.htm'),
+    ];
 
-    // 读取 HTML 文件
-    let html = fs.readFileSync(htmlPath, 'utf-8');
+    let html: string | null = null;
+    let htmlPath: string | undefined;
+
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate)) {
+        htmlPath = candidate;
+        try {
+          html = fs.readFileSync(candidate, 'utf-8');
+          break;
+        } catch (e) {
+          // 如果读取失败，继续尝试其他候选
+          Logger.warn(`Failed to read candidate html: ${candidate}`, { err: e as Error });
+        }
+      }
+    }
+
+    if (!html) {
+      const msg =
+        'Source Manager webview HTML not found. Please run `npm run build:webview` or start the extension in development mode.';
+      Logger.error(msg);
+      // 返回一个友好的占位 HTML，避免扩展崩溃
+      return `<html><body><h2>${msg}</h2></body></html>`;
+    }
 
     // 替换 CSP 占位符
     const cspSource = this.getCspSource(webview);
     html = html.replace(/\{\{cspSource\}\}/g, cspSource);
 
     // 转换资源路径为 webview URI
-    const htmlDir = path.dirname(htmlPath);
+    const htmlDir = path.dirname(htmlPath as string);
     html = html.replace(/(?:src|href)="([^"]+)"/g, (match, resourcePath) => {
       try {
         // 如果是绝对路径以 / 开头，则将其视为相对于 out/webview 根目录
@@ -108,11 +138,14 @@ export class SourceManagerWebviewProvider extends BaseWebviewProvider {
   protected async handleMessage(message: WebviewMessage): Promise<void> {
     try {
       const messageType = message.type;
+      Logger.info(`SourceManagerWebviewProvider received message: ${messageType}`, {
+        payload: message.payload,
+      });
 
       switch (messageType) {
         case 'ready':
           // 前端加载完成后，发送初始数据
-          Logger.debug('Source Manager webview ready, sending initial data');
+          Logger.info('Source Manager webview ready, sending initial data');
           await this.sendInitialData();
           break;
 
@@ -122,11 +155,11 @@ export class SourceManagerWebviewProvider extends BaseWebviewProvider {
           break;
 
         case 'editSource':
-          // 打开编辑规则源的独立 webview
-          await vscode.commands.executeCommand(
-            'turbo-ai-rules.manageSource',
-            message.payload.sourceId,
-          );
+          // 直接打开编辑规则源的 Webview 表单
+          {
+            const provider = SourceDetailWebviewProvider.getInstance(this.context);
+            await provider.showSourceForm(message.payload.sourceId);
+          }
           break;
 
         case 'deleteSource':
@@ -168,40 +201,61 @@ export class SourceManagerWebviewProvider extends BaseWebviewProvider {
 
   /**
    * 发送初始数据到前端
+   * @param messageType 消息类型，'init' 用于初始加载，'updateSources' 用于数据更新
    */
-  private async sendInitialData(): Promise<void> {
+  private async sendInitialData(messageType: 'init' | 'updateSources' = 'init'): Promise<void> {
     try {
       // 获取所有规则源
       const sources = this.configManager.getSources();
-
-      // 转换数据格式 - 直接从规则管理器获取每个源的规则数量
-      const sourcesWithStats = sources.map((source) => {
-        const rules = this.rulesManager.getRulesBySource(source.id);
-        return {
-          id: source.id,
-          name: source.name,
-          gitUrl: source.gitUrl,
-          branch: source.branch,
-          enabled: source.enabled,
-          ruleCount: rules.length,
-          lastSync: source.lastSync || null,
-          authType: source.authentication.type,
-          subPath: source.subPath,
-          tags: source.tags || [],
-        };
+      Logger.debug('SourceManagerWebviewProvider: getSources', {
+        count: sources.length,
+        sources: sources.map((s) => ({ id: s.id, name: s.name })),
       });
 
-      // 发送初始数据
+      // 转换数据格式 - 直接从规则管理器获取每个源的规则数量
+      // 从 WorkspaceStateManager 获取最后同步时间，与状态栏保持一致
+      const workspaceStateManager = WorkspaceStateManager.getInstance();
+      const sourcesWithStats = await Promise.all(
+        sources.map(async (source) => {
+          const rules = this.rulesManager.getRulesBySource(source.id);
+          const lastSyncTime = await workspaceStateManager.getLastSyncTime(source.id);
+          return {
+            id: source.id,
+            name: source.name,
+            gitUrl: source.gitUrl,
+            branch: source.branch || 'main',
+            enabled: source.enabled,
+            ruleCount: rules.length,
+            lastSync: lastSyncTime || null,
+            authType: source.authentication?.type || 'none',
+            subPath: source.subPath,
+          };
+        }),
+      );
+
+      Logger.debug('SourceManagerWebviewProvider: sourcesWithStats', {
+        count: sourcesWithStats.length,
+        sources: sourcesWithStats.map((s) => ({
+          id: s.id,
+          name: s.name,
+          ruleCount: s.ruleCount,
+        })),
+      });
+
+      // 发送数据
       this.postMessage({
-        type: 'init',
+        type: messageType,
         payload: {
           sources: sourcesWithStats,
         },
       });
 
-      Logger.debug('Initial data sent to Source Manager webview', { count: sources.length });
+      Logger.info(`Data sent to Source Manager webview (${messageType})`, {
+        count: sources.length,
+        sources: sourcesWithStats.map((s) => ({ id: s.id, name: s.name, ruleCount: s.ruleCount })),
+      });
     } catch (error) {
-      Logger.error('Failed to send initial data', error instanceof Error ? error : undefined);
+      Logger.error('Failed to send data', error instanceof Error ? error : undefined);
     }
   }
 
@@ -219,18 +273,8 @@ export class SourceManagerWebviewProvider extends BaseWebviewProvider {
       // 删除规则源
       await this.configManager.removeSource(sourceId);
 
-      // 发送成功消息
-      this.postMessage({
-        type: 'operationResult',
-        payload: {
-          success: true,
-          operation: 'delete',
-          message: `Source "${source.name}" deleted successfully`,
-        },
-      });
-
-      // 重新发送初始数据
-      await this.sendInitialData();
+      // 发送更新后的数据
+      await this.sendInitialData('updateSources');
 
       Logger.info('Source deleted successfully', { sourceId });
       notify(`Source "${source.name}" deleted successfully`, 'info');
@@ -263,18 +307,8 @@ export class SourceManagerWebviewProvider extends BaseWebviewProvider {
       // 更新规则源状态
       await this.configManager.updateSource(sourceId, { enabled });
 
-      // 发送成功消息
-      this.postMessage({
-        type: 'operationResult',
-        payload: {
-          success: true,
-          operation: 'toggle',
-          message: `Source "${source.name}" ${enabled ? 'enabled' : 'disabled'} successfully`,
-        },
-      });
-
-      // 重新发送初始数据
-      await this.sendInitialData();
+      // 发送更新后的数据
+      await this.sendInitialData('updateSources');
 
       Logger.info('Source toggled successfully', { sourceId, enabled });
       notify(`Source "${source.name}" ${enabled ? 'enabled' : 'disabled'} successfully`, 'info');
@@ -317,7 +351,7 @@ export class SourceManagerWebviewProvider extends BaseWebviewProvider {
           const rules = this.rulesManager.getRulesBySource(sourceId);
           const ruleCount = rules.length;
 
-          // 发送同步完成消息
+          // 发送同步完成消息（包含规则数量）
           this.postMessage({
             type: 'syncCompleted',
             payload: {
@@ -328,8 +362,8 @@ export class SourceManagerWebviewProvider extends BaseWebviewProvider {
             },
           });
 
-          // 重新发送初始数据
-          await this.sendInitialData();
+          // 发送更新后的数据
+          await this.sendInitialData('updateSources');
         },
       );
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { t } from '../utils/i18n';
+import { vscodeApi } from '../utils/vscode-api';
 import { Source } from './SourceManager';
 
 /**
@@ -79,10 +80,7 @@ export const SourceList: React.FC<SourceListProps> = ({
 
     // 使用 VS Code API 显示上下文菜单
     // 注意：这里需要通过消息通信来触发
-    window.vscode?.postMessage({
-      type: 'showContextMenu',
-      payload: { sourceId },
-    });
+    vscodeApi.postMessage('showContextMenu', { sourceId });
   };
 
   return (

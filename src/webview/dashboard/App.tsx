@@ -19,6 +19,13 @@ interface DashboardState {
     total: number;
     totalRules: number;
     lastSync: string | null;
+    /** 规则源列表（简要信息） */
+    list: Array<{
+      id: string;
+      name: string;
+      enabled: boolean;
+      ruleCount: number;
+    }>;
   };
   /** 适配器状态列表 */
   adapters: Array<{
@@ -107,28 +114,34 @@ export const App: React.FC = () => {
       {/* 规则源管理 */}
       <Section title={t('dashboard.sources.title')}>
         <Card className="sources-card">
-          <div className="stats-info">
-            <div className="stat-item">
-              <Icon icon="database" size={16} />
-              <span>
-                {t('dashboard.sources.enabled', {
-                  enabled: stats.sources.enabled,
-                  total: stats.sources.total,
-                })}
-              </span>
+          {/* 规则源卡片网格 */}
+          {stats.sources.list.length > 0 && (
+            <div className="sources-grid">
+              {stats.sources.list.map((source) => (
+                <div
+                  key={source.id}
+                  className={`source-chip ${source.enabled ? 'enabled' : 'disabled'}`}
+                >
+                  <Icon
+                    icon={source.enabled ? 'check' : 'circle-slash'}
+                    size={14}
+                    className="source-chip-icon"
+                  />
+                  <span className="source-chip-name">{source.name}</span>
+                  <span className="source-chip-count">{source.ruleCount}</span>
+                </div>
+              ))}
             </div>
-            <div className="stat-item">
-              <Icon icon="file" size={16} />
-              <span>{t('dashboard.sources.totalRules', { count: stats.sources.totalRules })}</span>
-            </div>
-            <div className="stat-item">
-              <Icon icon="clock" size={16} />
-              <span>
-                {t('dashboard.sources.lastSync', {
-                  time: stats.sources.lastSync || t('common.never'),
-                })}
-              </span>
-            </div>
+          )}
+
+          {/* 统计信息行 */}
+          <div className="sources-summary">
+            <span className="summary-item">
+              <Icon icon="clock" size={14} />
+              {t('dashboard.sources.lastSync', {
+                time: stats.sources.lastSync || t('common.never'),
+              })}
+            </span>
           </div>
 
           <div className="button-group">
@@ -141,15 +154,12 @@ export const App: React.FC = () => {
             <Button type="secondary" icon="settings-gear" onClick={handleManageSources}>
               {t('dashboard.sources.manageSources')}
             </Button>
-            <Button type="secondary" icon="search" onClick={handleSearchRules}>
-              {t('dashboard.sources.searchRules')}
-            </Button>
           </div>
         </Card>
       </Section>
 
       {/* 适配器状态 */}
-      <Section title={t('dashboard.adapters.title')} icon="extensions">
+      <Section title={t('dashboard.adapters.title')}>
         <Card className="adapters-card">
           {stats.adapters.length === 0 ? (
             <EmptyState icon={<span>📦</span>}>
@@ -190,6 +200,9 @@ export const App: React.FC = () => {
           )}
 
           <div className="button-group">
+            <Button type="primary" icon="sync" onClick={handleOpenRuleSyncPage}>
+              {t('dashboard.adapters.fineSync')}
+            </Button>
             <Button type="secondary" icon="settings-gear" onClick={handleManageAdapters}>
               {t('dashboard.adapters.manageAdapters')}
             </Button>
@@ -201,7 +214,7 @@ export const App: React.FC = () => {
       </Section>
 
       {/* 快速操作 */}
-      <Section title={t('dashboard.quickActions.title')} icon="zap">
+      <Section title={t('dashboard.quickActions.title')}>
         <Card className="quick-actions-card">
           <div className="quick-actions-grid">
             <button className="quick-action-button" onClick={handleOpenWelcome}>
@@ -229,7 +242,7 @@ export const App: React.FC = () => {
       </Section>
 
       {/* 快速入门 */}
-      <Section title={t('dashboard.gettingStarted.title')} icon="mortar-board">
+      <Section title={t('dashboard.gettingStarted.title')}>
         <Card className="getting-started-card">
           <div className="getting-started-content">
             <p className="getting-started-intro">{t('dashboard.gettingStarted.newUser')}</p>

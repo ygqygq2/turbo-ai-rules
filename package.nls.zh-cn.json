@@ -4,7 +4,7 @@
   "turboAiRules.removeSource.title": "Turbo AI Rules: 删除规则源",
   "turboAiRules.reloadSettings.title": "Turbo AI Rules: 重新加载配置",
   "turboAiRules.refreshGitCache.title": "Turbo AI Rules: 刷新Git缓存",
-  "turboAiRules.syncRules.title": "Turbo AI Rules: 同步规则",
+  "turboAiRules.syncRules.title": "同步规则",
   "turboAiRules.searchRules.title": "Turbo AI Rules: 搜索规则",
   "turboAiRules.generateConfigs.title": "Turbo AI Rules: 生成配置文件",
   "turboAiRules.manageSource.title": "Turbo AI Rules: 管理规则源",

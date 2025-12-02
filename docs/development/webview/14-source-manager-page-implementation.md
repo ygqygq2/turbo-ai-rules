@@ -1,357 +1,365 @@
-# Source Manager 页面实现文档
+# 规则源管理页面实施文档
 
-## 1. 设计文档与 UI 原型
+> **设计文档**: `.superdesign/design_docs/14-source-manager-page.md`  
+> **UI 原型**: `.superdesign/design_iterations/14-source-manager-page_2.html`  
+> **实施日期**: 2025-12-01
 
-### 设计文档
+---
 
-- **路径**: `.superdesign/design_docs/14-source-manager-page.md`
-- **设计原则**: 左右分栏布局，复用现有组件，仅显示规则源节点
-- **布局**: 左侧规则源列表，右侧详情/编辑视图
+## 📋 实施概览
 
-### UI 原型
+将规则源管理页面从**左右分栏布局**重构为**卡片网格布局**，提升用户体验和操作效率。
 
-- **版本**: 1.0
-- **路径**: `.superdesign/design_iterations/14-source-manager-page_1.html`
-- **特点**: 完整的 HTML/CSS 实现，使用 VS Code 主题变量，包含所有交互状态
+### 核心改进
 
-## 2. 实现概述
+- ✅ 卡片网格替代左右分栏
+- ✅ 所有操作在卡片上直接完成
+- ✅ 复用现有 add-source 和 source-detail webview
+- ✅ 简化状态管理，移除复杂视图切换
+- ✅ 响应式设计，支持多种屏幕尺寸
 
-### 目录结构
+---
 
-```
-src/webview/source-manager/
-├── App.tsx                    # 应用入口组件
-├── SourceManager.tsx          # 主页面组件
-├── SourceList.tsx             # 左侧规则源列表
-├── SourceDetails.tsx          # 右侧详情视图
-├── SourceForm.tsx             # 编辑表单组件
-├── index.tsx                  # 入口文件
-├── index.html                 # HTML 模板
-└── source-manager.css         # 样式文件
-```
+## 🎯 实施路径
 
-### 组件结构
+### 1. React 组件实现
 
-#### SourceManager.tsx
+**文件**: `src/webview/source-manager/SourceManager.tsx`
 
-- 主容器组件，管理左右分栏布局
-- 状态管理：选中的规则源、当前视图模式
-- 消息通信：与 VS Code 扩展的交互
+#### 主要变更
 
-#### SourceList.tsx
+1. **移除旧组件依赖**
 
-- 规则源列表，显示名称、状态、规则数量
-- 支持键盘导航和选中操作
-- 底部固定添加按钮
+   ```typescript
+   // ❌ 删除
+   import { SourceList } from './SourceList';
+   import { SourceDetails } from './SourceDetails';
+   import { SourceForm } from './SourceForm';
 
-#### SourceDetails.tsx
+   // ✅ 只需主组件
+   export const SourceManager: React.FC = () => {
+     // ...
+   };
+   ```
 
-- 规则源详情展示
-- 操作按钮：编辑、删除、同步、启用/禁用
+2. **简化状态管理**
 
-#### SourceForm.tsx
+   ```typescript
+   // ❌ 删除复杂状态
+   const [selectedSource, setSelectedSource] = useState<SourceDetails | null>(null);
+   const [viewMode, setViewMode] = useState<ViewMode>('empty');
 
-- 规则源编辑表单
-- 支持创建和编辑模式
-- 表单验证和错误处理
+   // ✅ 只保留必要状态
+   const [sources, setSources] = useState<Source[]>([]);
+   const [isLoading, setIsLoading] = useState(true);
+   const [error, setError] = useState<string | null>(null);
+   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+   ```
 
-## 3. 核心实现要点
+3. **卡片渲染逻辑**
 
-### 3.1 状态管理
+   ```tsx
+   <div className="source-cards-grid">
+     {sources.map((source) => (
+       <div key={source.id} className={`source-card ${source.enabled ? 'enabled' : 'disabled'}`}>
+         {/* 卡片头部 */}
+         <div className="card-header">
+           <div className="source-title">
+             <i
+               className={`codicon ${
+                 source.enabled ? 'codicon-pass-filled' : 'codicon-circle-large-outline'
+               } status-icon`}
+             ></i>
+             <h3>{source.name}</h3>
+           </div>
+           <button className="icon-button" onClick={() => handleEditSource(source.id)}>
+             <i className="codicon codicon-edit"></i>
+           </button>
+         </div>
 
-使用 React Hooks 管理组件状态：
+         {/* 卡片内容 */}
+         <div className="card-body">
+           <div className="info-row">
+             <span className="label">{t('form.label.gitUrl')}:</span>
+             <span className="value truncate" title={source.gitUrl}>
+               {source.gitUrl}
+             </span>
+           </div>
+           {/* ... 更多信息行 */}
+         </div>
 
-- `sources`: 规则源列表数据
-- `selectedSource`: 当前选中的规则源
-- `viewMode`: 当前视图模式 (`detail`/`edit`/`empty`)
-- `isLoading`: 加载状态
-- `error`: 错误信息
-- `successMessage`: 成功消息
+         {/* 卡片操作 */}
+         <div className="card-actions">
+           <button
+             className={`button ${source.enabled ? 'secondary' : 'primary'}`}
+             onClick={() => handleToggleSource(source)}
+           >
+             <i
+               className={`codicon ${
+                 source.enabled ? 'codicon-debug-pause' : 'codicon-debug-start'
+               }`}
+             ></i>
+             {source.enabled ? t('form.button.disable') : t('form.button.enable')}
+           </button>
+           <button
+             className="button secondary"
+             onClick={() => handleSyncSource(source.id)}
+             disabled={!source.enabled}
+           >
+             <i className="codicon codicon-sync"></i>
+             {t('form.button.sync')}
+           </button>
+           <button className="button danger" onClick={() => handleDeleteSource(source)}>
+             <i className="codicon codicon-trash"></i>
+           </button>
+         </div>
+       </div>
+     ))}
+   </div>
+   ```
 
-### 3.2 消息通信
+4. **时间格式化函数**
+   ```typescript
+   const formatLastSync = (lastSync: string | null): string => {
+     if (!lastSync) return t('sourceManager.neverSynced');
+     const date = new Date(lastSync);
+     const now = new Date();
+     const diff = now.getTime() - date.getTime();
+     const minutes = Math.floor(diff / 60000);
+     const hours = Math.floor(diff / 3600000);
+     const days = Math.floor(diff / 86400000);
 
-#### Webview → Extension
+     if (minutes < 1) return t('sourceManager.justNow');
+     if (minutes < 60) return t('sourceManager.minutesAgo', { count: minutes });
+     if (hours < 24) return t('sourceManager.hoursAgo', { count: hours });
+     return t('sourceManager.daysAgo', { count: days });
+   };
+   ```
 
-| 消息类型       | 用途                   | 载荷                                     |
-| -------------- | ---------------------- | ---------------------------------------- |
-| `ready`        | 前端就绪，请求初始数据 | -                                        |
-| `selectSource` | 选中规则源             | `{ sourceId: string }`                   |
-| `addSource`    | 添加规则源             | 规则源配置                               |
-| `editSource`   | 编辑规则源             | 规则源配置                               |
-| `deleteSource` | 删除规则源             | `{ sourceId: string }`                   |
-| `toggleSource` | 启用/禁用规则源        | `{ sourceId: string, enabled: boolean }` |
-| `syncSource`   | 同步规则源             | `{ sourceId: string }`                   |
+---
 
-#### Extension → Webview
+### 2. CSS 样式实现
 
-| 消息类型          | 用途           | 载荷                    |
-| ----------------- | -------------- | ----------------------- |
-| `init`            | 发送初始数据   | `{ sources: Source[] }` |
-| `sourceDetails`   | 发送规则源详情 | 规则源详细信息          |
-| `syncCompleted`   | 同步完成通知   | 同步结果                |
-| `operationResult` | 操作结果通知   | 操作结果                |
+**文件**: `src/webview/source-manager/source-manager.css`
 
-### 3.3 样式实现
+#### 关键样式点
 
-- 使用 VS Code CSS 变量实现主题自适应
-- 响应式布局，适配不同视口大小
-- 统一的按钮、表单、卡片样式
-- 无障碍支持，包含 ARIA 属性
+1. **卡片网格布局**
 
-### 3.4 无障碍支持
+   ```css
+   .source-cards-grid {
+     display: grid;
+     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+     gap: var(--spacing-lg);
+     padding: var(--spacing-sm) 0;
+   }
+   ```
 
-- 键盘导航：支持 `↑/↓` 导航，`Enter` 选中，`Delete` 删除，`F2` 编辑
-- ARIA 属性：`role="list"`、`role="listitem"`、`aria-selected`、`aria-label`
-- 焦点管理：支持键盘焦点导航
+2. **卡片悬停效果**
 
-## 4. 与扩展的集成
+   ```css
+   .source-card:hover {
+     border-color: var(--vscode-focusBorder);
+     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+     transform: translateY(-2px);
+   }
+   ```
 
-### 4.1 Webview Provider
+3. **禁用状态**
 
-创建了 `SourceManagerWebviewProvider` 类，继承自 `BaseWebviewProvider`，实现了：
+   ```css
+   .source-card.disabled {
+     opacity: 0.7;
+   }
 
-- Webview 面板管理
-- 消息处理逻辑
-- 初始数据发送
-- 规则源操作（添加、编辑、删除、同步）
+   .source-card.disabled:hover {
+     opacity: 0.85;
+   }
+   ```
 
-### 4.2 命令注册
+4. **响应式设计**
 
-在 `extension.ts` 中注册了命令：
+   ```css
+   @media (max-width: 768px) {
+     .source-cards-grid {
+       grid-template-columns: 1fr;
+     }
+   }
 
-```typescript
-vscode.commands.registerCommand('turbo-ai-rules.openSourceManager', async () => {
-  const sourceManagerProvider = SourceManagerWebviewProvider.getInstance(context);
-  await sourceManagerProvider.showSourceManager();
-});
-```
+   @media (min-width: 1400px) {
+     .source-cards-grid {
+       grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+     }
+   }
+   ```
 
-### 4.3 命令定义
+---
 
-在 `package.json` 中添加了命令定义：
+### 3. Provider 消息处理
+
+**文件**: `src/providers/SourceManagerWebviewProvider.ts`
+
+#### 消息处理变更
+
+1. **简化消息类型**
+
+   ```typescript
+   // ❌ 删除
+   case 'selectSource': // 不再需要选择逻辑
+
+   // ✅ 新逻辑 - 打开独立 webview
+   case 'addSource':
+     await vscode.commands.executeCommand('turbo-ai-rules.addSource');
+     break;
+
+   case 'editSource':
+     await vscode.commands.executeCommand('turbo-ai-rules.manageSource', message.payload.sourceId);
+     break;
+   ```
+
+2. **保留的消息处理**
+   - `ready` - 发送初始数据
+   - `deleteSource` - 删除规则源
+   - `toggleSource` - 启用/禁用
+   - `syncSource` - 同步规则
+
+---
+
+### 4. 国际化更新
+
+**文件**: `l10n/bundle.l10n.json` 和 `l10n/bundle.l10n.zh-cn.json`
+
+#### 新增翻译键
 
 ```json
 {
-  "command": "turbo-ai-rules.openSourceManager",
-  "title": "Open Source Manager",
-  "category": "Turbo AI Rules",
-  "icon": "$(settings-gear)"
+  "sourceManager.neverSynced": "Never synced / 从未同步",
+  "sourceManager.justNow": "Just now / 刚刚",
+  "sourceManager.minutesAgo": "{count} minutes ago / {count} 分钟前",
+  "sourceManager.hoursAgo": "{count} hours ago / {count} 小时前",
+  "sourceManager.daysAgo": "{count} days ago / {count} 天前",
+  "form.button.sync": "Sync / 同步"
 }
 ```
 
-## 5. 测试要点
+---
 
-### 5.1 功能测试
+## 🔧 技术要点
 
-- ✅ 添加规则源
-- ✅ 编辑规则源
-- ✅ 删除规则源
-- ✅ 启用/禁用规则源
-- ✅ 同步规则源
-- ✅ 查看规则源详情
-- ✅ 键盘导航
+### 1. 组件解耦
 
-### 5.2 无障碍测试
+**原设计问题**:
 
-- ✅ 键盘焦点导航
-- ✅ ARIA 属性支持
-- ✅ 屏幕阅读器支持
+- 左侧列表 + 右侧详情，需要维护选中状态
+- 内联编辑表单，状态管理复杂
+- 三种视图模式（empty/detail/edit）切换逻辑复杂
 
-### 5.3 性能测试
+**新设计优势**:
 
-- ✅ 规则源列表渲染性能
-- ✅ 表单验证性能
-- ✅ 消息通信延迟
+- 单一卡片组件，无选中状态
+- 复用现有表单 webview（add-source/source-detail）
+- 无视图切换，只有数据刷新
 
-## 6. 遇到的问题与解决方案
+### 2. 消息协议简化
 
-### 6.1 问题：ConfigManager API 调用错误
+| 操作       | 旧方式   | 新方式                     |
+| ---------- | -------- | -------------------------- |
+| 添加规则源 | 内联表单 | 打开 add-source webview    |
+| 编辑规则源 | 内联表单 | 打开 source-detail webview |
+| 删除规则源 | 消息通信 | 消息通信（保持不变）       |
+| 同步规则源 | 消息通信 | 消息通信（保持不变）       |
+| 启用/禁用  | 消息通信 | 消息通信（保持不变）       |
 
-**问题描述**：SourceManagerWebviewProvider 中使用了不存在的 API 方法：
+### 3. 性能优化
 
-- `getAllSources()` 应该是 `getSources()`
-- `validateSourceConfig()` 方法不存在
-- `deleteSource()` 应该是 `removeSource()`
-- `updateSource()` 的参数签名不正确
+- **虚拟化**: 当规则源数量 > 50 时，考虑使用虚拟滚动
+- **防抖**: 搜索过滤（未来功能）使用防抖
+- **批量操作**: 使用 Promise.all 并行处理多个同步
 
-**解决方案**：
+---
 
-1. 修改 `sendInitialData()` 方法，使用 `getSources()` 替代 `getAllSources()`
-2. 移除 `validateSourceConfig()` 调用，在 `handleAddSource()` 和 `handleEditSource()` 中添加基本验证
-3. 修改 `handleDeleteSource()` 使用 `removeSource()`
-4. 修改 `handleEditSource()` 和 `handleToggleSource()`，使用正确的 `updateSource(id, updates)` 签名
-5. 添加 Token 存储到 Secret Storage 的逻辑
+## 🧪 测试要点
 
-### 6.2 问题：SourceList 组件接口不完整
+### 手动测试清单
 
-**问题描述**：SourceList 组件缺少必要的操作回调：
+- [x] 页面加载显示正确的规则源列表
+- [x] 空状态显示正确（无规则源时）
+- [x] 点击"添加规则源"打开 add-source webview
+- [x] 点击卡片"编辑"按钮打开 source-detail webview
+- [x] 点击"启用/禁用"按钮切换状态，卡片样式更新
+- [x] 点击"同步"按钮执行同步，规则数更新
+- [x] 点击"删除"按钮显示确认对话框，删除后列表更新
+- [x] 禁用的规则源"同步"按钮被禁用
+- [x] 时间格式化正确显示（刚刚/X 分钟前/X 小时前/X 天前）
+- [x] 响应式布局在不同屏幕尺寸下正常工作
+- [x] 悬停效果正常（边框高亮、阴影、上移）
+- [x] 长 URL 正确截断，鼠标悬停显示完整 URL
 
-- 缺少 `onEditSource`、`onDeleteSource`、`onToggleSource`、`onSyncSource` 回调
-- 键盘事件处理不完整（Delete 和 F2 键未实现）
-- 缺少右键菜单支持
+---
 
-**解决方案**：
+## 🐛 已知问题和解决方案
 
-1. 扩展 SourceListProps 接口，添加所有缺失的回调
-2. 完善 `handleKeyDown()` 函数，实现 Delete 键删除和 F2 键编辑
-3. 添加 `handleContextMenu()` 函数，支持右键菜单
-4. 在组件中添加 `onContextMenu` 事件处理
+### 问题 1: SuperDesign 白屏
 
-### 6.3 问题：国际化翻译缺失
+**原因**: 旧的 HTML 原型使用 `var(--vscode-*)` 变量，但 SuperDesign 环境未定义这些变量。
 
-**问题描述**：很多翻译 key 未定义，导致界面显示为 key 本身。
+**解决**: 创建新的 `14-source-manager-page_2.html`，硬编码所有颜色变量为深色主题实际值。
 
-**解决方案**：
-在 `l10n/bundle.l10n.json` 和 `l10n/bundle.l10n.zh-cn.json` 中添加：
+### 问题 2: 时间格式化国际化
 
-- `sourceManager.*` 系列翻译
-- `form.label.*` 系列翻译
-- `form.button.*` 系列翻译
-- `authType.*` 系列翻译
-- `confirm.deleteSource` 翻译
-- 其他缺失的翻译键
+**原因**: 需要支持相对时间显示（X 分钟前、X 小时前等）。
 
-### 6.4 问题：CSS 样式引用问题
+**解决**: 添加 `formatLastSync` 函数和相应的国际化键。
 
-**问题描述**：`source-manager.css` 没有引入 `global.css`，导致 CSS 变量未定义。
+### 问题 3: 卡片操作按钮布局
 
-**解决方案**：
-在 `source-manager.css` 顶部添加：
+**原因**: 按钮数量不一致时布局错位。
 
-```css
-@import '../global.css';
+**解决**: 使用 flex 布局，最后一个按钮（删除）固定宽度，其他按钮平分空间。
+
+---
+
+## 📝 代码审查要点
+
+### 遵循的规范
+
+✅ **日志规范**: 使用 `@ygqygq2/vscode-log`，包含错误码（TAI-xxxx）  
+✅ **JSDoc 注释**: 所有导出函数都有完整注释  
+✅ **类型安全**: 无 `any` 类型，严格模式通过  
+✅ **命名规范**: camelCase 函数、PascalCase 组件  
+✅ **文件组织**: 按功能模块拆分，单文件 < 500 行  
+✅ **错误处理**: 所有异步操作都有 try-catch  
+✅ **用户提示**: 错误消息包含"问题+建议"
+
+### Lint 检查结果
+
+```bash
+pnpm lint
+# ✓ No errors found
 ```
 
-### 6.5 问题：Lint 错误
+---
 
-**问题描述**：
+## 🎯 后续优化方向
 
-- DashboardWebviewProvider.ts 中 case 块的词法声明错误
-- SourceList.tsx 中未使用的参数警告
-- 导入顺序不正确
+1. **搜索过滤** - 支持按名称、URL、分支筛选规则源
+2. **批量操作** - 支持全选、批量启用/禁用/同步
+3. **排序功能** - 支持按名称、规则数、最后同步时间排序
+4. **标签过滤** - 支持按 tags 筛选规则源
+5. **虚拟滚动** - 规则源数量 > 50 时启用虚拟化
+6. **拖拽排序** - 支持拖拽调整规则源优先级
 
-**解决方案**：
+---
 
-1. 在 `case 'manageSources':` 周围添加大括号创建块作用域
-2. 从 SourceList 组件的解构参数中移除未使用的 `onToggleSource` 和 `onSyncSource`（这些回调已定义在接口中，但当前实现不需要）
-3. 运行 `pnpm lint --fix` 自动修复导入顺序
+## 📚 相关文档
 
-### 6.6 问题：表单提交时类型安全
+- **设计文档**: `.superdesign/design_docs/14-source-manager-page.md`
+- **UI 原型**: `.superdesign/design_iterations/14-source-manager-page_2.html`
+- **架构设计**: `docs/development/20-architecture.md`
+- **UI 开发流程**: `docs/development/32-ui-development-process.md`
+- **Webview 最佳实践**: `docs/development/43-webview-best-practices.md`
 
-**解决方案**：将 `any` 类型替换为 `Record<string, unknown>`，并添加类型断言，确保类型安全。
+---
 
-### 6.7 问题：SourceDetails 组件图标模板字符串错误
-
-**问题描述**：按钮图标使用了错误的模板字符串格式。
-
-**解决方案**：
-
-```tsx
-// 错误
-<i className="codicon codicon-{source.enabled ? 'circle-slash' : 'check'}"></i>
-
-// 正确
-<i className={`codicon codicon-${source.enabled ? 'circle-slash' : 'check'}`}></i>
-```
-
-## 7. 优化建议
-
-1. **虚拟滚动**：当规则源数量超过 50 个时，考虑使用虚拟滚动优化性能
-2. **搜索功能**：添加规则源搜索功能，方便快速定位
-3. **批量操作**：支持批量启用/禁用、删除规则源
-4. **导入/导出**：支持规则源配置的导入/导出
-5. **同步历史**：显示规则源的同步历史记录
-
-## 8. 总结
-
-Source Manager 页面现已成功实现并修复了所有已知问题：
-
-### ✅ 已完成的工作
-
-1. **核心功能**：
-
-   - 左右分栏布局（规则源列表 + 详情/编辑视图）
-   - 添加、编辑、删除、启用/禁用规则源
-   - 立即同步功能
-   - 规则源详情展示
-
-2. **交互增强**：
-
-   - 完整的键盘导航支持（↑/↓/Enter/Delete/F2）
-   - 右键菜单支持
-   - 空状态提示
-   - 加载和错误状态处理
-
-3. **代码质量**：
-
-   - 修复了所有 ConfigManager API 调用错误
-   - 完善了国际化翻译（中英文）
-   - 修复了 CSS 样式引用问题
-   - 通过了 lint 检查和编译
-   - 添加了类型安全检查
-
-4. **文档完善**：
-   - 更新了实施文档，记录所有遇到的问题和解决方案
-   - 保持了设计文档、UI 原型和实现的一致性
-
-### 🎯 设计目标达成情况
-
-| 目标                     | 状态 | 说明 |
-| ------------------------ | ---- | ---- |
-| 查看所有规则源列表和状态 | ✅   | 完成 |
-| 编辑规则源配置           | ✅   | 完成 |
-| 添加新的规则源           | ✅   | 完成 |
-| 删除规则源               | ✅   | 完成 |
-| 启用/禁用规则源          | ✅   | 完成 |
-| 立即同步规则源           | ✅   | 完成 |
-| 键盘导航支持             | ✅   | 完成 |
-| 右键菜单支持             | ✅   | 完成 |
-| 无障碍支持               | ✅   | 完成 |
-
-### 📋 测试建议
-
-1. **功能测试**：
-
-   - 添加规则源（公开仓库、Token 认证、SSH 认证）
-   - 编辑规则源（修改分支、子路径、认证方式）
-   - 删除规则源（确认对话框）
-   - 启用/禁用规则源
-   - 立即同步规则源
-   - 查看规则源详情
-
-2. **交互测试**：
-
-   - 键盘导航（↑/↓ 选择，Enter 查看，Delete 删除，F2 编辑）
-   - 右键菜单
-   - 空状态显示
-   - 加载状态显示
-   - 错误状态显示
-
-3. **无障碍测试**：
-   - 键盘完整操作流程
-   - 屏幕阅读器支持
-   - ARIA 属性验证
-
-### 🚀 后续优化建议
-
-1. **性能优化**：
-
-   - 虚拟滚动（规则源数量 > 50 时）
-   - 防抖搜索（如果添加搜索功能）
-   - 懒加载详情数据
-
-2. **功能增强**：
-
-   - 规则源搜索功能
-   - 批量操作（批量启用/禁用、删除）
-   - 导入/导出配置
-   - 同步历史记录查看
-   - 标签管理
-
-3. **用户体验**：
-   - 添加更多的操作反馈动画
-   - 优化错误提示信息
-   - 添加操作撤销功能
-   - 支持拖拽排序
-
-实现过程中遇到的所有问题都已解决，代码已通过 lint 检查和编译测试。页面具有良好的用户体验和性能表现，符合 VS Code 扩展开发的最佳实践。
+_实施完成日期: 2025-12-01_  
+_文档版本: 2.0_

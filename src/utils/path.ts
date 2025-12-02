@@ -141,3 +141,27 @@ export function isPathWithinBase(targetPath: string, allowedBase: string): boole
 
   return normalizedTarget.startsWith(normalizedBase);
 }
+
+/**
+ * 规范化输出路径显示
+ * 用于 UI 展示，统一路径格式：
+ * - 不以 / 开头（相对于项目根目录）
+ * - 目录以 / 结尾
+ * - 文件不以 / 结尾
+ * @param outputPath 输出路径
+ * @returns 规范化后的路径
+ */
+export function normalizeOutputPathForDisplay(outputPath: string): string {
+  if (!outputPath) return '';
+
+  // 去掉开头的 / 或 ./
+  let normalized = outputPath.replace(/^[./]+/, '');
+
+  // 判断是否为目录（没有扩展名的视为目录）
+  const hasExtension = /\.[^/\\]+$/.test(normalized);
+  if (!hasExtension && !normalized.endsWith('/')) {
+    normalized += '/';
+  }
+
+  return normalized;
+}

@@ -152,6 +152,18 @@ body {
   background-color: var(--vscode-button-secondaryHoverBackground);
 }
 
+/* Danger 按钮 - 删除等危险操作 */
+.button-danger {
+  background-color: transparent;
+  color: var(--vscode-errorForeground);
+  border: 1px solid var(--vscode-errorForeground);
+}
+
+.button-danger:hover:not(:disabled) {
+  background-color: var(--vscode-inputValidation-errorBackground);
+  color: var(--vscode-errorForeground);
+}
+
 /* ========== 卡片样式 ========== */
 .card {
   background-color: var(--vscode-editorWidget-background);

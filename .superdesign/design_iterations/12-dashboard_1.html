@@ -133,6 +133,82 @@
         gap: var(--spacing-xs);
       }
 
+      /* 规则源卡片网格 */
+      .sources-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+      }
+
+      .source-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+        padding: var(--spacing-xs) var(--spacing-sm);
+        background-color: var(--vscode-editor-background);
+        border: 1px solid var(--vscode-editorWidget-border);
+        border-radius: 16px;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+      }
+
+      .source-chip:hover {
+        background-color: var(--vscode-list-hoverBackground);
+      }
+
+      .source-chip.enabled {
+        border-color: var(--vscode-testing-iconPassed);
+      }
+
+      .source-chip.enabled i {
+        color: var(--vscode-testing-iconPassed);
+      }
+
+      .source-chip.disabled {
+        opacity: 0.6;
+      }
+
+      .source-chip.disabled i {
+        color: var(--vscode-descriptionForeground);
+      }
+
+      .source-chip-name {
+        font-weight: 500;
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .source-chip-count {
+        background-color: var(--vscode-badge-background);
+        color: var(--vscode-badge-foreground);
+        padding: 1px 6px;
+        border-radius: 10px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        min-width: 20px;
+        text-align: center;
+      }
+
+      .sources-summary {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+        padding: var(--spacing-sm) 0;
+        border-top: 1px solid var(--vscode-editorWidget-border);
+        color: var(--vscode-descriptionForeground);
+        font-size: 0.85rem;
+      }
+
+      .summary-item {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+      }
+
       /* 按钮 */
       .btn {
         border: none;
@@ -369,13 +445,31 @@
           <i class="codicon codicon-archive"></i>
           规则源管理
         </div>
-        <div class="stats-info">
-          <i class="codicon codicon-graph-line"></i>
-          <span><strong>2</strong> 个源已启用，共 <strong>45</strong> 条规则</span>
+
+        <!-- 规则源卡片网格 -->
+        <div class="sources-grid">
+          <div class="source-chip enabled">
+            <i class="codicon codicon-check"></i>
+            <span class="source-chip-name">company-rules</span>
+            <span class="source-chip-count">15</span>
+          </div>
+          <div class="source-chip enabled">
+            <i class="codicon codicon-check"></i>
+            <span class="source-chip-name">personal-rules</span>
+            <span class="source-chip-count">30</span>
+          </div>
+          <div class="source-chip disabled">
+            <i class="codicon codicon-circle-slash"></i>
+            <span class="source-chip-name">archived-rules</span>
+            <span class="source-chip-count">0</span>
+          </div>
         </div>
-        <div class="stats-info">
-          <i class="codicon codicon-history"></i>
-          <span>最后同步: 2 分钟前</span>
+
+        <div class="sources-summary">
+          <span class="summary-item">
+            <i class="codicon codicon-history"></i>
+            最后同步: 2 分钟前
+          </span>
         </div>
 
         <div class="button-group">
@@ -390,10 +484,6 @@
           <button class="btn btn-secondary">
             <i class="codicon codicon-list-tree"></i>
             管理规则源
-          </button>
-          <button class="btn btn-secondary">
-            <i class="codicon codicon-search"></i>
-            浏览/搜索规则
           </button>
         </div>
       </div>

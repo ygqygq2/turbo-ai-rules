@@ -34,6 +34,84 @@
   padding: var(--spacing-md);
 }
 
+/* 规则源卡片网格 */
+.sources-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+/* 规则源芯片样式 */
+.source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: 16px;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.source-chip:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.source-chip.enabled {
+  border-color: var(--vscode-testing-iconPassed);
+}
+
+.source-chip.enabled .source-chip-icon {
+  color: var(--vscode-testing-iconPassed);
+}
+
+.source-chip.disabled {
+  opacity: 0.6;
+}
+
+.source-chip.disabled .source-chip-icon {
+  color: var(--vscode-descriptionForeground);
+}
+
+.source-chip-name {
+  font-weight: 500;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-chip-count {
+  background-color: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* 统计摘要行 */
+.sources-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm) 0;
+  border-top: 1px solid var(--vscode-editorWidget-border);
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.85rem;
+}
+
+.summary-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
 /* 统计信息 */
 .stats-info {
   display: flex;

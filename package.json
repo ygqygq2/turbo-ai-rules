@@ -71,7 +71,7 @@
         "command": "turbo-ai-rules.syncRules",
         "title": "%turboAiRules.syncRules.title%",
         "category": "Turbo AI Rules",
-        "icon": "$(cloud-download)"
+        "icon": "$(sync)"
       },
       {
         "command": "turbo-ai-rules.reloadSettings",
@@ -101,7 +101,7 @@
         "command": "turbo-ai-rules.refreshGitCache",
         "title": "%turboAiRules.refreshGitCache.title%",
         "category": "Turbo AI Rules",
-        "icon": "$(sync)"
+        "icon": "$(cloud-download)"
       },
       {
         "command": "turbo-ai-rules.editSource",

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Button } from '../components/Button';
 import { t } from '../utils/i18n';
+import { vscodeApi } from '../utils/vscode-api';
 
 /**
  * 规则源数据类型
@@ -14,7 +16,6 @@ export interface Source {
   lastSync: string | null;
   authType: 'none' | 'token' | 'ssh';
   subPath?: string;
-  tags?: string[];
 }
 
 /**
@@ -54,8 +55,7 @@ export const SourceManager: React.FC = () => {
 
         case 'operationResult':
           if (message.payload.success) {
-            // 操作成功，刷新数据
-            window.vscode?.postMessage({ type: 'ready' });
+            // 操作成功，显示成功消息（数据已在操作中更新，无需重新请求）
             setSuccessMessage(message.payload.message);
             setTimeout(() => setSuccessMessage(null), 3000);
           } else {
@@ -63,12 +63,19 @@ export const SourceManager: React.FC = () => {
             setTimeout(() => setError(null), 5000);
           }
           break;
+
+        case 'updateSources':
+          // 更新规则源列表
+          setSources(message.payload.sources || []);
+          setIsLoading(false);
+          break;
       }
     };
 
     window.addEventListener('message', handleMessage);
+
     // 请求初始化数据
-    window.vscode?.postMessage({ type: 'ready' });
+    vscodeApi.postMessage('ready');
 
     return () => {
       window.removeEventListener('message', handleMessage);
@@ -80,7 +87,7 @@ export const SourceManager: React.FC = () => {
    * @return default {void}
    */
   const handleAddSource = () => {
-    window.vscode?.postMessage({ type: 'addSource' });
+    vscodeApi.postMessage('addSource');
   };
 
   /**
@@ -89,7 +96,7 @@ export const SourceManager: React.FC = () => {
    * @param sourceId {string}
    */
   const handleEditSource = (sourceId: string) => {
-    window.vscode?.postMessage({ type: 'editSource', payload: { sourceId } });
+    vscodeApi.postMessage('editSource', { sourceId });
   };
 
   /**
@@ -99,10 +106,7 @@ export const SourceManager: React.FC = () => {
    */
   const handleDeleteSource = (source: Source) => {
     if (confirm(t('confirm.deleteSource', { name: source.name }))) {
-      window.vscode?.postMessage({
-        type: 'deleteSource',
-        payload: { sourceId: source.id },
-      });
+      vscodeApi.postMessage('deleteSource', { sourceId: source.id });
     }
   };
 
@@ -112,12 +116,9 @@ export const SourceManager: React.FC = () => {
    * @param source {Source}
    */
   const handleToggleSource = (source: Source) => {
-    window.vscode?.postMessage({
-      type: 'toggleSource',
-      payload: {
-        sourceId: source.id,
-        enabled: !source.enabled,
-      },
+    vscodeApi.postMessage('toggleSource', {
+      sourceId: source.id,
+      enabled: !source.enabled,
     });
     // 立即更新本地状态
     setSources((prevSources) =>
@@ -131,10 +132,7 @@ export const SourceManager: React.FC = () => {
    * @param sourceId {string}
    */
   const handleSyncSource = (sourceId: string) => {
-    window.vscode?.postMessage({
-      type: 'syncSource',
-      payload: { sourceId },
-    });
+    vscodeApi.postMessage('syncSource', { sourceId });
   };
 
   /**
@@ -167,10 +165,9 @@ export const SourceManager: React.FC = () => {
           <h1>{t('sourceManager.title')}</h1>
           <p className="subtitle">{t('sourceManager.subtitle')}</p>
         </div>
-        <button className="button primary" onClick={handleAddSource}>
-          <i className="codicon codicon-add"></i>
+        <Button type="primary" icon="add" onClick={handleAddSource}>
           {t('form.button.addSource')}
-        </button>
+        </Button>
       </div>
 
       {/* 消息显示 */}
@@ -187,10 +184,9 @@ export const SourceManager: React.FC = () => {
         <div className="empty-state">
           <i className="codicon codicon-archive icon"></i>
           <div className="message">{t('sourceManager.emptyState')}</div>
-          <button className="button primary" onClick={handleAddSource}>
-            <i className="codicon codicon-add"></i>
+          <Button type="primary" icon="add" onClick={handleAddSource}>
             {t('form.button.addSource')}
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="source-cards-grid">
@@ -209,13 +205,12 @@ export const SourceManager: React.FC = () => {
                   ></i>
                   <h3>{source.name}</h3>
                 </div>
-                <button
-                  className="icon-button"
+                <Button
+                  type="secondary"
+                  icon="edit"
                   onClick={() => handleEditSource(source.id)}
                   title={t('form.button.edit')}
-                >
-                  <i className="codicon codicon-edit"></i>
-                </button>
+                />
               </div>
 
               {/* 卡片内容 */}
@@ -250,34 +245,31 @@ export const SourceManager: React.FC = () => {
 
               {/* 卡片操作按钮 */}
               <div className="card-actions">
-                <button
-                  className={`button ${source.enabled ? 'secondary' : 'primary'}`}
+                <Button
+                  type={source.enabled ? 'secondary' : 'primary'}
+                  icon={source.enabled ? 'debug-pause' : 'debug-start'}
                   onClick={() => handleToggleSource(source)}
                   title={source.enabled ? t('form.button.disable') : t('form.button.enable')}
                 >
-                  <i
-                    className={`codicon ${
-                      source.enabled ? 'codicon-debug-pause' : 'codicon-debug-start'
-                    }`}
-                  ></i>
                   {source.enabled ? t('form.button.disable') : t('form.button.enable')}
-                </button>
-                <button
-                  className="button secondary"
+                </Button>
+                <Button
+                  type="secondary"
+                  icon="sync"
                   onClick={() => handleSyncSource(source.id)}
                   title={t('form.button.sync')}
                   disabled={!source.enabled}
                 >
-                  <i className="codicon codicon-sync"></i>
                   {t('form.button.sync')}
-                </button>
-                <button
-                  className="button danger"
+                </Button>
+                <Button
+                  type="danger"
+                  icon="trash"
                   onClick={() => handleDeleteSource(source)}
                   title={t('form.button.delete')}
                 >
-                  <i className="codicon codicon-trash"></i>
-                </button>
+                  {t('form.button.delete')}
+                </Button>
               </div>
             </div>
           ))}

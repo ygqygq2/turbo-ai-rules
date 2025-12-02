@@ -12,6 +12,7 @@ import { RulesManager } from '../services/RulesManager';
 import { EXTENSION_ICON_PATH } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
+import { normalizeOutputPathForDisplay } from '../utils/path';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 
 /**
@@ -24,6 +25,13 @@ interface DashboardState {
     total: number;
     totalRules: number;
     lastSync: string | null;
+    /** 规则源列表（简要信息） */
+    list: Array<{
+      id: string;
+      name: string;
+      enabled: boolean;
+      ruleCount: number;
+    }>;
   };
   /** 适配器状态列表 */
   adapters: Array<{
@@ -70,7 +78,7 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
     try {
       await this.show({
         viewType: 'turboAiRules.dashboard',
-        title: 'Turbo AI Rules - Dashboard',
+        title: vscode.l10n.t('dashboard.title'),
         viewColumn: vscode.ViewColumn.One,
         iconPath: EXTENSION_ICON_PATH,
       });
@@ -314,6 +322,19 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
         .reverse();
       const lastSync = lastSyncTimes[0] || null;
 
+      // 构建规则源列表（简要信息）
+      const sourceList = await Promise.all(
+        sources.map(async (s) => {
+          const sourceRules = allRules.filter((r) => r.sourceId === s.id);
+          return {
+            id: s.id,
+            name: s.name || s.id,
+            enabled: s.enabled,
+            ruleCount: sourceRules.length,
+          };
+        }),
+      );
+
       // 构建适配器状态列表
       const adapters: DashboardState['adapters'] = [];
 
@@ -359,7 +380,7 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
             name: custom.name,
             enabled: custom.enabled,
             ruleCount: custom.enabled ? totalRules : 0,
-            outputPath: custom.outputPath,
+            outputPath: normalizeOutputPathForDisplay(custom.outputPath),
             lastGenerated: null,
           });
         }
@@ -371,6 +392,7 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
           total: sources.length,
           totalRules,
           lastSync,
+          list: sourceList,
         },
         adapters,
       };
@@ -384,6 +406,7 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
           total: 0,
           totalRules: 0,
           lastSync: null,
+          list: [],
         },
         adapters: [],
       };

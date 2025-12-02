@@ -106,7 +106,10 @@ export abstract class BaseWebviewProvider {
    */
   protected postMessage(message: WebviewMessage): void {
     if (this.panel) {
+      Logger.debug(`Sending message to webview: ${message.type}`, { payload: message.payload });
       this.panel.webview.postMessage(message);
+    } else {
+      Logger.warn(`Cannot send message ${message.type}: panel is not initialized`);
     }
   }
 

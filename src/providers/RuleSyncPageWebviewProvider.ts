@@ -14,6 +14,7 @@ import type { AdapterConfig, RuleTreeNode } from '../types/config';
 import { EXTENSION_ICON_PATH, RULE_FILE_EXTENSIONS } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
+import { normalizeOutputPathForDisplay } from '../utils/path';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 
 /**
@@ -65,7 +66,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
     try {
       await this.show({
         viewType: 'turboAiRules.ruleSyncPage',
-        title: 'Rule Sync - Turbo AI Rules',
+        title: vscode.l10n.t('dashboard.quickActions.ruleSyncPage'),
         viewColumn: vscode.ViewColumn.One,
         iconPath: EXTENSION_ICON_PATH,
       });
@@ -85,11 +86,15 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
    */
   protected async getHtmlContent(webview: vscode.Webview): Promise<string> {
     try {
+      // 获取编译后的 webview 文件路径
       const htmlPath = path.join(
         this.context.extensionPath,
-        '.superdesign',
-        'design_iterations',
-        '05-rule-sync-page_1.html',
+        'out',
+        'webview',
+        'src',
+        'webview',
+        'rule-sync-page',
+        'index.html',
       );
 
       if (!fs.existsSync(htmlPath)) {
@@ -97,24 +102,88 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
           path: htmlPath,
           code: 'TAI-5016',
         });
-        return '<html><body><h1>Error</h1><p>Rule sync page template not found</p></body></html>';
+        return this.getErrorHtml('Rule sync page template not found');
       }
 
+      // 读取 HTML 文件
       let html = fs.readFileSync(htmlPath, 'utf-8');
 
-      // 替换占位符
-      const nonce = this.getNonce();
-      html = html.replace(/\{\{nonce\}\}/g, nonce);
-
+      // 替换 CSP 占位符
       const cspSource = this.getCspSource(webview);
       html = html.replace(/\{\{cspSource\}\}/g, cspSource);
+
+      // 转换资源路径为 webview URI
+      const htmlDir = path.dirname(htmlPath);
+      html = html.replace(/(?:src|href)="([^"]+)"/g, (match, resourcePath) => {
+        try {
+          // 如果是绝对路径以 / 开头，则将其视为相对于 out/webview 根目录
+          let absPath: string;
+          if (resourcePath.startsWith('/')) {
+            absPath = path.join(
+              this.context.extensionPath,
+              'out',
+              'webview',
+              resourcePath.replace(/^\//, ''),
+            );
+          } else {
+            // 相对路径相对于 HTML 文件所在目录
+            absPath = path.resolve(htmlDir, resourcePath);
+          }
+
+          if (!fs.existsSync(absPath)) {
+            return match; // 文件不存在则保留原引用
+          }
+
+          const assetUri = webview.asWebviewUri(vscode.Uri.file(absPath));
+          return match.replace(resourcePath, assetUri.toString());
+        } catch (_e) {
+          return match;
+        }
+      });
 
       return html;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       Logger.error('Failed to generate rule sync page HTML', error as Error, { code: 'TAI-5017' });
-      return `<html><body><h1>Error</h1><p>Failed to load rule sync page: ${errorMessage}</p></body></html>`;
+      return this.getErrorHtml(`Failed to load rule sync page: ${errorMessage}`);
     }
+  }
+
+  /**
+   * @description 获取错误 HTML
+   * @return default {string}
+   * @param message {string}
+   */
+  private getErrorHtml(message: string): string {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Error</title>
+  <style>
+    body {
+      font-family: var(--vscode-font-family);
+      padding: 20px;
+      color: var(--vscode-foreground);
+      background-color: var(--vscode-editor-background);
+    }
+    .error {
+      color: var(--vscode-errorForeground);
+      padding: 10px;
+      border: 1px solid var(--vscode-inputValidation-errorBorder);
+      background: var(--vscode-inputValidation-errorBackground);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="error">
+    <h2>Error</h2>
+    <p>${message}</p>
+  </div>
+</body>
+</html>`;
   }
 
   /**
@@ -125,8 +194,11 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
   protected async handleMessage(message: WebviewMessage): Promise<void> {
     try {
       const messageType = message.type || (message as { command?: string }).command;
+      const requestId = (message as { requestId?: string }).requestId;
+
       Logger.debug('Rule sync page message received', {
         type: messageType,
+        requestId,
         payload: message.payload,
       });
 
@@ -135,8 +207,13 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
           await this.sendInitialData();
           break;
 
+        case 'getInitialData':
+          // 处理 RPC 请求
+          await this.handleGetInitialData(requestId);
+          break;
+
         case 'sync':
-          await this.handleSync(message.payload);
+          await this.handleSync(message.payload, requestId);
           break;
 
         case 'cancel':
@@ -155,6 +232,33 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         `Rule sync operation failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       );
+    }
+  }
+
+  /**
+   * @description 处理 getInitialData RPC 请求
+   * @return default {Promise<void>}
+   * @param requestId {string | undefined}
+   */
+  private async handleGetInitialData(requestId?: string): Promise<void> {
+    try {
+      const data = await this.getRuleSyncData();
+      this.postMessage({
+        type: 'init',
+        payload: data,
+        ...(requestId && { requestId }),
+      } as WebviewMessage & { requestId?: string });
+    } catch (error) {
+      Logger.error('Failed to get rule sync page initial data', error as Error, {
+        code: 'TAI-5019',
+      });
+      if (requestId) {
+        this.postMessage({
+          type: 'init',
+          payload: { error: error instanceof Error ? error.message : String(error) },
+          requestId,
+        } as WebviewMessage & { requestId: string; error?: string });
+      }
     }
   }
 
@@ -356,7 +460,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         type: 'custom',
         enabled: custom.enabled ?? true,
         checked: custom.enabled ?? true,
-        outputPath: custom.outputPath || '',
+        outputPath: normalizeOutputPathForDisplay(custom.outputPath || ''),
         ruleCount: 0,
       });
     }
@@ -365,25 +469,18 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
   }
 
   /**
-   * @description 获取适配器输出路径
-   * @return default {string}
+   * @description 获取适配器输出路径（相对于工作区根目录）
+   * @return default {string} 相对路径，目录以/结尾，文件不以/结尾，不以/开头
    * @param adapterId {string}
    */
   private getAdapterOutputPath(adapterId: string): string {
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
-      return '';
-    }
-
-    const workspaceRoot = workspaceFolders[0].uri.fsPath;
-
     switch (adapterId) {
       case 'copilot':
-        return path.join(workspaceRoot, '.github', 'copilot-instructions.md');
+        return '.github/copilot-instructions.md';
       case 'cursor':
-        return path.join(workspaceRoot, '.cursorrules');
+        return '.cursorrules';
       case 'continue':
-        return path.join(workspaceRoot, '.continuerules');
+        return '.continuerules';
       default:
         return '';
     }
@@ -393,8 +490,9 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
    * @description 处理同步操作
    * @return default {Promise<void>}
    * @param payload {unknown}
+   * @param requestId {string | undefined}
    */
-  private async handleSync(payload: unknown): Promise<void> {
+  private async handleSync(payload: unknown, requestId?: string): Promise<void> {
     try {
       let syncData: { rules: string[]; adapters: string[] };
 
@@ -479,14 +577,15 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
       );
 
       // 发送成功消息到前端
-      await this.postMessage({
+      this.postMessage({
         type: 'syncComplete',
         payload: {
           success: true,
           ruleCount: selectedRules.length,
           adapterCount: adapters.length,
         },
-      });
+        ...(requestId && { requestId }),
+      } as WebviewMessage & { requestId?: string });
 
       // 关闭 webview
       setTimeout(() => {
@@ -499,13 +598,14 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         'error',
       );
 
-      await this.postMessage({
+      this.postMessage({
         type: 'syncComplete',
         payload: {
           success: false,
           error: error instanceof Error ? error.message : String(error),
         },
-      });
+        ...(requestId && { requestId }),
+      } as WebviewMessage & { requestId?: string });
     }
   }
 
