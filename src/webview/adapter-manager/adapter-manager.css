@@ -1,0 +1,767 @@
+/* Adapter Manager 样式 */
+@import '../global.css';
+
+/* 主容器 */
+.adapter-manager-container {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: var(--spacing-xl);
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-foreground);
+  min-height: 100vh;
+  padding-bottom: 80px; /* 为底部操作栏留空间 */
+}
+
+/* 页面标题 */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--vscode-editorWidget-border);
+}
+
+.page-header .header-content {
+  flex: 1;
+}
+
+.page-header h1 {
+  font-size: 1.8rem;
+  margin: 0 0 var(--spacing-sm) 0;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.page-header h1 .codicon {
+  font-size: 1.5rem;
+  color: var(--vscode-textLink-foreground);
+}
+
+.page-header .subtitle {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+/* 区块样式 */
+.adapter-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.adapter-section {
+  background-color: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.section-header h2 {
+  font-size: 1.2rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.section-header h2 .codicon {
+  color: var(--vscode-textLink-foreground);
+}
+
+.section-description {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+/* 适配器卡片网格 */
+.adapter-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+/* 适配器卡片 */
+.adapter-card {
+  background-color: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  transition: all 0.2s ease;
+}
+
+.adapter-card:hover {
+  border-color: var(--vscode-focusBorder);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.adapter-card.disabled {
+  opacity: 0.6;
+}
+
+.adapter-card.disabled:hover {
+  opacity: 0.75;
+}
+
+/* 卡片头部 */
+.adapter-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+}
+
+.adapter-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.adapter-name {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.adapter-name h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adapter-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.adapter-card.preset .adapter-icon {
+  color: var(--vscode-textLink-foreground);
+}
+
+.adapter-card.custom .adapter-icon {
+  color: var(--vscode-descriptionForeground);
+}
+
+.adapter-description {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.85rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* 类型标签 */
+.type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.type-badge .codicon {
+  font-size: 10px;
+}
+
+.type-badge.rule-type {
+  background-color: rgba(0, 127, 212, 0.15);
+  color: var(--vscode-textLink-foreground);
+  border: 1px solid rgba(0, 127, 212, 0.3);
+}
+
+.type-badge.skill-type {
+  background-color: rgba(255, 165, 0, 0.15);
+  color: var(--vscode-charts-orange, #ffa500);
+  border: 1px solid rgba(255, 165, 0, 0.3);
+}
+
+/* 展开/折叠按钮 */
+.expand-toggle {
+  background: none;
+  border: none;
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--border-radius);
+  transition: background-color 0.15s;
+}
+
+.expand-toggle:hover {
+  background-color: var(--vscode-toolbar-hoverBackground);
+}
+
+.expand-toggle .codicon {
+  font-size: 14px;
+  transition: transform 0.2s;
+}
+
+/* 适配器选项（展开区域）*/
+.adapter-options {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: var(--border-radius);
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.adapter-options .option-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.adapter-options .option-item:last-child {
+  margin-bottom: 0;
+}
+
+.adapter-options .option-item input[type='checkbox'] {
+  margin: 0;
+  accent-color: var(--vscode-focusBorder);
+}
+
+.adapter-options .option-item label {
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+/* 卡片内容 */
+.adapter-card .card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) 0;
+  border-top: 1px solid var(--vscode-editorWidget-border);
+  border-bottom: 1px solid var(--vscode-editorWidget-border);
+}
+
+.adapter-card .info-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 0.9rem;
+}
+
+.adapter-card .info-row .label {
+  color: var(--vscode-descriptionForeground);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 90px;
+  flex-shrink: 0;
+}
+
+.adapter-card .info-row .label .codicon {
+  font-size: 14px;
+}
+
+.adapter-card .info-row .value {
+  color: var(--vscode-foreground);
+  flex: 1;
+  min-width: 0;
+}
+
+.adapter-card .info-row .value.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.status-value.status-enabled {
+  color: var(--vscode-testing-iconPassed);
+}
+
+.status-value.status-disabled {
+  color: var(--vscode-descriptionForeground);
+}
+
+/* 卡片操作 */
+.adapter-card .card-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+}
+
+.adapter-card .card-actions .button {
+  flex: 1;
+}
+
+/* 空状态 */
+.adapter-section .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  color: var(--vscode-descriptionForeground);
+  text-align: center;
+  padding: var(--spacing-lg);
+  background-color: var(--vscode-editor-background);
+  border: 1px dashed var(--vscode-editorWidget-border);
+  border-radius: var(--border-radius);
+}
+
+.adapter-section .empty-state .icon {
+  font-size: 48px;
+  margin-bottom: var(--spacing-md);
+  opacity: 0.5;
+}
+
+.adapter-section .empty-state .message {
+  margin-bottom: var(--spacing-md);
+  font-size: 1rem;
+  color: var(--vscode-foreground);
+}
+
+/* 底部操作栏 */
+.footer-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-xl);
+  background-color: var(--vscode-editorWidget-background);
+  border-top: 1px solid var(--vscode-focusBorder);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+}
+
+.changes-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--vscode-warningForeground);
+  font-size: 0.9rem;
+}
+
+.changes-indicator .codicon {
+  font-size: 16px;
+}
+
+.footer-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+/* ========== 模态框样式 ========== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-lg);
+}
+
+.modal-content {
+  background-color: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: var(--border-radius-lg);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--vscode-editorWidget-border);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.modal-header h2 .codicon {
+  color: var(--vscode-textLink-foreground);
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-button:hover {
+  background-color: var(--vscode-toolbar-hoverBackground);
+}
+
+.close-button .codicon {
+  font-size: 18px;
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  border-top: 1px solid var(--vscode-editorWidget-border);
+}
+
+/* 表单样式 */
+.form-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  margin-bottom: var(--spacing-sm);
+  color: var(--vscode-foreground);
+}
+
+.form-group label .codicon {
+  font-size: 14px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.form-group .required {
+  color: var(--vscode-errorForeground);
+}
+
+.form-group .hint {
+  display: block;
+  margin-top: var(--spacing-xs);
+  font-size: 0.85rem;
+  color: var(--vscode-descriptionForeground);
+}
+
+.form-group .error-text {
+  display: block;
+  margin-top: var(--spacing-xs);
+  font-size: 0.85rem;
+  color: var(--vscode-errorForeground);
+}
+
+.form-group .input.error,
+.form-group .textarea.error {
+  border-color: var(--vscode-inputValidation-errorBorder);
+}
+
+.textarea {
+  width: 100%;
+  padding: 8px;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--border-radius);
+  font-family: var(--vscode-editor-font-family, 'Consolas', 'Courier New', monospace);
+  font-size: var(--vscode-font-size);
+  resize: vertical;
+  min-height: 100px;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+}
+
+/* 单选按钮组 */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.radio-option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.radio-option:hover {
+  border-color: var(--vscode-focusBorder);
+}
+
+.radio-option:has(input:checked) {
+  border-color: var(--vscode-focusBorder);
+  background-color: rgba(0, 127, 212, 0.1);
+}
+
+.radio-option input[type='radio'] {
+  margin: 0;
+  accent-color: var(--vscode-focusBorder);
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.radio-label .codicon {
+  font-size: 14px;
+}
+
+.radio-description {
+  flex-basis: 100%;
+  margin-left: 22px;
+  font-size: 0.85rem;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* 复选框组 */
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.checkbox-option:hover {
+  border-color: var(--vscode-focusBorder);
+}
+
+.checkbox-option:has(input:checked) {
+  border-color: var(--vscode-focusBorder);
+  background-color: rgba(0, 127, 212, 0.1);
+}
+
+.checkbox-option input[type='checkbox'] {
+  margin: 0;
+  accent-color: var(--vscode-focusBorder);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.checkbox-label .codicon {
+  font-size: 14px;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* 提示框 */
+.tip-box {
+  background-color: rgba(55, 148, 255, 0.1);
+  border: 1px solid rgba(55, 148, 255, 0.3);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.tip-box-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+  color: var(--vscode-textLink-foreground);
+}
+
+.tip-box-title .codicon {
+  font-size: 16px;
+}
+
+.tip-box ul {
+  margin: 0;
+  padding-left: var(--spacing-lg);
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.9rem;
+}
+
+.tip-box li {
+  margin-bottom: var(--spacing-xs);
+}
+
+.tip-box li:last-child {
+  margin-bottom: 0;
+}
+
+/* 加载状态 */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  color: var(--vscode-descriptionForeground);
+  min-height: 60vh;
+}
+
+.loading .codicon {
+  font-size: 48px;
+}
+
+.loading span {
+  font-size: 1.1rem;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.codicon-modifier-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* 错误消息 */
+.error-message {
+  background-color: var(--vscode-inputValidation-errorBackground);
+  color: var(--vscode-inputValidation-errorForeground);
+  border: 1px solid var(--vscode-inputValidation-errorBorder);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-lg);
+  font-size: 0.9rem;
+}
+
+/* 成功消息 */
+.success-message {
+  background-color: rgba(0, 128, 0, 0.2);
+  color: var(--vscode-testing-iconPassed);
+  border: 1px solid var(--vscode-testing-iconPassed);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-lg);
+  font-size: 0.9rem;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .adapter-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .footer-actions {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: stretch;
+  }
+
+  .footer-buttons {
+    justify-content: flex-end;
+  }
+}
+
+/* 超大屏幕优化 */
+@media (min-width: 1400px) {
+  .adapter-cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  }
+}

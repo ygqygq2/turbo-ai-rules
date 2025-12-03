@@ -11,11 +11,13 @@ import type { AIToolAdapter, GeneratedConfig } from '../adapters';
 import { ContinueAdapter, CopilotAdapter, CursorAdapter, CustomAdapter } from '../adapters';
 import type { AdaptersConfig, CustomAdapterConfig } from '../types/config';
 import { GenerateError, SystemError } from '../types/errors';
+import type { PartialUpdateOptions } from '../types/ruleMarker';
 import type { ConflictStrategy, ParsedRule } from '../types/rules';
 import { CONFIG_KEYS, CONFIG_PREFIX } from '../utils/constants';
 import { ensureDir, pathExists, readDir, safeReadFile, safeWriteFile } from '../utils/fileSystem';
 import { ensureIgnored } from '../utils/gitignore';
 import { Logger } from '../utils/logger';
+import { partialUpdate } from '../utils/ruleMarkerMerger';
 import type { UserRulesProtectionConfig } from '../utils/userRulesProtection';
 import { extractUserContent, isUserDefinedFile, mergeContent } from '../utils/userRulesProtection';
 import { GitManager } from './GitManager';
@@ -527,6 +529,157 @@ export class FileGenerator {
    */
   public getEnabledAdapters(): string[] {
     return Array.from(this.adapters.keys());
+  }
+
+  /**
+   * 部分更新：只更新指定规则源的规则
+   * @param rules 新规则列表
+   * @param workspaceRoot 工作区根目录
+   * @param targetSourceIds 目标规则源 ID 列表
+   * @param adapterIds 目标适配器 ID 列表（可选，默认全部）
+   * @returns 生成结果
+   */
+  public async partialUpdate(
+    rules: ParsedRule[],
+    workspaceRoot: string,
+    targetSourceIds: string[],
+    adapterIds?: string[],
+  ): Promise<GenerateResult> {
+    Logger.debug('Partial update started', {
+      ruleCount: rules.length,
+      targetSourceIds,
+      adapterIds,
+    });
+
+    const result: GenerateResult = {
+      success: [],
+      failures: [],
+    };
+
+    // 确定要更新的适配器
+    const adaptersToUpdate = adapterIds
+      ? Array.from(this.adapters.entries()).filter(([id]) => adapterIds.includes(id))
+      : Array.from(this.adapters.entries());
+
+    for (const [name, adapter] of adaptersToUpdate) {
+      try {
+        // 只对单文件适配器执行部分更新
+        if (this.isDirectoryOutput(adapter)) {
+          // 目录模式：直接覆盖对应文件
+          const config = await this.generateForAdapter(adapter, rules, workspaceRoot);
+          result.success.push(config);
+        } else {
+          // 单文件模式：使用部分更新逻辑
+          const config = await this.partialUpdateSingleFile(
+            adapter,
+            rules,
+            workspaceRoot,
+            targetSourceIds,
+          );
+          result.success.push(config);
+        }
+
+        Logger.debug(`Partial update completed for ${name}`, {
+          targetSourceIds,
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        result.failures.push({ adapter: name, error: errorMessage });
+        Logger.error(
+          `Failed to partial update for ${name}`,
+          error instanceof Error ? error : undefined,
+        );
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * 对单文件适配器执行部分更新
+   */
+  private async partialUpdateSingleFile(
+    adapter: AIToolAdapter,
+    rules: ParsedRule[],
+    workspaceRoot: string,
+    targetSourceIds: string[],
+  ): Promise<GeneratedConfig> {
+    const filePath = path.join(workspaceRoot, adapter.getFilePath());
+
+    // 读取现有文件内容
+    let existingContent = '';
+    try {
+      if (fs.existsSync(filePath)) {
+        existingContent = fs.readFileSync(filePath, 'utf-8');
+      }
+    } catch (_error) {
+      Logger.warn('Failed to read existing file for partial update', { filePath });
+    }
+
+    // 只获取目标规则源的规则
+    const targetRules = rules.filter((rule) => targetSourceIds.includes(rule.sourceId));
+
+    // 生成新内容（仅用于验证适配器能够处理这些规则）
+    await adapter.generate(targetRules);
+
+    // 提取头部内容（不含元数据，用于部分更新）
+    const headerContent = this.extractHeaderContent(adapter);
+
+    // 执行部分更新
+    const options: PartialUpdateOptions = {
+      targetSourceIds,
+      preserveUserContent: true,
+      preserveOtherSources: true,
+    };
+
+    const updateResult = partialUpdate(existingContent, targetRules, headerContent, options);
+
+    // 写入文件
+    await ensureDir(path.dirname(filePath));
+    await safeWriteFile(filePath, updateResult.content);
+
+    Logger.info('Partial update completed', {
+      filePath: adapter.getFilePath(),
+      isPartialUpdate: updateResult.isPartialUpdate,
+      updatedSources: updateResult.updatedSources,
+      preservedSources: updateResult.preservedSources,
+    });
+
+    return {
+      filePath: adapter.getFilePath(),
+      content: updateResult.content,
+      generatedAt: new Date(),
+      ruleCount: targetRules.length,
+    };
+  }
+
+  /**
+   * 提取适配器的头部内容（不含元数据）
+   */
+  private extractHeaderContent(adapter: AIToolAdapter): string {
+    // 根据适配器类型返回对应的头部内容
+    if (adapter.name === 'GitHub Copilot') {
+      return (
+        '# GitHub Copilot Instructions\n\n' +
+        '> This file provides coding guidelines and rules for GitHub Copilot.\n' +
+        '> Generated by Turbo AI Rules extension.\n\n'
+      );
+    } else if (adapter.name === 'Cursor') {
+      return (
+        '# Cursor Rules\n\n' +
+        '> This file provides coding rules for Cursor IDE.\n' +
+        '> Generated by Turbo AI Rules extension.\n\n'
+      );
+    } else if (adapter.name === 'Continue') {
+      return (
+        '# Continue Rules\n\n' +
+        '> This file provides coding rules for Continue extension.\n' +
+        '> Generated by Turbo AI Rules extension.\n\n'
+      );
+    }
+
+    // 自定义适配器
+    return `# ${adapter.name} Rules\n\n> Generated by Turbo AI Rules extension.\n\n`;
   }
 
   /**

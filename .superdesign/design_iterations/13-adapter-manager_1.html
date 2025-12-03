@@ -3,12 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net; script-src 'nonce-{{nonce}}';"
-    />
-    <title>Adapter Manager - Turbo AI Rules</title>
-    <!-- Codicons 图标库 -->
+    <title>适配器管理 - Adapter Manager</title>
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.35/dist/codicon.css"
@@ -16,45 +11,33 @@
     <style>
       :root {
         /* VS Code 主题变量 */
-        --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
-          Arial, sans-serif;
-        --vscode-font-weight: 400;
-        --vscode-font-size: 13px;
         --vscode-foreground: #cccccc;
-        --vscode-descriptionForeground: #8c8c8c;
-
-        /* 背景色 */
         --vscode-editor-background: #1e1e1e;
         --vscode-editorWidget-background: #252526;
-        --vscode-input-background: #3c3c3c;
-
-        /* 边框 */
         --vscode-editorWidget-border: #454545;
-        --vscode-focusBorder: #007fd4;
-
-        /* 按钮 */
+        --vscode-input-background: #3c3c3c;
+        --vscode-input-foreground: #cccccc;
+        --vscode-input-border: #3c3c3c;
         --vscode-button-background: #0e639c;
         --vscode-button-foreground: #ffffff;
         --vscode-button-hoverBackground: #1177bb;
         --vscode-button-secondaryBackground: #3a3d41;
-        --vscode-button-secondaryForeground: #ffffff;
+        --vscode-button-secondaryForeground: #cccccc;
         --vscode-button-secondaryHoverBackground: #45494e;
-
-        /* 测试图标颜色 */
+        --vscode-focusBorder: #007fd4;
+        --vscode-textLink-foreground: #3794ff;
+        --vscode-errorForeground: #f48771;
+        --vscode-descriptionForeground: #9d9d9d;
         --vscode-testing-iconPassed: #73c991;
-        --vscode-charts-blue: #75beff;
+        --vscode-charts-blue: #3794ff;
 
-        /* 其他 */
-        --vscode-checkbox-background: #3c3c3c;
-        --vscode-checkbox-border: #6c6c6c;
-        --vscode-icon-foreground: #c5c5c5;
-
-        /* 间距系统 */
+        /* 间距 */
         --spacing-xs: 4px;
         --spacing-sm: 8px;
-        --spacing-md: 12px;
-        --spacing-lg: 16px;
-        --spacing-xl: 20px;
+        --spacing-md: 16px;
+        --spacing-lg: 24px;
+
+        /* 边框 */
         --border-radius: 4px;
       }
 
@@ -63,150 +46,62 @@
       }
 
       body {
-        font-family: var(--vscode-font-family);
-        font-weight: var(--vscode-font-weight);
-        font-size: var(--vscode-font-size);
-        color: var(--vscode-foreground);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
         background-color: var(--vscode-editor-background);
+        color: var(--vscode-foreground);
         margin: 0;
         padding: 0;
-        overflow-x: hidden;
+        line-height: 1.5;
       }
 
-      /* 容器 */
+      /* 页面容器 */
       .adapter-manager {
         padding: var(--spacing-lg);
-        max-width: 900px;
+        max-width: 1200px;
         margin: 0 auto;
       }
 
-      /* 头部 */
-      .header {
+      /* 页面头部 */
+      .page-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: var(--spacing-xl);
+        margin-bottom: var(--spacing-lg);
         padding-bottom: var(--spacing-md);
         border-bottom: 1px solid var(--vscode-editorWidget-border);
       }
 
-      .header-left {
+      .page-title {
         display: flex;
         align-items: center;
         gap: var(--spacing-sm);
-      }
-
-      .header-title {
-        font-size: 18px;
+        font-size: 1.4rem;
         font-weight: 600;
         margin: 0;
       }
 
-      .header-right {
+      .page-title .codicon {
+        font-size: 1.2rem;
+      }
+
+      .header-actions {
         display: flex;
         gap: var(--spacing-sm);
       }
 
-      /* 适配器组 */
-      .adapter-group {
-        margin-bottom: var(--spacing-xl);
-      }
-
-      .adapter-group-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: var(--spacing-md);
-        font-size: 15px;
-        font-weight: 600;
-      }
-
-      .adapter-group-header .left {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-sm);
-      }
-
-      .adapter-group-header .codicon {
-        font-size: 16px;
-      }
-
-      /* 适配器卡片 */
-      .adapter-card {
-        background-color: var(--vscode-editorWidget-background);
-        border: 1px solid var(--vscode-editorWidget-border);
-        border-radius: var(--border-radius);
-        padding: var(--spacing-md);
-        margin-bottom: var(--spacing-sm);
-      }
-
-      .adapter-card.enabled {
-        border-left: 3px solid var(--vscode-testing-iconPassed);
-      }
-
-      .adapter-card.custom.enabled {
-        border-left-color: var(--vscode-charts-blue);
-      }
-
-      .adapter-card.disabled {
-        opacity: 0.6;
-      }
-
-      /* 适配器头部 */
-      .adapter-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: var(--spacing-sm);
-      }
-
-      .adapter-title {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-sm);
-        font-weight: 600;
-        font-size: 14px;
-      }
-
-      /* Checkbox */
-      input[type='checkbox'] {
-        cursor: pointer;
-      }
-
-      /* 适配器详情 */
-      .adapter-details {
-        margin-left: 24px;
-        color: var(--vscode-descriptionForeground);
-        font-size: 12px;
-      }
-
-      .adapter-detail-item {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-xs);
-        margin-bottom: 4px;
-      }
-
-      .adapter-detail-item .codicon {
-        font-size: 13px;
-      }
-
-      /* 按钮 */
+      /* 按钮样式 */
       .btn {
-        border: none;
-        padding: var(--spacing-sm) var(--spacing-md);
-        border-radius: var(--border-radius);
-        cursor: pointer;
         display: inline-flex;
         align-items: center;
         gap: var(--spacing-xs);
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: none;
+        border-radius: var(--border-radius);
+        cursor: pointer;
         font-size: 13px;
         font-family: inherit;
-        transition: background-color 0.1s;
-      }
-
-      .btn .codicon {
-        font-size: 14px;
+        transition: background-color 0.15s;
       }
 
       .btn-primary {
@@ -227,81 +122,217 @@
         background-color: var(--vscode-button-secondaryHoverBackground);
       }
 
-      .btn-small {
-        padding: 4px 8px;
-        font-size: 12px;
-      }
-
       .btn-icon {
-        padding: var(--spacing-xs);
+        padding: var(--spacing-xs) var(--spacing-sm);
       }
 
-      /* 适配器操作按钮组 */
-      .adapter-actions {
+      .btn-danger {
+        background-color: var(--vscode-errorForeground);
+        color: white;
+      }
+
+      .btn-danger:hover {
+        opacity: 0.9;
+      }
+
+      /* 适配器组 */
+      .adapter-group {
+        margin-bottom: var(--spacing-lg);
+      }
+
+      .adapter-group-header {
         display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--spacing-md);
+      }
+
+      .group-title {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      /* 适配器卡片 */
+      .adapter-card {
+        background-color: var(--vscode-editorWidget-background);
+        border: 1px solid var(--vscode-editorWidget-border);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-sm);
+        transition: border-color 0.15s;
+      }
+
+      .adapter-card.enabled {
+        border-left: 3px solid var(--vscode-testing-iconPassed);
+      }
+
+      .adapter-card.disabled {
+        opacity: 0.6;
+      }
+
+      .adapter-card.custom.enabled {
+        border-left-color: var(--vscode-charts-blue);
+      }
+
+      .adapter-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .adapter-title {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        font-weight: 600;
+        font-size: 1rem;
+      }
+
+      .adapter-toggle {
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 3px;
+        background-color: var(--vscode-input-background);
+        cursor: pointer;
+        position: relative;
+      }
+
+      .adapter-toggle:checked {
+        background-color: var(--vscode-button-background);
+        border-color: var(--vscode-button-background);
+      }
+
+      .adapter-toggle:checked::after {
+        content: '✓';
+        color: white;
+        font-size: 12px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .expand-toggle {
+        background: none;
+        border: none;
+        color: var(--vscode-textLink-foreground);
+        cursor: pointer;
+        padding: 0;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
         gap: var(--spacing-xs);
       }
 
-      /* 展开/收起详情 */
-      .expand-btn {
-        background: none;
-        border: none;
-        color: var(--vscode-icon-foreground);
-        cursor: pointer;
-        padding: 4px;
-        display: inline-flex;
-        align-items: center;
+      .expand-toggle:hover {
+        text-decoration: underline;
       }
 
-      .expand-btn:hover {
-        color: var(--vscode-foreground);
+      /* 适配器类型标签 */
+      .adapter-type-tag {
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 3px;
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-descriptionForeground);
       }
 
-      .expand-btn .codicon {
-        font-size: 14px;
-        transition: transform 0.2s;
+      .adapter-type-tag.rules {
+        background-color: rgba(55, 148, 255, 0.2);
+        color: var(--vscode-charts-blue);
       }
 
-      .expand-btn.expanded .codicon {
-        transform: rotate(180deg);
+      .adapter-type-tag.skills {
+        background-color: rgba(115, 201, 145, 0.2);
+        color: var(--vscode-testing-iconPassed);
       }
 
-      /* 展开内容 */
-      .expandable-content {
-        display: none;
+      /* 适配器详情 */
+      .adapter-details {
         margin-top: var(--spacing-sm);
         padding-top: var(--spacing-sm);
         border-top: 1px solid var(--vscode-editorWidget-border);
+        color: var(--vscode-descriptionForeground);
+        font-size: 0.9rem;
       }
 
-      .expandable-content.show {
-        display: block;
-      }
-
-      .config-option {
+      .adapter-details-row {
         display: flex;
         align-items: center;
-        gap: var(--spacing-xs);
+        gap: var(--spacing-sm);
         margin-bottom: var(--spacing-xs);
-        font-size: 13px;
+      }
+
+      .adapter-details-row .codicon {
+        width: 16px;
+        color: var(--vscode-descriptionForeground);
+      }
+
+      /* 适配器选项（展开区域）*/
+      .adapter-options {
+        margin-top: var(--spacing-md);
+        padding: var(--spacing-md);
+        background-color: rgba(0, 0, 0, 0.1);
+        border-radius: var(--border-radius);
+        display: none;
+      }
+
+      .adapter-options.expanded {
+        display: block;
+        animation: slideDown 0.3s ease-out;
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          max-height: 0;
+        }
+        to {
+          opacity: 1;
+          max-height: 500px;
+        }
+      }
+
+      .adapter-option {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-sm);
+      }
+
+      .adapter-option:last-child {
+        margin-bottom: 0;
+      }
+
+      /* 操作按钮 */
+      .adapter-actions {
+        display: flex;
+        gap: var(--spacing-xs);
+        margin-top: var(--spacing-sm);
       }
 
       /* 模态框 */
-      .modal {
-        display: none;
+      .modal-overlay {
         position: fixed;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
+        right: 0;
+        bottom: 0;
         background-color: rgba(0, 0, 0, 0.6);
-        z-index: 1000;
+        display: flex;
         align-items: center;
         justify-content: center;
+        z-index: 1000;
       }
 
-      .modal.show {
-        display: flex;
+      .modal-overlay.hidden {
+        display: none;
       }
 
       .modal-content {
@@ -313,19 +344,49 @@
         width: 90%;
         max-height: 90vh;
         overflow-y: auto;
+        animation: modalFadeIn 0.3s ease-out;
+      }
+
+      @keyframes modalFadeIn {
+        from {
+          opacity: 0;
+          transform: scale(0.9);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
       }
 
       .modal-header {
         display: flex;
         align-items: center;
-        gap: var(--spacing-sm);
-        margin-bottom: var(--spacing-lg);
-        font-size: 16px;
-        font-weight: 600;
+        justify-content: space-between;
+        margin-bottom: var(--spacing-md);
+        padding-bottom: var(--spacing-sm);
+        border-bottom: 1px solid var(--vscode-editorWidget-border);
       }
 
-      .modal-header .codicon {
-        font-size: 18px;
+      .modal-title {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .modal-close {
+        background: none;
+        border: none;
+        color: var(--vscode-foreground);
+        cursor: pointer;
+        padding: var(--spacing-xs);
+        border-radius: var(--border-radius);
+      }
+
+      .modal-close:hover {
+        background-color: var(--vscode-button-secondaryBackground);
       }
 
       .modal-footer {
@@ -337,44 +398,53 @@
         border-top: 1px solid var(--vscode-editorWidget-border);
       }
 
-      /* 表单 */
+      /* 表单样式 */
       .form-group {
         margin-bottom: var(--spacing-md);
       }
 
       .form-label {
         display: block;
+        font-weight: 600;
         margin-bottom: var(--spacing-xs);
-        font-size: 13px;
-        font-weight: 500;
+        color: var(--vscode-foreground);
       }
 
-      .form-label .required {
-        color: var(--vscode-testing-iconPassed);
-      }
-
-      .form-hint {
-        color: var(--vscode-descriptionForeground);
-        font-size: 11px;
-        margin-top: 2px;
+      .form-label.required::after {
+        content: ' *';
+        color: var(--vscode-errorForeground);
       }
 
       .form-input {
         width: 100%;
-        background-color: var(--vscode-input-background);
-        color: var(--vscode-foreground);
-        border: 1px solid var(--vscode-editorWidget-border);
-        border-radius: var(--border-radius);
         padding: var(--spacing-sm);
-        font-size: 13px;
+        background-color: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border: 1px solid var(--vscode-input-border);
+        border-radius: var(--border-radius);
         font-family: inherit;
+        font-size: 13px;
       }
 
       .form-input:focus {
-        outline: none;
-        border-color: var(--vscode-focusBorder);
+        outline: 1px solid var(--vscode-focusBorder);
+        outline-offset: -1px;
       }
 
+      .form-hint {
+        display: block;
+        margin-top: var(--spacing-xs);
+        font-size: 0.85rem;
+        color: var(--vscode-descriptionForeground);
+      }
+
+      .form-error {
+        color: var(--vscode-errorForeground);
+        font-size: 0.85rem;
+        margin-top: var(--spacing-xs);
+      }
+
+      /* 单选按钮组 */
       .radio-group {
         display: flex;
         flex-direction: column;
@@ -384,366 +454,526 @@
       .radio-option {
         display: flex;
         align-items: center;
-        gap: var(--spacing-xs);
+        gap: var(--spacing-sm);
         cursor: pointer;
       }
 
       .radio-option input[type='radio'] {
+        margin: 0;
+      }
+
+      .radio-option-label {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+      }
+
+      /* 复选框组 */
+      .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+      }
+
+      .checkbox-option {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-sm) var(--spacing-md);
+        background-color: var(--vscode-editor-background);
+        border: 1px solid var(--vscode-editorWidget-border);
+        border-radius: var(--border-radius);
         cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .checkbox-option:hover {
+        border-color: var(--vscode-focusBorder);
+      }
+
+      .checkbox-option:has(input:checked) {
+        border-color: var(--vscode-focusBorder);
+        background-color: rgba(0, 127, 212, 0.1);
+      }
+
+      .checkbox-option input[type='checkbox'] {
+        margin: 0;
+        accent-color: var(--vscode-focusBorder);
+      }
+
+      .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 500;
+      }
+
+      .checkbox-label .codicon {
+        font-size: 14px;
+        color: var(--vscode-descriptionForeground);
       }
 
       /* 提示框 */
-      .info-box {
-        background-color: var(--vscode-input-background);
-        border-left: 3px solid var(--vscode-charts-blue);
+      .tip-box {
+        background-color: rgba(55, 148, 255, 0.1);
+        border: 1px solid rgba(55, 148, 255, 0.3);
+        border-radius: var(--border-radius);
         padding: var(--spacing-md);
         margin-top: var(--spacing-md);
-        border-radius: var(--border-radius);
       }
 
-      .info-box-title {
+      .tip-box-title {
         display: flex;
         align-items: center;
         gap: var(--spacing-xs);
         font-weight: 600;
+        margin-bottom: var(--spacing-sm);
+        color: var(--vscode-charts-blue);
+      }
+
+      .tip-box ul {
+        margin: 0;
+        padding-left: var(--spacing-lg);
+        color: var(--vscode-descriptionForeground);
+      }
+
+      .tip-box li {
         margin-bottom: var(--spacing-xs);
       }
 
-      .info-box-content {
+      /* 底部操作栏（固定）*/
+      .bottom-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: var(--vscode-editorWidget-background);
+        border-top: 1px solid var(--vscode-editorWidget-border);
+        padding: var(--spacing-md) var(--spacing-lg);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .bottom-bar.hidden {
+        display: none;
+      }
+
+      .unsaved-indicator {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        color: var(--vscode-errorForeground);
+      }
+
+      /* 空状态 */
+      .empty-state {
+        text-align: center;
+        padding: var(--spacing-lg);
         color: var(--vscode-descriptionForeground);
-        font-size: 12px;
-        line-height: 1.5;
       }
 
-      .info-box-content li {
-        margin-bottom: 4px;
+      .empty-state .codicon {
+        font-size: 2rem;
+        margin-bottom: var(--spacing-sm);
       }
 
-      /* 响应式 */
-      @media (max-width: 600px) {
-        .adapter-manager {
-          padding: var(--spacing-md);
-        }
-
-        .modal-content {
-          width: 95%;
-          padding: var(--spacing-md);
-        }
+      .hidden {
+        display: none !important;
       }
     </style>
   </head>
   <body>
     <div class="adapter-manager">
-      <!-- 头部 -->
-      <div class="header">
-        <div class="header-left">
+      <!-- 页面头部 -->
+      <header class="page-header">
+        <h1 class="page-title">
           <i class="codicon codicon-settings-gear"></i>
-          <h1 class="header-title">适配器配置管理</h1>
-        </div>
-        <div class="header-right">
-          <button class="btn btn-secondary" id="cancelBtn">取消</button>
-          <button class="btn btn-primary" id="saveBtn">
+          适配器配置管理
+        </h1>
+        <div class="header-actions">
+          <button class="btn btn-secondary" onclick="handleCancel()">
+            <i class="codicon codicon-close"></i>
+            取消
+          </button>
+          <button class="btn btn-primary" onclick="handleSaveAll()">
             <i class="codicon codicon-save"></i>
             保存
           </button>
         </div>
-      </div>
+      </header>
 
-      <!-- 预置适配器 -->
-      <div class="adapter-group">
+      <!-- 预设适配器区块 -->
+      <section class="adapter-group">
         <div class="adapter-group-header">
-          <div class="left">
-            <i class="codicon codicon-package"></i>
-            <span>预置适配器</span>
-          </div>
+          <h2 class="group-title">
+            <i class="codicon codicon-extensions"></i>
+            预设适配器
+          </h2>
         </div>
 
         <!-- GitHub Copilot -->
-        <div class="adapter-card enabled">
+        <div class="adapter-card enabled" data-adapter="copilot">
           <div class="adapter-header">
             <div class="adapter-title">
-              <input type="checkbox" checked />
-              <span>GitHub Copilot</span>
+              <input type="checkbox" class="adapter-toggle" checked />
+              <i class="codicon codicon-copilot"></i>
+              GitHub Copilot
+              <span class="adapter-type-tag rules">规则类型</span>
             </div>
-            <button class="expand-btn" data-target="copilot-details">
+            <button class="expand-toggle" onclick="toggleExpand(this)">
+              <span>详细配置</span>
               <i class="codicon codicon-chevron-down"></i>
             </button>
           </div>
           <div class="adapter-details">
-            <div class="adapter-detail-item">
+            <div class="adapter-details-row">
               <i class="codicon codicon-file"></i>
               <span>输出: .github/copilot-instructions.md</span>
             </div>
           </div>
-          <div class="expandable-content" id="copilot-details">
-            <div class="config-option">
-              <input type="checkbox" id="copilot-auto" checked />
-              <label for="copilot-auto">自动更新配置文件</label>
+          <div class="adapter-options">
+            <div class="adapter-option">
+              <input type="checkbox" id="copilot-auto-update" checked />
+              <label for="copilot-auto-update">自动更新配置文件</label>
             </div>
-            <div class="config-option">
-              <input type="checkbox" id="copilot-meta" />
-              <label for="copilot-meta">包含元数据</label>
+            <div class="adapter-option">
+              <input type="checkbox" id="copilot-metadata" />
+              <label for="copilot-metadata">包含元数据</label>
             </div>
           </div>
         </div>
 
         <!-- Cursor -->
-        <div class="adapter-card enabled">
+        <div class="adapter-card enabled" data-adapter="cursor">
           <div class="adapter-header">
             <div class="adapter-title">
-              <input type="checkbox" checked />
-              <span>Cursor</span>
+              <input type="checkbox" class="adapter-toggle" checked />
+              <i class="codicon codicon-symbol-misc"></i>
+              Cursor
+              <span class="adapter-type-tag rules">规则类型</span>
             </div>
-            <button class="expand-btn" data-target="cursor-details">
+            <button class="expand-toggle" onclick="toggleExpand(this)">
+              <span>详细配置</span>
               <i class="codicon codicon-chevron-down"></i>
             </button>
           </div>
           <div class="adapter-details">
-            <div class="adapter-detail-item">
+            <div class="adapter-details-row">
               <i class="codicon codicon-file"></i>
               <span>输出: .cursorrules</span>
             </div>
           </div>
-          <div class="expandable-content" id="cursor-details">
-            <div class="config-option">
-              <input type="checkbox" id="cursor-auto" checked />
-              <label for="cursor-auto">自动更新配置文件</label>
+          <div class="adapter-options">
+            <div class="adapter-option">
+              <input type="checkbox" id="cursor-auto-update" checked />
+              <label for="cursor-auto-update">自动更新配置文件</label>
             </div>
-            <div class="config-option">
-              <input type="checkbox" id="cursor-meta" checked />
-              <label for="cursor-meta">包含元数据</label>
+            <div class="adapter-option">
+              <input type="checkbox" id="cursor-metadata" checked />
+              <label for="cursor-metadata">包含元数据</label>
             </div>
           </div>
         </div>
 
         <!-- Continue -->
-        <div class="adapter-card disabled">
+        <div class="adapter-card disabled" data-adapter="continue">
           <div class="adapter-header">
             <div class="adapter-title">
-              <input type="checkbox" />
-              <span>Continue</span>
+              <input type="checkbox" class="adapter-toggle" />
+              <i class="codicon codicon-symbol-method"></i>
+              Continue
+              <span class="adapter-type-tag rules">规则类型</span>
             </div>
-            <button class="expand-btn" data-target="continue-details">
+            <button class="expand-toggle" onclick="toggleExpand(this)">
+              <span>详细配置</span>
               <i class="codicon codicon-chevron-down"></i>
             </button>
           </div>
           <div class="adapter-details">
-            <div class="adapter-detail-item">
+            <div class="adapter-details-row">
               <i class="codicon codicon-file"></i>
               <span>输出: .continuerules</span>
             </div>
           </div>
-          <div class="expandable-content" id="continue-details">
-            <div class="config-option">
-              <input type="checkbox" id="continue-auto" checked />
-              <label for="continue-auto">自动更新配置文件</label>
+          <div class="adapter-options">
+            <div class="adapter-option">
+              <input type="checkbox" id="continue-auto-update" checked />
+              <label for="continue-auto-update">自动更新配置文件</label>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- 自定义适配器 -->
-      <div class="adapter-group">
+      <!-- 自定义适配器区块 -->
+      <section class="adapter-group">
         <div class="adapter-group-header">
-          <div class="left">
+          <h2 class="group-title">
             <i class="codicon codicon-tools"></i>
-            <span>自定义适配器</span>
-          </div>
-          <button class="btn btn-secondary btn-small" id="addAdapterBtn">
+            自定义适配器
+          </h2>
+          <button class="btn btn-primary" onclick="openAddModal()">
             <i class="codicon codicon-add"></i>
             添加适配器
           </button>
         </div>
 
-        <!-- Default Rules -->
-        <div class="adapter-card custom enabled">
+        <!-- 自定义适配器: Default Rules -->
+        <div class="adapter-card custom enabled" data-adapter="default-rules">
           <div class="adapter-header">
             <div class="adapter-title">
-              <input type="checkbox" checked />
-              <span>Default Rules</span>
-            </div>
-            <div class="adapter-actions">
-              <button class="btn btn-secondary btn-small btn-icon" title="编辑">
-                <i class="codicon codicon-edit"></i>
-              </button>
-              <button class="btn btn-secondary btn-small btn-icon" title="删除">
-                <i class="codicon codicon-trash"></i>
-              </button>
+              <input type="checkbox" class="adapter-toggle" checked />
+              <i class="codicon codicon-folder"></i>
+              Default Rules
+              <span class="adapter-type-tag rules">规则类型</span>
             </div>
           </div>
           <div class="adapter-details">
-            <div class="adapter-detail-item">
+            <div class="adapter-details-row">
               <i class="codicon codicon-folder"></i>
-              <span>输出类型: 目录</span>
+              <span>输出类型: 目录结构</span>
             </div>
-            <div class="adapter-detail-item">
+            <div class="adapter-details-row">
               <i class="codicon codicon-file-directory"></i>
               <span>输出路径: rules/</span>
             </div>
-            <div class="adapter-detail-item">
+            <div class="adapter-details-row">
               <i class="codicon codicon-filter"></i>
               <span>文件过滤: 所有文件</span>
             </div>
-            <div class="adapter-detail-item">
-              <i class="codicon codicon-symbol-namespace"></i>
-              <span>组织方式: 按源组织子目录</span>
+            <div class="adapter-details-row">
+              <i class="codicon codicon-folder-library"></i>
+              <span>按源 ID 组织子目录</span>
             </div>
+          </div>
+          <div class="adapter-actions">
+            <button class="btn btn-secondary btn-icon" onclick="openEditModal('default-rules')">
+              <i class="codicon codicon-edit"></i>
+              编辑
+            </button>
+            <button class="btn btn-danger btn-icon" onclick="confirmDelete('default-rules')">
+              <i class="codicon codicon-trash"></i>
+              删除
+            </button>
           </div>
         </div>
 
-        <!-- AI Skills -->
-        <div class="adapter-card custom enabled">
+        <!-- 自定义适配器: AI Skills -->
+        <div class="adapter-card custom enabled" data-adapter="ai-skills">
           <div class="adapter-header">
             <div class="adapter-title">
-              <input type="checkbox" checked />
-              <span>AI Skills</span>
-            </div>
-            <div class="adapter-actions">
-              <button class="btn btn-secondary btn-small btn-icon" title="编辑">
-                <i class="codicon codicon-edit"></i>
-              </button>
-              <button class="btn btn-secondary btn-small btn-icon" title="删除">
-                <i class="codicon codicon-trash"></i>
-              </button>
+              <input type="checkbox" class="adapter-toggle" checked />
+              <i class="codicon codicon-folder"></i>
+              AI Skills
+              <span class="adapter-type-tag skills">技能类型</span>
             </div>
           </div>
           <div class="adapter-details">
-            <div class="adapter-detail-item">
+            <div class="adapter-details-row">
               <i class="codicon codicon-folder"></i>
-              <span>输出类型: 目录</span>
+              <span>输出类型: 目录结构</span>
             </div>
-            <div class="adapter-detail-item">
+            <div class="adapter-details-row">
               <i class="codicon codicon-file-directory"></i>
               <span>输出路径: skills/</span>
             </div>
-            <div class="adapter-detail-item">
+            <div class="adapter-details-row">
               <i class="codicon codicon-filter"></i>
               <span>文件过滤: .md, .mdc</span>
             </div>
-            <div class="adapter-detail-item">
-              <i class="codicon codicon-symbol-namespace"></i>
-              <span>组织方式: 按源组织子目录</span>
+            <div class="adapter-details-row">
+              <i class="codicon codicon-folder-library"></i>
+              <span>按源 ID 组织子目录</span>
             </div>
           </div>
+          <div class="adapter-actions">
+            <button class="btn btn-secondary btn-icon" onclick="openEditModal('ai-skills')">
+              <i class="codicon codicon-edit"></i>
+              编辑
+            </button>
+            <button class="btn btn-danger btn-icon" onclick="confirmDelete('ai-skills')">
+              <i class="codicon codicon-trash"></i>
+              删除
+            </button>
+          </div>
         </div>
+      </section>
+
+      <!-- 底部留白（给固定底栏留空间）-->
+      <div style="height: 80px"></div>
+    </div>
+
+    <!-- 底部操作栏 -->
+    <div class="bottom-bar hidden" id="bottomBar">
+      <div class="unsaved-indicator">
+        <i class="codicon codicon-warning"></i>
+        <span>有未保存的更改</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" onclick="handleCancel()">取消</button>
+        <button class="btn btn-primary" onclick="handleSaveAll()">
+          <i class="codicon codicon-save"></i>
+          保存更改
+        </button>
       </div>
     </div>
 
     <!-- 添加/编辑适配器模态框 -->
-    <div class="modal" id="adapterModal">
+    <div class="modal-overlay hidden" id="adapterModal">
       <div class="modal-content">
         <div class="modal-header">
-          <i class="codicon codicon-edit"></i>
-          <span id="modalTitle">编辑自定义适配器</span>
+          <h3 class="modal-title">
+            <i class="codicon codicon-add"></i>
+            <span id="modalTitle">添加自定义适配器</span>
+          </h3>
+          <button class="modal-close" onclick="closeModal()">
+            <i class="codicon codicon-close"></i>
+          </button>
         </div>
 
         <form id="adapterForm">
           <!-- 适配器 ID -->
           <div class="form-group">
-            <label class="form-label"> 适配器 ID <span class="required">*</span> </label>
-            <input type="text" class="form-input" id="adapterId" placeholder="ai-skills" required />
-            <div class="form-hint">(kebab-case, 仅字母、数字、连字符)</div>
+            <label for="adapterId" class="form-label required">适配器 ID</label>
+            <input
+              type="text"
+              id="adapterId"
+              class="form-input"
+              placeholder="my-adapter"
+              pattern="^[a-z0-9-]+$"
+            />
+            <small class="form-hint">kebab-case 格式，仅小写字母、数字、连字符</small>
           </div>
 
           <!-- 适配器名称 -->
           <div class="form-group">
-            <label class="form-label"> 适配器名称 <span class="required">*</span> </label>
-            <input
-              type="text"
-              class="form-input"
-              id="adapterName"
-              placeholder="AI Skills"
-              required
-            />
+            <label for="adapterName" class="form-label required">显示名称</label>
+            <input type="text" id="adapterName" class="form-input" placeholder="My Adapter" />
+          </div>
+
+          <!-- 适配器类型 -->
+          <div class="form-group">
+            <label class="form-label required">适配器类型</label>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="adapterType" value="rules" checked />
+                <span class="radio-option-label">
+                  <i class="codicon codicon-file-code"></i>
+                  规则类型 (rules)
+                </span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="adapterType" value="skills" />
+                <span class="radio-option-label">
+                  <i class="codicon codicon-lightbulb"></i>
+                  技能类型 (skills)
+                </span>
+              </label>
+            </div>
           </div>
 
           <!-- 输出类型 -->
           <div class="form-group">
-            <label class="form-label"> 输出类型 <span class="required">*</span> </label>
+            <label class="form-label required">输出格式</label>
             <div class="radio-group">
               <label class="radio-option">
                 <input type="radio" name="outputType" value="file" />
-                <i class="codicon codicon-file"></i>
-                <span>单个文件 (合并所有规则到一个文件)</span>
+                <span class="radio-option-label">
+                  <i class="codicon codicon-file"></i>
+                  单个文件 (合并所有规则到一个文件)
+                </span>
               </label>
               <label class="radio-option">
                 <input type="radio" name="outputType" value="directory" checked />
-                <i class="codicon codicon-folder"></i>
-                <span>目录结构 (保持原有目录结构)</span>
+                <span class="radio-option-label">
+                  <i class="codicon codicon-folder"></i>
+                  目录结构 (保持原有目录结构)
+                </span>
               </label>
             </div>
           </div>
 
           <!-- 输出路径 -->
           <div class="form-group">
-            <label class="form-label"> 输出路径 <span class="required">*</span> </label>
-            <input type="text" class="form-input" id="outputPath" placeholder="skills/" required />
-            <div class="form-hint">(相对于工作区根目录)</div>
+            <label for="outputPath" class="form-label required">输出路径</label>
+            <input type="text" id="outputPath" class="form-input" placeholder="my-rules/" />
+            <small class="form-hint">相对于工作区根目录</small>
           </div>
 
-          <!-- 文件过滤 -->
+          <!-- 文件过滤（可选）-->
           <div class="form-group">
-            <label class="form-label">文件过滤</label>
-            <input type="text" class="form-input" id="fileFilter" placeholder=".md, .mdc" />
-            <div class="form-hint">(逗号分隔，不填写则同步所有文件)</div>
+            <label for="fileExtensions" class="form-label">文件过滤</label>
+            <input type="text" id="fileExtensions" class="form-input" placeholder=".md, .mdc" />
+            <small class="form-hint">逗号分隔的扩展名，为空则同步所有文件</small>
           </div>
 
-          <!-- 配置选项 -->
-          <div class="form-group">
-            <div class="config-option">
-              <input type="checkbox" id="organizeBySource" checked />
-              <label for="organizeBySource">按源 ID 组织子目录 (仅对目录类型有效)</label>
-            </div>
-            <div class="config-option">
-              <input type="checkbox" id="generateIndex" checked />
-              <label for="generateIndex">生成索引文件 (仅对目录类型有效)</label>
-            </div>
+          <!-- 单文件模式选项 -->
+          <div class="form-group hidden" id="fileOptions">
+            <label for="fileTemplate" class="form-label required">文件模板</label>
+            <textarea
+              id="fileTemplate"
+              class="form-input"
+              rows="4"
+              placeholder="# My Rules&#10;&#10;{{rules}}"
+            ></textarea>
+            <small class="form-hint">使用 {{rules}} 作为规则内容占位符</small>
           </div>
 
-          <!-- 索引文件名 -->
-          <div class="form-group">
-            <label class="form-label">索引文件名</label>
+          <!-- 目录模式选项 -->
+          <div class="form-group" id="directoryOptions">
+            <label for="filePattern" class="form-label required">文件名模式</label>
+            <input type="text" id="filePattern" class="form-input" placeholder="{{name}}.md" />
+            <small class="form-hint">支持变量: {{name}}, {{id}}, {{ext}}</small>
+          </div>
+
+          <div class="form-group" id="pathTemplateGroup">
+            <label for="pathTemplate" class="form-label required">路径模板</label>
             <input
               type="text"
+              id="pathTemplate"
               class="form-input"
-              id="indexFileName"
-              placeholder="index.md"
-              value="index.md"
+              placeholder="{{sourceId}}/{{category}}/"
             />
+            <small class="form-hint">支持变量: {{sourceId}}, {{category}}, {{tags}}</small>
           </div>
 
-          <!-- 其他配置 -->
-          <div class="form-group">
-            <div class="config-option">
-              <input type="checkbox" id="autoUpdate" checked />
-              <label for="autoUpdate">启用自动更新</label>
-            </div>
-            <div class="config-option">
-              <input type="checkbox" id="includeMetadata" checked />
-              <label for="includeMetadata">包含元数据</label>
+          <!-- 目录模式复选框 -->
+          <div class="form-group" id="directoryCheckboxes">
+            <div class="checkbox-group">
+              <label class="checkbox-option">
+                <input type="checkbox" id="organizeBySource" checked />
+                <span class="checkbox-label">
+                  <i class="codicon codicon-folder-library"></i>
+                  按源 ID 组织子目录
+                </span>
+              </label>
+              <label class="checkbox-option">
+                <input type="checkbox" id="generateIndex" />
+                <span class="checkbox-label">
+                  <i class="codicon codicon-list-tree"></i>
+                  生成索引文件
+                </span>
+              </label>
             </div>
           </div>
 
           <!-- 提示框 -->
-          <div class="info-box">
-            <div class="info-box-title">
+          <div class="tip-box">
+            <div class="tip-box-title">
               <i class="codicon codicon-lightbulb"></i>
-              <span>提示</span>
+              提示
             </div>
-            <div class="info-box-content">
-              <ul style="margin: 0; padding-left: var(--spacing-lg)">
-                <li>适配器 ID 用于标识适配器，创建后不可修改</li>
-                <li>输出路径将自动创建，无需手动创建目录</li>
-                <li>文件过滤为空时，将同步所有文件(包括非 .md/.mdc 文件)</li>
-                <li>Skills 类型适配器建议命名包含 "skills" 关键词</li>
-              </ul>
-            </div>
+            <ul>
+              <li>适配器 ID 用于标识适配器，创建后不可修改</li>
+              <li>输出路径将自动创建，无需手动创建目录</li>
+              <li>Skills 类型适配器建议用于技能/能力相关的规则集</li>
+            </ul>
           </div>
         </form>
 
         <div class="modal-footer">
-          <button class="btn btn-secondary" id="modalCancelBtn">取消</button>
-          <button class="btn btn-primary" id="modalSaveBtn">
+          <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+          <button class="btn btn-primary" onclick="saveAdapter()">
             <i class="codicon codicon-save"></i>
             保存
           </button>
@@ -751,106 +981,142 @@
       </div>
     </div>
 
-    <script nonce="{{nonce}}">
-      const vscode = acquireVsCodeApi();
+    <script>
+      // 状态管理
+      let hasUnsavedChanges = false;
+      let editingAdapterId = null;
 
-      // 展开/收起详情
-      document.querySelectorAll('.expand-btn').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          const targetId = btn.getAttribute('data-target');
-          const target = document.getElementById(targetId);
-          const icon = btn.querySelector('.codicon');
+      // 展开/折叠详细配置
+      function toggleExpand(button) {
+        const card = button.closest('.adapter-card');
+        const options = card.querySelector('.adapter-options');
+        const icon = button.querySelector('.codicon');
 
-          if (target.classList.contains('show')) {
-            target.classList.remove('show');
-            btn.classList.remove('expanded');
-          } else {
-            target.classList.add('show');
-            btn.classList.add('expanded');
-          }
-        });
-      });
+        if (options.classList.contains('expanded')) {
+          options.classList.remove('expanded');
+          icon.classList.remove('codicon-chevron-up');
+          icon.classList.add('codicon-chevron-down');
+        } else {
+          options.classList.add('expanded');
+          icon.classList.remove('codicon-chevron-down');
+          icon.classList.add('codicon-chevron-up');
+        }
+      }
 
-      // 打开添加适配器模态框
-      document.getElementById('addAdapterBtn').addEventListener('click', () => {
+      // 打开添加模态框
+      function openAddModal() {
+        editingAdapterId = null;
         document.getElementById('modalTitle').textContent = '添加自定义适配器';
         document.getElementById('adapterForm').reset();
-        document.getElementById('adapterModal').classList.add('show');
-      });
+        document.getElementById('adapterId').disabled = false;
+        document.getElementById('adapterModal').classList.remove('hidden');
+      }
+
+      // 打开编辑模态框
+      function openEditModal(adapterId) {
+        editingAdapterId = adapterId;
+        document.getElementById('modalTitle').textContent = '编辑自定义适配器';
+        document.getElementById('adapterId').value = adapterId;
+        document.getElementById('adapterId').disabled = true;
+        // 预填充其他字段...
+        document.getElementById('adapterModal').classList.remove('hidden');
+      }
 
       // 关闭模态框
-      document.getElementById('modalCancelBtn').addEventListener('click', () => {
-        document.getElementById('adapterModal').classList.remove('show');
-      });
-
-      // 模态框外部点击关闭
-      document.getElementById('adapterModal').addEventListener('click', (e) => {
-        if (e.target.id === 'adapterModal') {
-          document.getElementById('adapterModal').classList.remove('show');
-        }
-      });
+      function closeModal() {
+        document.getElementById('adapterModal').classList.add('hidden');
+        editingAdapterId = null;
+      }
 
       // 保存适配器
-      document.getElementById('modalSaveBtn').addEventListener('click', () => {
-        const formData = {
-          id: document.getElementById('adapterId').value,
-          name: document.getElementById('adapterName').value,
-          outputType: document.querySelector('input[name="outputType"]:checked').value,
-          outputPath: document.getElementById('outputPath').value,
-          fileExtensions: document
-            .getElementById('fileFilter')
-            .value.split(',')
-            .map((s) => s.trim())
-            .filter((s) => s),
-          organizeBySource: document.getElementById('organizeBySource').checked,
-          generateIndex: document.getElementById('generateIndex').checked,
-          indexFileName: document.getElementById('indexFileName').value,
-          autoUpdate: document.getElementById('autoUpdate').checked,
-          includeMetadata: document.getElementById('includeMetadata').checked,
-        };
+      function saveAdapter() {
+        const form = document.getElementById('adapterForm');
+        const adapterId = document.getElementById('adapterId').value;
+        const adapterName = document.getElementById('adapterName').value;
 
-        vscode.postMessage({
-          command: 'saveAdapter',
-          data: formData,
-        });
+        if (!adapterId || !adapterName) {
+          alert('请填写必填字段');
+          return;
+        }
 
-        document.getElementById('adapterModal').classList.remove('show');
-      });
+        // 发送消息到扩展
+        console.log('Save adapter:', { adapterId, adapterName, editing: editingAdapterId });
+
+        setUnsavedChanges(true);
+        closeModal();
+      }
+
+      // 确认删除
+      function confirmDelete(adapterId) {
+        if (confirm(`确定要删除适配器 "${adapterId}" 吗？`)) {
+          console.log('Delete adapter:', adapterId);
+          setUnsavedChanges(true);
+        }
+      }
 
       // 保存所有配置
-      document.getElementById('saveBtn').addEventListener('click', () => {
-        vscode.postMessage({ command: 'saveAll' });
-      });
+      function handleSaveAll() {
+        console.log('Save all configurations');
+        setUnsavedChanges(false);
+        // 发送消息到扩展
+      }
 
       // 取消
-      document.getElementById('cancelBtn').addEventListener('click', () => {
-        vscode.postMessage({ command: 'cancel' });
-      });
+      function handleCancel() {
+        if (hasUnsavedChanges) {
+          if (confirm('有未保存的更改，确定要放弃吗？')) {
+            console.log('Cancel and close');
+          }
+        } else {
+          console.log('Cancel and close');
+        }
+      }
 
-      // 编辑适配器
-      document.querySelectorAll('.btn-icon[title="编辑"]').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          const card = e.target.closest('.adapter-card');
-          const name = card.querySelector('.adapter-title span').textContent;
+      // 设置未保存状态
+      function setUnsavedChanges(value) {
+        hasUnsavedChanges = value;
+        const bottomBar = document.getElementById('bottomBar');
+        if (value) {
+          bottomBar.classList.remove('hidden');
+        } else {
+          bottomBar.classList.add('hidden');
+        }
+      }
 
-          document.getElementById('modalTitle').textContent = '编辑自定义适配器';
-          document.getElementById('adapterName').value = name;
-          document.getElementById('adapterModal').classList.add('show');
+      // 输出类型切换
+      document.querySelectorAll('input[name="outputType"]').forEach((radio) => {
+        radio.addEventListener('change', function () {
+          const directoryOptions = document.getElementById('directoryOptions');
+          const pathTemplateGroup = document.getElementById('pathTemplateGroup');
+          const directoryCheckboxes = document.getElementById('directoryCheckboxes');
+          const fileOptions = document.getElementById('fileOptions');
+
+          if (this.value === 'directory') {
+            directoryOptions.classList.remove('hidden');
+            pathTemplateGroup.classList.remove('hidden');
+            directoryCheckboxes.classList.remove('hidden');
+            fileOptions.classList.add('hidden');
+          } else {
+            directoryOptions.classList.add('hidden');
+            pathTemplateGroup.classList.add('hidden');
+            directoryCheckboxes.classList.add('hidden');
+            fileOptions.classList.remove('hidden');
+          }
         });
       });
 
-      // 删除适配器
-      document.querySelectorAll('.btn-icon[title="删除"]').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          const card = e.target.closest('.adapter-card');
-          const name = card.querySelector('.adapter-title span').textContent;
-
-          if (confirm(`确定要删除适配器 "${name}" 吗？`)) {
-            vscode.postMessage({
-              command: 'deleteAdapter',
-              data: { name },
-            });
+      // 复选框变更监听
+      document.querySelectorAll('.adapter-toggle').forEach((toggle) => {
+        toggle.addEventListener('change', function () {
+          const card = this.closest('.adapter-card');
+          if (this.checked) {
+            card.classList.add('enabled');
+            card.classList.remove('disabled');
+          } else {
+            card.classList.remove('enabled');
+            card.classList.add('disabled');
           }
+          setUnsavedChanges(true);
         });
       });
     </script>

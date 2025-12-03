@@ -17,14 +17,17 @@
 
 ## Webview 页面列表
 
-| 序号 | 页面名称   | Provider                      | 实施文档                                                                       |
-| ---- | ---------- | ----------------------------- | ------------------------------------------------------------------------------ |
-| 01   | 欢迎页     | `WelcomeWebviewProvider`      | [01-welcome-page-implementation.md](./01-welcome-page-implementation.md)       |
-| 02   | 统计仪表板 | `StatisticsWebviewProvider`   | [02-statistics-implementation.md](./02-statistics-implementation.md)           |
-| 03   | 规则详情   | `RuleDetailsWebviewProvider`  | [03-rule-details-implementation.md](./03-rule-details-implementation.md)       |
-| 04   | 高级搜索   | `SearchWebviewProvider`       | [04-advanced-search-implementation.md](./04-advanced-search-implementation.md) |
-| 05   | 规则同步页 | `RuleSyncPageWebviewProvider` | [05-rule-sync-page-implementation.md](./05-rule-sync-page-implementation.md)   |
-| 07   | 源详情     | `SourceDetailWebviewProvider` | [07-source-details-implementation.md](./07-source-details-implementation.md)   |
+| 序号 | 页面名称     | Provider                        | 实施文档                                                                               |
+| ---- | ------------ | ------------------------------- | -------------------------------------------------------------------------------------- |
+| 01   | 欢迎页       | `WelcomeWebviewProvider`        | [01-welcome-page-implementation.md](./01-welcome-page-implementation.md)               |
+| 02   | 统计仪表板   | `StatisticsWebviewProvider`     | [02-statistics-implementation.md](./02-statistics-implementation.md)                   |
+| 03   | 规则详情     | `RuleDetailsWebviewProvider`    | [03-rule-details-implementation.md](./03-rule-details-implementation.md)               |
+| 04   | 高级搜索     | `SearchWebviewProvider`         | [04-advanced-search-implementation.md](./04-advanced-search-implementation.md)         |
+| 05   | 规则同步页   | `RuleSyncPageWebviewProvider`   | [05-rule-sync-page-implementation.md](./05-rule-sync-page-implementation.md)           |
+| 07   | 源详情       | `SourceDetailWebviewProvider`   | [07-source-details-implementation.md](./07-source-details-implementation.md)           |
+| 12   | 仪表盘       | `DashboardWebviewProvider`      | [12-dashboard-implementation.md](./12-dashboard-implementation.md)                     |
+| 13   | 适配器管理   | `AdapterManagerWebviewProvider` | [13-adapter-manager-implementation.md](./13-adapter-manager-implementation.md)         |
+| 14   | 规则源管理器 | `SourceManagerWebviewProvider`  | [14-source-manager-page-implementation.md](./14-source-manager-page-implementation.md) |
 
 > **注**: 序号对应 `.superdesign/design_docs/` 下的设计文档编号
 

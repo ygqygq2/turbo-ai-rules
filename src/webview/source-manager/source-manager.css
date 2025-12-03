@@ -4,6 +4,8 @@
 
 /* 主容器 */
 .source-manager-container {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
   padding: var(--spacing-xl);
   background-color: var(--vscode-editor-background);
   color: var(--vscode-foreground);
@@ -72,6 +74,56 @@
   gap: var(--spacing-sm);
   padding-bottom: var(--spacing-md);
   border-bottom: 1px solid var(--vscode-editorWidget-border);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+/* 同步状态徽章 */
+.sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.sync-status .codicon {
+  font-size: 12px;
+}
+
+.sync-status.syncing {
+  background-color: var(--vscode-statusBarItem-prominentBackground);
+  color: var(--vscode-statusBarItem-prominentForeground);
+}
+
+.sync-status.success {
+  background-color: var(--vscode-testing-iconPassed);
+  color: var(--vscode-editor-background);
+}
+
+.sync-status.failed {
+  background-color: var(--vscode-testing-iconFailed);
+  color: var(--vscode-editor-background);
+}
+
+.sync-status.never {
+  background-color: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  opacity: 0.7;
+}
+
+.sync-status.idle {
+  background-color: var(--vscode-editorWidget-background);
+  color: var(--vscode-descriptionForeground);
+  border: 1px solid var(--vscode-editorWidget-border);
 }
 
 .source-title {

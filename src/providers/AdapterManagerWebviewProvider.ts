@@ -8,22 +8,46 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { ConfigManager } from '../services/ConfigManager';
-import type { AdapterConfig, CustomAdapterConfig } from '../types/config';
+import type { CustomAdapterConfig } from '../types/config';
 import { EXTENSION_ICON_PATH } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 
 /**
+ * 预设适配器数据（用于前端展示）
+ */
+interface PresetAdapterData {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  outputPath: string;
+  isRuleType: boolean;
+}
+
+/**
+ * 自定义适配器数据（用于前端展示）
+ */
+interface CustomAdapterData {
+  id: string;
+  name: string;
+  outputPath: string;
+  format: 'single-file' | 'directory';
+  isRuleType: boolean;
+  singleFileTemplate?: string;
+  directoryStructure?: {
+    filePattern: string;
+    pathTemplate: string;
+  };
+}
+
+/**
  * 适配器数据（用于前端展示）
  */
 interface AdapterData {
-  presets: {
-    copilot: AdapterConfig & { id: 'copilot'; name: 'GitHub Copilot' };
-    cursor: AdapterConfig & { id: 'cursor'; name: 'Cursor' };
-    continue: AdapterConfig & { id: 'continue'; name: 'Continue' };
-  };
-  custom: CustomAdapterConfig[];
+  presetAdapters: PresetAdapterData[];
+  customAdapters: CustomAdapterData[];
 }
 
 /**
@@ -77,37 +101,77 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
    * @param webview {vscode.Webview}
    */
   protected async getHtmlContent(webview: vscode.Webview): Promise<string> {
-    try {
-      const htmlPath = path.join(
+    // 尝试多个可能的构建产物路径（兼容不同的构建输出布局）
+    const candidates = [
+      path.join(
         this.context.extensionPath,
-        '.superdesign',
-        'design_iterations',
-        '13-adapter-manager_1.html',
-      );
+        'out',
+        'webview',
+        'src',
+        'webview',
+        'adapter-manager',
+        'index.html',
+      ),
+      path.join(this.context.extensionPath, 'out', 'webview', 'adapter-manager', 'index.html'),
+      path.join(this.context.extensionPath, 'out', 'webview', 'adapter-manager.html'),
+    ];
 
-      if (!fs.existsSync(htmlPath)) {
-        Logger.error('Adapter manager HTML template not found', undefined, {
-          path: htmlPath,
-          code: 'TAI-5008',
-        });
-        return this.getErrorHtml('Adapter manager template not found');
+    let html: string | null = null;
+    let htmlPath: string | undefined;
+
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate)) {
+        htmlPath = candidate;
+        try {
+          html = fs.readFileSync(candidate, 'utf-8');
+          break;
+        } catch (e) {
+          Logger.warn(`Failed to read candidate html: ${candidate}`, { err: e as Error });
+        }
       }
-
-      let html = fs.readFileSync(htmlPath, 'utf-8');
-
-      // 替换占位符
-      const nonce = this.getNonce();
-      html = html.replace(/\{\{nonce\}\}/g, nonce);
-
-      const cspSource = this.getCspSource(webview);
-      html = html.replace(/\{\{cspSource\}\}/g, cspSource);
-
-      return html;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      Logger.error('Failed to generate adapter manager HTML', error as Error, { code: 'TAI-5009' });
-      return this.getErrorHtml(`Failed to load adapter manager: ${errorMessage}`);
     }
+
+    if (!html) {
+      const msg =
+        'Adapter Manager webview HTML not found. Please run `npm run build:webview` or start the extension in development mode.';
+      Logger.error(msg, undefined, { code: 'TAI-5008', candidates });
+      return this.getErrorHtml(msg);
+    }
+
+    // 替换 CSP 占位符
+    const cspSource = this.getCspSource(webview);
+    html = html.replace(/\{\{cspSource\}\}/g, cspSource);
+
+    // 转换资源路径为 webview URI
+    const htmlDir = path.dirname(htmlPath as string);
+    html = html.replace(/(?:src|href)="([^"]+)"/g, (match, resourcePath) => {
+      try {
+        // 如果是绝对路径以 / 开头，则将其视为相对于 out/webview 根目录
+        let absPath: string;
+        if (resourcePath.startsWith('/')) {
+          absPath = path.join(
+            this.context.extensionPath,
+            'out',
+            'webview',
+            resourcePath.replace(/^\//, ''),
+          );
+        } else {
+          // 相对路径相对于 HTML 文件所在目录
+          absPath = path.resolve(htmlDir, resourcePath);
+        }
+
+        if (!fs.existsSync(absPath)) {
+          return match; // 文件不存在则保留原引用
+        }
+
+        const assetUri = webview.asWebviewUri(vscode.Uri.file(absPath));
+        return match.replace(resourcePath, assetUri.toString());
+      } catch (_e) {
+        return match;
+      }
+    });
+
+    return html;
   }
 
   /**
@@ -153,7 +217,9 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         code: 'TAI-5010',
       });
       notify(
-        `Adapter manager operation failed: ${error instanceof Error ? error.message : String(error)}`,
+        `Adapter manager operation failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
         'error',
       );
     }
@@ -184,31 +250,54 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
   private async getAdapterData(): Promise<AdapterData> {
     const config = this.configManager.getConfig();
 
-    return {
-      presets: {
-        copilot: {
-          id: 'copilot',
-          name: 'GitHub Copilot',
-          enabled: config.adapters.copilot?.enabled ?? true,
-          autoUpdate: config.adapters.copilot?.autoUpdate ?? true,
-          includeMetadata: config.adapters.copilot?.includeMetadata ?? false,
-        },
-        cursor: {
-          id: 'cursor',
-          name: 'Cursor',
-          enabled: config.adapters.cursor?.enabled ?? true,
-          autoUpdate: config.adapters.cursor?.autoUpdate ?? true,
-          includeMetadata: config.adapters.cursor?.includeMetadata ?? true,
-        },
-        continue: {
-          id: 'continue',
-          name: 'Continue',
-          enabled: config.adapters.continue?.enabled ?? false,
-          autoUpdate: config.adapters.continue?.autoUpdate ?? true,
-          includeMetadata: config.adapters.continue?.includeMetadata ?? false,
-        },
+    // 预设适配器列表
+    const presetAdapters: PresetAdapterData[] = [
+      {
+        id: 'copilot',
+        name: 'GitHub Copilot',
+        description: vscode.l10n.t('adapterManager.copilotDesc'),
+        enabled: config.adapters.copilot?.enabled ?? true,
+        outputPath: '.github/copilot-instructions.md',
+        isRuleType: true, // Copilot 是规则类型
       },
-      custom: config.adapters.custom || [],
+      {
+        id: 'cursor',
+        name: 'Cursor',
+        description: vscode.l10n.t('adapterManager.cursorDesc'),
+        enabled: config.adapters.cursor?.enabled ?? true,
+        outputPath: '.cursor/rules/',
+        isRuleType: true, // Cursor 是规则类型
+      },
+      {
+        id: 'continue',
+        name: 'Continue',
+        description: vscode.l10n.t('adapterManager.continueDesc'),
+        enabled: config.adapters.continue?.enabled ?? false,
+        outputPath: '.continue/rules/',
+        isRuleType: true, // Continue 是规则类型
+      },
+    ];
+
+    // 自定义适配器列表
+    const customAdapters: CustomAdapterData[] = (config.adapters.custom || []).map((adapter) => ({
+      id: adapter.id,
+      name: adapter.name,
+      outputPath: adapter.outputPath,
+      format: adapter.outputType === 'directory' ? 'directory' : 'single-file',
+      isRuleType: adapter.isRuleType ?? false, // 默认为技能类型
+      ...(adapter.outputType === 'file'
+        ? { singleFileTemplate: adapter.fileTemplate }
+        : {
+            directoryStructure: {
+              filePattern: adapter.fileExtensions?.join(', ') || '*.md',
+              pathTemplate: adapter.indexFileName || 'index.md',
+            },
+          }),
+    }));
+
+    return {
+      presetAdapters,
+      customAdapters,
     };
   }
 
@@ -219,17 +308,83 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
    */
   private async handleSaveAll(payload: unknown): Promise<void> {
     try {
-      // TODO: 实现保存所有配置的逻辑
-      // 从 payload 中提取预置适配器和自定义适配器的配置
-      // 更新到 ConfigManager
+      const data = payload as {
+        presetAdapters?: PresetAdapterData[];
+        customAdapters?: CustomAdapterData[];
+      };
 
-      Logger.info('Saving all adapter configurations', { payload });
-      notify('All adapter configurations saved', 'info');
+      const config = this.configManager.getConfig();
+
+      // 更新预设适配器状态
+      if (data.presetAdapters) {
+        for (const preset of data.presetAdapters) {
+          if (preset.id === 'copilot') {
+            config.adapters.copilot = {
+              enabled: preset.enabled,
+              autoUpdate: config.adapters.copilot?.autoUpdate ?? true,
+              includeMetadata: config.adapters.copilot?.includeMetadata ?? false,
+            };
+          } else if (preset.id === 'cursor') {
+            config.adapters.cursor = {
+              enabled: preset.enabled,
+              autoUpdate: config.adapters.cursor?.autoUpdate ?? true,
+              includeMetadata: config.adapters.cursor?.includeMetadata ?? true,
+            };
+          } else if (preset.id === 'continue') {
+            config.adapters.continue = {
+              enabled: preset.enabled,
+              autoUpdate: config.adapters.continue?.autoUpdate ?? true,
+              includeMetadata: config.adapters.continue?.includeMetadata ?? false,
+            };
+          }
+        }
+      }
+
+      // 更新自定义适配器
+      if (data.customAdapters) {
+        config.adapters.custom = data.customAdapters.map((adapter) => ({
+          id: adapter.id,
+          name: adapter.name,
+          enabled: true,
+          autoUpdate: true,
+          includeMetadata: true,
+          outputPath: adapter.outputPath,
+          outputType: adapter.format === 'directory' ? 'directory' : 'file',
+          fileExtensions: adapter.directoryStructure?.filePattern?.split(', ') || [],
+          organizeBySource: true,
+          generateIndex: true,
+          indexFileName: adapter.directoryStructure?.pathTemplate || 'index.md',
+          isRuleType: adapter.isRuleType,
+          fileTemplate: adapter.singleFileTemplate,
+        }));
+      }
+
+      // 保存配置
+      await this.configManager.updateConfig('adapters', config.adapters);
+
+      Logger.info('All adapter configurations saved', { payload });
+
+      // 发送成功消息
+      this.postMessage({
+        type: 'saveResult',
+        payload: { success: true },
+      });
+
+      notify(vscode.l10n.t('adapterManager.saveSuccess'), 'info');
 
       // 刷新数据
       await this.sendInitialData();
     } catch (error) {
       Logger.error('Failed to save all adapters', error as Error, { code: 'TAI-5012' });
+
+      this.postMessage({
+        type: 'saveResult',
+        payload: {
+          success: false,
+          message: error instanceof Error ? error.message : 'Failed to save',
+        },
+      });
+
       throw error;
     }
   }
@@ -242,45 +397,29 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
   private async handleSaveAdapter(data: unknown): Promise<void> {
     try {
       // 验证数据
-      if (!data || typeof data !== 'object' || !('id' in data) || !('name' in data)) {
+      const payload = data as { adapter?: CustomAdapterData };
+      if (!payload.adapter || !payload.adapter.id || !payload.adapter.name) {
         throw new Error('Invalid adapter data: missing required fields (id, name)');
       }
 
-      const adapterData = data as {
-        id: string;
-        name: string;
-        isEdit?: boolean;
-        enabled?: boolean;
-        autoUpdate?: boolean;
-        includeMetadata?: boolean;
-        outputPath: string;
-        outputType?: 'file' | 'directory';
-        fileExtensions?: string[];
-        organizeBySource?: boolean;
-        generateIndex?: boolean;
-        indexFileName?: string;
-      };
+      const adapterData = payload.adapter;
       const config = this.configManager.getConfig();
-
-      // 检查 ID 是否已存在（编辑模式除外）
-      const existingAdapter = config.adapters.custom?.find((a) => a.id === adapterData.id);
-      if (existingAdapter && !adapterData.isEdit) {
-        throw new Error(`Adapter with ID "${adapterData.id}" already exists`);
-      }
 
       // 构建适配器配置
       const adapterConfig: CustomAdapterConfig = {
         id: adapterData.id,
         name: adapterData.name,
-        enabled: adapterData.enabled ?? true,
-        autoUpdate: adapterData.autoUpdate ?? true,
-        includeMetadata: adapterData.includeMetadata ?? true,
+        enabled: true,
+        autoUpdate: true,
+        includeMetadata: true,
         outputPath: adapterData.outputPath,
-        outputType: adapterData.outputType || 'directory',
-        fileExtensions: adapterData.fileExtensions || [],
-        organizeBySource: adapterData.organizeBySource ?? true,
-        generateIndex: adapterData.generateIndex ?? true,
-        indexFileName: adapterData.indexFileName || 'index.md',
+        outputType: adapterData.format === 'directory' ? 'directory' : 'file',
+        fileExtensions: adapterData.directoryStructure?.filePattern?.split(', ') || [],
+        organizeBySource: true,
+        generateIndex: true,
+        indexFileName: adapterData.directoryStructure?.pathTemplate || 'index.md',
+        isRuleType: adapterData.isRuleType,
+        fileTemplate: adapterData.singleFileTemplate,
       };
 
       // 更新或添加适配器
@@ -303,7 +442,7 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         custom: customAdapters,
       });
 
-      notify(`Adapter "${adapterData.name}" saved successfully`, 'info');
+      notify(vscode.l10n.t('adapterManager.adapterSaved', { name: adapterData.name }), 'info');
 
       // 刷新数据
       await this.sendInitialData();
@@ -320,21 +459,21 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
    */
   private async handleDeleteAdapter(data: unknown): Promise<void> {
     try {
-      if (!data || typeof data !== 'object' || !('name' in data)) {
-        throw new Error('Invalid delete request: missing adapter name');
+      const payload = data as { id?: string; name?: string };
+      const identifier = payload.id || payload.name;
+
+      if (!identifier) {
+        throw new Error('Invalid delete request: missing adapter id or name');
       }
 
-      const deleteData = data as { name: string };
       const config = this.configManager.getConfig();
       const customAdapters = config.adapters.custom || [];
 
       // 找到要删除的适配器
-      const index = customAdapters.findIndex(
-        (a) => a.name === deleteData.name || a.id === deleteData.name,
-      );
+      const index = customAdapters.findIndex((a) => a.id === identifier || a.name === identifier);
 
       if (index < 0) {
-        throw new Error(`Adapter "${deleteData.name}" not found`);
+        throw new Error(`Adapter "${identifier}" not found`);
       }
 
       const deletedAdapter = customAdapters[index];
@@ -347,7 +486,7 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
       });
 
       Logger.info('Custom adapter deleted', { id: deletedAdapter.id });
-      notify(`Adapter "${deletedAdapter.name}" deleted successfully`, 'info');
+      notify(vscode.l10n.t('adapterManager.adapterDeleted', { name: deletedAdapter.name }), 'info');
 
       // 刷新数据
       await this.sendInitialData();

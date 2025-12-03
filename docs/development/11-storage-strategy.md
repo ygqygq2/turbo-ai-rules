@@ -56,17 +56,32 @@ Layer 5: 项目根目录（.cursorrules 等）
 └── workspaces/{hash}/            # 工作区数据（SHA256 前 16 位）
     ├── rules.index.json          # 规则索引（id, title, tags, priority）
     ├── search.index.json         # 搜索倒排索引（keywords, tags）
-    ├── rule-selections.json      # 规则选择状态（sourceId -> selectedPaths）
+    ├── rule-selections.json      # 规则适配器的规则选择（isRuleType=true）
+    ├── skill-selections.json     # 非规则适配器的规则选择（isRuleType=false）
+    ├── adapter-mappings.json     # 适配器规则映射（adapterId -> selectedRules）
     └── generation.manifest.json  # 生成清单（path, sha256, adapter）
 ```
 
 **隔离机制**：工作区路径 → 规范化 → SHA256 → 前 16 位 → 目录名  
-**清单用途**：追踪生成文件、检测手动修改（哈希对比）、决定是否重新生成  
-**选择状态**：
+**清单用途**：追踪生成文件、检测手动修改（哈希对比）、决定是否重新生成
 
-- **默认行为**：新规则源初始化时，`rule-selections.json` 中对应源的 `paths` 为空数组（不选择任何规则）
-- **持久化**：用户勾选规则后，选择状态实时保存到 `rule-selections.json`
-- **跨会话保持**：重新打开工作区时，从 `rule-selections.json` 恢复上次的选择状态
+**规则选择数据**：
+
+- `rule-selections.json`：规则适配器的规则选择（`isRuleType=true`）
+- `skill-selections.json`：非规则适配器的规则选择（`isRuleType=false`）
+- 两份数据独立，按规则源 ID（sourceId）保存
+
+**持久化时机**：
+
+- **规则选择器（Rules Explorer）**：实时更新 `rule-selections.json`
+- **规则同步页**：点击"同步"按钮时才持久化
+  - 选中规则适配器 → 更新 `rule-selections.json`
+  - 选中非规则适配器 → 更新 `skill-selections.json`
+
+**适配器映射**：
+
+- **数据结构**：`adapter-mappings.json` 按 `adapterId` 为主键存储每个适配器的独立规则选择
+- **与选择数据的关系**：选择数据按规则源存储，映射数据按适配器存储
 
 ---
 

@@ -129,6 +129,7 @@
 - `enabled`: 是否启用（默认 false）
 - `autoUpdate`: 是否自动更新配置文件（默认 true）
 - `includeMetadata`: 是否在生成的文件中包含元数据（可选）
+- `isRuleType`: 是否是规则类型（默认 true，skills 类设为 false 不参与规则同步页）
 
 **自定义适配器配置 (CustomAdapterConfig)**:
 
@@ -194,7 +195,101 @@
 
 ## 3. 规则同步相关数据结构 (v2.0 新增)
 
-### 3.1 RuleSyncConfig (规则同步配置)
+### 3.1 RuleSelections 与 SkillSelections (规则选择数据)
+
+按规则源存储规则选择状态，持久化到 `~/.cache/.turbo-ai-rules/workspaces/{hash}/`：
+
+- `rule-selections.json`：规则适配器（`isRuleType=true`）的规则选择
+- `skill-selections.json`：非规则适配器（`isRuleType=false`）的规则选择
+
+**职责**:
+
+- 按规则源 ID 保存用户选择的规则
+- 规则选择器（Rules Explorer）更新 `rule-selections.json`
+- 规则同步页点击同步时更新对应文件
+- 两份数据独立，互不影响
+
+**字段**:
+
+```typescript
+// rule-selections.json / skill-selections.json 结构相同
+interface RuleSelections {
+  version: number;
+  workspacePath: string;
+  lastUpdated: string;
+  selections: {
+    [sourceId: string]: RuleSelection; // 按规则源 ID 保存
+  };
+}
+
+interface RuleSelection {
+  mode: 'include' | 'exclude';
+  paths?: string[]; // 选中的规则文件路径
+  excludePaths?: string[]; // 排除的路径
+}
+```
+
+**持久化时机**:
+
+- **规则选择器（Rules Explorer）**：实时更新 `rule-selections.json`
+- **规则同步页**：点击"同步"按钮时才持久化
+  - 选中规则适配器 → 更新 `rule-selections.json`
+  - 选中非规则适配器 → 更新 `skill-selections.json`
+
+**设计考量**:
+
+- 规则选择器只服务于规则同步（`isRuleType=true`）
+- Skills 只能通过规则同步页操作
+- 两份数据分离，避免互相干扰
+
+---
+
+### 3.2 AdapterMappings (适配器规则映射)
+
+存储每个适配器的独立规则选择，持久化到 `~/.cache/.turbo-ai-rules/workspaces/{hash}/adapter-mappings.json`：
+
+**职责**:
+
+- 为每个适配器保存独立的规则选择
+- 支持不同适配器同步不同规则
+- 跨会话持久化映射关系
+
+**字段**:
+
+```typescript
+// 单个适配器的规则映射
+interface AdapterRuleMapping {
+  adapterId: string; // 适配器 ID（主键）
+  selectedRules: string[]; // 选中的规则路径（格式：sourceId/relativePath）
+  lastSyncedAt?: string; // 最后同步时间
+  autoSync: boolean; // 是否自动同步
+}
+
+// 适配器映射文件结构
+interface AdapterMappings {
+  version: number;
+  workspacePath: string;
+  lastUpdated: string;
+  mappings: { [adapterId: string]: AdapterRuleMapping };
+}
+```
+
+**与选择数据的关系**:
+
+| 文件                    | 作用                                         | 主键      |
+| ----------------------- | -------------------------------------------- | --------- |
+| `rule-selections.json`  | 规则适配器的规则选择（`isRuleType=true`）    | sourceId  |
+| `skill-selections.json` | 非规则适配器的规则选择（`isRuleType=false`） | sourceId  |
+| `adapter-mappings.json` | 按适配器存储规则映射                         | adapterId |
+
+**设计考量**:
+
+- 选择数据按规则源存储，映射数据按适配器存储
+- 映射数据与 UI 状态分离，跨会话保持
+
+---
+
+### 3.3 RuleSyncConfig (规则同步配置)
 
 用于"规则同步页"的临时状态，不持久化到配置文件：
 
@@ -236,7 +331,7 @@ interface RuleSyncConfig {
 
 ---
 
-### 3.2 AdapterState (适配器状态)
+### 3.5 AdapterState (适配器状态)
 
 用于 UI 展示适配器状态和统计信息：
 
@@ -249,8 +344,10 @@ interface AdapterState {
   type: 'preset' | 'custom'; // 预置/自定义
   enabled: boolean; // 是否启用（来自配置）
   checked: boolean; // 是否勾选（用户在同步页的临时操作）
+  selectDisabled: boolean; // 是否禁止选择（因类型互斥）
   outputPath: string; // 输出路径
   ruleCount: number; // 将同步的规则数（实时统计）
+  isRuleType: boolean; // 是否是规则类型（false 时为 Skills 类型）
 }
 ```
 
@@ -260,10 +357,19 @@ interface AdapterState {
 - 显示每个适配器将同步的规则数
 - 区分启用/禁用和勾选/未勾选状态
 
+**选择互斥逻辑**:
+
+- **初始状态**：所有启用的适配器都可选
+- **选择第一个适配器后**：
+  - 选择规则适配器（`isRuleType=true`）→ 所有非规则适配器变为禁止选择（`selectDisabled=true`）
+  - 选择非规则适配器（`isRuleType=false`）→ 所有规则适配器变为禁止选择
+- **取消所有选择后**：恢复初始状态，所有适配器重新可选
+
 **设计考量**:
 
 - `enabled`: 从配置读取，禁用的适配器无法勾选
 - `checked`: 用户临时操作，决定是否同步到该适配器
+- `selectDisabled`: 因类型互斥而临时禁止选择
 - `ruleCount`: 根据左侧选中的规则实时计算
 
 ---

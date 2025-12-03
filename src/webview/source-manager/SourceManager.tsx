@@ -4,6 +4,11 @@ import { t } from '../utils/i18n';
 import { vscodeApi } from '../utils/vscode-api';
 
 /**
+ * 同步状态类型
+ */
+export type SyncStatus = 'idle' | 'syncing' | 'success' | 'failed';
+
+/**
  * 规则源数据类型
  */
 export interface Source {
@@ -16,6 +21,7 @@ export interface Source {
   lastSync: string | null;
   authType: 'none' | 'token' | 'ssh';
   subPath?: string;
+  syncStatus?: SyncStatus;
 }
 
 /**
@@ -26,7 +32,6 @@ export const SourceManager: React.FC = () => {
   const [sources, setSources] = useState<Source[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // 初始化数据
   useEffect(() => {
@@ -45,19 +50,28 @@ export const SourceManager: React.FC = () => {
           setSources((prevSources) =>
             prevSources.map((source) =>
               source.id === message.payload.sourceId
-                ? { ...source, ruleCount: message.payload.ruleCount }
+                ? {
+                    ...source,
+                    ruleCount: message.payload.ruleCount,
+                    syncStatus: message.payload.success ? 'success' : 'failed',
+                    lastSync: new Date().toISOString(),
+                  }
                 : source,
             ),
           );
-          setSuccessMessage(message.payload.message);
-          setTimeout(() => setSuccessMessage(null), 3000);
+          // 3秒后重置同步状态为 idle
+          setTimeout(() => {
+            setSources((prevSources) =>
+              prevSources.map((source) =>
+                source.id === message.payload.sourceId ? { ...source, syncStatus: 'idle' } : source,
+              ),
+            );
+          }, 3000);
           break;
 
         case 'operationResult':
           if (message.payload.success) {
-            // 操作成功，显示成功消息（数据已在操作中更新，无需重新请求）
-            setSuccessMessage(message.payload.message);
-            setTimeout(() => setSuccessMessage(null), 3000);
+            // 操作成功（数据已在操作中更新，无需额外处理）
           } else {
             setError(message.payload.message);
             setTimeout(() => setError(null), 5000);
@@ -132,6 +146,12 @@ export const SourceManager: React.FC = () => {
    * @param sourceId {string}
    */
   const handleSyncSource = (sourceId: string) => {
+    // 设置该源为 syncing 状态
+    setSources((prevSources) =>
+      prevSources.map((source) =>
+        source.id === sourceId ? { ...source, syncStatus: 'syncing' } : source,
+      ),
+    );
     vscodeApi.postMessage('syncSource', { sourceId });
   };
 
@@ -157,6 +177,51 @@ export const SourceManager: React.FC = () => {
     return t('sourceManager.daysAgo', { count: days });
   };
 
+  /**
+   * @description 获取同步状态文本和样式
+   * @return default {{ text: string, className: string, icon: string }}
+   * @param syncStatus {SyncStatus | undefined}
+   * @param lastSync {string | null}
+   */
+  const getSyncStatusDisplay = (
+    syncStatus: SyncStatus | undefined,
+    lastSync: string | null,
+  ): { text: string; className: string; icon: string } => {
+    switch (syncStatus) {
+      case 'syncing':
+        return {
+          text: t('sourceManager.syncStatus.syncing'),
+          className: 'sync-status syncing',
+          icon: 'codicon-sync codicon-modifier-spin',
+        };
+      case 'success':
+        return {
+          text: t('sourceManager.syncStatus.success'),
+          className: 'sync-status success',
+          icon: 'codicon-check',
+        };
+      case 'failed':
+        return {
+          text: t('sourceManager.syncStatus.failed'),
+          className: 'sync-status failed',
+          icon: 'codicon-error',
+        };
+      default:
+        if (!lastSync) {
+          return {
+            text: t('sourceManager.syncStatus.never'),
+            className: 'sync-status never',
+            icon: 'codicon-circle-outline',
+          };
+        }
+        return {
+          text: formatLastSync(lastSync),
+          className: 'sync-status idle',
+          icon: 'codicon-history',
+        };
+    }
+  };
+
   return (
     <div className="source-manager-container">
       {/* 页面标题 */}
@@ -172,7 +237,6 @@ export const SourceManager: React.FC = () => {
 
       {/* 消息显示 */}
       {error && <div className="error-message">{error}</div>}
-      {successMessage && <div className="success-message">{successMessage}</div>}
 
       {/* 主内容区 */}
       {isLoading ? (
@@ -205,12 +269,24 @@ export const SourceManager: React.FC = () => {
                   ></i>
                   <h3>{source.name}</h3>
                 </div>
-                <Button
-                  type="secondary"
-                  icon="edit"
-                  onClick={() => handleEditSource(source.id)}
-                  title={t('form.button.edit')}
-                />
+                <div className="header-actions">
+                  {/* 同步状态徽章 */}
+                  {(() => {
+                    const statusDisplay = getSyncStatusDisplay(source.syncStatus, source.lastSync);
+                    return (
+                      <span className={statusDisplay.className}>
+                        <i className={`codicon ${statusDisplay.icon}`}></i>
+                        <span>{statusDisplay.text}</span>
+                      </span>
+                    );
+                  })()}
+                  <Button
+                    type="secondary"
+                    icon="edit"
+                    onClick={() => handleEditSource(source.id)}
+                    title={t('form.button.edit')}
+                  />
+                </div>
               </div>
 
               {/* 卡片内容 */}
@@ -237,10 +313,6 @@ export const SourceManager: React.FC = () => {
                   <span className="label">{t('sourceManager.ruleCount')}:</span>
                   <span className="value highlight">{source.ruleCount}</span>
                 </div>
-                <div className="info-row">
-                  <span className="label">{t('sourceManager.lastSync')}:</span>
-                  <span className="value">{formatLastSync(source.lastSync)}</span>
-                </div>
               </div>
 
               {/* 卡片操作按钮 */}
@@ -258,9 +330,11 @@ export const SourceManager: React.FC = () => {
                   icon="sync"
                   onClick={() => handleSyncSource(source.id)}
                   title={t('form.button.sync')}
-                  disabled={!source.enabled}
+                  disabled={!source.enabled || source.syncStatus === 'syncing'}
                 >
-                  {t('form.button.sync')}
+                  {source.syncStatus === 'syncing'
+                    ? t('sourceManager.syncStatus.syncing')
+                    : t('form.button.sync')}
                 </Button>
                 <Button
                   type="danger"

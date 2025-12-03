@@ -41,7 +41,10 @@ This directory contains all project documentation, organized into user guides an
 
 | Document                                                       | Description                                      |
 | -------------------------------------------------------------- | ------------------------------------------------ |
-| [架构设计](./development/01-design.md)                         | System architecture, design patterns, data flows |
+| [背景与目标](./development/01-background.md)                   | Project background and goals                     |
+| [需求分析](./development/02-requirements.md)                   | Requirements analysis                            |
+| [详细设计](./development/03-design.md)                         | Detailed design specification                    |
+| [架构设计](./development/20-architecture.md)                   | System architecture, design patterns, data flows |
 | [自定义适配器设计](./development/23-custom-adapters-design.md) | Custom adapter design and implementation         |
 | [文档导航（必读）](./00-documentation-system.md)               | How to read docs and navigate quickly            |
 | [测试覆盖规范](./development/41-test-coverage.md)              | Test coverage requirements and reports           |
@@ -54,23 +57,30 @@ This directory contains all project documentation, organized into user guides an
 | [维护指南](./development/42-maintaining.md)                    | Maintenance workflows and best practices      |
 | [Webview 最佳实践](./development/43-webview-best-practices.md) | Webview development architecture and patterns |
 | [Webview CSS 规范](./development/44-webview-css-guide.md)      | CSS organization and styling guidelines       |
+| [Codicons 指南](./development/45-codicons-guide.md)            | VS Code Codicons usage guide                  |
 
-#### 🎨 实施层：UI 实施文档
+#### 🎨 UI 设计与实施
 
-| Document                                                                     | Description                                  |
-| ---------------------------------------------------------------------------- | -------------------------------------------- |
-| [UI 设计方案](./development/31-ui-design.md)                                 | Complete UI design specification             |
-| [UI 开发流程](./development/32-ui-development-process.md)                    | UI development workflow and standards        |
-| [UI Phase 1 实施](./development/11-ui-phase1-implementation.md)              | Phase 1: Basic UI implementation             |
-| [UI Phase 2 实施](./development/12-ui-phase2-implementation.md)              | Phase 2: Enhanced UI implementation overview |
-| [欢迎页面实施](./development/13-ui-phase2-01-welcome-page-implementation.md) | Welcome page implementation details          |
-| [UI Phase 3 设计](./development/14-ui-phase3-design.md)                      | Phase 3: Advanced interaction design         |
-| [UI Phase 3 实施](./development/15-ui-phase3-implementation.md)              | Phase 3: Advanced search implementation      |
-| [规则源详情实施](./development/16-source-detail-implementation.md)           | Source detail page implementation            |
+| Document                                                  | Description                       |
+| --------------------------------------------------------- | --------------------------------- |
+| [UI 设计概述](./development/30-ui-design-overview.md)     | UI design overview                |
+| [UI 设计方案](./development/31-ui-design.md)              | Complete UI design specification  |
+| [UI 开发流程](./development/32-ui-development-process.md) | UI development workflow           |
+| [状态栏设计](./development/46-status-bar-design.md)       | Status bar design and integration |
+
+#### 📊 数据与存储
+
+| Document                                               | Description                   |
+| ------------------------------------------------------ | ----------------------------- |
+| [数据模型](./development/10-data-model.md)             | Data model design             |
+| [存储策略](./development/11-storage-strategy.md)       | Storage strategy              |
+| [解析器与验证器](./development/12-parser-validator.md) | Parser and validator design   |
+| [适配器设计](./development/21-adapter-design.md)       | Adapter design                |
+| [配置同步](./development/22-config-sync.md)            | Configuration synchronization |
 
 ### Quick Start for Contributors
 
-1. **理解架构**：阅读 [架构设计](./development/01-design.md) 了解系统架构
+1. **理解架构**：阅读 [架构设计](./development/20-architecture.md) 了解系统架构
 2. **搭建环境**：按照 [开发指南](./development/40-development.md) 设置开发环境
 3. **学习规范**：查看 [维护指南](./development/42-maintaining.md) 了解贡献流程
 4. **Webview 开发**：参考 [Webview 最佳实践](./development/43-webview-best-practices.md) 和 [CSS 规范](./development/44-webview-css-guide.md)
@@ -86,9 +96,9 @@ This directory contains all project documentation, organized into user guides an
 ### New to the Project?
 
 1. **Users**: Start with [User Guide](./user-guide/README.md) or [用户指南](./user-guide/README.zh.md)
-2. **Contributors**: Read [开发指南](./development/05-development.md)
-3. **Architecture**: Check [架构设计](./development/01-design.md)
-4. **UI Development**: See [UI 开发流程](./development/10-ui-development-process.md)
+2. **Contributors**: Read [开发指南](./development/40-development.md)
+3. **Architecture**: Check [架构设计](./development/20-architecture.md)
+4. **UI Development**: See [UI 开发流程](./development/32-ui-development-process.md)
 
 ### Common Tasks
 

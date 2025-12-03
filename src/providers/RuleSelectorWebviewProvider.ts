@@ -202,21 +202,32 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
       // 读取所有规则选择数据
       const _selections = await dataManager.readRuleSelections();
 
-      // 获取所有源及其文件树（如果指定了 sourceId，则只加载该源）
+      // 获取所有源（用于显示源列表）
       // 传递 workspaceUri 以确保能读取到工作区文件夹级别的配置
-      let sources = configManager.getSources(workspaceUri);
+      const allSources = configManager.getSources(workspaceUri);
 
-      if (this.currentSourceId) {
-        sources = sources.filter((s) => s.id === this.currentSourceId);
-      }
+      // 要加载详细数据的源（如果指定了 sourceId，则只加载该源；否则加载所有源）
+      const sourcesToLoad = this.currentSourceId
+        ? allSources.filter((s) => s.id === this.currentSourceId)
+        : allSources;
 
       const fileTreeBySource: Record<string, FileTreeNode[]> = {};
       const selectionsData: Record<string, RuleSelection> = {};
 
-      // 创建源信息数组，包含 id、name 和真实的规则总数
-      const sourceList = [];
+      // 创建源信息数组，包含 id、name（确保始终包含所有源）
+      const sourceList: { id: string; name: string; totalRules: number }[] = [];
 
-      for (const source of sources) {
+      // 先为所有源添加基本信息
+      for (const source of allSources) {
+        sourceList.push({
+          id: source.id,
+          name: source.name || source.gitUrl,
+          totalRules: 0, // 未加载详细数据时默认为 0
+        });
+      }
+
+      // 只为需要加载的源获取详细数据
+      for (const source of sourcesToLoad) {
         try {
           // 从 Git 缓存加载规则（如果内存中没有）
           const rules = await this.loadRulesFromCache(source.id);
@@ -234,11 +245,11 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
             paths: selectedPaths,
           };
 
-          sourceList.push({
-            id: source.id,
-            name: source.name || source.gitUrl,
-            totalRules,
-          });
+          // 更新 sourceList 中对应源的规则数
+          const sourceEntry = sourceList.find((s) => s.id === source.id);
+          if (sourceEntry) {
+            sourceEntry.totalRules = totalRules;
+          }
 
           const sourcePath = gitManager.getSourcePath(source.id);
           fileTreeBySource[source.id] = await this.readDirectoryTree(sourcePath, sourcePath);
@@ -286,7 +297,7 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
         });
 
         Logger.info('Initial data sent to rule selector webview', {
-          sourceCount: sources.length,
+          sourceCount: allSources.length,
           currentSourceId: this.currentSourceId,
         });
       } else {

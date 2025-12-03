@@ -87,6 +87,26 @@ export interface RuleSelections {
 }
 
 /**
+ * 单个适配器的规则映射
+ */
+export interface AdapterRuleMapping {
+  adapterId: string;
+  selectedRules: string[]; // 格式：sourceId/relativePath
+  lastSyncedAt?: string;
+  autoSync: boolean;
+}
+
+/**
+ * 适配器规则映射文件结构
+ */
+export interface AdapterMappings {
+  version: number;
+  workspacePath: string;
+  lastUpdated: string;
+  mappings: { [adapterId: string]: AdapterRuleMapping };
+}
+
+/**
  * 工作区数据管理器
  */
 export class WorkspaceDataManager {
@@ -96,6 +116,12 @@ export class WorkspaceDataManager {
   // 规则选择缓存（写穿 + TTL）
   private selectionsCache: RuleSelections | null = null;
   private selectionsCacheTimestamp = 0;
+  // Skill 选择缓存
+  private skillSelectionsCache: RuleSelections | null = null;
+  private skillSelectionsCacheTimestamp = 0;
+  // 适配器映射缓存
+  private adapterMappingsCache: AdapterMappings | null = null;
+  private adapterMappingsCacheTimestamp = 0;
   private readonly selectionsCacheTTL = 5000; // 5s TTL
 
   private constructor() {}
@@ -555,6 +581,8 @@ export class WorkspaceDataManager {
       'search.index.json',
       'generation.manifest.json',
       'rule-selections.json',
+      'skill-selections.json',
+      'adapter-mappings.json',
     ];
 
     for (const file of files) {
@@ -609,5 +637,261 @@ export class WorkspaceDataManager {
       cleanedCount,
       totalChecked: dirs.length,
     });
+  }
+
+  // ==================== Skill 选择操作 ====================
+
+  /**
+   * @description 读取 Skill 选择配置
+   * @return {Promise<RuleSelections | null>}
+   */
+  public async readSkillSelections(): Promise<RuleSelections | null> {
+    // 缓存命中
+    if (
+      this.skillSelectionsCache &&
+      Date.now() - this.skillSelectionsCacheTimestamp < this.selectionsCacheTTL
+    ) {
+      Logger.debug('Skill selections cache hit');
+      return this.skillSelectionsCache;
+    }
+
+    const selectionsPath = path.join(this.getWorkspaceDir(), 'skill-selections.json');
+    if (!(await pathExists(selectionsPath))) {
+      this.skillSelectionsCache = null;
+      return null;
+    }
+    try {
+      const content = await safeReadFile(selectionsPath);
+      this.skillSelectionsCache = JSON.parse(content) as RuleSelections;
+      this.skillSelectionsCacheTimestamp = Date.now();
+      Logger.debug('Skill selections loaded from disk');
+      return this.skillSelectionsCache;
+    } catch (error) {
+      Logger.warn('Failed to read skill selections', { error: String(error) });
+      this.skillSelectionsCache = null;
+      return null;
+    }
+  }
+
+  /**
+   * @description 写入 Skill 选择配置
+   * @return {Promise<void>}
+   * @param workspacePath {string}
+   * @param selections {{ [sourceId: string]: RuleSelection }}
+   */
+  public async writeSkillSelections(
+    workspacePath: string,
+    selections: { [sourceId: string]: RuleSelection },
+  ): Promise<void> {
+    const selectionsPath = path.join(this.getWorkspaceDir(), 'skill-selections.json');
+
+    const data: RuleSelections = {
+      version: 1,
+      workspacePath,
+      lastUpdated: new Date().toISOString(),
+      selections,
+    };
+
+    try {
+      const content = JSON.stringify(data, null, 2);
+      await safeWriteFile(selectionsPath, content);
+      // 更新缓存（写穿）
+      this.skillSelectionsCache = data;
+      this.skillSelectionsCacheTimestamp = Date.now();
+      Logger.info('Skill selections written', {
+        sourceCount: Object.keys(selections).length,
+        cached: true,
+      });
+    } catch (error) {
+      this.skillSelectionsCache = null; // 防止缓存脏数据
+      throw new SystemError(
+        'Failed to write skill selections',
+        'TAI-5003',
+        error instanceof Error ? error : undefined,
+      );
+    }
+  }
+
+  /**
+   * @description 获取某源的 Skill 选择
+   * @return {Promise<RuleSelection | null>}
+   * @param sourceId {string}
+   */
+  public async getSkillSelection(sourceId: string): Promise<RuleSelection | null> {
+    const data = await this.readSkillSelections();
+    if (!data) {
+      return null;
+    }
+    return data.selections[sourceId] || null;
+  }
+
+  /**
+   * @description 设置某源的 Skill 选择
+   * @return {Promise<void>}
+   * @param workspacePath {string}
+   * @param sourceId {string}
+   * @param selection {RuleSelection}
+   */
+  public async setSkillSelection(
+    workspacePath: string,
+    sourceId: string,
+    selection: RuleSelection,
+  ): Promise<void> {
+    const existing = (await this.readSkillSelections()) || {
+      version: 1,
+      workspacePath,
+      lastUpdated: new Date().toISOString(),
+      selections: {},
+    };
+    existing.selections[sourceId] = selection;
+    existing.lastUpdated = new Date().toISOString();
+    await this.writeSkillSelections(workspacePath, existing.selections);
+  }
+
+  /**
+   * @description 删除某源的 Skill 选择
+   * @return {Promise<void>}
+   * @param workspacePath {string}
+   * @param sourceId {string}
+   */
+  public async deleteSkillSelection(workspacePath: string, sourceId: string): Promise<void> {
+    const data = await this.readSkillSelections();
+    if (!data || !data.selections[sourceId]) {
+      return;
+    }
+
+    delete data.selections[sourceId];
+    data.lastUpdated = new Date().toISOString();
+
+    await this.writeSkillSelections(workspacePath, data.selections);
+    Logger.info('Skill selection deleted', { sourceId });
+  }
+
+  // ==================== 适配器映射操作 ====================
+
+  /**
+   * @description 读取适配器映射配置
+   * @return {Promise<AdapterMappings | null>}
+   */
+  public async readAdapterMappings(): Promise<AdapterMappings | null> {
+    // 缓存命中
+    if (
+      this.adapterMappingsCache &&
+      Date.now() - this.adapterMappingsCacheTimestamp < this.selectionsCacheTTL
+    ) {
+      Logger.debug('Adapter mappings cache hit');
+      return this.adapterMappingsCache;
+    }
+
+    const mappingsPath = path.join(this.getWorkspaceDir(), 'adapter-mappings.json');
+    if (!(await pathExists(mappingsPath))) {
+      this.adapterMappingsCache = null;
+      return null;
+    }
+    try {
+      const content = await safeReadFile(mappingsPath);
+      this.adapterMappingsCache = JSON.parse(content) as AdapterMappings;
+      this.adapterMappingsCacheTimestamp = Date.now();
+      Logger.debug('Adapter mappings loaded from disk');
+      return this.adapterMappingsCache;
+    } catch (error) {
+      Logger.warn('Failed to read adapter mappings', { error: String(error) });
+      this.adapterMappingsCache = null;
+      return null;
+    }
+  }
+
+  /**
+   * @description 写入适配器映射配置
+   * @return {Promise<void>}
+   * @param workspacePath {string}
+   * @param mappings {{ [adapterId: string]: AdapterRuleMapping }}
+   */
+  public async writeAdapterMappings(
+    workspacePath: string,
+    mappings: { [adapterId: string]: AdapterRuleMapping },
+  ): Promise<void> {
+    const mappingsPath = path.join(this.getWorkspaceDir(), 'adapter-mappings.json');
+
+    const data: AdapterMappings = {
+      version: 1,
+      workspacePath,
+      lastUpdated: new Date().toISOString(),
+      mappings,
+    };
+
+    try {
+      const content = JSON.stringify(data, null, 2);
+      await safeWriteFile(mappingsPath, content);
+      // 更新缓存（写穿）
+      this.adapterMappingsCache = data;
+      this.adapterMappingsCacheTimestamp = Date.now();
+      Logger.info('Adapter mappings written', {
+        adapterCount: Object.keys(mappings).length,
+        cached: true,
+      });
+    } catch (error) {
+      this.adapterMappingsCache = null; // 防止缓存脏数据
+      throw new SystemError(
+        'Failed to write adapter mappings',
+        'TAI-5003',
+        error instanceof Error ? error : undefined,
+      );
+    }
+  }
+
+  /**
+   * @description 获取某适配器的规则映射
+   * @return {Promise<AdapterRuleMapping | null>}
+   * @param adapterId {string}
+   */
+  public async getAdapterMapping(adapterId: string): Promise<AdapterRuleMapping | null> {
+    const data = await this.readAdapterMappings();
+    if (!data) {
+      return null;
+    }
+    return data.mappings[adapterId] || null;
+  }
+
+  /**
+   * @description 设置某适配器的规则映射
+   * @return {Promise<void>}
+   * @param workspacePath {string}
+   * @param adapterId {string}
+   * @param mapping {AdapterRuleMapping}
+   */
+  public async setAdapterMapping(
+    workspacePath: string,
+    adapterId: string,
+    mapping: AdapterRuleMapping,
+  ): Promise<void> {
+    const existing = (await this.readAdapterMappings()) || {
+      version: 1,
+      workspacePath,
+      lastUpdated: new Date().toISOString(),
+      mappings: {},
+    };
+    existing.mappings[adapterId] = mapping;
+    existing.lastUpdated = new Date().toISOString();
+    await this.writeAdapterMappings(workspacePath, existing.mappings);
+  }
+
+  /**
+   * @description 删除某适配器的规则映射
+   * @return {Promise<void>}
+   * @param workspacePath {string}
+   * @param adapterId {string}
+   */
+  public async deleteAdapterMapping(workspacePath: string, adapterId: string): Promise<void> {
+    const data = await this.readAdapterMappings();
+    if (!data || !data.mappings[adapterId]) {
+      return;
+    }
+
+    delete data.mappings[adapterId];
+    data.lastUpdated = new Date().toISOString();
+
+    await this.writeAdapterMappings(workspacePath, data.mappings);
+    Logger.info('Adapter mapping deleted', { adapterId });
   }
 }

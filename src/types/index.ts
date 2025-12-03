@@ -4,6 +4,7 @@
 
 export * from './config';
 export * from './git';
+export * from './ruleMarker';
 export * from './rules';
 
 // 显式导出 errors 以解决与 git.ts 的命名冲突

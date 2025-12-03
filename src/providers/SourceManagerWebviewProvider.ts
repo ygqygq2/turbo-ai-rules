@@ -329,43 +329,30 @@ export class SourceManagerWebviewProvider extends BaseWebviewProvider {
 
   /**
    * 处理同步规则源
+   * 注意：syncRulesCommand 已有自己的 withProgress，此处不再创建进度条
    */
   private async handleSyncSource(sourceId: string): Promise<void> {
     try {
-      // 显示同步进度
-      await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: `Syncing rules from source: ${sourceId}`,
-          cancellable: false,
+      // 执行同步（syncRulesCommand 内部已有进度显示）
+      await vscode.commands.executeCommand('turbo-ai-rules.syncRules', sourceId);
+
+      // 获取规则数量
+      const rules = this.rulesManager.getRulesBySource(sourceId);
+      const ruleCount = rules.length;
+
+      // 发送同步完成消息（包含规则数量）
+      this.postMessage({
+        type: 'syncCompleted',
+        payload: {
+          sourceId,
+          success: true,
+          ruleCount,
+          message: 'Sync completed successfully',
         },
-        async (progress) => {
-          progress.report({ message: 'Syncing...' });
+      });
 
-          // 执行同步
-          await vscode.commands.executeCommand('turbo-ai-rules.syncRules', sourceId);
-
-          progress.report({ message: 'Sync completed' });
-
-          // 获取规则数量
-          const rules = this.rulesManager.getRulesBySource(sourceId);
-          const ruleCount = rules.length;
-
-          // 发送同步完成消息（包含规则数量）
-          this.postMessage({
-            type: 'syncCompleted',
-            payload: {
-              sourceId,
-              success: true,
-              ruleCount,
-              message: 'Sync completed successfully',
-            },
-          });
-
-          // 发送更新后的数据
-          await this.sendInitialData('updateSources');
-        },
-      );
+      // 发送更新后的数据
+      await this.sendInitialData('updateSources');
 
       Logger.info('Source synced successfully', { sourceId });
     } catch (error) {

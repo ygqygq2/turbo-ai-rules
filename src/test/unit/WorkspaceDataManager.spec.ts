@@ -251,4 +251,196 @@ describe('WorkspaceDataManager', () => {
       expect(manifest?.artifacts[0].size).toBe(1500); // 应该是新的大小
     });
   });
+
+  describe('规则选择', () => {
+    it('应该能够写入和读取规则选择', async () => {
+      const selections = {
+        'source-1': {
+          mode: 'include' as const,
+          paths: ['rule1.md', 'rule2.md'],
+        },
+        'source-2': {
+          mode: 'exclude' as const,
+          excludePaths: ['skip.md'],
+        },
+      };
+
+      await manager.writeRuleSelections(testWorkspacePath, selections);
+      const data = await manager.readRuleSelections();
+
+      expect(data).not.toBeNull();
+      expect(data?.selections['source-1'].mode).toBe('include');
+      expect(data?.selections['source-1'].paths).toEqual(['rule1.md', 'rule2.md']);
+      expect(data?.selections['source-2'].mode).toBe('exclude');
+    });
+
+    it('应该能够设置单个源的规则选择', async () => {
+      const selection = {
+        mode: 'include' as const,
+        paths: ['rule1.md'],
+      };
+
+      await manager.setRuleSelection(testWorkspacePath, 'test-source', selection);
+      const result = await manager.getRuleSelection('test-source');
+
+      expect(result).not.toBeNull();
+      expect(result?.mode).toBe('include');
+      expect(result?.paths).toEqual(['rule1.md']);
+    });
+
+    it('应该能够删除单个源的规则选择', async () => {
+      const selection = {
+        mode: 'include' as const,
+        paths: ['rule1.md'],
+      };
+
+      await manager.setRuleSelection(testWorkspacePath, 'test-source', selection);
+      await manager.deleteRuleSelection(testWorkspacePath, 'test-source');
+      const result = await manager.getRuleSelection('test-source');
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('Skill 选择', () => {
+    it('应该能够写入和读取 Skill 选择', async () => {
+      const selections = {
+        'source-1': {
+          mode: 'include' as const,
+          paths: ['skill1.md', 'skill2.md'],
+        },
+      };
+
+      await manager.writeSkillSelections(testWorkspacePath, selections);
+      const data = await manager.readSkillSelections();
+
+      expect(data).not.toBeNull();
+      expect(data?.selections['source-1'].mode).toBe('include');
+      expect(data?.selections['source-1'].paths).toEqual(['skill1.md', 'skill2.md']);
+    });
+
+    it('应该能够设置单个源的 Skill 选择', async () => {
+      const selection = {
+        mode: 'include' as const,
+        paths: ['skill1.md'],
+      };
+
+      await manager.setSkillSelection(testWorkspacePath, 'test-source', selection);
+      const result = await manager.getSkillSelection('test-source');
+
+      expect(result).not.toBeNull();
+      expect(result?.mode).toBe('include');
+      expect(result?.paths).toEqual(['skill1.md']);
+    });
+
+    it('应该能够删除单个源的 Skill 选择', async () => {
+      const selection = {
+        mode: 'include' as const,
+        paths: ['skill1.md'],
+      };
+
+      await manager.setSkillSelection(testWorkspacePath, 'test-source', selection);
+      await manager.deleteSkillSelection(testWorkspacePath, 'test-source');
+      const result = await manager.getSkillSelection('test-source');
+
+      expect(result).toBeNull();
+    });
+
+    it('Skill 选择应该独立于规则选择', async () => {
+      const ruleSelection = {
+        mode: 'include' as const,
+        paths: ['rule1.md'],
+      };
+      const skillSelection = {
+        mode: 'include' as const,
+        paths: ['skill1.md'],
+      };
+
+      await manager.setRuleSelection(testWorkspacePath, 'test-source', ruleSelection);
+      await manager.setSkillSelection(testWorkspacePath, 'test-source', skillSelection);
+
+      const ruleResult = await manager.getRuleSelection('test-source');
+      const skillResult = await manager.getSkillSelection('test-source');
+
+      expect(ruleResult?.paths).toEqual(['rule1.md']);
+      expect(skillResult?.paths).toEqual(['skill1.md']);
+    });
+  });
+
+  describe('适配器映射', () => {
+    it('应该能够写入和读取适配器映射', async () => {
+      const mappings = {
+        cursor: {
+          adapterId: 'cursor',
+          selectedRules: ['source-1/rule1.md', 'source-1/rule2.md'],
+          autoSync: true,
+          lastSyncedAt: new Date().toISOString(),
+        },
+        copilot: {
+          adapterId: 'copilot',
+          selectedRules: ['source-2/rule3.md'],
+          autoSync: false,
+        },
+      };
+
+      await manager.writeAdapterMappings(testWorkspacePath, mappings);
+      const data = await manager.readAdapterMappings();
+
+      expect(data).not.toBeNull();
+      expect(data?.mappings['cursor'].selectedRules).toHaveLength(2);
+      expect(data?.mappings['cursor'].autoSync).toBe(true);
+      expect(data?.mappings['copilot'].selectedRules).toEqual(['source-2/rule3.md']);
+    });
+
+    it('应该能够设置单个适配器的映射', async () => {
+      const mapping = {
+        adapterId: 'cursor',
+        selectedRules: ['source-1/rule1.md'],
+        autoSync: true,
+      };
+
+      await manager.setAdapterMapping(testWorkspacePath, 'cursor', mapping);
+      const result = await manager.getAdapterMapping('cursor');
+
+      expect(result).not.toBeNull();
+      expect(result?.adapterId).toBe('cursor');
+      expect(result?.selectedRules).toEqual(['source-1/rule1.md']);
+      expect(result?.autoSync).toBe(true);
+    });
+
+    it('应该能够删除单个适配器的映射', async () => {
+      const mapping = {
+        adapterId: 'cursor',
+        selectedRules: ['source-1/rule1.md'],
+        autoSync: true,
+      };
+
+      await manager.setAdapterMapping(testWorkspacePath, 'cursor', mapping);
+      await manager.deleteAdapterMapping(testWorkspacePath, 'cursor');
+      const result = await manager.getAdapterMapping('cursor');
+
+      expect(result).toBeNull();
+    });
+
+    it('应该能够更新已存在的适配器映射', async () => {
+      const mapping1 = {
+        adapterId: 'cursor',
+        selectedRules: ['source-1/rule1.md'],
+        autoSync: false,
+      };
+      const mapping2 = {
+        adapterId: 'cursor',
+        selectedRules: ['source-1/rule1.md', 'source-1/rule2.md'],
+        autoSync: true,
+      };
+
+      await manager.setAdapterMapping(testWorkspacePath, 'cursor', mapping1);
+      await manager.setAdapterMapping(testWorkspacePath, 'cursor', mapping2);
+      const result = await manager.getAdapterMapping('cursor');
+
+      expect(result).not.toBeNull();
+      expect(result?.selectedRules).toHaveLength(2);
+      expect(result?.autoSync).toBe(true);
+    });
+  });
 });

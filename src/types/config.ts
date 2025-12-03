@@ -75,6 +75,8 @@ export interface AdapterConfig {
   autoUpdate: boolean;
   /** 是否在生成的文件中包含元数据 */
   includeMetadata?: boolean;
+  /** 是否是规则类型（默认 true，skills 类设为 false 不参与规则同步页） */
+  isRuleType?: boolean;
 }
 
 /**
@@ -102,6 +104,14 @@ export interface CustomAdapterConfig extends AdapterConfig {
   generateIndex?: boolean;
   /** 索引文件名(默认 'index.md') */
   indexFileName?: string;
+  /** 单文件模板(仅对 file 类型有效), 使用 {{rules}} 作为规则内容占位符 */
+  fileTemplate?: string;
+  /** 是否为 skills 类型适配器（从源仓库直接读取文件） */
+  skills?: boolean;
+  /** Skills 类型的规则源 ID（仅当 skills=true 时有效） */
+  sourceId?: string;
+  /** Skills 类型的子目录路径（仅当 skills=true 时有效） */
+  subPath?: string;
 }
 
 /**
@@ -241,10 +251,14 @@ export interface AdapterState {
   enabled: boolean;
   /** 是否被勾选（用于同步） */
   checked: boolean;
+  /** 是否禁止选择（因类型互斥） */
+  selectDisabled: boolean;
   /** 输出路径 */
   outputPath: string;
   /** 当前规则数量 */
   ruleCount: number;
+  /** 是否是规则类型（false 时为 Skills 类型） */
+  isRuleType: boolean;
 }
 
 /**
