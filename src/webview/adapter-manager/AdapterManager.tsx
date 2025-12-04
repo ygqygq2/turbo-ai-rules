@@ -44,6 +44,8 @@ export interface CustomAdapter {
   };
   /** 是否为规则类型适配器 */
   isRuleType: boolean;
+  /** 是否启用 */
+  enabled: boolean;
   /** 文件过滤扩展名 */
   fileExtensions?: string[];
   /** 是否按源组织子目录 */
@@ -130,6 +132,19 @@ export const AdapterManager: React.FC = () => {
   };
 
   /**
+   * @description 切换自定义适配器启用状态
+   * @param adapterId {string}
+   */
+  const handleToggleCustom = (adapterId: string) => {
+    setCustomAdapters((prev) =>
+      prev.map((adapter) =>
+        adapter.id === adapterId ? { ...adapter, enabled: !adapter.enabled } : adapter,
+      ),
+    );
+    setHasChanges(true);
+  };
+
+  /**
    * @description 打开添加自定义适配器模态框
    */
   const handleAddCustomAdapter = () => {
@@ -140,6 +155,7 @@ export const AdapterManager: React.FC = () => {
       outputPath: '',
       format: 'single-file',
       isRuleType: false, // 默认为技能类型
+      enabled: true, // 默认启用
     });
     setModalOpen(true);
   };
@@ -215,14 +231,6 @@ export const AdapterManager: React.FC = () => {
           <h1>{t('adapterManager.title')}</h1>
           <p className="subtitle">{t('adapterManager.subtitle')}</p>
         </div>
-        <div className="header-actions">
-          <Button type="secondary" icon="close" onClick={handleCancel}>
-            {t('common.cancel')}
-          </Button>
-          <Button type="primary" icon="save" onClick={handleSaveAll} disabled={!hasChanges}>
-            {t('adapterManager.saveAll')}
-          </Button>
-        </div>
       </div>
 
       {/* 消息显示 */}
@@ -290,10 +298,12 @@ export const AdapterManager: React.FC = () => {
                     name={adapter.name}
                     outputPath={adapter.outputPath}
                     isRuleType={adapter.isRuleType}
+                    enabled={adapter.enabled}
                     format={adapter.format}
                     fileExtensions={adapter.fileExtensions}
                     organizeBySource={adapter.organizeBySource}
                     isPreset={false}
+                    onToggle={() => handleToggleCustom(adapter.id)}
                     onEdit={() => handleEditCustomAdapter(adapter)}
                     onDelete={() => handleDeleteCustomAdapter(adapter.id)}
                   />
@@ -318,22 +328,22 @@ export const AdapterManager: React.FC = () => {
       )}
 
       {/* 底部操作栏（固定） */}
-      {hasChanges && (
-        <div className="footer-actions">
+      <div className="footer-actions">
+        {hasChanges && (
           <span className="changes-indicator">
             <i className="codicon codicon-warning"></i>
             {t('adapterManager.unsavedChanges')}
           </span>
-          <div className="footer-buttons">
-            <Button type="secondary" icon="close" onClick={handleCancel}>
-              {t('common.cancel')}
-            </Button>
-            <Button type="primary" icon="save" onClick={handleSaveAll}>
-              {t('adapterManager.saveAll')}
-            </Button>
-          </div>
+        )}
+        <div className="footer-buttons">
+          <Button type="secondary" icon="close" onClick={handleCancel}>
+            {t('common.cancel')}
+          </Button>
+          <Button type="primary" icon="save" onClick={handleSaveAll} disabled={!hasChanges}>
+            {t('adapterManager.saveAll')}
+          </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 };
