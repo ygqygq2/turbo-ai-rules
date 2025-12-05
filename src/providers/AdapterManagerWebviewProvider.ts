@@ -35,11 +35,14 @@ interface CustomAdapterData {
   outputPath: string;
   format: 'single-file' | 'directory';
   isRuleType: boolean;
+  enabled: boolean;
   singleFileTemplate?: string;
   directoryStructure?: {
     filePattern: string;
     pathTemplate: string;
   };
+  fileExtensions?: string[];
+  organizeBySource?: boolean;
 }
 
 /**
@@ -82,7 +85,7 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
     try {
       await this.show({
         viewType: 'turboAiRules.adapterManager',
-        title: 'Adapter Manager',
+        title: vscode.l10n.t('adapterManager.title'),
         viewColumn: vscode.ViewColumn.One,
         iconPath: EXTENSION_ICON_PATH,
       });
@@ -285,6 +288,9 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
       outputPath: adapter.outputPath,
       format: adapter.outputType === 'directory' ? 'directory' : 'single-file',
       isRuleType: adapter.isRuleType ?? false, // 默认为技能类型
+      enabled: adapter.enabled ?? true, // 默认启用
+      fileExtensions: adapter.fileExtensions,
+      organizeBySource: adapter.organizeBySource,
       ...(adapter.outputType === 'file'
         ? { singleFileTemplate: adapter.fileTemplate }
         : {
@@ -313,54 +319,42 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         customAdapters?: CustomAdapterData[];
       };
 
-      const config = this.configManager.getConfig();
+      const vscodeConfig = vscode.workspace.getConfiguration('turbo-ai-rules');
+      const target = vscode.ConfigurationTarget.Workspace;
 
-      // 更新预设适配器状态
+      // 更新预设适配器状态（按单独的配置键更新）
       if (data.presetAdapters) {
         for (const preset of data.presetAdapters) {
           if (preset.id === 'copilot') {
-            config.adapters.copilot = {
-              enabled: preset.enabled,
-              autoUpdate: config.adapters.copilot?.autoUpdate ?? true,
-              includeMetadata: config.adapters.copilot?.includeMetadata ?? false,
-            };
+            await vscodeConfig.update('adapters.copilot.enabled', preset.enabled, target);
           } else if (preset.id === 'cursor') {
-            config.adapters.cursor = {
-              enabled: preset.enabled,
-              autoUpdate: config.adapters.cursor?.autoUpdate ?? true,
-              includeMetadata: config.adapters.cursor?.includeMetadata ?? true,
-            };
+            await vscodeConfig.update('adapters.cursor.enabled', preset.enabled, target);
           } else if (preset.id === 'continue') {
-            config.adapters.continue = {
-              enabled: preset.enabled,
-              autoUpdate: config.adapters.continue?.autoUpdate ?? true,
-              includeMetadata: config.adapters.continue?.includeMetadata ?? false,
-            };
+            await vscodeConfig.update('adapters.continue.enabled', preset.enabled, target);
           }
         }
       }
 
       // 更新自定义适配器
       if (data.customAdapters) {
-        config.adapters.custom = data.customAdapters.map((adapter) => ({
+        const customAdapters: CustomAdapterConfig[] = data.customAdapters.map((adapter) => ({
           id: adapter.id,
           name: adapter.name,
-          enabled: true,
+          enabled: adapter.enabled ?? true,
           autoUpdate: true,
           includeMetadata: true,
           outputPath: adapter.outputPath,
           outputType: adapter.format === 'directory' ? 'directory' : 'file',
-          fileExtensions: adapter.directoryStructure?.filePattern?.split(', ') || [],
-          organizeBySource: true,
+          fileExtensions:
+            adapter.fileExtensions || adapter.directoryStructure?.filePattern?.split(', ') || [],
+          organizeBySource: adapter.organizeBySource ?? true,
           generateIndex: true,
           indexFileName: adapter.directoryStructure?.pathTemplate || 'index.md',
           isRuleType: adapter.isRuleType,
           fileTemplate: adapter.singleFileTemplate,
         }));
+        await vscodeConfig.update('adapters.custom', customAdapters, target);
       }
-
-      // 保存配置
-      await this.configManager.updateConfig('adapters', config.adapters);
 
       Logger.info('All adapter configurations saved', { payload });
 

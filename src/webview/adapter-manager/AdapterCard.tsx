@@ -134,24 +134,21 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
             )}
           </>
         )}
-        {isPreset && (
-          <div className="info-row">
-            <span className="label">
-              <i className="codicon codicon-circle-large-outline"></i>
-              {t('form.label.status')}
-            </span>
-            <span
-              className={`value status-value ${enabled ? 'status-enabled' : 'status-disabled'}`}
-            >
-              <i
-                className={`codicon ${
-                  enabled ? 'codicon-pass-filled' : 'codicon-circle-large-outline'
-                }`}
-              ></i>
-              {enabled ? t('enabled') : t('disabled')}
-            </span>
-          </div>
-        )}
+        {/* 状态显示（预设和自定义适配器都显示） */}
+        <div className="info-row">
+          <span className="label">
+            <i className="codicon codicon-circle-large-outline"></i>
+            {t('form.label.status')}
+          </span>
+          <span className={`value status-value ${enabled ? 'status-enabled' : 'status-disabled'}`}>
+            <i
+              className={`codicon ${
+                enabled ? 'codicon-pass-filled' : 'codicon-circle-large-outline'
+              }`}
+            ></i>
+            {enabled ? t('enabled') : t('disabled')}
+          </span>
+        </div>
       </div>
 
       {/* 展开的详细配置（仅预设适配器） */}
@@ -170,15 +167,16 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
 
       {/* 卡片操作 */}
       <div className="card-actions">
-        {isPreset ? (
-          <Button
-            type={enabled ? 'secondary' : 'primary'}
-            icon={enabled ? 'debug-pause' : 'debug-start'}
-            onClick={onToggle}
-          >
-            {enabled ? t('form.button.disable') : t('form.button.enable')}
-          </Button>
-        ) : (
+        {/* 启用/禁用按钮（预设和自定义适配器都有） */}
+        <Button
+          type={enabled ? 'secondary' : 'primary'}
+          icon={enabled ? 'debug-pause' : 'debug-start'}
+          onClick={onToggle}
+        >
+          {enabled ? t('form.button.disable') : t('form.button.enable')}
+        </Button>
+        {/* 编辑和删除按钮（仅自定义适配器） */}
+        {!isPreset && (
           <>
             <Button type="secondary" icon="edit" onClick={onEdit}>
               {t('form.button.edit')}

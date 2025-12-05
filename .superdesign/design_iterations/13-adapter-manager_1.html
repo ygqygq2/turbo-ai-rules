@@ -591,16 +591,6 @@
           <i class="codicon codicon-settings-gear"></i>
           适配器配置管理
         </h1>
-        <div class="header-actions">
-          <button class="btn btn-secondary" onclick="handleCancel()">
-            <i class="codicon codicon-close"></i>
-            取消
-          </button>
-          <button class="btn btn-primary" onclick="handleSaveAll()">
-            <i class="codicon codicon-save"></i>
-            保存
-          </button>
-        </div>
       </header>
 
       <!-- 预设适配器区块 -->
@@ -803,17 +793,20 @@
       <div style="height: 80px"></div>
     </div>
 
-    <!-- 底部操作栏 -->
-    <div class="bottom-bar hidden" id="bottomBar">
-      <div class="unsaved-indicator">
+    <!-- 底部操作栏（始终显示） -->
+    <div class="bottom-bar" id="bottomBar">
+      <div class="unsaved-indicator hidden" id="unsavedIndicator">
         <i class="codicon codicon-warning"></i>
         <span>有未保存的更改</span>
       </div>
-      <div class="header-actions">
-        <button class="btn btn-secondary" onclick="handleCancel()">取消</button>
-        <button class="btn btn-primary" onclick="handleSaveAll()">
+      <div class="footer-actions">
+        <button class="btn btn-secondary" onclick="handleCancel()">
+          <i class="codicon codicon-close"></i>
+          取消
+        </button>
+        <button class="btn btn-primary" id="saveBtn" onclick="handleSaveAll()" disabled>
           <i class="codicon codicon-save"></i>
-          保存更改
+          保存全部
         </button>
       </div>
     </div>
