@@ -73,9 +73,9 @@ export class ContinueAdapter extends BaseAdapter {
   private formatRulesForContinue(rules: ParsedRule[]): string {
     return rules
       .map((rule) => {
-        // 直接使用规则的原始内容，不添加额外的标题
-        // rawContent 已经包含了完整的 frontmatter 和内容
-        const content = (rule.rawContent || rule.content)?.trim() || '';
+        // 使用不含 frontmatter 的 content，避免 YAML 元数据显示为文本
+        // frontmatter 中的元数据已通过其他方式（如标记、目录）体现
+        const content = (rule.content || rule.rawContent)?.trim() || '';
         return content;
       })
       .join('\n\n---\n\n');

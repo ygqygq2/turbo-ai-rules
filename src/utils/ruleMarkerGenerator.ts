@@ -115,6 +115,57 @@ export function generateUserContentMarkers(): { begin: string; end: string } {
 }
 
 /**
+ * @description 生成规则元数据摘要（Markdown 表格格式）
+ * @return {string} 格式化的元数据表格，如果没有元数据则返回空字符串
+ * @param rule {ParsedRule} 规则
+ */
+export function generateMetadataSummary(rule: ParsedRule): string {
+  const meta = rule.metadata;
+  const entries = Object.entries(meta);
+
+  // 如果没有任何元数据，返回空
+  if (entries.length === 0) {
+    return '';
+  }
+
+  const rows: Array<{ key: string; value: string }> = [];
+
+  // 动态遍历所有元数据字段，原样保留
+  for (const [key, value] of entries) {
+    let formattedValue: string;
+
+    if (value === undefined || value === null) {
+      formattedValue = '';
+    } else if (Array.isArray(value)) {
+      // 数组：用代码格式展示每个元素
+      formattedValue = value.length > 0 ? value.map((v) => `\`${v}\``).join(', ') : '';
+    } else if (typeof value === 'boolean') {
+      // 布尔值
+      formattedValue = String(value);
+    } else if (typeof value === 'object') {
+      // 对象：转为 JSON 字符串
+      formattedValue = JSON.stringify(value);
+    } else {
+      // 字符串或数字，原样保留
+      formattedValue = String(value);
+    }
+
+    rows.push({ key, value: formattedValue });
+  }
+
+  // 生成表格
+  const lines: string[] = [];
+  lines.push('| Property | Value |');
+  lines.push('|----------|-------|');
+  for (const row of rows) {
+    lines.push(`| ${row.key} | ${row.value} |`);
+  }
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+/**
  * @description 生成单条带标记的规则内容
  * @return {string}
  * @param rule {ParsedRule} 规则
@@ -137,9 +188,24 @@ export function generateMarkedRule(
     parts.push(beginMarker);
   }
 
-  // 规则内容
-  const content = (rule.rawContent || rule.content)?.trim() || '';
-  parts.push(content);
+  // 规则内容（使用不含 frontmatter 的 content）
+  const content = (rule.content || rule.rawContent)?.trim() || '';
+
+  // 在内容开头添加元数据摘要（如果有）
+  const metaSummary = generateMetadataSummary(rule);
+  if (metaSummary) {
+    // 检查内容是否以标题开头，如果是则在标题后插入元数据
+    const titleMatch = content.match(/^(#+ .+\n)/);
+    if (titleMatch) {
+      const title = titleMatch[1];
+      const restContent = content.slice(title.length);
+      parts.push(title + metaSummary + restContent);
+    } else {
+      parts.push(metaSummary + '\n' + content);
+    }
+  } else {
+    parts.push(content);
+  }
 
   // 结束标记
   const endMarker = generateRuleEndMarker(options);
