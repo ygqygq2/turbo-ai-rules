@@ -14,6 +14,22 @@ All notable changes to the "turbo-ai-rules" extension will be documented in this
 
 - 修复规则同步页面不选择任何规则时，之前的选择状态仍被保留的问题
 - 修复 Git 缓存刷新后规则列表未自动更新的问题
+- 修复未加引号的通配符（`*.md`、`**/*.js` 等）导致的 YAML 解析失败
+- 修复扩展启动时规则列表不完整的问题
+- 修复取消所有规则选择后配置文件未清空的问题
+
+## 💡 改进优化
+
+- 添加智能 YAML 转义：自动为 frontmatter 中的通配符值添加引号
+- 统一扩展启动和 Git 缓存刷新的规则解析逻辑
+- 优化日志输出，移除冗余的调试日志
+- 即使没有规则也生成空配置，确保清空之前的内容
+
+## 🔧 技术改进
+
+- 添加 `js-yaml` 依赖以支持自定义 YAML 解析
+- 提取 `parseAndLoadRules` 共享函数到 `utils/ruleLoader.ts`
+- 更新相关文档和实施记录
 
 # [2.0.1]
 

@@ -140,11 +140,9 @@ export class FileGenerator {
       );
     }
 
-    // 如果没有规则
+    // 即使没有规则，也要生成空配置以清空之前的内容
     if (rules.length === 0) {
-      Logger.warn('No rules to generate');
-      // 不抛出错误，但返回空结果
-      return result;
+      Logger.info('No rules selected, generating empty configurations to clear previous content');
     }
 
     // 为每个适配器生成配置
