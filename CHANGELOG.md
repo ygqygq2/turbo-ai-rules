@@ -8,6 +8,12 @@ All notable changes to the "turbo-ai-rules" extension will be documented in this
 
 - **用户规则保护默认启用** - `protectUserRules` 默认改为 `true`，更好地保护用户已有规则
 - **统一块标记格式** - 使用固定的 `<!-- TURBO-AI-RULES:BEGIN -->` 标记，时间信息移至第二行
+- **Git 缓存刷新后自动重新解析规则** - 点击"刷新 Git 缓存"按钮后，会自动重新解析规则并更新规则树视图
+
+## 🐛 修复问题
+
+- 修复规则同步页面不选择任何规则时，之前的选择状态仍被保留的问题
+- 修复 Git 缓存刷新后规则列表未自动更新的问题
 
 # [2.0.1]
 

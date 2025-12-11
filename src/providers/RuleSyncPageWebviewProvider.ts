@@ -10,6 +10,7 @@ import * as vscode from 'vscode';
 import { ConfigManager } from '../services/ConfigManager';
 import { GitManager } from '../services/GitManager';
 import { RulesManager } from '../services/RulesManager';
+import { SelectionStateManager } from '../services/SelectionStateManager';
 import type { AdapterConfig, RuleTreeNode } from '../types/config';
 import { EXTENSION_ICON_PATH, RULE_FILE_EXTENSIONS } from '../utils/constants';
 import { Logger } from '../utils/logger';
@@ -38,12 +39,14 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
   private configManager: ConfigManager;
   private rulesManager: RulesManager;
   private gitManager: GitManager;
+  private selectionStateManager: SelectionStateManager;
 
   private constructor(context: vscode.ExtensionContext) {
     super(context);
     this.configManager = ConfigManager.getInstance(context);
     this.rulesManager = RulesManager.getInstance();
     this.gitManager = GitManager.getInstance();
+    this.selectionStateManager = SelectionStateManager.getInstance();
   }
 
   /**
@@ -511,7 +514,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         throw new Error('Invalid sync payload: missing or invalid rules/adapters array');
       }
 
-      Logger.info('Starting rule sync', {
+      Logger.info('Starting rule sync from webview', {
         ruleCount: rules.length,
         adapterCount: adapters.length,
       });
@@ -528,51 +531,46 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         selectedRulePaths.get(sourceId)!.push(relativePath);
       }
 
-      // 获取所有选中的规则内容
-      const selectedRules = [];
-      for (const [sourceId, paths] of selectedRulePaths.entries()) {
-        const sourcePath = this.gitManager.getSourcePath(sourceId);
-        for (const relativePath of paths) {
-          const fullPath = path.join(sourcePath, relativePath);
-          try {
-            const content = await fs.promises.readFile(fullPath, 'utf-8');
-            selectedRules.push({
-              sourceId,
-              path: relativePath,
-              content,
-            });
-          } catch (error) {
-            Logger.warn('Failed to read rule file', {
-              sourceId,
-              path: relativePath,
-              error: error instanceof Error ? error.message : String(error),
-            });
-          }
-        }
-      }
-
-      // 执行同步到选中的适配器
+      // 更新所有规则源的选择状态（包括没有选中任何规则的源 - 清空选择）
       const workspaceFolders = vscode.workspace.workspaceFolders;
       if (!workspaceFolders || workspaceFolders.length === 0) {
         throw new Error('No workspace folder open');
       }
-
       const workspaceRoot = workspaceFolders[0].uri.fsPath;
 
-      for (const adapterId of adapters) {
-        try {
-          await this.syncToAdapter(adapterId, selectedRules, workspaceRoot);
-          Logger.info('Synced rules to adapter', { adapterId, ruleCount: selectedRules.length });
-        } catch (error) {
-          Logger.error('Failed to sync to adapter', error as Error, {
-            adapterId,
-            code: 'TAI-5020',
-          });
-        }
+      // 获取所有启用的规则源
+      const allSources = this.configManager.getAllSources();
+      const enabledSources = allSources.filter((s) => s.enabled);
+
+      // 更新每个启用源的选择状态
+      for (const source of enabledSources) {
+        const selectedPaths = selectedRulePaths.get(source.id) || [];
+        // 即使是空数组也要更新，这样可以清空之前的选择
+        this.selectionStateManager.updateSelection(
+          source.id,
+          selectedPaths,
+          true, // 立即安排持久化
+          workspaceRoot,
+        );
+        Logger.debug('Updated selection state from sync page', {
+          sourceId: source.id,
+          selectedCount: selectedPaths.length,
+        });
+      }
+
+      // 执行完整的同步流程（拉取最新规则 + 更新 RulesManager + 生成配置）
+      // 使用 syncRulesCommand 确保规则列表完整且最新
+      await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+
+      // 获取实际同步的规则数量（从 SelectionStateManager）
+      let totalSelectedRules = 0;
+      for (const source of enabledSources) {
+        const selectedPaths = this.selectionStateManager.getSelection(source.id);
+        totalSelectedRules += selectedPaths.length;
       }
 
       notify(
-        `Successfully synced ${selectedRules.length} rules to ${adapters.length} adapters`,
+        `Successfully synced ${totalSelectedRules} rules to ${adapters.length} adapters`,
         'info',
       );
 
@@ -581,7 +579,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         type: 'syncComplete',
         payload: {
           success: true,
-          ruleCount: selectedRules.length,
+          ruleCount: totalSelectedRules,
           adapterCount: adapters.length,
         },
         ...(requestId && { requestId }),
@@ -607,64 +605,5 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         ...(requestId && { requestId }),
       } as WebviewMessage & { requestId?: string });
     }
-  }
-
-  /**
-   * @description 同步规则到指定适配器
-   * @return default {Promise<void>}
-   * @param adapterId {string}
-   * @param rules {Array<{sourceId: string; path: string; content: string}>}
-   * @param workspaceRoot {string}
-   */
-  private async syncToAdapter(
-    adapterId: string,
-    rules: Array<{ sourceId: string; path: string; content: string }>,
-    workspaceRoot: string,
-  ): Promise<void> {
-    const config = this.configManager.getConfig();
-
-    // 根据适配器类型选择适配器实例
-    let adapter;
-    let outputPath = '';
-
-    if (adapterId === 'copilot') {
-      const { CopilotAdapter } = await import('../adapters/CopilotAdapter');
-      adapter = new CopilotAdapter(config.adapters.copilot?.enabled ?? true);
-      outputPath = path.join(workspaceRoot, '.github', 'copilot-instructions.md');
-    } else if (adapterId === 'cursor') {
-      const { CursorAdapter } = await import('../adapters/CursorAdapter');
-      adapter = new CursorAdapter(config.adapters.cursor?.enabled ?? true);
-      outputPath = path.join(workspaceRoot, '.cursorrules');
-    } else if (adapterId === 'continue') {
-      const { ContinueAdapter } = await import('../adapters/ContinueAdapter');
-      adapter = new ContinueAdapter(config.adapters.continue?.enabled ?? true);
-      outputPath = path.join(workspaceRoot, '.continuerules');
-    } else {
-      // 自定义适配器
-      const customAdapters = config.adapters.custom || [];
-      const customConfig = customAdapters.find((a) => a.id === adapterId);
-      if (!customConfig) {
-        throw new Error(`Custom adapter not found: ${adapterId}`);
-      }
-
-      const { CustomAdapter } = await import('../adapters/CustomAdapter');
-      adapter = new CustomAdapter(customConfig);
-      outputPath = path.join(workspaceRoot, customConfig.outputPath);
-    }
-
-    // 使用适配器生成配置文件
-    const parsedRules = rules.map((r) => ({
-      id: `${r.sourceId}:${r.path}`,
-      sourceId: r.sourceId,
-      filePath: r.path,
-      title: path.basename(r.path, path.extname(r.path)),
-      content: r.content,
-      rawContent: r.content, // 使用完整内容作为 rawContent
-      metadata: {},
-    }));
-
-    await adapter.generate(parsedRules);
-
-    Logger.debug('Adapter generated config', { adapterId, outputPath, ruleCount: rules.length });
   }
 }

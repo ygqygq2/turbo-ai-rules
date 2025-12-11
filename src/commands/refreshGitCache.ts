@@ -1,18 +1,23 @@
 /**
  * @file 刷新 Git 缓存命令
- * @description 对所有已启用的源执行 git pull 更新缓存（不解析规则）
+ * @description 对所有已启用的源执行 git pull 更新缓存并重新解析规则
  */
 
 import * as vscode from 'vscode';
 
+import { parseAndLoadRules } from '../utils/ruleLoader';
+import { MdcParser } from '../parsers/MdcParser';
+import { RulesValidator } from '../parsers/RulesValidator';
 import { ConfigManager } from '../services/ConfigManager';
 import { GitManager } from '../services/GitManager';
+import { RulesManager } from '../services/RulesManager';
+import { SelectionStateManager } from '../services/SelectionStateManager';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { ProgressManager } from '../utils/progressManager';
 
 /**
- * @description 刷新 Git 缓存 - 对所有已启用的源执行 git pull
+ * @description 刷新 Git 缓存 - 对所有已启用的源执行 git pull 并重新解析规则
  * @return default {Promise<void>}
  */
 export async function refreshGitCacheCommand(): Promise<void> {
@@ -21,6 +26,10 @@ export async function refreshGitCacheCommand(): Promise<void> {
   try {
     const configManager = ConfigManager.getInstance();
     const gitManager = GitManager.getInstance();
+    const rulesManager = RulesManager.getInstance();
+    const selectionStateManager = SelectionStateManager.getInstance();
+    const parser = new MdcParser();
+    const validator = new RulesValidator();
 
     // 1. 获取工作区根目录
     const allWorkspaceFolders = vscode.workspace.workspaceFolders;
@@ -104,6 +113,32 @@ export async function refreshGitCacheCommand(): Promise<void> {
                 });
               } else {
                 Logger.debug(`Source already up-to-date: ${source.id}`);
+              }
+
+              // 重新解析规则（无论是否有更新，都重新解析以确保规则列表完整）
+              try {
+                // 复用共享的解析和加载逻辑
+                const result = await parseAndLoadRules(
+                  source,
+                  parser,
+                  validator,
+                  gitManager,
+                  rulesManager,
+                );
+
+                // 初始化选择状态（如果之前没有选择状态）
+                await selectionStateManager.initializeState(source.id, result.valid, []);
+
+                Logger.info('Rules re-parsed after git pull', {
+                  sourceId: source.id,
+                  totalRules: result.total,
+                  validRules: result.valid,
+                });
+              } catch (parseError) {
+                Logger.error('Failed to re-parse rules after git pull', parseError as Error, {
+                  sourceId: source.id,
+                  code: 'TAI-3002',
+                });
               }
             } else {
               failCount++;

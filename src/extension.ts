@@ -56,6 +56,7 @@ import { EXTENSION_NAME } from './utils/constants';
 import { ensureIgnored } from './utils/gitignore';
 import { Logger } from './utils/logger';
 import { notify } from './utils/notifications';
+import { parseAndLoadRules } from './utils/ruleLoader';
 
 /**
  * 从缓存目录加载已同步的规则
@@ -84,31 +85,15 @@ async function loadRulesFromCache(
         continue;
       }
 
-      // 使用 parseDirectory 解析规则
-      const parsedRules = await parser.parseDirectory(rulesPath, source.id, {
-        recursive: true,
-        maxDepth: 6,
-        maxFiles: 500,
+      // 复用解析和加载逻辑
+      const result = await parseAndLoadRules(source, parser, validator, gitManager, rulesManager);
+      totalLoaded += result.valid;
+
+      Logger.debug('Rules loaded from cache', {
+        sourceId: source.id,
+        total: result.total,
+        valid: result.valid,
       });
-
-      // 验证规则
-      const validationResults = validator.validateRules(parsedRules);
-
-      // 只保留有效的规则
-      const validRules = parsedRules.filter((rule) => {
-        const result = validationResults.get(rule.id);
-        return result && result.valid;
-      });
-
-      if (validRules.length > 0) {
-        rulesManager.addRules(source.id, validRules);
-        totalLoaded += validRules.length;
-        Logger.debug('Rules loaded from cache', {
-          sourceId: source.id,
-          total: parsedRules.length,
-          valid: validRules.length,
-        });
-      }
     } catch (error) {
       Logger.warn('Failed to load rules from cache', {
         sourceId: source.id,
@@ -165,8 +150,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<{
 
     Logger.info('Services initialized');
 
-    // 2. 从缓存加载已同步的规则
-    await loadRulesFromCache(sources, rulesManager);
+    // 2. 从缓存加载已同步的规则（只加载已启用的源）
+    const enabledSources = sources.filter((s) => s.enabled);
+    await loadRulesFromCache(enabledSources, rulesManager);
 
     // 3. 注册 UI 提供者
     const treeProvider = new RulesTreeProvider(configManager, rulesManager, selectionStateManager);

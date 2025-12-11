@@ -440,11 +440,9 @@ async function syncSingleSource(
     subPath,
   });
 
-  // 5. 解析规则（默认递归）
+  // 5. 解析规则（使用默认参数确保解析所有规则）
   const parsedRules = await parser.parseDirectory(rulesPath, source.id, {
-    recursive: true, // 默认递归
-    maxDepth: 6,
-    maxFiles: 500,
+    recursive: true,
   });
 
   // 6. 为规则添加 sourceId

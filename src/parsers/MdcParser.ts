@@ -5,6 +5,7 @@
 
 import * as fs from 'fs-extra';
 import matter from 'gray-matter';
+import * as yaml from 'js-yaml';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
@@ -76,15 +77,37 @@ export class MdcParser {
       // 解析 frontmatter（捕获 YAML 解析错误）
       let parsed;
       try {
+        // 先尝试默认解析
         parsed = matter(content);
       } catch (yamlError) {
-        const errorMsg = yamlError instanceof Error ? yamlError.message : String(yamlError);
-        throw new ParseError(
-          `Invalid YAML frontmatter: ${errorMsg}. Common issues: unquoted special characters (*, &, etc.)`,
-          ErrorCodes.PARSE_INVALID_FORMAT,
+        // 如果默认解析失败，尝试转义通配符后重新解析
+        Logger.debug('Default YAML parsing failed, trying with escaped wildcards', {
           filePath,
-          yamlError as Error,
-        );
+          error: yamlError instanceof Error ? yamlError.message : String(yamlError),
+        });
+
+        try {
+          // 提取 frontmatter 并手动转义通配符
+          const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+          if (fmMatch) {
+            const fmContent = fmMatch[1];
+            // 转义未加引号的通配符值（只匹配行尾的值，避免跨行匹配）
+            const escapedFm = fmContent.replace(/^(\s*\w+:\s*)(\*[^\r\n]*?)$/gm, '$1"$2"');
+            const escapedContent = content.replace(fmMatch[0], `---\n${escapedFm}\n---`);
+            parsed = matter(escapedContent);
+            Logger.debug('Successfully parsed with escaped wildcards', { filePath });
+          } else {
+            throw yamlError;
+          }
+        } catch (retryError) {
+          const errorMsg = yamlError instanceof Error ? yamlError.message : String(yamlError);
+          throw new ParseError(
+            `Invalid YAML frontmatter: ${errorMsg}. Common issues: unquoted special characters (*, &, etc.)`,
+            ErrorCodes.PARSE_INVALID_FORMAT,
+            filePath,
+            yamlError as Error,
+          );
+        }
       }
 
       // 检查是否要求 frontmatter

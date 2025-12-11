@@ -631,6 +631,7 @@
   "devDependencies": {
     "@eslint/js": "^9.38.0",
     "@types/fs-extra": "^11.0.4",
+    "@types/js-yaml": "^4.0.9",
     "@types/lodash": "^4.17.20",
     "@types/lodash-es": "^4.17.12",
     "@types/mocha": "^10.0.10",
@@ -674,6 +675,7 @@
     "@vscode/codicons": "^0.0.41",
     "@ygqygq2/vscode-log": "^0.0.3",
     "gray-matter": "^4.0.3",
+    "js-yaml": "^4.1.1",
     "simple-git": "^3.28.0",
     "zustand": "^5.0.8"
   }

@@ -342,8 +342,52 @@ private totalCountCache = new Map<string, number>();
 
 ---
 
+## 7. 版本更新记录
+
+### v2.0.2 - 规则选择清空功能修复
+
+**问题描述**：
+在规则同步页面（`RuleSyncPageWebviewProvider`）不选择任何规则进行同步时，之前选择的规则状态仍会被保留。这导致用户无法通过不选择规则来清空某个规则源的所有规则。
+
+**修复内容**：
+
+1. **在 `RuleSyncPageWebviewProvider.handleSync()` 中添加选择状态更新**
+
+   - 解析用户选择的规则后，遍历所有启用的规则源
+   - 对每个规则源调用 `selectionStateManager.updateSelection()`
+   - 即使选择数量为 0，也会更新状态（清空选择）
+
+2. **关键代码变更**：
+
+   ```typescript
+   // 更新每个启用源的选择状态
+   for (const source of enabledSources) {
+     const selectedPaths = selectedRulePaths.get(source.id) || [];
+     // 即使是空数组也要更新，这样可以清空之前的选择
+     this.selectionStateManager.updateSelection(
+       source.id,
+       selectedPaths,
+       true, // 立即安排持久化
+       workspaceRoot,
+     );
+   }
+   ```
+
+3. **文件修改**：
+   - `src/providers/RuleSyncPageWebviewProvider.ts` - 添加 `SelectionStateManager` 导入和使用
+   - `docs/development/22-config-sync.md` - 更新文档说明选择状态清空行为
+   - `src/test/suite/syncRules.test.ts` - 添加测试用例验证清空功能
+
+**使用场景**：
+
+- 用户希望暂时禁用某个规则源的所有规则，但不删除规则源本身
+- 用户只想保留自定义规则，清空所有规则源的规则
+
+---
+
 > **维护提示**: 修改选择状态相关代码时，必须确保：
 >
 > 1. 内存状态、磁盘状态、UI 显示三者一致
 > 2. 所有监听器都能正确收到事件
 > 3. 持久化逻辑不会丢失用户操作
+> 4. **重要**：空选择（0 个规则）也需要正确持久化，不能被忽略

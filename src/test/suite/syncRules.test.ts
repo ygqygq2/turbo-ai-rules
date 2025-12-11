@@ -265,4 +265,59 @@ describe('Sync Rules Tests', () => {
       }
     }
   });
+
+  it('Should clear selection when no rules selected', async function () {
+    this.timeout(120000); // 2分钟
+
+    // 1. 首先同步并选择一些规则
+    await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+
+    // 等待同步完成
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    const sources = config.get<Array<{ id: string; enabled: boolean }>>('sources');
+    assert.ok(sources && sources.length > 0, 'Should have configured sources');
+
+    const enabledSource = sources.find((s) => s.enabled);
+    assert.ok(enabledSource, 'Should have at least one enabled source');
+
+    // 选择所有规则
+    const allRules = rulesManager.getRulesBySource(enabledSource.id);
+    if (allRules.length > 0) {
+      const allPaths = allRules.map((r: any) => r.filePath);
+      selectionStateManager.updateSelection(enabledSource.id, allPaths);
+
+      // 等待状态更新
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // 验证选择状态
+      const selectedPaths = selectionStateManager.getSelection(enabledSource.id);
+      assert.ok(selectedPaths.length > 0, 'Should have selected rules');
+    }
+
+    // 2. 清空选择（模拟用户不选择任何规则）
+    selectionStateManager.updateSelection(enabledSource.id, []);
+
+    // 等待状态更新
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // 3. 验证选择状态已清空
+    const clearedPaths = selectionStateManager.getSelection(enabledSource.id);
+    assert.strictEqual(clearedPaths.length, 0, 'Selection should be cleared');
+
+    // 4. 再次同步，验证不会恢复之前的选择
+    await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+
+    // 等待同步完成
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    // 5. 验证选择仍然为空
+    const pathsAfterSync = selectionStateManager.getSelection(enabledSource.id);
+    assert.strictEqual(
+      pathsAfterSync.length,
+      0,
+      'Selection should remain empty after sync without selection',
+    );
+  });
 });
