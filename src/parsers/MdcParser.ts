@@ -5,7 +5,6 @@
 
 import * as fs from 'fs-extra';
 import matter from 'gray-matter';
-import * as yaml from 'js-yaml';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
@@ -99,7 +98,7 @@ export class MdcParser {
           } else {
             throw yamlError;
           }
-        } catch (retryError) {
+        } catch (_retryError) {
           const errorMsg = yamlError instanceof Error ? yamlError.message : String(yamlError);
           throw new ParseError(
             `Invalid YAML frontmatter: ${errorMsg}. Common issues: unquoted special characters (*, &, etc.)`,

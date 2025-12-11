@@ -5,13 +5,13 @@
 
 import * as vscode from 'vscode';
 
-import { parseAndLoadRules } from '../utils/ruleLoader';
 import { MdcParser } from '../parsers/MdcParser';
 import { RulesValidator } from '../parsers/RulesValidator';
 import { ConfigManager } from '../services/ConfigManager';
 import { GitManager } from '../services/GitManager';
 import { RulesManager } from '../services/RulesManager';
 import { SelectionStateManager } from '../services/SelectionStateManager';
+import { parseAndLoadRules } from '../utils/ruleLoader';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { ProgressManager } from '../utils/progressManager';

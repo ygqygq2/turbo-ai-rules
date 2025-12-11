@@ -539,8 +539,8 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
       const workspaceRoot = workspaceFolders[0].uri.fsPath;
 
       // 获取所有启用的规则源
-      const allSources = this.configManager.getAllSources();
-      const enabledSources = allSources.filter((s) => s.enabled);
+      const allSources = this.configManager.getSources(workspaceFolders[0].uri);
+      const enabledSources = allSources.filter((s: { enabled: boolean }) => s.enabled);
 
       // 更新每个启用源的选择状态
       for (const source of enabledSources) {
