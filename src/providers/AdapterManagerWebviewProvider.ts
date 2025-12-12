@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { PRESET_ADAPTERS } from '../adapters';
 import { ConfigManager } from '../services/ConfigManager';
 import type { CustomAdapterConfig } from '../types/config';
 import { EXTENSION_ICON_PATH } from '../utils/constants';
@@ -246,40 +247,142 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
     }
   }
 
-  /**
-   * @description 获取适配器数据
+  /**   * @description 迁移旧配置格式到新格式
+   * 兼容旧的独立配置键（adapters.cursor.enabled 等）
+   * 仅迁移原有的3种预设适配器：cursor, copilot, continue
+   *
+   * @deprecated 此方法将在 3 个版本后移除（计划在 v1.7.0 移除）
+   * @param vscodeConfig {vscode.WorkspaceConfiguration}
+   */
+  private async migrateOldAdapterConfig(
+    vscodeConfig: vscode.WorkspaceConfiguration,
+  ): Promise<void> {
+    const target = vscode.ConfigurationTarget.Workspace;
+    const legacyAdapters = ['cursor', 'copilot', 'continue'] as const;
+    const currentAdapters = vscodeConfig.get<
+      Record<string, { enabled?: boolean; autoUpdate?: boolean }>
+    >('adapters', {});
+    let needsMigration = false;
+
+    // 检测旧格式配置是否存在
+    const legacyKeysToClean: string[] = [];
+
+    for (const adapterId of legacyAdapters) {
+      const oldEnabledKey = `adapters.${adapterId}.enabled`;
+      const oldAutoUpdateKey = `adapters.${adapterId}.autoUpdate`;
+      const inspection = vscodeConfig.inspect(oldEnabledKey);
+
+      // 如果存在旧格式配置
+      if (
+        inspection &&
+        (inspection.workspaceFolderValue !== undefined ||
+          inspection.workspaceValue !== undefined ||
+          inspection.globalValue !== undefined)
+      ) {
+        legacyKeysToClean.push(oldEnabledKey);
+
+        // 检查是否还有 autoUpdate 配置
+        const autoUpdateInspection = vscodeConfig.inspect(oldAutoUpdateKey);
+        if (
+          autoUpdateInspection &&
+          (autoUpdateInspection.workspaceFolderValue !== undefined ||
+            autoUpdateInspection.workspaceValue !== undefined ||
+            autoUpdateInspection.globalValue !== undefined)
+        ) {
+          legacyKeysToClean.push(oldAutoUpdateKey);
+        }
+
+        // 如果新格式中不存在该适配器配置，则迁移值
+        if (!currentAdapters[adapterId]) {
+          const enabled = (inspection.workspaceFolderValue ??
+            inspection.workspaceValue ??
+            inspection.globalValue) as boolean | undefined;
+          const autoUpdate = (autoUpdateInspection?.workspaceFolderValue ??
+            autoUpdateInspection?.workspaceValue ??
+            autoUpdateInspection?.globalValue) as boolean | undefined;
+
+          if (enabled !== undefined) {
+            currentAdapters[adapterId] = {
+              enabled,
+              ...(autoUpdate !== undefined && { autoUpdate }),
+            };
+            needsMigration = true;
+            Logger.info(`Migrating legacy adapter config: ${adapterId}`, {
+              enabled,
+              autoUpdate,
+            });
+          }
+        }
+      }
+    }
+
+    // 如果有需要迁移的配置，执行迁移
+    if (needsMigration) {
+      await vscodeConfig.update('adapters', currentAdapters, target);
+      Logger.info('Legacy adapter configuration migrated to new format');
+    }
+
+    // 清理旧的配置键（无论是否迁移，只要存在旧配置就清理）
+    if (legacyKeysToClean.length > 0) {
+      for (const configKey of legacyKeysToClean) {
+        const inspection = vscodeConfig.inspect(configKey);
+        if (!inspection) continue;
+
+        // 清理所有作用域的旧配置
+        if (inspection.workspaceFolderValue !== undefined) {
+          await vscodeConfig.update(
+            configKey,
+            undefined,
+            vscode.ConfigurationTarget.WorkspaceFolder,
+          );
+        }
+        if (inspection.workspaceValue !== undefined) {
+          await vscodeConfig.update(configKey, undefined, vscode.ConfigurationTarget.Workspace);
+        }
+        if (inspection.globalValue !== undefined) {
+          await vscodeConfig.update(configKey, undefined, vscode.ConfigurationTarget.Global);
+        }
+
+        Logger.info(`Removed legacy config key: ${configKey}`);
+      }
+
+      Logger.info('Legacy adapter configuration keys removed', { count: legacyKeysToClean.length });
+
+      // 显示清理提示（仅一次）
+      const migrationNoticeKey = 'adapterConfigMigrated';
+      const hasMigrated = this.context.globalState.get(migrationNoticeKey, false);
+      if (!hasMigrated) {
+        const message = needsMigration
+          ? 'Adapter configuration has been automatically migrated to new format.'
+          : 'Legacy adapter configuration keys have been cleaned up.';
+        notify(vscode.l10n.t(message), 'info');
+        await this.context.globalState.update(migrationNoticeKey, true);
+      }
+    }
+  }
+
+  /**   * @description 获取适配器数据（包含配置迁移逻辑）
    * @return default {Promise<AdapterData>}
    */
   private async getAdapterData(): Promise<AdapterData> {
     const config = this.configManager.getConfig();
+    const vscodeConfig = vscode.workspace.getConfiguration('turbo-ai-rules');
 
-    // 预设适配器列表
-    const presetAdapters: PresetAdapterData[] = [
-      {
-        id: 'copilot',
-        name: 'GitHub Copilot',
-        description: vscode.l10n.t('adapterManager.copilotDesc'),
-        enabled: config.adapters.copilot?.enabled ?? true,
-        outputPath: '.github/copilot-instructions.md',
-        isRuleType: true, // Copilot 是规则类型
-      },
-      {
-        id: 'cursor',
-        name: 'Cursor',
-        description: vscode.l10n.t('adapterManager.cursorDesc'),
-        enabled: config.adapters.cursor?.enabled ?? true,
-        outputPath: '.cursor/rules/',
-        isRuleType: true, // Cursor 是规则类型
-      },
-      {
-        id: 'continue',
-        name: 'Continue',
-        description: vscode.l10n.t('adapterManager.continueDesc'),
-        enabled: config.adapters.continue?.enabled ?? false,
-        outputPath: '.continue/rules/',
-        isRuleType: true, // Continue 是规则类型
-      },
-    ];
+    // 检测并迁移旧配置格式（仅迁移原有的3种预设适配器：cursor, copilot, continue）
+    await this.migrateOldAdapterConfig(vscodeConfig);
+
+    // 从 PRESET_ADAPTERS 配置动态构建预设适配器列表
+    const presetAdapters: PresetAdapterData[] = PRESET_ADAPTERS.map((presetConfig) => ({
+      id: presetConfig.id,
+      name: presetConfig.name,
+      description: presetConfig.description || `${presetConfig.name} AI coding assistant`,
+      enabled:
+        (config.adapters as Record<string, { enabled?: boolean }>)[presetConfig.id]?.enabled ??
+        presetConfig.defaultEnabled ??
+        false,
+      outputPath: presetConfig.filePath,
+      isRuleType: true, // 所有预设适配器都是规则类型
+    }));
 
     // 自定义适配器列表
     const customAdapters: CustomAdapterData[] = (config.adapters.custom || []).map((adapter) => ({
@@ -322,20 +425,27 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
       const vscodeConfig = vscode.workspace.getConfiguration('turbo-ai-rules');
       const target = vscode.ConfigurationTarget.Workspace;
 
-      // 更新预设适配器状态（按单独的配置键更新）
+      // 更新预设适配器状态（使用嵌套对象方式，避免需要预先在 package.json 中定义每个适配器）
       if (data.presetAdapters) {
+        // 读取当前的 adapters 配置对象
+        const currentAdapters = vscodeConfig.get<
+          Record<string, { enabled?: boolean; autoUpdate?: boolean }>
+        >('adapters', {});
+
+        // 更新预设适配器的状态
         for (const preset of data.presetAdapters) {
-          if (preset.id === 'copilot') {
-            await vscodeConfig.update('adapters.copilot.enabled', preset.enabled, target);
-          } else if (preset.id === 'cursor') {
-            await vscodeConfig.update('adapters.cursor.enabled', preset.enabled, target);
-          } else if (preset.id === 'continue') {
-            await vscodeConfig.update('adapters.continue.enabled', preset.enabled, target);
+          if (!currentAdapters[preset.id]) {
+            currentAdapters[preset.id] = {};
           }
+          currentAdapters[preset.id].enabled = preset.enabled;
+          Logger.debug(`Updated preset adapter: ${preset.id} -> ${preset.enabled}`);
         }
+
+        // 整体更新 adapters 配置（保留 custom 字段）
+        await vscodeConfig.update('adapters', currentAdapters, target);
       }
 
-      // 更新自定义适配器
+      // 更新自定义适配器（custom 是独立的配置键）
       if (data.customAdapters) {
         const customAdapters: CustomAdapterConfig[] = data.customAdapters.map((adapter) => ({
           id: adapter.id,

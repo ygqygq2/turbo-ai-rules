@@ -73,6 +73,11 @@ export const AdapterManager: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
 
+  // 分页状态
+  const [presetPage, setPresetPage] = useState(1);
+  const [customPage, setCustomPage] = useState(1);
+  const PAGE_SIZE = 6; // 每页显示6个
+
   // 模态框状态
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAdapter, setEditingAdapter] = useState<EditingAdapter | null>(null);
@@ -153,9 +158,13 @@ export const AdapterManager: React.FC = () => {
       id: '',
       name: '',
       outputPath: '',
-      format: 'single-file',
+      format: 'directory', // 默认为目录格式
       isRuleType: false, // 默认为技能类型
       enabled: true, // 默认启用
+      directoryStructure: {
+        filePattern: '*.md',
+        pathTemplate: '{{ruleId}}.md',
+      },
     });
     setModalOpen(true);
   };
@@ -223,6 +232,20 @@ export const AdapterManager: React.FC = () => {
     vscodeApi.postMessage('cancel');
   };
 
+  // 计算分页数据
+  const presetTotalPages = Math.ceil(presetAdapters.length / PAGE_SIZE);
+  const customTotalPages = Math.ceil(customAdapters.length / PAGE_SIZE);
+
+  const paginatedPresetAdapters = presetAdapters.slice(
+    (presetPage - 1) * PAGE_SIZE,
+    presetPage * PAGE_SIZE,
+  );
+
+  const paginatedCustomAdapters = customAdapters.slice(
+    (customPage - 1) * PAGE_SIZE,
+    customPage * PAGE_SIZE,
+  );
+
   return (
     <div className="adapter-manager-container">
       {/* 页面标题 */}
@@ -246,7 +269,7 @@ export const AdapterManager: React.FC = () => {
       ) : (
         <div className="adapter-sections">
           {/* 预设适配器区块 */}
-          <section className="adapter-section">
+          <section className="adapter-section preset-section">
             <div className="section-header">
               <h2>
                 <i className="codicon codicon-package"></i>
@@ -254,24 +277,51 @@ export const AdapterManager: React.FC = () => {
               </h2>
               <span className="section-description">{t('adapterManager.presetAdaptersDesc')}</span>
             </div>
-            <div className="adapter-cards-grid">
-              {presetAdapters.map((adapter) => (
-                <AdapterCard
-                  key={adapter.id}
-                  name={adapter.name}
-                  description={adapter.description}
-                  enabled={adapter.enabled}
-                  outputPath={adapter.outputPath}
-                  isRuleType={adapter.isRuleType}
-                  isPreset={true}
-                  onToggle={() => handleTogglePreset(adapter.id)}
-                />
-              ))}
+            <div className="adapter-section-content">
+              <div className="adapter-cards-container">
+                <div className="adapter-cards-grid">
+                  {paginatedPresetAdapters.map((adapter) => (
+                    <AdapterCard
+                      key={adapter.id}
+                      name={adapter.name}
+                      description={adapter.description}
+                      enabled={adapter.enabled}
+                      outputPath={adapter.outputPath}
+                      isRuleType={adapter.isRuleType}
+                      isPreset={true}
+                      onToggle={() => handleTogglePreset(adapter.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+              {presetTotalPages > 1 && (
+                <div className="pagination">
+                  <button
+                    className="pagination-button"
+                    onClick={() => setPresetPage((p) => Math.max(1, p - 1))}
+                    disabled={presetPage === 1}
+                  >
+                    <i className="codicon codicon-chevron-left"></i>
+                    {t('common.previous')}
+                  </button>
+                  <span className="pagination-info">
+                    {presetPage} / {presetTotalPages}
+                  </span>
+                  <button
+                    className="pagination-button"
+                    onClick={() => setPresetPage((p) => Math.min(presetTotalPages, p + 1))}
+                    disabled={presetPage === presetTotalPages}
+                  >
+                    {t('common.next')}
+                    <i className="codicon codicon-chevron-right"></i>
+                  </button>
+                </div>
+              )}
             </div>
           </section>
 
           {/* 自定义适配器区块 */}
-          <section className="adapter-section">
+          <section className="adapter-section custom-section">
             <div className="section-header">
               <h2>
                 <i className="codicon codicon-symbol-misc"></i>
@@ -282,34 +332,63 @@ export const AdapterManager: React.FC = () => {
                 {t('adapterManager.addCustomAdapter')}
               </Button>
             </div>
-            {customAdapters.length === 0 ? (
-              <div className="empty-state">
-                <i className="codicon codicon-symbol-misc icon"></i>
-                <div className="message">{t('adapterManager.noCustomAdapters')}</div>
-                <Button type="primary" icon="add" onClick={handleAddCustomAdapter}>
-                  {t('adapterManager.addCustomAdapter')}
-                </Button>
-              </div>
-            ) : (
-              <div className="adapter-cards-grid">
-                {customAdapters.map((adapter) => (
-                  <AdapterCard
-                    key={adapter.id}
-                    name={adapter.name}
-                    outputPath={adapter.outputPath}
-                    isRuleType={adapter.isRuleType}
-                    enabled={adapter.enabled}
-                    format={adapter.format}
-                    fileExtensions={adapter.fileExtensions}
-                    organizeBySource={adapter.organizeBySource}
-                    isPreset={false}
-                    onToggle={() => handleToggleCustom(adapter.id)}
-                    onEdit={() => handleEditCustomAdapter(adapter)}
-                    onDelete={() => handleDeleteCustomAdapter(adapter.id)}
-                  />
-                ))}
-              </div>
-            )}
+            <div className="adapter-section-content">
+              {customAdapters.length === 0 ? (
+                <div className="empty-state">
+                  <i className="codicon codicon-symbol-misc icon"></i>
+                  <div className="message">{t('adapterManager.noCustomAdapters')}</div>
+                  <Button type="primary" icon="add" onClick={handleAddCustomAdapter}>
+                    {t('adapterManager.addCustomAdapter')}
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="adapter-cards-container">
+                    <div className="adapter-cards-grid">
+                      {paginatedCustomAdapters.map((adapter) => (
+                        <AdapterCard
+                          key={adapter.id}
+                          name={adapter.name}
+                          outputPath={adapter.outputPath}
+                          isRuleType={adapter.isRuleType}
+                          enabled={adapter.enabled}
+                          format={adapter.format}
+                          fileExtensions={adapter.fileExtensions}
+                          organizeBySource={adapter.organizeBySource}
+                          isPreset={false}
+                          onToggle={() => handleToggleCustom(adapter.id)}
+                          onEdit={() => handleEditCustomAdapter(adapter)}
+                          onDelete={() => handleDeleteCustomAdapter(adapter.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  {customTotalPages > 1 && (
+                    <div className="pagination">
+                      <button
+                        className="pagination-button"
+                        onClick={() => setCustomPage((p) => Math.max(1, p - 1))}
+                        disabled={customPage === 1}
+                      >
+                        <i className="codicon codicon-chevron-left"></i>
+                        {t('common.previous')}
+                      </button>
+                      <span className="pagination-info">
+                        {customPage} / {customTotalPages}
+                      </span>
+                      <button
+                        className="pagination-button"
+                        onClick={() => setCustomPage((p) => Math.min(customTotalPages, p + 1))}
+                        disabled={customPage === customTotalPages}
+                      >
+                        {t('common.next')}
+                        <i className="codicon codicon-chevron-right"></i>
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </section>
         </div>
       )}

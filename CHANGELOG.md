@@ -6,9 +6,45 @@ All notable changes to the "turbo-ai-rules" extension will be documented in this
 
 ## 🚀 功能增强
 
+- **配置驱动的预设适配器** - 重构预设适配器架构，从 3 个扩展到 9 个主流 AI 工具
+  - 新增支持：Windsurf, Cline, Roo-Cline, Aider, Bolt, Qodo Gen
+  - 采用配置驱动，添加新工具无需修改代码
+- **适配器配置格式优化** - 采用嵌套对象格式，支持动态扩展
+  - 自动迁移旧配置格式（cursor, copilot, continue）
+  - 保持 3 个版本兼容性（计划 v2.0.5 移除旧格式）
 - **用户规则保护默认启用** - `protectUserRules` 默认改为 `true`，更好地保护用户已有规则
 - **统一块标记格式** - 使用固定的 `<!-- TURBO-AI-RULES:BEGIN -->` 标记，时间信息移至第二行
 - **Git 缓存刷新后自动重新解析规则** - 点击"刷新 Git 缓存"按钮后，会自动重新解析规则并更新规则树视图
+
+## ⚠️ 配置格式变更
+
+**旧格式**（仍然支持，会自动迁移）:
+
+```json
+{
+  "turbo-ai-rules.adapters.cursor.enabled": true,
+  "turbo-ai-rules.adapters.copilot.enabled": false
+}
+```
+
+**新格式**（推荐）:
+
+```json
+{
+  "turbo-ai-rules.adapters": {
+    "cursor": { "enabled": true },
+    "copilot": { "enabled": false }
+  }
+}
+```
+
+详见: [适配器配置迁移说明](docs/development/implementation/adapter-config-migration.md)
+
+## 🎨 UI 优化
+
+- 适配器管理页面布局优化：预设适配器占 60%，自定义占 40%
+- 添加分页功能，每页显示 6 个适配器
+- 卡片设计更紧凑，提高信息密度
 
 ## 🐛 修复问题
 

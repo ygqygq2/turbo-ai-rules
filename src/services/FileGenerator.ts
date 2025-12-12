@@ -8,7 +8,14 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import type { AIToolAdapter, GeneratedConfig } from '../adapters';
-import { ContinueAdapter, CopilotAdapter, CursorAdapter, CustomAdapter } from '../adapters';
+import {
+  ContinueAdapter,
+  CopilotAdapter,
+  CursorAdapter,
+  CustomAdapter,
+  PRESET_ADAPTERS,
+  PresetAdapter,
+} from '../adapters';
 import type { AdaptersConfig, CustomAdapterConfig } from '../types/config';
 import { GenerateError, SystemError } from '../types/errors';
 import type { PartialUpdateOptions } from '../types/ruleMarker';
@@ -76,17 +83,30 @@ export class FileGenerator {
 
     this.adapters.clear();
 
-    // 注册内置适配器
-    if (config.cursor?.enabled) {
+    // 注册预设适配器（配置驱动）
+    for (const presetConfig of PRESET_ADAPTERS) {
+      const enabled =
+        (config as Record<string, { enabled?: boolean }>)[presetConfig.id]?.enabled ?? false;
+      if (enabled) {
+        const adapter = new PresetAdapter(presetConfig, true);
+        this.adapters.set(presetConfig.id, adapter);
+        Logger.debug(`Registered preset adapter: ${presetConfig.id} (${presetConfig.name})`);
+      }
+    }
+
+    // 兼容旧的独立适配器类（待废弃）
+    // TODO: 在下一个主版本中移除这些独立类
+    if (config.cursor?.enabled && !this.adapters.has('cursor')) {
       this.adapters.set('cursor', new CursorAdapter(true));
+      Logger.warn('Using legacy CursorAdapter, please update to PresetAdapter');
     }
-
-    if (config.copilot?.enabled) {
+    if (config.copilot?.enabled && !this.adapters.has('copilot')) {
       this.adapters.set('copilot', new CopilotAdapter(true));
+      Logger.warn('Using legacy CopilotAdapter, please update to PresetAdapter');
     }
-
-    if (config.continue?.enabled) {
+    if (config.continue?.enabled && !this.adapters.has('continue')) {
       this.adapters.set('continue', new ContinueAdapter(true));
+      Logger.warn('Using legacy ContinueAdapter, please update to PresetAdapter');
     }
 
     // 注册自定义适配器

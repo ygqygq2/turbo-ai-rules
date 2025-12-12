@@ -11,10 +11,10 @@ import { ConfigManager } from '../services/ConfigManager';
 import { GitManager } from '../services/GitManager';
 import { RulesManager } from '../services/RulesManager';
 import { SelectionStateManager } from '../services/SelectionStateManager';
-import { parseAndLoadRules } from '../utils/ruleLoader';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { ProgressManager } from '../utils/progressManager';
+import { parseAndLoadRules } from '../utils/ruleLoader';
 
 /**
  * @description 刷新 Git 缓存 - 对所有已启用的源执行 git pull 并重新解析规则

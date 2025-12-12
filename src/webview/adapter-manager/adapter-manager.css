@@ -3,13 +3,14 @@
 
 /* 主容器 */
 .adapter-manager-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
   max-width: var(--container-max-width);
   margin: 0 auto;
-  padding: var(--spacing-xl);
   background-color: var(--vscode-editor-background);
   color: var(--vscode-foreground);
-  min-height: 100vh;
-  padding-bottom: 80px; /* 为底部操作栏留空间 */
+  overflow: hidden;
 }
 
 /* 页面标题 */
@@ -17,9 +18,9 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: var(--spacing-xl);
-  padding-bottom: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-md) var(--spacing-sm) var(--spacing-md);
   border-bottom: 1px solid var(--vscode-editorWidget-border);
+  flex-shrink: 0;
 }
 
 .page-header .header-content {
@@ -27,23 +28,23 @@
 }
 
 .page-header h1 {
-  font-size: 1.8rem;
-  margin: 0 0 var(--spacing-sm) 0;
+  font-size: 1.3rem;
+  margin: 0 0 var(--spacing-xs) 0;
   font-weight: 600;
   color: var(--vscode-foreground);
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
 }
 
 .page-header h1 .codicon {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   color: var(--vscode-textLink-foreground);
 }
 
 .page-header .subtitle {
   color: var(--vscode-descriptionForeground);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   margin: 0;
 }
 
@@ -57,30 +58,46 @@
 .adapter-sections {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  flex: 1;
+  overflow: hidden;
+  padding: var(--spacing-md);
+  gap: var(--spacing-md);
 }
 
 .adapter-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   background-color: var(--vscode-editorWidget-background);
   border: 1px solid var(--vscode-editorWidget-border);
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-lg);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  overflow: hidden;
+}
+
+.adapter-section.preset-section {
+  flex: 3; /* 60% */
+}
+
+.adapter-section.custom-section {
+  flex: 2; /* 40% */
 }
 
 .section-header {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .section-header h2 {
-  font-size: 1.2rem;
+  font-size: 1rem;
   margin: 0;
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
 }
 
 .section-header h2 .codicon {
@@ -93,11 +110,27 @@
   flex: 1;
 }
 
+/* 适配器内容容器 */
+.adapter-section-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 适配器卡片网格容器 */
+.adapter-cards-container {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: var(--spacing-xs);
+}
+
 /* 适配器卡片网格 */
 .adapter-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: var(--spacing-lg);
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--spacing-sm);
 }
 
 /* 适配器卡片 */
@@ -105,10 +138,10 @@
   background-color: var(--vscode-editor-background);
   border: 1px solid var(--vscode-editorWidget-border);
   border-radius: var(--border-radius);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-sm);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-xs);
   transition: all 0.2s ease;
 }
 
@@ -366,18 +399,16 @@
 
 /* 底部操作栏 */
 .footer-actions {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  position: relative;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  padding: var(--spacing-md) var(--spacing-xl);
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   background-color: var(--vscode-editorWidget-background);
   border-top: 1px solid var(--vscode-focusBorder);
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
-  z-index: 100;
+  flex-shrink: 0;
 }
 
 .changes-indicator {
@@ -710,10 +741,11 @@
   background-color: var(--vscode-inputValidation-errorBackground);
   color: var(--vscode-inputValidation-errorForeground);
   border: 1px solid var(--vscode-inputValidation-errorBorder);
-  padding: var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-md);
   border-radius: var(--border-radius);
-  margin-bottom: var(--spacing-lg);
-  font-size: 0.9rem;
+  margin: 0 var(--spacing-md) var(--spacing-xs) var(--spacing-md);
+  font-size: 0.85rem;
+  flex-shrink: 0;
 }
 
 /* 成功消息 */
@@ -721,10 +753,57 @@
   background-color: rgba(0, 128, 0, 0.2);
   color: var(--vscode-testing-iconPassed);
   border: 1px solid var(--vscode-testing-iconPassed);
-  padding: var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-md);
   border-radius: var(--border-radius);
-  margin-bottom: var(--spacing-lg);
-  font-size: 0.9rem;
+  margin: 0 var(--spacing-md) var(--spacing-xs) var(--spacing-md);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+/* 分页器 */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) 0;
+  flex-shrink: 0;
+  border-top: 1px solid var(--vscode-editorWidget-border);
+  margin-top: var(--spacing-sm);
+}
+
+.pagination-info {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.85rem;
+  margin: 0 var(--spacing-sm);
+}
+
+.pagination-button {
+  background: none;
+  border: 1px solid var(--vscode-editorWidget-border);
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  border-radius: var(--border-radius);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background-color: var(--vscode-toolbar-hoverBackground);
+  border-color: var(--vscode-focusBorder);
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-button .codicon {
+  font-size: 12px;
 }
 
 /* 响应式调整 */

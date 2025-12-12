@@ -460,38 +460,24 @@
           },
           "description": "%turboAiRules.parser.excludeFiles.description%"
         },
-        "turbo-ai-rules.adapters.cursor.enabled": {
-          "type": "boolean",
-          "default": false,
+        "turbo-ai-rules.adapters": {
+          "type": "object",
+          "default": {},
           "scope": "resource",
-          "description": "%turboAiRules.adapters.cursor.enabled.description%"
-        },
-        "turbo-ai-rules.adapters.cursor.autoUpdate": {
-          "type": "boolean",
-          "default": false,
-          "description": "%turboAiRules.adapters.cursor.autoUpdate.description%"
-        },
-        "turbo-ai-rules.adapters.copilot.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "%turboAiRules.adapters.copilot.enabled.description%"
-        },
-        "turbo-ai-rules.adapters.copilot.autoUpdate": {
-          "type": "boolean",
-          "default": false,
-          "description": "%turboAiRules.adapters.copilot.autoUpdate.description%"
-        },
-        "turbo-ai-rules.adapters.continue.enabled": {
-          "type": "boolean",
-          "default": false,
-          "scope": "resource",
-          "description": "%turboAiRules.adapters.continue.enabled.description%"
-        },
-        "turbo-ai-rules.adapters.continue.autoUpdate": {
-          "type": "boolean",
-          "default": true,
-          "description": "%turboAiRules.adapters.continue.autoUpdate.description%"
+          "description": "Adapter configurations (preset and custom adapters)",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "description": "Enable or disable this adapter"
+              },
+              "autoUpdate": {
+                "type": "boolean",
+                "description": "Automatically update config files"
+              }
+            }
+          }
         },
         "turbo-ai-rules.adapters.custom": {
           "type": "array",

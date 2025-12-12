@@ -453,5 +453,7 @@
   "adapterManager.tips": "提示",
   "adapterManager.tip1": "适配器 ID 用于标识适配器，创建后不可修改",
   "adapterManager.tip2": "输出路径将自动创建，无需手动创建目录",
-  "adapterManager.tip3": "Skills 类型适配器建议用于技能/能力相关的规则集"
+  "adapterManager.tip3": "Skills 类型适配器建议用于技能/能力相关的规则集",
+  "common.previous": "上一页",
+  "common.next": "下一页"
 }

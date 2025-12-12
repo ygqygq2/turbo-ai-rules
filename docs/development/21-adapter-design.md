@@ -15,7 +15,9 @@
 - 支持自定义规则模板和渲染逻辑
 - 提供工具特定的优化和增强
 
-### 1.2 适配器分类
+### 1.2 适配器分类（新架构）
+
+**v2.0+ 配置驱动架构**：
 
 ```
 ┌────────────────────────────────────────────────────┐
@@ -24,15 +26,24 @@
 │  • 提供默认实现和辅助方法                         │
 └────────────────────────────────────────────────────┘
                       ↓
-    ┌─────────────────┴─────────────────┐
-    ↓                                     ↓
-┌─────────────────────┐      ┌─────────────────────┐
-│   内置适配器        │      │   自定义适配器       │
-│ • CursorAdapter     │      │ • CustomAdapter     │
-│ • CopilotAdapter    │      │   (用户提供模板)    │
-│ • ContinueAdapter   │      │                     │
-└─────────────────────┘      └─────────────────────┘
+    ┌─────────────────┴──────────────────────┐
+    ↓                                         ↓
+┌──────────────────────────┐      ┌─────────────────────┐
+│   预设适配器（配置驱动） │      │   自定义适配器       │
+│ • PresetAdapter          │      │ • CustomAdapter     │
+│   - 通过 PRESET_ADAPTERS │      │   (用户提供模板)    │
+│     配置列表定义         │      │                     │
+│   - 统一实现逻辑         │      │                     │
+│   - 易于扩展新工具       │      │                     │
+└──────────────────────────┘      └─────────────────────┘
 ```
+
+**关键改进**：
+
+- ✅ **配置化**: 预设适配器通过配置列表 `PRESET_ADAPTERS` 定义，不再需要为每个工具创建独立类
+- ✅ **统一实现**: 所有预设适配器共享同一个 `PresetAdapter` 类，减少代码重复
+- ✅ **易于扩展**: 添加新工具只需在配置列表中添加一项，无需修改代码逻辑
+- ⚠️ **兼容性**: 旧的独立类（CursorAdapter, CopilotAdapter, ContinueAdapter）保留作为兼容层，将在下一主版本移除
 
 ---
 
@@ -47,107 +58,126 @@
 
 ### 2.2 关键方法
 
-- `generate(rules: ParsedRule[]): string` - 生成配置内容
-- `getTargetFile(): string` - 返回目标文件路径
-- `validate(config: AdapterConfig): ValidationResult` - 验证配置
-- `shouldEnable(): boolean` - 判断是否应启用
-- `formatRules(rules: ParsedRule[]): ParsedRule[]` - 格式化规则
+- `generate(rules: ParsedRule[]): Promise<GeneratedConfig>` - 生成配置内容
+- `getFilePath(): string` - 返回目标文件路径
+- `validate(content: string): boolean` - 验证生成的配置
+- `enabled: boolean` - 是否启用
+- `name: string` - 适配器名称
 
-### 2.3 生命周期钩子
+### 2.3 通用辅助方法
 
-- `beforeGenerate()` - 生成前的准备工作
-- `afterGenerate()` - 生成后的清理工作
-- `onError(error: Error)` - 错误处理
+BaseAdapter 提供以下辅助方法供子类使用：
+
+- `formatRules(rules: ParsedRule[]): string` - 格式化规则内容
+- `generateMetadata(ruleCount: number): string` - 生成元数据注释
+- `generateFileHeader(toolName: string, ruleCount: number): string` - 生成文件头部
+- `generateTableOfContents(rules: ParsedRule[]): string` - 生成目录
+- `sortByPriority(rules: ParsedRule[]): ParsedRule[]` - 按优先级排序
+- `groupByTag(rules: ParsedRule[]): Map<string, ParsedRule[]>` - 按标签分组
 
 ---
 
-## 3. 内置适配器
+## 3. 预设适配器（新架构）
 
-### 3.1 适配器通用配置
+### 3.1 配置结构
 
-所有适配器（内置和自定义）共享以下配置字段：
+预设适配器通过 `PresetAdapterConfig` 接口定义：
 
-- `enabled`: 是否启用（默认 false）
-- `autoUpdate`: 是否自动更新配置文件（默认 true）
-- `includeMetadata`: 是否在生成的文件中包含元数据（可选）
-- `isRuleType`: 是否是规则类型（默认 true，skills 类设为 false 不参与规则同步页）
+```typescript
+export interface PresetAdapterConfig {
+  id: string; // 适配器 ID (kebab-case)
+  name: string; // 显示名称
+  filePath: string; // 目标文件路径
+  type: 'file' | 'directory'; // 文件类型
+  defaultEnabled?: boolean; // 默认是否启用
+  description?: string; // 工具描述
+  website?: string; // 官网链接
+}
+```
 
-**isRuleType 字段说明**：
+### 3.2 当前支持的预设适配器
 
-- `true`（默认）：适配器参与规则同步页，用户可为其分配规则
-- `false`：适配器不参与规则同步页（如 skills 类型），有独立的同步逻辑
+**IDE 集成类**：
 
-### 3.2 CursorAdapter
+| ID         | 名称           | 文件路径                          | 默认状态 |
+| ---------- | -------------- | --------------------------------- | -------- |
+| `cursor`   | Cursor         | `.cursorrules`                    | ✅ 启用  |
+| `windsurf` | Windsurf       | `.windsurfrules`                  | ❌ 禁用  |
+| `copilot`  | GitHub Copilot | `.github/copilot-instructions.md` | ❌ 禁用  |
 
-**目标文件**: `.cursorrules`
+**VSCode 扩展类**：
 
-**特性**:
+| ID          | 名称      | 文件路径         | 默认状态 |
+| ----------- | --------- | ---------------- | -------- |
+| `continue`  | Continue  | `.continuerules` | ❌ 禁用  |
+| `cline`     | Cline     | `.clinerules`    | ❌ 禁用  |
+| `roo-cline` | Roo-Cline | `.roorules`      | ❌ 禁用  |
 
-- 支持 Markdown 格式
-- 支持分段规则（用 `---` 分隔）
-- 自动添加元数据注释
-- 支持优先级排序
+**命令行工具**：
 
-**配置项**:
+| ID      | 名称  | 文件路径          | 默认状态 |
+| ------- | ----- | ----------------- | -------- |
+| `aider` | Aider | `.aider.conf.yml` | ❌ 禁用  |
+
+**Web 平台类**：
+
+| ID         | 名称     | 文件路径         | 默认状态 |
+| ---------- | -------- | ---------------- | -------- |
+| `bolt`     | Bolt.new | `.bolt/prompt`   | ❌ 禁用  |
+| `qodo-gen` | Qodo Gen | `.qodo/rules.md` | ❌ 禁用  |
+
+### 3.3 通用配置方式
+
+所有预设适配器的配置格式统一：
 
 ```json
 {
-  "turboAiRules.adapters.cursor": {
+  "turbo-ai-rules.adapters.{id}": {
     "enabled": true,
     "autoUpdate": true,
-    "template": "default",
     "includeMetadata": true
   }
 }
 ```
 
-### 3.3 CopilotAdapter
-
-**目标文件**: `.github/copilot-instructions.md`
-
-**特性**:
-
-- 符合 GitHub Copilot 格式要求
-- 支持多语言规则
-- 自动分类和索引
-- 支持代码块语法高亮
-
-**配置项**:
+示例：
 
 ```json
 {
-  "turboAiRules.adapters.copilot": {
-    "enabled": true,
-    "autoUpdate": true,
-    "language": "en",
-    "includeExamples": true
+  "turbo-ai-rules.adapters.cursor": {
+    "enabled": true
+  },
+  "turbo-ai-rules.adapters.windsurf": {
+    "enabled": true
+  },
+  "turbo-ai-rules.adapters.cline": {
+    "enabled": true
   }
 }
 ```
 
-### 3.4 ContinueAdapter
+### 3.4 添加新的预设适配器
 
-**目标文件**: `.continuerules`
+只需在 `src/adapters/PresetAdapter.ts` 的 `PRESET_ADAPTERS` 列表中添加配置：
 
-**特性**:
-
-- 支持 Continue.dev 特有语法
-- 支持规则分组
-- 支持条件规则（基于文件类型）
-- 支持嵌入式代码片段
-
-**配置项**:
-
-```json
+```typescript
 {
-  "turboAiRules.adapters.continue": {
-    "enabled": true,
-    "autoUpdate": true,
-    "groupByCategory": true,
-    "includeCodeSnippets": true
-  }
+  id: 'new-tool',
+  name: 'New AI Tool',
+  filePath: '.newtoolrules',
+  type: 'file',
+  defaultEnabled: false,
+  description: 'Description of the tool',
+  website: 'https://example.com'
 }
 ```
+
+**无需额外步骤**：
+
+- ❌ 不需要创建新的适配器类
+- ❌ 不需要修改 FileGenerator
+- ❌ 不需要修改 Provider
+- ✅ 配置会自动被识别和使用
 
 ---
 
@@ -164,51 +194,29 @@
 
 ```json
 {
-  "turboAiRules.adapters.custom": [
+  "turbo-ai-rules.adapters.custom": [
     {
+      "id": "my-tool",
       "name": "My Custom Tool",
-      "targetFile": ".my-tool-rules",
-      "template": "path/to/template.hbs",
       "enabled": true,
-      "autoUpdate": true,
-      "options": {
-        "format": "json",
-        "indent": 2
-      }
+      "outputPath": ".my-tool-rules",
+      "outputType": "file",
+      "fileTemplate": "# Rules\n\n{{content}}",
+      "isRuleType": true
     }
   ]
 }
 ```
 
-### 4.3 模板语法 (Handlebars)
+### 4.3 配置字段说明
 
-支持使用 Handlebars 模板引擎定义自定义格式：
-
-```handlebars
-{{! template.hbs }}
-# Rules for
-{{toolName}}
-
-Generated at:
-{{timestamp}}
-
-{{#each rules}}
-  ##
-  {{title}}
-
-  {{content}}
-
-  ---
-{{/each}}
-```
-
-### 4.4 可用变量
-
-- `rules`: 规则数组 (`ParsedRule[]`)
-- `sources`: 规则源信息 (`RuleSource[]`)
-- `timestamp`: 生成时间戳
-- `toolName`: 工具名称
-- `version`: 扩展版本
+- `id`: 唯一标识（kebab-case）
+- `name`: 显示名称
+- `enabled`: 是否启用
+- `outputPath`: 输出路径
+- `outputType`: 输出类型（file 或 directory）
+- `fileTemplate`: 文件模板（单文件模式）
+- `isRuleType`: 是否为规则类型（true=参与规则同步，false=独立同步）
 
 ---
 
@@ -219,32 +227,51 @@ Generated at:
 ```
 1. 获取合并后的规则列表
    ↓
-2. 适配器过滤规则 (tags, priority)
+2. 适配器过滤规则 (如果需要)
    ↓
-3. 适配器排序规则
+3. 适配器排序规则（优先级）
    ↓
-4. 适配器格式化内容
+4. 生成文件头部（元数据 + 标题）
    ↓
-5. 应用模板 (如果有)
+5. 生成目录（Table of Contents）
    ↓
-6. 添加元数据注释
+6. 格式化规则内容
    ↓
 7. 返回最终内容
 ```
 
-### 5.2 过滤策略
+### 5.2 统一输出格式
 
-- **按标签过滤**: 只包含特定标签的规则
-- **按优先级过滤**: 高于指定阈值的规则
-- **按来源过滤**: 只包含指定规则源的规则
-- **自定义过滤**: 适配器实现自定义逻辑
+所有预设适配器生成的文件格式统一：
 
-### 5.3 排序策略
+```markdown
+<!-- Generated by Turbo AI Rules at 2024-01-01T00:00:00.000Z -->
+<!-- Total rules: 10 -->
 
-- **按优先级排序**: 数值越高越靠前
-- **按来源排序**: 按规则源添加顺序
-- **按字母排序**: 按规则标题字母顺序
-- **自定义排序**: 适配器实现自定义逻辑
+# AI Coding Rules for {Tool Name}
+
+> This file is automatically generated by Turbo AI Rules extension.
+> Do not edit manually - changes will be overwritten on next sync.
+
+> **{Tool Name}**: {Tool Description}
+> **Website**: {Tool Website}
+
+## Table of Contents
+
+- [Rule 1](#rule-1)
+- [Rule 2](#rule-2)
+  ...
+
+---
+
+{Rule Content 1}
+
+---
+
+{Rule Content 2}
+
+...
+```
 
 ---
 

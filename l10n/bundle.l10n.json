@@ -453,5 +453,7 @@
   "adapterManager.tips": "Tips",
   "adapterManager.tip1": "Adapter ID cannot be changed after creation",
   "adapterManager.tip2": "Output path will be created automatically",
-  "adapterManager.tip3": "Skills type adapters are recommended for skill/capability related rule sets"
+  "adapterManager.tip3": "Skills type adapters are recommended for skill/capability related rule sets",
+  "common.previous": "Previous",
+  "common.next": "Next"
 }

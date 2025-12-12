@@ -3,6 +3,7 @@
 > **项目**：Turbo AI Rules - 从外部 Git 仓库管理 AI 编码规则并为多工具生成配置的 VSCode 扩展  
 > **作用域**：约束 Turbo AI Rules 的开发规范，详细设计见 docs/ 目录  
 > **原则**：本文档仅包含规范性内容，不包含具体实现细节
+> **todolist**：每次任务前建 todolist
 
 ---
 

@@ -1,8 +1,4 @@
 {
-  // Continue 适配器测试场景
-  "turbo-ai-rules.adapters.cursor.enabled": false,
-  "turbo-ai-rules.adapters.copilot.enabled": false,
-  "turbo-ai-rules.adapters.continue.enabled": true,
   "turbo-ai-rules.adapters.custom": [], // 禁用默认的自定义适配器
   "turbo-ai-rules.sync.conflictStrategy": "priority",
   "turbo-ai-rules.sync.auto": false,
@@ -21,5 +17,35 @@
         "type": "none"
       }
     }
-  ]
+  ],
+  "turbo-ai-rules.adapters": {
+    "custom": [],
+    "cursor": {
+      "enabled": false
+    },
+    "windsurf": {
+      "enabled": false
+    },
+    "copilot": {
+      "enabled": false
+    },
+    "continue": {
+      "enabled": true
+    },
+    "cline": {
+      "enabled": false
+    },
+    "roo-cline": {
+      "enabled": false
+    },
+    "aider": {
+      "enabled": false
+    },
+    "bolt": {
+      "enabled": false
+    },
+    "qodo-gen": {
+      "enabled": false
+    }
+  }
 }

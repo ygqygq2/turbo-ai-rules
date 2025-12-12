@@ -1,25 +1,27 @@
 {
   // 默认 rules/ 目录适配器测试场景
-  "turbo-ai-rules.adapters.cursor.enabled": false,
-  "turbo-ai-rules.adapters.copilot.enabled": false,
-  "turbo-ai-rules.adapters.continue.enabled": false,
   "turbo-ai-rules.sync.auto": false,
   "turbo-ai-rules.sync.onStartup": false,
 
-  // 自定义适配器配置（默认 rules/ 目录）
-  "turbo-ai-rules.adapters.custom": [
-    {
-      "id": "default-rules",
-      "name": "Generic Rules",
-      "enabled": true,
-      "autoUpdate": true,
-      "outputPath": "rules",
-      "outputType": "directory",
-      "organizeBySource": true,
-      "generateIndex": true,
-      "indexFileName": "index.md"
-    }
-  ],
+  // 适配器配置
+  "turbo-ai-rules.adapters": {
+    "cursor": { "enabled": false },
+    "copilot": { "enabled": false },
+    "continue": { "enabled": false },
+    "custom": [
+      {
+        "id": "default-rules",
+        "name": "Generic Rules",
+        "enabled": true,
+        "autoUpdate": true,
+        "outputPath": "rules",
+        "outputType": "directory",
+        "organizeBySource": true,
+        "generateIndex": true,
+        "indexFileName": "index.md"
+      }
+    ]
+  },
 
   // 预配置测试用规则源
   "turbo-ai-rules.sources": [

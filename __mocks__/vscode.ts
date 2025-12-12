@@ -25,6 +25,21 @@ if (!vscode.l10n) {
   };
 }
 
+// Add workspace mock
+if (!vscode.workspace) {
+  vscode.workspace = {
+    getConfiguration: vi.fn(() => ({
+      get: vi.fn(),
+      has: vi.fn(),
+      inspect: vi.fn(),
+      update: vi.fn().mockResolvedValue(undefined),
+    })),
+    workspaceFolders: undefined,
+    onDidChangeConfiguration: vi.fn(),
+    onDidChangeWorkspaceFolders: vi.fn(),
+  };
+}
+
 // Add TreeItem class
 if (!vscode.TreeItem) {
   class TreeItem {
@@ -124,3 +139,4 @@ if (!vscode.window.showTextDocument) {
 }
 
 module.exports = vscode;
+export default vscode;

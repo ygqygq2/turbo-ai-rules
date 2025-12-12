@@ -116,14 +116,38 @@ export interface CustomAdapterConfig extends AdapterConfig {
 
 /**
  * AI 工具适配器配置集合
+ *
+ * 支持预设适配器和自定义适配器：
+ * - 预设适配器：cursor, copilot, continue, windsurf, aider, cline, roo-cline, bolt, qodo-gen
+ * - 自定义适配器：通过 custom 数组配置
  */
 export interface AdaptersConfig {
-  /** Cursor 配置 */
+  // === IDE 集成类工具 ===
+  /** Cursor AI editor */
   cursor?: AdapterConfig;
-  /** GitHub Copilot 配置 */
+  /** Windsurf (Codeium IDE) */
+  windsurf?: AdapterConfig;
+  /** GitHub Copilot */
   copilot?: AdapterConfig;
-  /** Continue.dev 配置 */
+
+  // === VSCode 扩展类工具 ===
+  /** Continue.dev */
   continue?: AdapterConfig;
+  /** Cline (formerly Claude Dev) */
+  cline?: AdapterConfig;
+  /** Roo-Cline (Cline fork) */
+  'roo-cline'?: AdapterConfig;
+
+  // === 命令行工具 ===
+  /** Aider - AI pair programming */
+  aider?: AdapterConfig;
+
+  // === Web 平台类工具 ===
+  /** Bolt.new (StackBlitz) */
+  bolt?: AdapterConfig;
+  /** Qodo Gen (test generation) */
+  'qodo-gen'?: AdapterConfig;
+
   /** 自定义适配器列表 */
   custom?: CustomAdapterConfig[];
 }
