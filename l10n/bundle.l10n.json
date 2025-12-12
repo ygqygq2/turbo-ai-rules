@@ -319,6 +319,8 @@
   "dashboard.sources.searchRules": "Browse/Search Rules",
   "dashboard.adapters.title": "Adapter Status",
   "dashboard.adapters.noAdaptersConfigured": "No adapters configured",
+  "dashboard.adapters.preset": "Preset",
+  "dashboard.adapters.custom": "Custom",
   "dashboard.adapters.ruleCount": "{count} rules",
   "dashboard.adapters.output": "Output",
   "dashboard.adapters.lastGenerated": "Last generated: {time}",

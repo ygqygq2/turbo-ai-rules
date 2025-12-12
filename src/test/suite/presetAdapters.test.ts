@@ -50,7 +50,7 @@ describe('Preset Adapters Integration Tests', () => {
     }
   });
 
-  test('应该加载所有9个预设适配器', () => {
+  it('应该加载所有9个预设适配器', () => {
     assert.strictEqual(PRESET_ADAPTERS.length, 9, '预设适配器数量应为9个');
 
     const expectedAdapters = [
@@ -71,7 +71,7 @@ describe('Preset Adapters Integration Tests', () => {
     }
   });
 
-  test('所有预设适配器应有必需的属性', () => {
+  it('所有预设适配器应有必需的属性', () => {
     for (const adapter of PRESET_ADAPTERS) {
       assert.ok(adapter.id, `适配器 ${adapter.id} 应有 id`);
       assert.ok(adapter.name, `适配器 ${adapter.id} 应有 name`);
@@ -84,14 +84,14 @@ describe('Preset Adapters Integration Tests', () => {
     }
   });
 
-  test('预设适配器ID应为kebab-case格式', () => {
+  it('预设适配器ID应为kebab-case格式', () => {
     const kebabCasePattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
     for (const adapter of PRESET_ADAPTERS) {
       assert.ok(kebabCasePattern.test(adapter.id), `适配器 ID ${adapter.id} 应为 kebab-case 格式`);
     }
   });
 
-  test('应该能够配置并启用Windsurf适配器', async () => {
+  it('应该能够配置并启用Windsurf适配器', async () => {
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
 
     // 启用 Windsurf 适配器
@@ -109,7 +109,7 @@ describe('Preset Adapters Integration Tests', () => {
     await config.update('adapters', adapters, vscode.ConfigurationTarget.Workspace);
   });
 
-  test('应该能够配置并启用多个新增的适配器', async () => {
+  it('应该能够配置并启用多个新增的适配器', async () => {
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
 
     // 启用多个新增适配器
@@ -136,7 +136,7 @@ describe('Preset Adapters Integration Tests', () => {
     await config.update('adapters', adapters, vscode.ConfigurationTarget.Workspace);
   });
 
-  test('新格式配置应该被正确读取', async () => {
+  it('新格式配置应该被正确读取', async () => {
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
 
     // 设置新格式配置

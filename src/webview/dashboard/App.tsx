@@ -31,6 +31,7 @@ interface DashboardState {
   adapters: Array<{
     id: string;
     name: string;
+    type: 'preset' | 'custom'; // 适配器类型
     enabled: boolean;
     ruleCount: number;
     outputPath: string;
@@ -166,34 +167,23 @@ export const App: React.FC = () => {
               {t('dashboard.adapters.noAdaptersConfigured')}
             </EmptyState>
           ) : (
-            <div className="adapters-list">
+            <div className="adapters-grid">
               {stats.adapters.map((adapter) => (
-                <div key={adapter.id} className="adapter-item">
-                  <div className="adapter-header">
-                    <Icon
-                      icon={adapter.enabled ? 'pass' : 'circle-slash'}
-                      size={16}
-                      className={adapter.enabled ? 'status-enabled' : 'status-disabled'}
-                    />
-                    <div className="adapter-info">
-                      <div className="adapter-name">
-                        {adapter.name}{' '}
-                        {adapter.enabled && (
-                          <span className="rule-count">
-                            ({t('dashboard.adapters.ruleCount', { count: adapter.ruleCount })})
-                          </span>
-                        )}
-                      </div>
-                      <div className="adapter-path">
-                        {t('dashboard.adapters.output')}: {adapter.outputPath}
-                      </div>
-                      {adapter.lastGenerated && (
-                        <div className="adapter-last-generated">
-                          {t('dashboard.adapters.lastGenerated', { time: adapter.lastGenerated })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                <div
+                  key={adapter.id}
+                  className={`adapter-chip ${adapter.enabled ? 'enabled' : 'disabled'}`}
+                >
+                  <Icon
+                    icon={adapter.enabled ? 'pass' : 'circle-slash'}
+                    size={14}
+                    className="adapter-chip-icon"
+                  />
+                  <span className="adapter-chip-name">{adapter.name}</span>
+                  <span className="adapter-chip-type">
+                    {adapter.type === 'preset'
+                      ? t('dashboard.adapters.preset')
+                      : t('dashboard.adapters.custom')}
+                  </span>
                 </div>
               ))}
             </div>

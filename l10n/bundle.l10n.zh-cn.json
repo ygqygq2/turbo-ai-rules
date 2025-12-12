@@ -318,6 +318,8 @@
   "dashboard.sources.searchRules": "浏览/搜索规则",
   "dashboard.adapters.title": "适配器状态",
   "dashboard.adapters.noAdaptersConfigured": "未配置适配器",
+  "dashboard.adapters.preset": "预置",
+  "dashboard.adapters.custom": "自定义",
   "dashboard.adapters.ruleCount": "{count} 条规则",
   "dashboard.adapters.output": "输出",
   "dashboard.adapters.lastGenerated": "最后生成: {time}",

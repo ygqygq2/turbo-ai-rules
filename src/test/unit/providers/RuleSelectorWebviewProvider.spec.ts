@@ -39,12 +39,12 @@ describe('RuleSelectorWebviewProvider', () => {
       uri: { fsPath: '/fake/workspace' },
     };
 
-    // 使用 defineProperty 替代直接赋值
-    Object.defineProperty(vscode.workspace, 'workspaceFolders', {
-      value: [mockWorkspaceFolder],
-      writable: true,
-      configurable: true,
-    });
+    // Ensure workspace exists
+    if (!vscode.workspace) {
+      (vscode as any).workspace = {} as any;
+    }
+    // 设置 workspaceFolders
+    (vscode.workspace as any).workspaceFolders = [mockWorkspaceFolder] as any;
 
     // 测试保存逻辑
 
@@ -74,11 +74,11 @@ describe('RuleSelectorWebviewProvider', () => {
       uri: { fsPath: '/fake/workspace' },
     };
 
-    Object.defineProperty(vscode.workspace, 'workspaceFolders', {
-      value: [mockWorkspaceFolder],
-      writable: true,
-      configurable: true,
-    });
+    // Ensure workspace exists
+    if (!vscode.workspace) {
+      (vscode as any).workspace = {} as any;
+    }
+    (vscode.workspace as any).workspaceFolders = [mockWorkspaceFolder] as any;
 
     expect(mockDataManager.readRuleSelections).toBeDefined();
   });

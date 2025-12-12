@@ -37,6 +37,7 @@ interface DashboardState {
   adapters: Array<{
     id: string;
     name: string;
+    type: 'preset' | 'custom'; // 适配器类型
     enabled: boolean;
     ruleCount: number;
     outputPath: string;
@@ -291,6 +292,10 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
   private async sendInitialState(): Promise<void> {
     try {
       const state = await this.getDashboardState();
+      Logger.info('Dashboard state prepared', {
+        adaptersCount: state.adapters.length,
+        adapters: state.adapters.map((a) => ({ id: a.id, name: a.name, enabled: a.enabled })),
+      });
       await this.postMessage({
         type: 'updateStats',
         payload: state,
@@ -338,51 +343,99 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
       // 构建适配器状态列表
       const adapters: DashboardState['adapters'] = [];
 
-      // 预置适配器
-      if (config.adapters.copilot) {
-        adapters.push({
+      Logger.debug('Building adapter list', {
+        cursorConfig: config.adapters.cursor,
+        copilotConfig: config.adapters.copilot,
+        continueConfig: config.adapters.continue,
+      });
+
+      // 预置适配器 - 显示所有预置适配器（启用或禁用）
+      const presetAdapters = [
+        {
           id: 'copilot',
           name: 'GitHub Copilot',
-          enabled: config.adapters.copilot.enabled,
-          ruleCount: config.adapters.copilot.enabled ? totalRules : 0,
           outputPath: '.github/copilot-instructions.md',
-          lastGenerated: null, // TODO: 从工作区状态获取
-        });
-      }
-
-      if (config.adapters.cursor) {
-        adapters.push({
+          config: config.adapters.copilot,
+        },
+        {
           id: 'cursor',
           name: 'Cursor',
-          enabled: config.adapters.cursor.enabled,
-          ruleCount: config.adapters.cursor.enabled ? totalRules : 0,
           outputPath: '.cursorrules',
-          lastGenerated: null,
-        });
-      }
-
-      if (config.adapters.continue) {
-        adapters.push({
+          config: config.adapters.cursor,
+        },
+        {
           id: 'continue',
           name: 'Continue',
-          enabled: config.adapters.continue.enabled,
-          ruleCount: config.adapters.continue.enabled ? totalRules : 0,
           outputPath: '.continuerules',
-          lastGenerated: null,
-        });
+          config: config.adapters.continue,
+        },
+        {
+          id: 'windsurf',
+          name: 'Windsurf',
+          outputPath: '.windsurfrules',
+          config: config.adapters.windsurf,
+        },
+        {
+          id: 'aider',
+          name: 'Aider',
+          outputPath: '.aider',
+          config: config.adapters.aider,
+        },
+        {
+          id: 'cline',
+          name: 'Cline',
+          outputPath: '.clinerules',
+          config: config.adapters.cline,
+        },
+        {
+          id: 'roo-cline',
+          name: 'Roo-Cline',
+          outputPath: '.roo-clinerules',
+          config: config.adapters['roo-cline'],
+        },
+        {
+          id: 'bolt',
+          name: 'Bolt',
+          outputPath: '.boltrules',
+          config: config.adapters.bolt,
+        },
+        {
+          id: 'qodo-gen',
+          name: 'Qodo Gen',
+          outputPath: '.qodo-genrules',
+          config: config.adapters['qodo-gen'],
+        },
+      ];
+
+      // 只显示已启用的预置适配器
+      for (const preset of presetAdapters) {
+        if (preset.config && preset.config.enabled) {
+          adapters.push({
+            id: preset.id,
+            name: preset.name,
+            type: 'preset',
+            enabled: true,
+            ruleCount: totalRules,
+            outputPath: preset.outputPath,
+            lastGenerated: null, // TODO: 从工作区状态获取
+          });
+        }
       }
 
-      // 自定义适配器
+      // 自定义适配器 - 只显示已启用的
       if (config.adapters.custom) {
         for (const custom of config.adapters.custom) {
-          adapters.push({
-            id: custom.id,
-            name: custom.name,
-            enabled: custom.enabled,
-            ruleCount: custom.enabled ? totalRules : 0,
-            outputPath: normalizeOutputPathForDisplay(custom.outputPath),
-            lastGenerated: null,
-          });
+          if (custom.enabled) {
+            adapters.push({
+              id: custom.id,
+              name: custom.name,
+              type: 'custom',
+              enabled: true,
+              ruleCount: totalRules,
+              outputPath: normalizeOutputPathForDisplay(custom.outputPath),
+              lastGenerated: null,
+            });
+          }
         }
       }
 

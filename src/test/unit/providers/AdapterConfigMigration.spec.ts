@@ -5,7 +5,42 @@
  * @deprecated 此测试将在 v2.0.5 删除（与迁移功能一起移除）
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import vscode from 'vscode';
+
+// Mock vscode module first
+vi.mock('vscode', async () => {
+  return {
+    default: {
+      workspace: {
+        getConfiguration: vi.fn(),
+      },
+      window: {
+        showInformationMessage: vi.fn(),
+      },
+      l10n: {
+        t: vi.fn((key: string, args?: any) => key),
+      },
+      ConfigurationTarget: {
+        Global: 1,
+        Workspace: 2,
+        WorkspaceFolder: 3,
+      },
+    },
+    workspace: {
+      getConfiguration: vi.fn(),
+    },
+    window: {
+      showInformationMessage: vi.fn(),
+    },
+    l10n: {
+      t: vi.fn((key: string, args?: any) => key),
+    },
+    ConfigurationTarget: {
+      Global: 1,
+      Workspace: 2,
+      WorkspaceFolder: 3,
+    },
+  };
+});
 
 // Mock ConfigManager
 vi.mock('../../../services/ConfigManager', () => ({
@@ -32,6 +67,8 @@ vi.mock('../../../utils/logger', () => ({
     debug: vi.fn(),
   },
 }));
+
+import vscode from 'vscode';
 
 import { AdapterManagerWebviewProvider } from '../../../providers/AdapterManagerWebviewProvider';
 import { notify } from '../../../utils/notifications';

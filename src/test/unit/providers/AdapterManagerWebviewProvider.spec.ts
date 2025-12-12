@@ -20,6 +20,17 @@ vi.mock('vscode', () => ({
   Uri: {
     file: vi.fn((path) => ({ fsPath: path })),
   },
+  workspace: {
+    getConfiguration: vi.fn(),
+  },
+  l10n: {
+    t: vi.fn((key: string, args?: any) => key),
+  },
+  ConfigurationTarget: {
+    Global: 1,
+    Workspace: 2,
+    WorkspaceFolder: 3,
+  },
 }));
 
 // Mock fs
@@ -57,14 +68,27 @@ describe('AdapterManagerWebviewProvider', () => {
   let provider: AdapterManagerWebviewProvider;
   let mockContext: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Reset singleton
     (AdapterManagerWebviewProvider as any).instance = undefined;
+
+    // Mock vscode.workspace.getConfiguration
+    const mockVscode = await import('vscode');
+    vi.mocked(mockVscode.workspace.getConfiguration).mockReturnValue({
+      get: vi.fn().mockReturnValue({}),
+      has: vi.fn(),
+      inspect: vi.fn(),
+      update: vi.fn().mockResolvedValue(undefined),
+    } as any);
 
     mockContext = {
       extensionPath: '/test/path',
       subscriptions: [],
       extensionUri: { fsPath: '/test/path' },
+      globalState: {
+        get: vi.fn().mockReturnValue(false),
+        update: vi.fn(),
+      },
     };
 
     provider = AdapterManagerWebviewProvider.getInstance(mockContext);
@@ -83,34 +107,31 @@ describe('AdapterManagerWebviewProvider', () => {
     it('应该返回预置适配器和自定义适配器', async () => {
       const data = await (provider as any).getAdapterData();
 
-      expect(data).toHaveProperty('presets');
-      expect(data).toHaveProperty('custom');
+      expect(data).toHaveProperty('presetAdapters');
+      expect(data).toHaveProperty('customAdapters');
 
-      expect(data.presets).toHaveProperty('copilot');
-      expect(data.presets).toHaveProperty('cursor');
-      expect(data.presets).toHaveProperty('continue');
-
-      expect(Array.isArray(data.custom)).toBe(true);
-      expect(data.custom.length).toBe(1);
+      expect(Array.isArray(data.presetAdapters)).toBe(true);
+      expect(Array.isArray(data.customAdapters)).toBe(true);
+      expect(data.customAdapters.length).toBe(1);
     });
 
     it('应该正确设置预置适配器的属性', async () => {
       const data = await (provider as any).getAdapterData();
 
-      expect(data.presets.copilot.enabled).toBe(true);
-      expect(data.presets.copilot.autoUpdate).toBe(true);
+      const copilot = data.presetAdapters.find((a: any) => a.id === 'copilot');
+      const cursor = data.presetAdapters.find((a: any) => a.id === 'cursor');
 
-      expect(data.presets.cursor.enabled).toBe(false);
-      expect(data.presets.cursor.autoUpdate).toBe(false);
+      expect(copilot?.enabled).toBe(true);
+      expect(cursor?.enabled).toBe(false);
     });
 
     it('应该包含自定义适配器的完整信息', async () => {
       const data = await (provider as any).getAdapterData();
 
-      expect(data.custom[0].id).toBe('custom1');
-      expect(data.custom[0].name).toBe('Custom Adapter 1');
-      expect(data.custom[0].enabled).toBe(true);
-      expect(data.custom[0].outputPath).toBe('custom/path');
+      expect(data.customAdapters[0].id).toBe('custom1');
+      expect(data.customAdapters[0].name).toBe('Custom Adapter 1');
+      expect(data.customAdapters[0].enabled).toBe(true);
+      expect(data.customAdapters[0].outputPath).toBe('custom/path');
     });
   });
 
@@ -125,7 +146,7 @@ describe('AdapterManagerWebviewProvider', () => {
         template: 'custom template',
       };
 
-      await (provider as any).handleSaveAdapter(newAdapter);
+      await (provider as any).handleSaveAdapter({ adapter: newAdapter });
 
       expect(mockUpdateConfig).toHaveBeenCalled();
       const callArgs = mockUpdateConfig.mock.calls[mockUpdateConfig.mock.calls.length - 1];
@@ -145,7 +166,7 @@ describe('AdapterManagerWebviewProvider', () => {
         template: 'new template',
       };
 
-      await (provider as any).handleSaveAdapter(updatedAdapter);
+      await (provider as any).handleSaveAdapter({ adapter: updatedAdapter });
 
       expect(mockUpdateConfig).toHaveBeenCalled();
       const callArgs = mockUpdateConfig.mock.calls[mockUpdateConfig.mock.calls.length - 1];

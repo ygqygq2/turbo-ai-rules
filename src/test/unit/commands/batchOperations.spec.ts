@@ -67,11 +67,32 @@ describe('batchOperations 命令单元测试', () => {
       update: vi.fn().mockResolvedValue(undefined),
     };
 
-    (vscode.workspace.getConfiguration as any) = vi.fn().mockReturnValue(mockConfig);
-    (vscode.workspace.fs.writeFile as any) = vi.fn().mockResolvedValue(undefined);
-    (vscode.workspace.fs.delete as any) = vi.fn().mockResolvedValue(undefined);
-    (vscode.window.showSaveDialog as any) = vi.fn();
-    (vscode.Uri.file as any) = vi.fn((path: string) => ({ fsPath: path }));
+    // Ensure vscode mock objects exist
+    if (!vscode.workspace) {
+      (vscode as any).workspace = {} as any;
+    }
+    if (!vscode.workspace.fs) {
+      (vscode.workspace as any).fs = {} as any;
+    }
+    if (!vscode.window) {
+      (vscode as any).window = {} as any;
+    }
+    if (!vscode.Uri) {
+      (vscode as any).Uri = {} as any;
+    }
+    if (!vscode.ConfigurationTarget) {
+      (vscode as any).ConfigurationTarget = {
+        Global: 1,
+        Workspace: 2,
+        WorkspaceFolder: 3,
+      };
+    }
+
+    vscode.workspace.getConfiguration = vi.fn().mockReturnValue(mockConfig as any);
+    vscode.workspace.fs.writeFile = vi.fn().mockResolvedValue(undefined);
+    vscode.workspace.fs.delete = vi.fn().mockResolvedValue(undefined);
+    vscode.window.showSaveDialog = vi.fn().mockResolvedValue(undefined);
+    vscode.Uri.file = vi.fn().mockImplementation((path: string) => ({ fsPath: path }) as any);
 
     mockRulesManager = {
       getRulesBySource: vi.fn().mockReturnValue([]),

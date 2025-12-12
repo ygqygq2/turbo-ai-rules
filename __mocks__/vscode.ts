@@ -4,16 +4,48 @@ import { createVSCodeMock } from 'jest-mock-vscode';
 
 const vscode = createVSCodeMock(vi);
 
-// Add withProgress to window mock
-if (!vscode.window.withProgress) {
-  vscode.window.withProgress = vi.fn().mockImplementation(async (options, task) => {
-    return task({ report: vi.fn() }, { checkCancellation: vi.fn() });
-  });
-}
-
-// Add setStatusBarMessage to window mock
-if (!vscode.window.setStatusBarMessage) {
-  vscode.window.setStatusBarMessage = vi.fn().mockReturnValue({ dispose: vi.fn() });
+// Create or extend window
+if (!vscode.window) {
+  vscode.window = {
+    withProgress: vi.fn().mockImplementation(async (options, task) => {
+      return task({ report: vi.fn() }, { checkCancellation: vi.fn() });
+    }),
+    setStatusBarMessage: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+    showQuickPick: vi.fn(),
+    createStatusBarItem: vi.fn().mockReturnValue({
+      text: '',
+      tooltip: '',
+      command: '',
+      show: vi.fn(),
+      hide: vi.fn(),
+      dispose: vi.fn(),
+    }),
+    showSaveDialog: vi.fn().mockResolvedValue(undefined),
+    showTextDocument: vi.fn().mockResolvedValue({}),
+  } as any;
+} else {
+  // Extend existing window
+  vscode.window.withProgress =
+    vscode.window.withProgress ||
+    vi.fn().mockImplementation(async (options, task) => {
+      return task({ report: vi.fn() }, { checkCancellation: vi.fn() });
+    });
+  vscode.window.setStatusBarMessage =
+    vscode.window.setStatusBarMessage || vi.fn().mockReturnValue({ dispose: vi.fn() });
+  vscode.window.showQuickPick = vscode.window.showQuickPick || vi.fn();
+  vscode.window.createStatusBarItem =
+    vscode.window.createStatusBarItem ||
+    vi.fn().mockReturnValue({
+      text: '',
+      tooltip: '',
+      command: '',
+      show: vi.fn(),
+      hide: vi.fn(),
+      dispose: vi.fn(),
+    });
+  vscode.window.showSaveDialog =
+    vscode.window.showSaveDialog || vi.fn().mockResolvedValue(undefined);
+  vscode.window.showTextDocument = vscode.window.showTextDocument || vi.fn().mockResolvedValue({});
 }
 
 // Add l10n mock
@@ -25,7 +57,7 @@ if (!vscode.l10n) {
   };
 }
 
-// Add workspace mock
+// Create or extend workspace
 if (!vscode.workspace) {
   vscode.workspace = {
     getConfiguration: vi.fn(() => ({
@@ -37,7 +69,57 @@ if (!vscode.workspace) {
     workspaceFolders: undefined,
     onDidChangeConfiguration: vi.fn(),
     onDidChangeWorkspaceFolders: vi.fn(),
-  };
+    fs: {
+      writeFile: vi.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockResolvedValue(undefined),
+      readFile: vi.fn().mockResolvedValue(Buffer.from('')),
+    },
+    openTextDocument: vi.fn().mockResolvedValue({}),
+  } as any;
+} else {
+  // Extend existing workspace
+  vscode.workspace.getConfiguration =
+    vscode.workspace.getConfiguration ||
+    vi.fn(() => ({
+      get: vi.fn(),
+      has: vi.fn(),
+      inspect: vi.fn(),
+      update: vi.fn().mockResolvedValue(undefined),
+    }));
+
+  // Use Object.defineProperty for workspaceFolders since it might be read-only
+  if (!Object.getOwnPropertyDescriptor(vscode.workspace, 'workspaceFolders')) {
+    try {
+      Object.defineProperty(vscode.workspace, 'workspaceFolders', {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      });
+    } catch (e) {
+      // If it fails, it's already defined and that's okay
+    }
+  }
+
+  vscode.workspace.onDidChangeConfiguration = vscode.workspace.onDidChangeConfiguration || vi.fn();
+  vscode.workspace.onDidChangeWorkspaceFolders =
+    vscode.workspace.onDidChangeWorkspaceFolders || vi.fn();
+  if (!vscode.workspace.fs) {
+    try {
+      Object.defineProperty(vscode.workspace, 'fs', {
+        value: {
+          writeFile: vi.fn().mockResolvedValue(undefined),
+          delete: vi.fn().mockResolvedValue(undefined),
+          readFile: vi.fn().mockResolvedValue(Buffer.from('')),
+        },
+        writable: true,
+        configurable: true,
+      });
+    } catch (e) {
+      // If it fails, it's already defined
+    }
+  }
+  vscode.workspace.openTextDocument =
+    vscode.workspace.openTextDocument || vi.fn().mockResolvedValue({});
 }
 
 // Add TreeItem class
@@ -95,6 +177,23 @@ if (!vscode.ViewColumn) {
   };
 }
 
+// Add StatusBarAlignment enum
+if (!vscode.StatusBarAlignment) {
+  vscode.StatusBarAlignment = {
+    Left: 1,
+    Right: 2,
+  };
+}
+
+// Add ConfigurationTarget enum
+if (!vscode.ConfigurationTarget) {
+  vscode.ConfigurationTarget = {
+    Global: 1,
+    Workspace: 2,
+    WorkspaceFolder: 3,
+  };
+}
+
 // Add commands API
 if (!vscode.commands) {
   vscode.commands = {
@@ -123,20 +222,6 @@ if (!vscode.env) {
   };
 }
 
-// Add showSaveDialog to window
-if (!vscode.window.showSaveDialog) {
-  vscode.window.showSaveDialog = vi.fn().mockResolvedValue(undefined);
-}
+// These are now handled in the window/workspace initialization above
 
-// Add openTextDocument to workspace
-if (!vscode.workspace.openTextDocument) {
-  vscode.workspace.openTextDocument = vi.fn().mockResolvedValue({});
-}
-
-// Add showTextDocument to window
-if (!vscode.window.showTextDocument) {
-  vscode.window.showTextDocument = vi.fn().mockResolvedValue({});
-}
-
-module.exports = vscode;
 export default vscode;

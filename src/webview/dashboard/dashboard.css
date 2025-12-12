@@ -140,62 +140,59 @@
   margin-top: var(--spacing-md);
 }
 
-/* 适配器列表 */
-.adapters-list {
+/* 适配器网格 */
+.adapters-grid {
   display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
   margin-bottom: var(--spacing-md);
 }
 
-.adapter-item {
-  padding: var(--spacing-md);
+/* 适配器芯片样式 */
+.adapter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
   background-color: var(--vscode-editorWidget-background);
   border: 1px solid var(--vscode-editorWidget-border);
-  border-radius: var(--border-radius);
-}
-
-.adapter-header {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-sm);
-}
-
-.adapter-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.adapter-name {
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.rule-count {
-  color: var(--vscode-descriptionForeground);
-  font-weight: normal;
-  font-size: 0.9rem;
-}
-
-.adapter-path {
-  color: var(--vscode-descriptionForeground);
+  border-radius: 16px;
   font-size: 0.85rem;
-  font-family: var(--vscode-font-family);
+  transition: all 0.2s ease;
 }
 
-.adapter-last-generated {
-  color: var(--vscode-descriptionForeground);
-  font-size: 0.85rem;
+.adapter-chip:hover {
+  background-color: var(--vscode-list-hoverBackground);
 }
 
-.status-enabled {
+.adapter-chip.enabled {
+  border-color: var(--vscode-testing-iconPassed);
+}
+
+.adapter-chip.enabled .adapter-chip-icon {
   color: var(--vscode-testing-iconPassed);
 }
 
-.status-disabled {
+.adapter-chip.disabled {
+  opacity: 0.6;
+}
+
+.adapter-chip.disabled .adapter-chip-icon {
   color: var(--vscode-descriptionForeground);
+}
+
+.adapter-chip-name {
+  font-weight: 500;
+}
+
+.adapter-chip-type {
+  background-color: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
 /* 快速操作网格 */
