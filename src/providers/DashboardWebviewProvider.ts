@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { PRESET_ADAPTERS } from '../adapters';
 import { ConfigManager } from '../services/ConfigManager';
 import { RulesManager } from '../services/RulesManager';
 import { EXTENSION_ICON_PATH } from '../utils/constants';
@@ -292,7 +293,7 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
   private async sendInitialState(): Promise<void> {
     try {
       const state = await this.getDashboardState();
-      Logger.info('Dashboard state prepared', {
+      Logger.debug('Dashboard state prepared', {
         adaptersCount: state.adapters.length,
         adapters: state.adapters.map((a) => ({ id: a.id, name: a.name, enabled: a.enabled })),
       });
@@ -343,99 +344,38 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
       // 构建适配器状态列表
       const adapters: DashboardState['adapters'] = [];
 
-      Logger.debug('Building adapter list', {
-        cursorConfig: config.adapters.cursor,
-        copilotConfig: config.adapters.copilot,
-        continueConfig: config.adapters.continue,
-      });
+      // 使用 PRESET_ADAPTERS 动态构建预置适配器列表（与适配器管理页保持一致）
+      for (const presetConfig of PRESET_ADAPTERS) {
+        // 与 AdapterManagerWebviewProvider 保持一致的逻辑
+        const enabled =
+          (config.adapters as Record<string, { enabled?: boolean }>)[presetConfig.id]?.enabled ??
+          presetConfig.defaultEnabled ??
+          false;
 
-      // 预置适配器 - 显示所有预置适配器（启用或禁用）
-      const presetAdapters = [
-        {
-          id: 'copilot',
-          name: 'GitHub Copilot',
-          outputPath: '.github/copilot-instructions.md',
-          config: config.adapters.copilot,
-        },
-        {
-          id: 'cursor',
-          name: 'Cursor',
-          outputPath: '.cursorrules',
-          config: config.adapters.cursor,
-        },
-        {
-          id: 'continue',
-          name: 'Continue',
-          outputPath: '.continuerules',
-          config: config.adapters.continue,
-        },
-        {
-          id: 'windsurf',
-          name: 'Windsurf',
-          outputPath: '.windsurfrules',
-          config: config.adapters.windsurf,
-        },
-        {
-          id: 'aider',
-          name: 'Aider',
-          outputPath: '.aider',
-          config: config.adapters.aider,
-        },
-        {
-          id: 'cline',
-          name: 'Cline',
-          outputPath: '.clinerules',
-          config: config.adapters.cline,
-        },
-        {
-          id: 'roo-cline',
-          name: 'Roo-Cline',
-          outputPath: '.roo-clinerules',
-          config: config.adapters['roo-cline'],
-        },
-        {
-          id: 'bolt',
-          name: 'Bolt',
-          outputPath: '.boltrules',
-          config: config.adapters.bolt,
-        },
-        {
-          id: 'qodo-gen',
-          name: 'Qodo Gen',
-          outputPath: '.qodo-genrules',
-          config: config.adapters['qodo-gen'],
-        },
-      ];
-
-      // 只显示已启用的预置适配器
-      for (const preset of presetAdapters) {
-        if (preset.config && preset.config.enabled) {
-          adapters.push({
-            id: preset.id,
-            name: preset.name,
-            type: 'preset',
-            enabled: true,
-            ruleCount: totalRules,
-            outputPath: preset.outputPath,
-            lastGenerated: null, // TODO: 从工作区状态获取
-          });
-        }
+        adapters.push({
+          id: presetConfig.id,
+          name: presetConfig.name,
+          type: 'preset',
+          enabled,
+          ruleCount: enabled ? totalRules : 0, // 未启用的适配器规则数为 0
+          outputPath: presetConfig.filePath,
+          lastGenerated: null, // TODO: 从工作区状态获取
+        });
       }
 
-      // 自定义适配器 - 只显示已启用的
+      // 显示所有自定义适配器（包括已启用和未启用的）
       if (config.adapters.custom) {
         for (const custom of config.adapters.custom) {
-          if (custom.enabled) {
-            adapters.push({
-              id: custom.id,
-              name: custom.name,
-              type: 'custom',
-              enabled: true,
-              ruleCount: totalRules,
-              outputPath: normalizeOutputPathForDisplay(custom.outputPath),
-              lastGenerated: null,
-            });
-          }
+          const enabled = custom.enabled ?? false;
+          adapters.push({
+            id: custom.id,
+            name: custom.name,
+            type: 'custom',
+            enabled,
+            ruleCount: enabled ? totalRules : 0, // 未启用的适配器规则数为 0
+            outputPath: normalizeOutputPathForDisplay(custom.outputPath),
+            lastGenerated: null,
+          });
         }
       }
 

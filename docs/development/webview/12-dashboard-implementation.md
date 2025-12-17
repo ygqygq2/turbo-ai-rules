@@ -155,6 +155,118 @@ const handleMessage = (event: MessageEvent) => {
 /* 主容器 */
 /* 主容器 */
 /* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
+/* 主容器 */
 .dashboard-header         /* 顶部标题栏 */
 .sources-card             /* 规则源卡片 */
 .adapters-card            /* 适配器卡片 */
@@ -224,23 +336,23 @@ const handleMessage = (event: MessageEvent) => {
 
 **操作命令**:
 
-| 消息类型                    | 触发场景         | 对应命令                          |
-| --------------------------- | ---------------- | --------------------------------- |
-| `ready`                     | 页面加载完成     | 请求初始状态                      |
-| `syncAll`                   | 同步所有适配器   | `turbo-ai-rules.syncRules`        |
-| `addSource`                 | 添加规则源       | `turbo-ai-rules.addSource`        |
-| `manageSources`             | 管理规则源       | `turbo-ai-rules.manageSources`    |
-| `searchRules`               | 浏览/搜索规则    | `turbo-ai-rules.searchRules`      |
-| `manageAdapters`            | 管理适配器       | `turbo-ai-rules.manageAdapters`   |
-| `regenerateAll`             | 重新生成所有配置 | `turbo-ai-rules.generateConfigs`  |
-| `openRuleSyncPage`          | 打开规则同步页   | `turbo-ai-rules.openRuleSyncPage` |
-| `openStatistics`            | 打开统计面板     | `turbo-ai-rules.showStatistics`   |
-| `openAdvancedSearch`        | 打开高级搜索     | `turbo-ai-rules.advancedSearch`   |
-| `showWelcome`/`openWelcome` | 显示欢迎页       | `turbo-ai-rules.showWelcome`      |
-| `openRuleFormat`            | 查看规则格式文档 | 打开 GitHub 规则格式文档          |
-| `openExamples`              | 浏览示例规则库   | 打开 GitHub 示例仓库              |
-| `openSettings`              | 打开设置         | `workbench.action.openSettings`   |
-| `openDocs`                  | 打开帮助文档     | 打开扩展文档链接                  |
+| 消息类型                    | 触发场景           | 对应命令                          |
+| --------------------------- | ------------------ | --------------------------------- |
+| `ready`                     | 页面加载完成       | 请求初始状态                      |
+| `syncAll`                   | 同步所有适配器     | `turbo-ai-rules.syncRules`        |
+| `addSource`                 | 添加规则源         | `turbo-ai-rules.addSource`        |
+| `manageSources`             | 管理规则源         | `turbo-ai-rules.manageSources`    |
+| `searchRules`               | 浏览/搜索规则      | `turbo-ai-rules.searchRules`      |
+| `openRuleSyncPage`          | 打开规则同步页     | `turbo-ai-rules.openRuleSyncPage` |
+| `regenerateAll`             | 适配器重新生成内容 | `turbo-ai-rules.generateConfigs`  |
+| `manageAdapters`            | 管理适配器         | `turbo-ai-rules.manageAdapters`   |
+| `openStatistics`            | 打开统计面板       | `turbo-ai-rules.showStatistics`   |
+| `openAdvancedSearch`        | 打开高级搜索       | `turbo-ai-rules.advancedSearch`   |
+| `showWelcome`/`openWelcome` | 显示欢迎页         | `turbo-ai-rules.showWelcome`      |
+| `openRuleFormat`            | 查看规则格式文档   | 打开 GitHub 规则格式文档          |
+| `openExamples`              | 浏览示例规则库     | 打开 GitHub 示例仓库              |
+| `openSettings`              | 打开设置           | `workbench.action.openSettings`   |
+| `openDocs`                  | 打开帮助文档       | 打开扩展文档链接                  |
 
 **设置按钮演进计划**:
 
@@ -279,15 +391,15 @@ const handleMessage = (event: MessageEvent) => {
   "dashboard.adapters.ruleCount": "{count} rules",
   "dashboard.adapters.output": "Output",
   "dashboard.adapters.lastGenerated": "Last generated: {time}",
+  "dashboard.adapters.fineSync": "Rule Sync Page",
   "dashboard.adapters.manageAdapters": "Manage Adapters",
-  "dashboard.adapters.regenerateAll": "Regenerate All Configs",
+  "dashboard.adapters.regenerateAll": "Regenerate Adapter Configs",
   "dashboard.quickActions.title": "Quick Actions",
   "dashboard.quickActions.quickStart": "Quick Start",
   "dashboard.quickActions.generateConfigs": "Generate Config Files",
   "dashboard.quickActions.statistics": "Statistics Panel",
   "dashboard.quickActions.advancedSearch": "Advanced Search",
   "dashboard.quickActions.ruleSyncPage": "Rule Sync Page",
-  "dashboard.quickActions.ruleTree": "Rule Tree",
   "dashboard.gettingStarted.title": "Getting Started",
   "dashboard.gettingStarted.newUser": "👋 New user?",
   "dashboard.gettingStarted.viewWelcome": "View Welcome Page and Quick Start Guide",

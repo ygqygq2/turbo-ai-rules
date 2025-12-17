@@ -108,7 +108,7 @@ export async function generateConfigsCommand(): Promise<void> {
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
-        title: 'Generating Config Files',
+        title: vscode.l10n.t('Generating Config Files'),
         cancellable: false,
       },
       async (progress) => {

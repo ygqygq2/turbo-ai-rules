@@ -1,9 +1,7 @@
 import React, { useEffect } from 'react';
 import { Icon } from '../components/Icon';
-import { TreeNode } from './TreeNode';
+import { renderTreeNodes } from '../components/tree';
 import { useRuleSelectorStore } from './store';
-import { getDirectoryFilePaths } from './tree-utils';
-import type { TreeNode as TreeNodeType } from './tree-utils';
 import { t } from '../utils/i18n';
 import '../global.css';
 import './rule-selector.css';
@@ -149,39 +147,7 @@ export const App: React.FC = () => {
     rpc.notify('close');
   };
 
-  /**
-   * @description 递归渲染树形节点
-   * @return default {React.ReactElement[]}
-   * @param nodes {TreeNodeType[]}
-   * @param level {number}
-   */
-  const renderTreeNodes = (nodes: TreeNodeType[], level: number = 0): React.ReactElement[] => {
-    return nodes.map((node) => {
-      const isDirectory = node.type === 'directory';
-      const isSelected = isDirectory
-        ? getDirectoryFilePaths(treeNodes, node.path).every((p) => selectedPaths.includes(p))
-        : selectedPaths.includes(node.path);
-
-      const isIndeterminate =
-        isDirectory &&
-        !isSelected &&
-        getDirectoryFilePaths(treeNodes, node.path).some((p) => selectedPaths.includes(p));
-
-      return (
-        <React.Fragment key={node.id}>
-          <TreeNode
-            node={node}
-            level={level}
-            isSelected={isSelected}
-            isIndeterminate={isIndeterminate}
-            onToggle={toggleTreeNode}
-            onSelect={selectNode}
-          />
-          {node.expanded && node.children && renderTreeNodes(node.children, level + 1)}
-        </React.Fragment>
-      );
-    });
-  };
+  // ✅ 使用提取的通用渲染函数
 
   const hasChanges = JSON.stringify(selectedPaths.sort()) !== JSON.stringify(originalPaths.sort());
   const selectedCount = selectedPaths.length;
@@ -258,7 +224,15 @@ export const App: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div>{renderTreeNodes(treeNodes)}</div>
+          <div>
+            {renderTreeNodes({
+              nodes: treeNodes,
+              fullTree: treeNodes,
+              selectedPaths,
+              onToggle: toggleTreeNode,
+              onSelect: selectNode,
+            })}
+          </div>
         )}
       </div>
       {/* Footer */}

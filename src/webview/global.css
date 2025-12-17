@@ -24,6 +24,12 @@
   --vscode-button-secondaryForeground: #cccccc;
   --vscode-button-secondaryHoverBackground: #45494e;
 
+  /* 按钮选中状态颜色 */
+  --button-selected-background: #0e639c;
+  --button-selected-foreground: #ffffff;
+  --button-selected-border: #1177bb;
+  --button-selected-shadow: 0 0 0 2px rgba(14, 99, 156, 0.3);
+
   /* 输入框颜色 */
   --vscode-input-background: #3c3c3c;
   --vscode-input-foreground: #cccccc;
@@ -162,6 +168,33 @@ body {
 .button-danger:hover:not(:disabled) {
   background-color: var(--vscode-inputValidation-errorBackground);
   color: var(--vscode-errorForeground);
+}
+
+/* 选中状态按钮 - 统一样式（类似 UI 组件库） */
+.button-selected,
+.button.selected {
+  background-color: var(--button-selected-background);
+  color: var(--button-selected-foreground);
+  border: 1px solid var(--button-selected-border);
+  box-shadow: var(--button-selected-shadow);
+  font-weight: 600;
+}
+
+.button-selected:hover:not(:disabled),
+.button.selected:hover:not(:disabled) {
+  background-color: var(--vscode-button-hoverBackground);
+  transform: translateY(-1px);
+}
+
+/* 按钮组样式 - 用于单选按钮组 */
+.button-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.button-group .button {
+  position: relative;
 }
 
 /* ========== 卡片样式 ========== */

@@ -1,36 +1,23 @@
 import React, { useEffect, useMemo } from 'react';
 import { Icon } from '../components/Icon';
-import { TreeNode } from './TreeNode';
+import { CompactRuleSelector } from '../components/CompactRuleSelector';
 import { AdapterCard } from './AdapterCard';
 import { useRuleSyncPageStore } from './store';
-import {
-  getDirectoryFilePaths,
-  getAllFilePaths,
-  type TreeNode as TreeNodeType,
-} from '../rule-selector/tree-utils';
 import { t } from '../utils/i18n';
 import { createWebviewRPC } from '../common/messaging';
 import '../global.css';
+import '../rule-selector/rule-selector.css'; // ✅ 导入TreeNode的样式
 import './rule-sync-page.css';
 
-// 定义节点接口，用于类型安全
-interface DisplayNode {
-  id: string;
-  path: string;
-  name: string;
-  type: 'file' | 'directory';
-  expanded?: boolean;
-  children?: DisplayNode[];
-}
-
 /**
- * 规则同步页主组件
+ * 规则同步页主组件（✅ 使用CompactRuleSelector复用规则选择器逻辑）
  */
 export const App: React.FC = () => {
   const {
     sources,
     treeNodesBySource,
-    selectedPaths,
+    selectedPathsBySource,
+    expandedNodes, // ✅ 添加展开状态
     adapters,
     selectedAdapters,
     searchTerm,
@@ -55,14 +42,34 @@ export const App: React.FC = () => {
 
   // 初始化
   useEffect(() => {
+    // 使用 RPC 请求初始数据
     rpc
       .request('getInitialData')
+      .then((payload) => {
+        setInitialData(payload as Parameters<typeof setInitialData>[0]);
+      })
       .catch((err) => console.error('Failed to request initial data', err));
 
-    const offInit = rpc.on('init', (payload: Parameters<typeof setInitialData>[0]) => {
-      setInitialData(payload);
-    });
+    // 监听选择变更事件（来自其他页面或左侧树视图）
+    const offSelectionChanged = rpc.on(
+      'selectionChanged',
+      (payload: { sourceId: string; selectedPaths: string[]; totalCount: number }) => {
+        console.log('Selection changed from extension', {
+          sourceId: payload.sourceId,
+          selectedCount: payload.selectedPaths.length,
+        });
+        // ✅ 更新该源的选择状态（复用规则选择器逻辑）
+        const store = useRuleSyncPageStore.getState();
+        useRuleSyncPageStore.setState({
+          selectedPathsBySource: {
+            ...store.selectedPathsBySource,
+            [payload.sourceId]: payload.selectedPaths, // ✅ 直接使用后端返回的路径数组
+          },
+        });
+      },
+    );
 
+    // 监听同步完成事件（非 RPC）
     const offSyncComplete = rpc.on(
       'syncComplete',
       (payload: { success: boolean; error?: string }) => {
@@ -75,7 +82,7 @@ export const App: React.FC = () => {
     );
 
     return () => {
-      offInit();
+      offSelectionChanged();
       offSyncComplete();
     };
   }, [rpc, setInitialData]);
@@ -89,7 +96,7 @@ export const App: React.FC = () => {
     }
   };
 
-  // 渲染规则树
+  // ✅ 渲染规则树（使用独立的规则选择器组件实例）
   const renderRuleTree = () => {
     if (sources.length === 0) {
       return (
@@ -101,101 +108,23 @@ export const App: React.FC = () => {
 
     return sources.map((source) => {
       const tree = treeNodesBySource[source.id] || [];
-      const allPaths = getAllFilePaths(tree);
-      const selectedCount = allPaths.filter((p) => selectedPaths.has(`${source.id}:${p}`)).length;
+      const selectedPaths = selectedPathsBySource[source.id] || [];
+      const isExpanded = expandedNodes.has(source.id);
 
       return (
-        <div key={source.id} className="source-section">
-          {/* 源节点 */}
-          <div className="tree-node source-node">
-            <div className="tree-node-item">
-              <span className="tree-node-chevron" onClick={() => toggleTreeNode(source.id, '')}>
-                <Icon icon="chevron-down" />
-              </span>
-              <input
-                type="checkbox"
-                className="tree-node-checkbox"
-                checked={selectedCount === allPaths.length && allPaths.length > 0}
-                ref={(input) => {
-                  if (input) {
-                    input.indeterminate = selectedCount > 0 && selectedCount < allPaths.length;
-                  }
-                }}
-                onChange={(e) => {
-                  // 选中/取消源下所有文件
-                  allPaths.forEach((path) => {
-                    selectNode(source.id, path, e.target.checked, false);
-                  });
-                }}
-              />
-              <span className="tree-node-icon">
-                <Icon icon="archive" />
-              </span>
-              <span className="tree-node-name">{source.name}</span>
-              <span className="tree-node-badge">
-                {selectedCount}/{allPaths.length}
-              </span>
-            </div>
-          </div>
-          {/* 子节点 */}
-          {renderTreeNodes(source.id, tree as unknown as DisplayNode[], 1)}
-        </div>
+        <CompactRuleSelector
+          key={source.id}
+          sourceId={source.id}
+          sourceName={source.name}
+          treeNodes={tree}
+          selectedPaths={selectedPaths}
+          onToggleNode={(path) => toggleTreeNode(source.id, path)}
+          onSelectNode={(path, checked, isDir) => selectNode(source.id, path, checked, isDir)}
+          isExpanded={isExpanded}
+          onToggleSource={() => toggleTreeNode(source.id, '')}
+        />
       );
     });
-  };
-
-  // 递归渲染树节点
-  const renderTreeNodes = (
-    sourceId: string,
-    _nodes: DisplayNode[],
-    level: number,
-  ): React.ReactElement[] => {
-    const tree = treeNodesBySource[sourceId] || [];
-
-    return (tree as unknown as DisplayNode[])
-      .filter((node) => {
-        // 搜索过滤
-        if (searchTerm) {
-          return node.name.toLowerCase().includes(searchTerm.toLowerCase());
-        }
-        return true;
-      })
-      .map((node) => {
-        const isDirectory = node.type === 'directory';
-        const fullPath = `${sourceId}:${node.path}`;
-
-        let isSelected = false;
-        let isIndeterminate = false;
-
-        if (isDirectory) {
-          const dirPaths = getDirectoryFilePaths(
-            tree as unknown as Parameters<typeof getDirectoryFilePaths>[0],
-            node.path,
-          );
-          const selectedDirPaths = dirPaths.filter((p) => selectedPaths.has(`${sourceId}:${p}`));
-          isSelected = selectedDirPaths.length === dirPaths.length && dirPaths.length > 0;
-          isIndeterminate =
-            selectedDirPaths.length > 0 && selectedDirPaths.length < dirPaths.length;
-        } else {
-          isSelected = selectedPaths.has(fullPath);
-        }
-
-        return (
-          <React.Fragment key={node.id}>
-            <TreeNode
-              node={node as TreeNodeType}
-              level={level}
-              isSelected={isSelected}
-              isIndeterminate={isIndeterminate}
-              onToggle={(path: string) => toggleTreeNode(sourceId, path)}
-              onSelect={(path: string, checked: boolean, isDir: boolean) =>
-                selectNode(sourceId, path, checked, isDir)
-              }
-            />
-            {node.expanded && node.children && renderTreeNodes(sourceId, node.children, level + 1)}
-          </React.Fragment>
-        );
-      });
   };
 
   const selectedRulesCount = getSelectedRulesCount();

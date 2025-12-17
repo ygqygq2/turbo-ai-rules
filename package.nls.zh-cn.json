@@ -54,5 +54,7 @@
   "turboAiRules.sync.conflictStrategy.description": "解决规则冲突的策略",
   "turboAiRules.sync.conflictStrategy.priority": "发生冲突时使用优先级最高的规则",
   "turboAiRules.sync.conflictStrategy.merge": "合并冲突的规则(尚未实现)",
-  "turboAiRules.sync.conflictStrategy.skip-duplicates": "跳过重复规则，保留首次出现的规则"
+  "turboAiRules.sync.conflictStrategy.skip-duplicates": "跳过重复规则，保留首次出现的规则",
+  "turboAiRules.enableSharedSelection.description": "启用共享规则选择状态（存储在工作区，可提交到 Git 供团队共享）",
+  "turboAiRules.selectionFilePath.description": "共享选择文件的路径（相对于工作区根目录）"
 }

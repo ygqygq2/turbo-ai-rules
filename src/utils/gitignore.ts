@@ -170,3 +170,74 @@ export async function isPatternIgnored(workspacePath: string, pattern: string): 
     return false;
   }
 }
+
+/**
+ * 从 .gitignore 中移除指定的模式（保留其他 turbo-ai-rules 管理的模式）
+ * @param workspacePath 工作区路径
+ * @param patterns 要移除的模式列表
+ */
+export async function removeIgnored(workspacePath: string, patterns: string[]): Promise<void> {
+  try {
+    const gitignorePath = path.join(workspacePath, '.gitignore');
+
+    if (!(await pathExists(gitignorePath))) {
+      return;
+    }
+
+    const content = await safeReadFile(gitignorePath);
+    const lines = content.split('\n');
+    const markerIndex = lines.findIndex((line) => line.includes(GITIGNORE_MARKER));
+
+    if (markerIndex === -1) {
+      Logger.debug('No turbo-ai-rules patterns found in .gitignore');
+      return;
+    }
+
+    // 提取当前管理的模式
+    const existingPatterns: string[] = [];
+    const newLines = lines.slice(0, markerIndex);
+
+    for (let i = markerIndex + 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line === '') break; // 遇到空行停止
+      existingPatterns.push(line);
+    }
+
+    // 保留空行后的内容
+    const emptyLineIndex = lines.slice(markerIndex + 1).findIndex((l) => l.trim() === '');
+    if (emptyLineIndex !== -1) {
+      newLines.push(...lines.slice(markerIndex + 1 + emptyLineIndex + 1));
+    }
+
+    // 过滤掉要移除的模式
+    const remainingPatterns = existingPatterns.filter((p) => !patterns.includes(p));
+
+    // 如果没有剩余模式，移除整个标记块
+    if (remainingPatterns.length === 0) {
+      await safeWriteFile(gitignorePath, newLines.join('\n'));
+      Logger.info('Removed all specified patterns from .gitignore', { patterns });
+      return;
+    }
+
+    // 重新构建内容
+    const finalLines = [
+      ...newLines.map((l) => l.trimEnd()).filter((_, i, arr) => i < arr.length - 1 || _ !== ''),
+      '',
+      GITIGNORE_MARKER,
+      ...remainingPatterns,
+      '',
+    ];
+
+    await safeWriteFile(gitignorePath, finalLines.join('\n'));
+
+    Logger.info('Removed specified patterns from .gitignore', {
+      patternsRemoved: patterns.filter((p) => existingPatterns.includes(p)).length,
+      remainingPatterns: remainingPatterns.length,
+    });
+  } catch (error) {
+    Logger.error('Failed to remove patterns from .gitignore', error as Error, {
+      workspacePath,
+      patterns,
+    });
+  }
+}

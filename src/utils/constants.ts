@@ -66,6 +66,10 @@ export const CONFIG_KEYS = {
   SYNC_INTERVAL: 'sync.interval',
   SYNC_ON_STARTUP: 'sync.onStartup',
   SYNC_CONFLICT_STRATEGY: 'sync.conflictStrategy',
+
+  /** 共享选择状态配置 */
+  ENABLE_SHARED_SELECTION: 'enableSharedSelection',
+  SELECTION_FILE_PATH: 'selectionFilePath',
 } as const;
 
 /**

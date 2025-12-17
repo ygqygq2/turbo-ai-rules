@@ -8,6 +8,7 @@ export interface FileTreeNode {
   name: string;
   type: 'file' | 'directory';
   children?: FileTreeNode[];
+  checked?: boolean; // ✅ 添加选中状态（后端标记）
 }
 
 export interface TreeNode {
@@ -17,6 +18,7 @@ export interface TreeNode {
   type: 'directory' | 'file';
   children?: TreeNode[]; // 子节点（目录）
   expanded?: boolean; // 是否展开
+  checked?: boolean; // ✅ 选中状态（保留后端标记）
 }
 
 /**
@@ -29,7 +31,7 @@ export function buildTree(fileTree: FileTreeNode[]): TreeNode[] {
 }
 
 /**
- * @description 转换单个文件节点
+ * @description 转换单个文件节点（✅ 保留后端的 checked 属性）
  * @return default {TreeNode}
  * @param node {FileTreeNode}
  */
@@ -41,6 +43,7 @@ function convertFileNode(node: FileTreeNode): TreeNode {
     type: node.type,
     children: node.children ? node.children.map(convertFileNode) : undefined,
     expanded: false,
+    checked: node.checked, // ✅ 保留后端标记的选中状态
   };
 }
 

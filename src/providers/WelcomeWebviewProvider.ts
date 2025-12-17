@@ -39,7 +39,7 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
   public async showWelcome(): Promise<void> {
     await this.show({
       viewType: 'turboAiRules.welcome',
-      title: 'Welcome to Turbo AI Rules',
+      title: vscode.l10n.t('Welcome to Turbo AI Rules'),
       viewColumn: vscode.ViewColumn.One,
       iconPath: EXTENSION_ICON_PATH,
     });

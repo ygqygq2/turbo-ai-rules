@@ -475,7 +475,7 @@
         <div class="button-group">
           <button class="btn btn-primary">
             <i class="codicon codicon-sync"></i>
-            同步至所有启用适配器
+            快速同步规则
           </button>
           <button class="btn btn-secondary">
             <i class="codicon codicon-add"></i>
@@ -548,7 +548,7 @@
           </button>
           <button class="btn btn-secondary">
             <i class="codicon codicon-export"></i>
-            重新生成所有配置
+            适配器重新生成内容
           </button>
         </div>
       </div>
@@ -632,7 +632,7 @@
           }
 
           // 根据按钮文本发送不同消息（向后兼容）
-          if (buttonText.includes('同步至所有启用适配器')) {
+          if (buttonText.includes('快速同步规则')) {
             vscode.postMessage({ type: 'syncAll' });
           } else if (buttonText.includes('添加规则源')) {
             vscode.postMessage({ type: 'addSource' });
@@ -642,7 +642,7 @@
             vscode.postMessage({ type: 'searchRules' });
           } else if (buttonText.includes('管理适配器')) {
             vscode.postMessage({ type: 'manageAdapters' });
-          } else if (buttonText.includes('重新生成所有配置')) {
+          } else if (buttonText.includes('适配器重新生成内容')) {
             vscode.postMessage({ type: 'regenerateAll' });
           }
         });

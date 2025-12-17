@@ -7,5 +7,7 @@ export { FileGenerator } from './FileGenerator';
 export { GitManager } from './GitManager';
 export { LocalConfigManager } from './LocalConfigManager';
 export { RulesManager } from './RulesManager';
+export { SelectionStateManager } from './SelectionStateManager';
+export { SharedSelectionManager } from './SharedSelectionManager';
 export { WorkspaceDataManager } from './WorkspaceDataManager';
 export { WorkspaceStateManager } from './WorkspaceStateManager';

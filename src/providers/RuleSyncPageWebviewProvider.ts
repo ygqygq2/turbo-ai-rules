@@ -40,6 +40,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
   private rulesManager: RulesManager;
   private gitManager: GitManager;
   private selectionStateManager: SelectionStateManager;
+  private stateChangeDisposable?: () => void;
 
   private constructor(context: vscode.ExtensionContext) {
     super(context);
@@ -47,6 +48,25 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
     this.rulesManager = RulesManager.getInstance();
     this.gitManager = GitManager.getInstance();
     this.selectionStateManager = SelectionStateManager.getInstance();
+
+    // 订阅状态变更事件，自动向 Webview 发送消息
+    this.stateChangeDisposable = this.selectionStateManager.onStateChanged((event) => {
+      // 当 Webview 打开且任何源的选择发生变化时推送更新
+      if (this.panel) {
+        Logger.debug('Selection state changed, notifying rule sync page', {
+          sourceId: event.sourceId,
+        });
+        this.postMessage({
+          type: 'selectionChanged',
+          payload: {
+            sourceId: event.sourceId,
+            selectedPaths: event.selectedPaths,
+            totalCount: event.totalCount,
+            timestamp: event.timestamp,
+          },
+        });
+      }
+    });
   }
 
   /**
@@ -59,6 +79,18 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
       RuleSyncPageWebviewProvider.instance = new RuleSyncPageWebviewProvider(context);
     }
     return RuleSyncPageWebviewProvider.instance;
+  }
+
+  /**
+   * @description 清理资源
+   * @return default {void}
+   */
+  public dispose(): void {
+    if (this.stateChangeDisposable) {
+      this.stateChangeDisposable();
+      this.stateChangeDisposable = undefined;
+    }
+    super.dispose();
   }
 
   /**
@@ -215,6 +247,10 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
           await this.handleGetInitialData(requestId);
           break;
 
+        case 'selectionChanged':
+          await this.handleSelectionChanged(message.payload);
+          break;
+
         case 'sync':
           await this.handleSync(message.payload, requestId);
           break;
@@ -239,6 +275,42 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
   }
 
   /**
+   * @description 处理选择变更
+   * @return default {Promise<void>}
+   * @param payload {any}
+   */
+  private async handleSelectionChanged(payload: {
+    sourceId?: string;
+    selectedPaths?: string[];
+  }): Promise<void> {
+    const sourceId = payload?.sourceId;
+    const paths = payload?.selectedPaths || [];
+
+    if (!sourceId) {
+      Logger.warn('Selection changed without sourceId');
+      return;
+    }
+
+    try {
+      // 获取工作区路径
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      const workspacePath = workspaceFolders?.[0]?.uri.fsPath;
+
+      // 更新状态并触发延时落盘，会自动通知其他页面刷新
+      this.selectionStateManager.updateSelection(sourceId, paths, true, workspacePath);
+
+      Logger.debug('Selection changed from rule sync page', {
+        sourceId,
+        pathCount: paths.length,
+      });
+    } catch (error) {
+      Logger.error('Failed to handle selection change from rule sync page', error as Error, {
+        sourceId,
+      });
+    }
+  }
+
+  /**
    * @description 处理 getInitialData RPC 请求
    * @return default {Promise<void>}
    * @param requestId {string | undefined}
@@ -247,7 +319,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
     try {
       const data = await this.getRuleSyncData();
       this.postMessage({
-        type: 'init',
+        type: 'getInitialData',
         payload: data,
         ...(requestId && { requestId }),
       } as WebviewMessage & { requestId?: string });
@@ -257,8 +329,8 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
       });
       if (requestId) {
         this.postMessage({
-          type: 'init',
-          payload: { error: error instanceof Error ? error.message : String(error) },
+          type: 'getInitialData',
+          error: error instanceof Error ? error.message : String(error),
           requestId,
         } as WebviewMessage & { requestId: string; error?: string });
       }
@@ -326,7 +398,27 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
           }
         }
 
+        // 获取该源的已选规则路径
+        const selectedPaths = this.selectionStateManager.getSelection(source.id);
+        const selectedSet = new Set(selectedPaths);
+
+        Logger.debug(
+          `[getRuleSyncData] Source ${source.id}: ${selectedPaths.length} selected paths`,
+          {
+            sourceId: source.id,
+            samplePaths: selectedPaths.slice(0, 3),
+          },
+        );
+
         // 构建该源的文件树
+        const children = await this.buildFileTree(sourcePath, sourcePath, source.id);
+
+        // 标记已选择的节点
+        this.markSelectedNodes(children, selectedSet);
+
+        const checkedCount = this.countSelectedFiles(children);
+        Logger.debug(`[getRuleSyncData] Source ${source.id}: marked ${checkedCount} checked nodes`);
+
         const sourceNode: RuleTreeNode = {
           type: 'source',
           id: source.id,
@@ -334,10 +426,10 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
           sourceId: source.id,
           checked: false,
           expanded: true,
-          children: await this.buildFileTree(sourcePath, sourcePath, source.id),
+          children,
           stats: {
             total: totalRules,
-            selected: 0,
+            selected: selectedPaths.length,
           },
         };
 
@@ -418,6 +510,62 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
     }
 
     return nodes;
+  }
+
+  /**
+   * @description 标记已选择的节点
+   * @return default {void}
+   * @param nodes {RuleTreeNode[]} 树节点
+   * @param selectedPaths {Set<string>} 已选路径集合
+   */
+  private markSelectedNodes(nodes: RuleTreeNode[], selectedPaths: Set<string>): void {
+    for (const node of nodes) {
+      if (node.type === 'file' && node.path) {
+        // 文件节点：检查路径是否在已选集合中
+        node.checked = selectedPaths.has(node.path);
+      } else if (node.type === 'directory' && node.children) {
+        // 目录节点：递归标记子节点
+        this.markSelectedNodes(node.children, selectedPaths);
+        // 计算目录的选中状态（部分选中/全选）
+        const totalFiles = this.countFiles(node.children);
+        const selectedFiles = this.countSelectedFiles(node.children);
+        node.checked = totalFiles > 0 && selectedFiles === totalFiles;
+      }
+    }
+  }
+
+  /**
+   * @description 统计文件数量
+   * @return default {number}
+   * @param nodes {RuleTreeNode[]}
+   */
+  private countFiles(nodes: RuleTreeNode[]): number {
+    let count = 0;
+    for (const node of nodes) {
+      if (node.type === 'file') {
+        count++;
+      } else if (node.children) {
+        count += this.countFiles(node.children);
+      }
+    }
+    return count;
+  }
+
+  /**
+   * @description 统计已选文件数量
+   * @return default {number}
+   * @param nodes {RuleTreeNode[]}
+   */
+  private countSelectedFiles(nodes: RuleTreeNode[]): number {
+    let count = 0;
+    for (const node of nodes) {
+      if (node.type === 'file' && node.checked) {
+        count++;
+      } else if (node.children) {
+        count += this.countSelectedFiles(node.children);
+      }
+    }
+    return count;
   }
 
   /**

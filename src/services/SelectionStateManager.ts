@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 
 import { Logger } from '../utils/logger';
 import { toAbsolutePaths, toRelativePaths } from '../utils/rulePath';
+import { SharedSelectionManager } from './SharedSelectionManager';
 import type { RuleSelection } from './WorkspaceDataManager';
 import { WorkspaceDataManager } from './WorkspaceDataManager';
 
@@ -52,9 +53,11 @@ export class SelectionStateManager {
   private readonly PERSISTENCE_DELAY = 500;
 
   private workspaceDataManager: WorkspaceDataManager;
+  private sharedManager: SharedSelectionManager;
 
   private constructor() {
     this.workspaceDataManager = WorkspaceDataManager.getInstance();
+    this.sharedManager = SharedSelectionManager.getInstance();
   }
 
   /**
@@ -239,6 +242,19 @@ export class SelectionStateManager {
         selectedCount: relativePaths.length,
         samplePath: relativePaths[0],
       });
+
+      // 如果启用共享模式，同时保存到工作区文件
+      const workspaceFolder = vscode.workspace.workspaceFolders?.find(
+        (folder) => folder.uri.fsPath === workspacePath,
+      );
+      if (this.sharedManager.isEnabled(workspaceFolder)) {
+        await this.sharedManager.save(workspacePath, this.memoryState).catch((err) => {
+          Logger.warn('Failed to save to shared selection file', {
+            error: String(err),
+            sourceId,
+          });
+        });
+      }
     } catch (error) {
       Logger.error('Failed to persist selection', error as Error, { sourceId, workspacePath });
       throw error;
@@ -339,5 +355,58 @@ export class SelectionStateManager {
     this.listeners = [];
 
     Logger.info('SelectionStateManager disposed');
+  }
+
+  // ==================== 共享选择状态 API（委托模式）====================
+
+  /**
+   * @description 导入工作区共享选择状态
+   * @param workspacePath {string} 工作区路径
+   * @param mergeMode {'replace' | 'merge'} 合并模式
+   * @return {Promise<number>} 导入的源数量
+   */
+  public async importSharedSelection(
+    workspacePath: string,
+    mergeMode: 'replace' | 'merge' = 'replace',
+  ): Promise<number> {
+    const imported = await this.sharedManager.import(workspacePath, this.memoryState, mergeMode);
+
+    // 更新内存状态
+    let importedCount = 0;
+    for (const [sourceId, paths] of imported.entries()) {
+      this.memoryState.set(sourceId, paths);
+      // 持久化到本地缓存
+      await this.persistToDisk(sourceId, workspacePath);
+      importedCount++;
+    }
+
+    return importedCount;
+  }
+
+  /**
+   * @description 导出选择状态到工作区共享文件
+   * @param workspacePath {string} 工作区路径
+   * @return {Promise<void>}
+   */
+  public async exportSharedSelection(workspacePath: string): Promise<void> {
+    await this.sharedManager.export(workspacePath, this.memoryState);
+  }
+
+  /**
+   * @description 初始化共享选择（首次启用时）
+   * @param workspacePath {string} 工作区路径
+   * @return {Promise<void>}
+   */
+  public async initializeSharedSelection(workspacePath: string): Promise<void> {
+    await this.sharedManager.initialize(workspacePath, this.memoryState);
+  }
+
+  /**
+   * @description 检查是否启用共享选择
+   * @param workspaceFolder {vscode.WorkspaceFolder} 工作区文件夹
+   * @return {boolean}
+   */
+  public isSharedSelectionEnabled(workspaceFolder?: vscode.WorkspaceFolder): boolean {
+    return this.sharedManager.isEnabled(workspaceFolder);
   }
 }

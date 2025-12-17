@@ -580,6 +580,18 @@
             "%turboAiRules.sync.conflictStrategy.skip-duplicates%"
           ],
           "description": "%turboAiRules.sync.conflictStrategy.description%"
+        },
+        "turbo-ai-rules.enableSharedSelection": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "%turboAiRules.enableSharedSelection.description%"
+        },
+        "turbo-ai-rules.selectionFilePath": {
+          "type": "string",
+          "default": ".turbo-ai-rules/selections.json",
+          "scope": "resource",
+          "description": "%turboAiRules.selectionFilePath.description%"
         }
       }
     }

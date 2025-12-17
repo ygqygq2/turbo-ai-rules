@@ -54,5 +54,7 @@
   "turboAiRules.sync.conflictStrategy.description": "Strategy for resolving rule conflicts",
   "turboAiRules.sync.conflictStrategy.priority": "Use highest priority rule when conflicts occur",
   "turboAiRules.sync.conflictStrategy.merge": "Merge conflicting rules (not implemented yet)",
-  "turboAiRules.sync.conflictStrategy.skip-duplicates": "Skip duplicate rules, keep first occurrence"
+  "turboAiRules.sync.conflictStrategy.skip-duplicates": "Skip duplicate rules, keep first occurrence",
+  "turboAiRules.enableSharedSelection.description": "Enable shared rule selection state (stored in workspace, can be committed to Git for team sharing)",
+  "turboAiRules.selectionFilePath.description": "Path to the shared selection file (relative to workspace root)"
 }

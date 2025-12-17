@@ -289,21 +289,24 @@ export const SourceForm: React.FC<SourceFormProps> = ({
               flexWrap: 'wrap',
             }}
           >
-            <div className="auth-options" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div className="button-group">
               <Button
-                type={form.authType === 'none' ? 'primary' : 'secondary'}
+                type="secondary"
+                selected={form.authType === 'none'}
                 onClick={() => handleAuthTypeChange('none')}
               >
                 {t('form.auth.none')}
               </Button>
               <Button
-                type={form.authType === 'token' ? 'primary' : 'secondary'}
+                type="secondary"
+                selected={form.authType === 'token'}
                 onClick={() => handleAuthTypeChange('token')}
               >
                 {t('form.auth.token')}
               </Button>
               <Button
-                type={form.authType === 'ssh' ? 'primary' : 'secondary'}
+                type="secondary"
+                selected={form.authType === 'ssh'}
                 onClick={() => handleAuthTypeChange('ssh')}
               >
                 {t('form.auth.ssh')}

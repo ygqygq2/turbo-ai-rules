@@ -6,6 +6,7 @@ export interface ButtonProps {
   type?: 'primary' | 'secondary' | 'danger';
   onClick?: () => void;
   disabled?: boolean;
+  selected?: boolean; // 选中状态
   className?: string;
   icon?: string; // Codicon name (without 'codicon-' prefix)
   iconSize?: number;
@@ -18,6 +19,7 @@ export const Button: React.FC<ButtonProps> = ({
   type = 'primary',
   onClick,
   disabled,
+  selected = false,
   className,
   icon,
   iconSize = 16,
@@ -25,7 +27,7 @@ export const Button: React.FC<ButtonProps> = ({
   title,
 }) => (
   <button
-    className={`button button-${type} ${className ?? ''}`}
+    className={`button button-${type} ${selected ? 'button-selected' : ''} ${className ?? ''}`}
     onClick={onClick}
     disabled={disabled}
     type={buttonType}

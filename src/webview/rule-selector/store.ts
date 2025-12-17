@@ -7,8 +7,8 @@ import {
   getAllFilePaths,
   getDirectoryFilePaths,
   toggleNode as toggleTreeNode,
-  type TreeNode,
-} from './tree-utils';
+  type TreeNodeType as TreeNode,
+} from '../components/tree';
 
 // 获取 RPC 实例（延迟到使用时获取，避免模块加载时就调用 acquireVsCodeApi）
 const getRpc = () => createWebviewRPC();

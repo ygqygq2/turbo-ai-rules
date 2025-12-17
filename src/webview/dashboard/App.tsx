@@ -70,7 +70,6 @@ export const App: React.FC = () => {
   const handleSyncAll = () => vscodeApi.postMessage('syncAll');
   const handleAddSource = () => vscodeApi.postMessage('addSource');
   const handleManageSources = () => vscodeApi.postMessage('manageSources');
-  const handleSearchRules = () => vscodeApi.postMessage('searchRules');
   const handleManageAdapters = () => vscodeApi.postMessage('manageAdapters');
   const handleRegenerateAll = () => vscodeApi.postMessage('regenerateAll');
   const handleOpenRuleSyncPage = () => vscodeApi.postMessage('openRuleSyncPage');
@@ -124,7 +123,7 @@ export const App: React.FC = () => {
                   className={`source-chip ${source.enabled ? 'enabled' : 'disabled'}`}
                 >
                   <Icon
-                    icon={source.enabled ? 'check' : 'circle-slash'}
+                    icon={source.enabled ? 'pass' : 'circle-slash'}
                     size={14}
                     className="source-chip-icon"
                   />
@@ -190,14 +189,14 @@ export const App: React.FC = () => {
           )}
 
           <div className="button-group">
-            <Button type="primary" icon="sync" onClick={handleOpenRuleSyncPage}>
+            <Button type="primary" icon="list-tree" onClick={handleOpenRuleSyncPage}>
               {t('dashboard.adapters.fineSync')}
-            </Button>
-            <Button type="secondary" icon="settings-gear" onClick={handleManageAdapters}>
-              {t('dashboard.adapters.manageAdapters')}
             </Button>
             <Button type="secondary" icon="file-code" onClick={handleRegenerateAll}>
               {t('dashboard.adapters.regenerateAll')}
+            </Button>
+            <Button type="secondary" icon="settings-gear" onClick={handleManageAdapters}>
+              {t('dashboard.adapters.manageAdapters')}
             </Button>
           </div>
         </Card>
@@ -220,12 +219,8 @@ export const App: React.FC = () => {
               <span>{t('dashboard.quickActions.advancedSearch')}</span>
             </button>
             <button className="quick-action-button" onClick={handleOpenRuleSyncPage}>
-              <Icon icon="sync" size={24} />
-              <span>{t('dashboard.quickActions.ruleSyncPage')}</span>
-            </button>
-            <button className="quick-action-button" onClick={handleSearchRules}>
               <Icon icon="list-tree" size={24} />
-              <span>{t('dashboard.quickActions.ruleTree')}</span>
+              <span>{t('dashboard.quickActions.ruleSyncPage')}</span>
             </button>
           </div>
         </Card>
