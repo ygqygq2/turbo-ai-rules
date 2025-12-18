@@ -21,6 +21,9 @@ vi.mock('vscode', () => ({
         index: 0,
       },
     ],
+    getConfiguration: vi.fn().mockReturnValue({
+      get: vi.fn().mockReturnValue(false), // 默认禁用 shared selection
+    }),
   },
 }));
 

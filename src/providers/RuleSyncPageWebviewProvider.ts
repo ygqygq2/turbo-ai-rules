@@ -398,7 +398,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
           }
         }
 
-        // 获取该源的已选规则路径
+        // 获取该源的已选规则路径（已经是相对路径）
         const selectedPaths = this.selectionStateManager.getSelection(source.id);
         const selectedSet = new Set(selectedPaths);
 

@@ -141,20 +141,20 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
         if (entry.name.startsWith('.')) continue;
 
         const fullPath = path.join(dirPath, entry.name);
-        // 使用绝对路径而不是相对路径，与 ParsedRule.filePath 保持一致
-        const absolutePath = fullPath;
+        // 使用相对路径，与 SelectionStateManager 存储格式一致
+        const relativePath = path.relative(basePath, fullPath);
 
         if (entry.isDirectory()) {
           const children = await this.readDirectoryTree(fullPath, basePath);
           nodes.push({
-            path: absolutePath,
+            path: relativePath,
             name: entry.name,
             type: 'directory',
             children,
           });
         } else if (entry.isFile() && RULE_FILE_EXTENSIONS.includes(path.extname(entry.name))) {
           nodes.push({
-            path: absolutePath,
+            path: relativePath,
             name: entry.name,
             type: 'file',
           });

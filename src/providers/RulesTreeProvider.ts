@@ -12,6 +12,7 @@ import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
 import type { RuleSource } from '../types/config';
 import type { ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
+import { toRelativePath } from '../utils/rulePath';
 
 /**
  * 树节点类型
@@ -304,7 +305,12 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
         if (item.data.type !== 'rule' || !item.data.rule?.filePath) continue;
 
         const sourceId = item.data.rule.sourceId;
-        const filePath = item.data.rule.filePath;
+        const absolutePath = item.data.rule.filePath;
+
+        // 转换为相对路径（SelectionStateManager 内部存储相对路径）
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders?.length) continue;
+        const relativePath = toRelativePath(absolutePath, workspaceFolders[0].uri.fsPath);
 
         if (!changesBySource.has(sourceId)) {
           // 从 SelectionStateManager 获取当前状态
@@ -314,9 +320,9 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
 
         const paths = changesBySource.get(sourceId)!;
         if (checkState === vscode.TreeItemCheckboxState.Checked) {
-          paths.add(filePath);
+          paths.add(relativePath);
         } else {
-          paths.delete(filePath);
+          paths.delete(relativePath);
         }
       }
 
@@ -509,8 +515,10 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
     // 获取该源的规则选择信息（从 SelectionStateManager 读取）
     let selectedPaths: Set<string> = new Set();
     try {
-      // 获取所有规则路径（用于初始化默认全选）
-      const allRulePaths = rules.map((r) => r.filePath).filter((p) => p) as string[];
+      // 获取所有规则路径（转为相对路径用于初始化默认全选）
+      const allRulePaths = rules
+        .map((r) => (r.filePath ? toRelativePath(r.filePath, source.id) : null))
+        .filter((p) => p) as string[];
 
       // 先初始化状态（从磁盘加载），如果已初始化则直接返回内存中的数据
       // 如果是新源（无保存状态），会使用 allRulePaths 初始化为全选
@@ -519,11 +527,17 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
       selectedPaths = new Set(paths);
     } catch (error) {
       Logger.warn('Failed to get rule selection for source', { sourceId: source.id, error });
-      // 出错时默认全选
-      selectedPaths = new Set(rules.map((r) => r.filePath).filter((p) => p) as string[]);
+      // 出错时默认全选（使用相对路径）
+      selectedPaths = new Set(
+        rules
+          .map((r) => (r.filePath ? toRelativePath(r.filePath, source.id) : null))
+          .filter((p) => p) as string[],
+      );
     }
     return rules.map((rule) => {
-      const isSelected = rule.filePath ? selectedPaths.has(rule.filePath) : true;
+      // 将 rule.filePath 转为相对路径后比较（SelectionStateManager 存储相对路径）
+      const relativeFilePath = rule.filePath ? toRelativePath(rule.filePath, source.id) : null;
+      const isSelected = relativeFilePath ? selectedPaths.has(relativeFilePath) : true;
 
       return new RuleTreeItem(
         {

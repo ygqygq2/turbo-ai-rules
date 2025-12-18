@@ -7,6 +7,7 @@ import { ParsedRule } from '../types/rules';
 import { CONFIG_KEYS, CONFIG_PREFIX } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
+import { toRelativePath } from '../utils/rulePath';
 
 /**
  * 批量禁用规则
@@ -224,8 +225,10 @@ export async function selectAllRulesCommand(source: RuleSource): Promise<void> {
       return;
     }
 
-    // 获取所有规则路径
-    const allRulePaths = rules.map((r) => r.filePath).filter((p) => p) as string[];
+    // 获取所有规则路径（转为相对路径）
+    const allRulePaths = rules
+      .map((r) => (r.filePath ? toRelativePath(r.filePath, source.id) : null))
+      .filter((p) => p) as string[];
 
     // 获取工作区路径
     const workspaceFolders = vscode.workspace.workspaceFolders;

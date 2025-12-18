@@ -10,6 +10,7 @@ import type { ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { ProgressManager } from '../utils/progressManager';
+import { toRelativePath } from '../utils/rulePath';
 
 /**
  * 编辑规则源
@@ -314,11 +315,13 @@ export async function ignoreRuleCommand(
       const { SelectionStateManager } = await import('../services/SelectionStateManager');
       const selectionStateManager = SelectionStateManager.getInstance();
 
-      // 获取当前选择的路径
+      // 获取当前选择的路径（相对路径）
       const selectedPaths = selectionStateManager.getSelection(rule.sourceId);
 
+      // 将 rule.filePath 转为相对路径后比较（SelectionStateManager 存储相对路径）
+      const relativeFilePath = toRelativePath(rule.filePath, rule.sourceId);
       // 移除该规则的路径
-      const newPaths = selectedPaths.filter((p) => p !== rule.filePath);
+      const newPaths = selectedPaths.filter((p) => p !== relativeFilePath);
 
       // 获取工作区路径
       const workspaceFolders = vscode.workspace.workspaceFolders;

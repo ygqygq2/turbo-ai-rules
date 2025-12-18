@@ -12,6 +12,7 @@ import type { ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { ProgressManager } from '../utils/progressManager';
+import { toRelativePath } from '../utils/rulePath';
 
 /**
  * 生成配置文件命令处理器
@@ -70,7 +71,9 @@ export async function generateConfigsCommand(): Promise<void> {
       const selectedPaths = selectionStateManager.getSelection(rule.sourceId);
 
       // 只包含用户主动勾选的规则（空数组 = 全不选）
-      if (selectedPaths.length > 0 && selectedPaths.includes(rule.filePath)) {
+      // 将 rule.filePath 转为相对路径后比较（SelectionStateManager 存储相对路径）
+      const relativeFilePath = toRelativePath(rule.filePath, rule.sourceId);
+      if (selectedPaths.length > 0 && selectedPaths.includes(relativeFilePath)) {
         selectedRules.push(rule);
       }
     }

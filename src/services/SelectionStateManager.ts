@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 
 import { Logger } from '../utils/logger';
-import { toAbsolutePaths, toRelativePaths } from '../utils/rulePath';
+import { toRelativePaths } from '../utils/rulePath';
 import { SharedSelectionManager } from './SharedSelectionManager';
 import type { RuleSelection } from './WorkspaceDataManager';
 import { WorkspaceDataManager } from './WorkspaceDataManager';
@@ -33,7 +33,8 @@ export type SelectionStateChangeListener = (event: SelectionStateChangeEvent) =>
 export class SelectionStateManager {
   private static instance: SelectionStateManager;
 
-  // 内存中的选择状态（sourceId -> Set<filePath>）
+  // 内存中的选择状态（sourceId -> Set<relativePath>）
+  // 统一存储相对路径，减少冗余数据
   private memoryState = new Map<string, Set<string>>();
 
   // 规则总数缓存（sourceId -> totalCount）
@@ -100,8 +101,8 @@ export class SelectionStateManager {
         if (selection.mode === 'include') {
           const savedPaths = selection.paths || [];
 
-          // 使用工具函数批量转换相对路径为绝对路径（向后兼容）
-          paths = toAbsolutePaths(savedPaths, sourceId);
+          // 磁盘存储的已经是相对路径，直接使用
+          paths = savedPaths;
         } else if (selection.mode === 'exclude') {
           // exclude 模式：存储排除的路径，返回时需要特殊标记
           // 这里我们存储为负数标记，在其他地方处理
@@ -226,7 +227,7 @@ export class SelectionStateManager {
     }
 
     try {
-      // 使用工具函数批量转换绝对路径为相对路径（减少存储空间）
+      // 内存中已经是相对路径，但使用 toRelativePaths 做安全检查（处理可能的历史绝对路径数据）
       const relativePaths = toRelativePaths(Array.from(selectedPaths), sourceId);
 
       const selection: RuleSelection = {

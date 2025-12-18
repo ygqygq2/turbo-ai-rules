@@ -13,6 +13,7 @@ import type { ParsedRule } from '../types/rules';
 import { EXTENSION_ICON_PATH } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
+import { toRelativePath } from '../utils/rulePath';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 
 interface SearchCriteria {
@@ -514,13 +515,15 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
       // 1. 显示扩展的侧边栏视图
       await vscode.commands.executeCommand('workbench.view.extension.turbo-ai-rules');
 
-      // 2. 按源分组规则
+      // 2. 按源分组规则（转为相对路径）
       const rulesBySource = new Map<string, Set<string>>();
       for (const { rule } of rules) {
         if (!rulesBySource.has(rule.sourceId)) {
           rulesBySource.set(rule.sourceId, new Set());
         }
-        rulesBySource.get(rule.sourceId)!.add(rule.filePath);
+        // 将 rule.filePath 转为相对路径（SelectionStateManager 存储相对路径）
+        const relativeFilePath = toRelativePath(rule.filePath, rule.sourceId);
+        rulesBySource.get(rule.sourceId)!.add(relativeFilePath);
       }
 
       // 3. 通过 SelectionStateManager 勾选规则

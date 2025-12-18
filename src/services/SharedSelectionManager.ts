@@ -15,7 +15,6 @@ import { CONFIG_KEYS, CONFIG_PREFIX } from '../utils/constants';
 import { ensureDir, pathExists, safeReadFile, safeWriteFile } from '../utils/fileSystem';
 import { ensureIgnored, removeIgnored } from '../utils/gitignore';
 import { Logger } from '../utils/logger';
-import { toAbsolutePaths, toRelativePaths } from '../utils/rulePath';
 import type { RuleSelection, RuleSelections } from './WorkspaceDataManager';
 
 /**
@@ -105,14 +104,13 @@ export class SharedSelectionManager {
     // 确保目录存在
     await ensureDir(path.dirname(filePath));
 
-    // 构建共享选择数据
+    // 构建共享选择数据（内存中已经是相对路径）
     const selectionsData: { [sourceId: string]: RuleSelection } = {};
 
     for (const [sourceId, selectedPaths] of selections.entries()) {
-      const relativePaths = toRelativePaths(Array.from(selectedPaths), sourceId);
       selectionsData[sourceId] = {
         mode: 'include',
-        paths: relativePaths,
+        paths: Array.from(selectedPaths),
       };
     }
 
@@ -160,14 +158,15 @@ export class SharedSelectionManager {
 
     for (const [sourceId, selection] of Object.entries(sharedData.selections)) {
       if (selection.mode === 'include' && selection.paths) {
-        const absolutePaths = toAbsolutePaths(selection.paths, sourceId);
+        // 磁盘存储的已经是相对路径，直接使用
+        const paths = selection.paths;
 
         if (mergeMode === 'replace' || !result.has(sourceId)) {
-          result.set(sourceId, new Set(absolutePaths));
+          result.set(sourceId, new Set(paths));
         } else {
           // merge 模式：合并路径
           const existing = result.get(sourceId)!;
-          absolutePaths.forEach((p) => existing.add(p));
+          paths.forEach((p) => existing.add(p));
         }
       }
     }
