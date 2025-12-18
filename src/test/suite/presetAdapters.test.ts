@@ -50,8 +50,8 @@ describe('Preset Adapters Integration Tests', () => {
     }
   });
 
-  it('应该加载所有9个预设适配器', () => {
-    assert.strictEqual(PRESET_ADAPTERS.length, 9, '预设适配器数量应为9个');
+  it('Should load all 9 preset adapters', () => {
+    assert.strictEqual(PRESET_ADAPTERS.length, 9, 'Should have 9 preset adapters');
 
     const expectedAdapters = [
       'cursor',
@@ -67,52 +67,59 @@ describe('Preset Adapters Integration Tests', () => {
 
     const actualIds = PRESET_ADAPTERS.map((adapter) => adapter.id);
     for (const expectedId of expectedAdapters) {
-      assert.ok(actualIds.includes(expectedId), `预设适配器应包含 ${expectedId}`);
+      assert.ok(actualIds.includes(expectedId), `Preset adapter should include ${expectedId}`);
     }
   });
 
-  it('所有预设适配器应有必需的属性', () => {
+  it('All preset adapters should have required properties', () => {
     for (const adapter of PRESET_ADAPTERS) {
-      assert.ok(adapter.id, `适配器 ${adapter.id} 应有 id`);
-      assert.ok(adapter.name, `适配器 ${adapter.id} 应有 name`);
-      assert.ok(adapter.filePath, `适配器 ${adapter.id} 应有 filePath`);
-      assert.ok(adapter.type, `适配器 ${adapter.id} 应有 type`);
+      assert.ok(adapter.id, `Adapter ${adapter.id} should have id`);
+      assert.ok(adapter.name, `Adapter ${adapter.id} should have name`);
+      assert.ok(adapter.filePath, `Adapter ${adapter.id} should have filePath`);
+      assert.ok(adapter.type, `Adapter ${adapter.id} should have type`);
       assert.ok(
         ['file', 'directory'].includes(adapter.type),
-        `适配器 ${adapter.id} 的 type 应为 file 或 directory`,
+        `Adapter ${adapter.id} type should be file or directory`,
       );
     }
   });
 
-  it('预设适配器ID应为kebab-case格式', () => {
+  it('Preset adapter IDs should be in kebab-case format', () => {
     const kebabCasePattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
     for (const adapter of PRESET_ADAPTERS) {
-      assert.ok(kebabCasePattern.test(adapter.id), `适配器 ID ${adapter.id} 应为 kebab-case 格式`);
+      assert.ok(
+        kebabCasePattern.test(adapter.id),
+        `Adapter ID ${adapter.id} should be in kebab-case format`,
+      );
     }
   });
 
-  it('应该能够配置并启用Windsurf适配器', async () => {
+  it('Should be able to configure and enable Windsurf adapter', async () => {
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
 
-    // 启用 Windsurf 适配器
+    // Enable Windsurf adapter
     const adapters = config.get<Record<string, any>>('adapters', {});
     adapters.windsurf = { enabled: true };
     await config.update('adapters', adapters, vscode.ConfigurationTarget.Workspace);
 
-    // 验证配置已更新
+    // Verify configuration has been updated
     const updatedConfig = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
     const updatedAdapters = updatedConfig.get<Record<string, any>>('adapters', {});
-    assert.strictEqual(updatedAdapters.windsurf?.enabled, true, 'Windsurf 适配器应已启用');
+    assert.strictEqual(
+      updatedAdapters.windsurf?.enabled,
+      true,
+      'Windsurf adapter should be enabled',
+    );
 
     // 清理配置
     adapters.windsurf = { enabled: false };
     await config.update('adapters', adapters, vscode.ConfigurationTarget.Workspace);
   });
 
-  it('应该能够配置并启用多个新增的适配器', async () => {
+  it('Should be able to configure and enable multiple new adapters', async () => {
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
 
-    // 启用多个新增适配器
+    // Enable multiple new adapters
     const adapters = config.get<Record<string, any>>('adapters', {});
     const newAdapters = ['windsurf', 'cline', 'roo-cline', 'aider', 'bolt', 'qodo-gen'];
 
@@ -121,12 +128,16 @@ describe('Preset Adapters Integration Tests', () => {
     }
     await config.update('adapters', adapters, vscode.ConfigurationTarget.Workspace);
 
-    // 验证所有适配器已启用
+    // Verify all adapters are enabled
     const updatedConfig = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
     const updatedAdapters = updatedConfig.get<Record<string, any>>('adapters', {});
 
     for (const adapterId of newAdapters) {
-      assert.strictEqual(updatedAdapters[adapterId]?.enabled, true, `${adapterId} 适配器应已启用`);
+      assert.strictEqual(
+        updatedAdapters[adapterId]?.enabled,
+        true,
+        `${adapterId} adapter should be enabled`,
+      );
     }
 
     // 清理配置
@@ -136,10 +147,10 @@ describe('Preset Adapters Integration Tests', () => {
     await config.update('adapters', adapters, vscode.ConfigurationTarget.Workspace);
   });
 
-  it('新格式配置应该被正确读取', async () => {
+  it('New format configuration should be read correctly', async () => {
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
 
-    // 设置新格式配置
+    // Set new format configuration
     const adapters = {
       cursor: { enabled: true, autoUpdate: false },
       windsurf: { enabled: true, autoUpdate: true },

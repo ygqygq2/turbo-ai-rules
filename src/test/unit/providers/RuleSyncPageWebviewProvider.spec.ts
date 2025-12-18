@@ -4,7 +4,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { RuleSyncPageWebviewProvider } from '@/providers/RuleSyncPageWebviewProvider';
+import { RuleSyncPageWebviewProvider } from '@/providers/RuleSyncPageWebview';
 
 // Mock vscode
 vi.mock('vscode', () => ({
@@ -24,8 +24,14 @@ vi.mock('vscode', () => ({
       },
     ],
   },
+  commands: {
+    executeCommand: vi.fn(() => Promise.resolve()), // ✅ Mock commands.executeCommand
+  },
   Uri: {
     file: vi.fn((path) => ({ fsPath: path })),
+  },
+  l10n: {
+    t: vi.fn((key) => key), // ✅ Mock l10n.t
   },
 }));
 
@@ -62,6 +68,11 @@ vi.mock('@/services/ConfigManager', () => ({
           ],
         },
       })),
+      // ✅ 添加 getSources 方法
+      getSources: vi.fn(() => [
+        { id: 'source1', name: 'Source 1', enabled: true },
+        { id: 'source2', name: 'Source 2', enabled: true },
+      ]),
     })),
   },
 }));
@@ -119,24 +130,24 @@ describe('RuleSyncPageWebviewProvider', () => {
     it('应该返回规则树和适配器列表', async () => {
       const data = await (provider as any).getRuleSyncData();
 
-      expect(data).toHaveProperty('ruleTree');
+      expect(data).toHaveProperty('sources');
       expect(data).toHaveProperty('adapters');
 
-      expect(Array.isArray(data.ruleTree)).toBe(true);
+      expect(Array.isArray(data.sources)).toBe(true);
       expect(Array.isArray(data.adapters)).toBe(true);
     });
 
     it('应该为每个规则源构建树节点', async () => {
       const data = await (provider as any).getRuleSyncData();
 
-      expect(data.ruleTree.length).toBeGreaterThan(0);
+      expect(data.sources.length).toBeGreaterThan(0);
 
-      const sourceNode = data.ruleTree[0];
-      expect(sourceNode.type).toBe('source');
-      expect(sourceNode).toHaveProperty('id');
-      expect(sourceNode).toHaveProperty('name');
-      expect(sourceNode).toHaveProperty('children');
-      expect(sourceNode).toHaveProperty('stats');
+      const source = data.sources[0];
+      expect(source).toHaveProperty('id');
+      expect(source).toHaveProperty('name');
+      expect(source).toHaveProperty('fileTree');
+      expect(source).toHaveProperty('selectedPaths');
+      expect(source).toHaveProperty('stats');
     });
 
     it('应该包含所有适配器（预置和自定义）', async () => {
@@ -172,7 +183,7 @@ describe('RuleSyncPageWebviewProvider', () => {
         name: 'GitHub Copilot',
         type: 'preset',
         enabled: true,
-        checked: true,
+        checked: false, // 默认未启用，checked 为 false
         ruleCount: 0,
       });
     });
@@ -191,13 +202,7 @@ describe('RuleSyncPageWebviewProvider', () => {
     });
   });
 
-  describe('buildFileTree', () => {
-    it('应该构建文件树结构', async () => {
-      const tree = await (provider as any).buildFileTree('/test/dir', '/test', 'source1');
-
-      expect(Array.isArray(tree)).toBe(true);
-    });
-  });
+  // buildFileTree 方法已移除，改用公共方法 buildFileTreeFromRules (utils/fileTreeBuilder.ts)
 
   describe('getAdapterOutputPath', () => {
     it('应该返回 Copilot 的输出路径', () => {
@@ -221,7 +226,7 @@ describe('RuleSyncPageWebviewProvider', () => {
     });
   });
 
-  describe('handleSync', () => {
+  describe('handleSyncInternal', () => {
     it('应该处理同步请求', async () => {
       const payload = {
         data: {
@@ -231,7 +236,7 @@ describe('RuleSyncPageWebviewProvider', () => {
       };
 
       // 测试不抛出异常
-      await expect((provider as any).handleSync(payload)).resolves.not.toThrow();
+      await expect((provider as any).handleSyncInternal(payload)).resolves.not.toThrow();
     });
 
     it('应该解析规则 ID 为源和路径', async () => {
@@ -243,10 +248,10 @@ describe('RuleSyncPageWebviewProvider', () => {
       };
 
       // 测试不抛出异常
-      await expect((provider as any).handleSync(payload)).resolves.not.toThrow();
+      await expect((provider as any).handleSyncInternal(payload)).resolves.not.toThrow();
     });
 
-    it('应该在缺少数据时正常处理并返回错误', async () => {
+    it('应该在缺少数据时抛出错误', async () => {
       const payload = {
         data: {
           rules: [],
@@ -254,31 +259,31 @@ describe('RuleSyncPageWebviewProvider', () => {
         },
       };
 
-      // handleSync 不会抛出错误，而是捕获并记录
-      await expect((provider as any).handleSync(payload)).resolves.not.toThrow();
+      // handleSyncInternal 现在会抛出错误
+      await expect((provider as any).handleSyncInternal(payload)).rejects.toThrow();
     });
   });
 
   describe('handleMessage', () => {
-    it('应该处理 ready 消息', async () => {
-      const sendInitialDataSpy = vi.spyOn(provider as any, 'sendInitialData');
+    it('应该处理 ready 消息（兼容旧协议）', async () => {
+      const getRuleSyncDataSpy = vi.spyOn(provider as any, 'getRuleSyncData');
 
       await (provider as any).handleMessage({ type: 'ready' });
 
-      expect(sendInitialDataSpy).toHaveBeenCalled();
+      expect(getRuleSyncDataSpy).toHaveBeenCalled();
     });
 
-    it('应该处理 sync 消息', async () => {
-      const handleSyncSpy = vi.spyOn(provider as any, 'handleSync');
-      const payload = { data: { rules: [], adapters: [] } };
-
-      await (provider as any).handleMessage({ type: 'sync', payload });
-
-      expect(handleSyncSpy).toHaveBeenCalledWith(payload, undefined);
-    });
-
-    it('应该处理未知消息类型', async () => {
+    it('应该处理未知消息类型（不抛出错误）', async () => {
       await expect((provider as any).handleMessage({ type: 'unknown' })).resolves.not.toThrow();
+    });
+  });
+
+  // ✅ RPC 消息处理器现在通过 registerMessageHandlers 注册，不再通过 handleMessage
+  describe('registerMessageHandlers', () => {
+    it('应该注册 RPC 处理器', () => {
+      // 简单测试：确保方法存在且可调用
+      expect((provider as any).registerMessageHandlers).toBeDefined();
+      expect(typeof (provider as any).registerMessageHandlers).toBe('function');
     });
   });
 });

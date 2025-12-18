@@ -97,19 +97,19 @@ export interface CustomAdapterConfig extends AdapterConfig {
   outputType: OutputType;
   /** 文件过滤规则(文件后缀,如 ['.md', '.mdc']), 不配置或空数组则不过滤(同步所有文件) */
   fileExtensions?: string[];
-  /** 是否按源ID组织子目录(仅对 directory 类型有效), 默认 true */
+  /** 是否按源ID组织子目录(仅对 directory 类型有效), 默认 false */
   organizeBySource?: boolean;
+  /** 是否使用原文件名(仅对 directory 类型有效), 默认 true。false 时使用 sourceId-ruleId.md 格式 */
+  useOriginalFilename?: boolean;
   /** 是否生成索引文件(仅对 directory 类型有效), 默认 true */
   generateIndex?: boolean;
   /** 索引文件名(默认 'index.md') */
   indexFileName?: string;
   /** 单文件模板(仅对 file 类型有效), 使用 {{rules}} 作为规则内容占位符 */
   fileTemplate?: string;
-  /** 是否为 skills 类型适配器（从源仓库直接读取文件） */
-  skills?: boolean;
-  /** Skills 类型的规则源 ID（仅当 skills=true 时有效） */
+  /** Skills 类型的规则源 ID（仅当 isRuleType=false 时有效） */
   sourceId?: string;
-  /** Skills 类型的子目录路径（仅当 skills=true 时有效） */
+  /** Skills 类型的子目录路径（仅当 isRuleType=false 时有效） */
   subPath?: string;
 }
 

@@ -198,9 +198,8 @@ Continue 也支持从 `.continue/rules/` 目录加载规则，**完全支持递�
       "enabled": true,
       "outputPath": ".continue/rules",
       "outputType": "directory",
-      "fileExtensions": [".md"],
-      "organizeBySource": true,
-      "generateIndex": true
+      "fileExtensions": [".md"]
+      // organizeBySource: false (默认), useOriginalFilename: true (默认)
     }
   ]
 }
@@ -243,7 +242,8 @@ Continue 也支持从 `.continue/rules/` 目录加载规则，**完全支持递�
       "outputPath": "path/to/output", // 输出路径 (相对工作区根目录)
       "outputType": "file",           // 输出类型: "file" | "directory"
       "fileExtensions": [".md"],      // 文件过滤 (可选)
-      "organizeBySource": true,       // 按源组织 (仅 directory 模式)
+      "organizeBySource": false,      // 按源组织 (仅 directory 模式，默认: false)
+      "useOriginalFilename": true,    // 使用原文件名 (仅 directory 模式，默认: true)
       "generateIndex": true,          // 生成索引 (仅 directory 模式)
       "indexFileName": "index.md"     // 索引文件名 (仅 directory 模式)
     }
@@ -253,21 +253,22 @@ Continue 也支持从 `.continue/rules/` 目录加载规则，**完全支持递�
 
 ##### 参数详解
 
-| 参数               | 类型     | 必填 | 默认值     | 说明                                                                       |
-| ------------------ | -------- | ---- | ---------- | -------------------------------------------------------------------------- |
-| `id`               | string   | ✅   | -          | 唯一标识符，使用 kebab-case (如 `windsurf`, `my-custom-ai`)                |
-| `name`             | string   | ✅   | -          | 显示名称，出现在日志和 UI 中                                               |
-| `enabled`          | boolean  | ❌   | `true`     | 是否启用该适配器                                                           |
-| `autoUpdate`       | boolean  | ❌   | `true`     | 同步规则后是否自动更新输出                                                 |
-| `outputPath`       | string   | ✅   | -          | 输出路径，相对于工作区根目录                                               |
-| `outputType`       | enum     | ✅   | -          | `"file"`: 单文件输出<br>`"directory"`: 目录结构输出                        |
-| `fileExtensions`   | string[] | ❌   | `[]`       | 文件扩展名过滤 (如 `[".md", ".mdc"]`)<br>**空数组或不配置 = 同步所有文件** |
-| `organizeBySource` | boolean  | ❌   | `true`     | (仅 `directory` 模式) 是否按源 ID 创建子目录                               |
-| `generateIndex`    | boolean  | ❌   | `true`     | (仅 `directory` 模式) 是否生成索引文件                                     |
-| `indexFileName`    | string   | ❌   | `index.md` | (仅 `directory` 模式) 索引文件名                                           |
-| `skills`           | boolean  | ❌   | `false`    | (技能模式) 是否为技能适配器，技能文件直接复制不解析                        |
-| `sourceId`         | string   | ❌   | -          | (技能模式) 复用的规则源 ID，复用其 Git 仓库、分支、认证配置                |
-| `subPath`          | string   | ❌   | `/`        | (技能模式) 技能文件在仓库中的子目录（相对于仓库根目录，如 `/skills`）      |
+| 参数                  | 类型     | 必填 | 默认值     | 说明                                                                              |
+| --------------------- | -------- | ---- | ---------- | --------------------------------------------------------------------------------- |
+| `id`                  | string   | ✅   | -          | 唯一标识符，使用 kebab-case (如 `windsurf`, `my-custom-ai`)                       |
+| `name`                | string   | ✅   | -          | 显示名称，出现在日志和 UI 中                                                      |
+| `enabled`             | boolean  | ❌   | `true`     | 是否启用该适配器                                                                  |
+| `autoUpdate`          | boolean  | ❌   | `true`     | 同步规则后是否自动更新输出                                                        |
+| `outputPath`          | string   | ✅   | -          | 输出路径，相对于工作区根目录                                                      |
+| `outputType`          | enum     | ✅   | -          | `"file"`: 单文件输出<br>`"directory"`: 目录结构输出                               |
+| `fileExtensions`      | string[] | ❌   | `[]`       | 文件扩展名过滤 (如 `[".md", ".mdc"]`)<br>**空数组或不配置 = 同步所有文件**        |
+| `organizeBySource`    | boolean  | ❌   | `false`    | (仅 `directory` 模式) 是否按源 ID 创建子目录                                      |
+| `useOriginalFilename` | boolean  | ❌   | `true`     | (仅 `directory` 模式) 使用原文件名。为 `false` 时使用 `{sourceId-}ruleId.md` 格式 |
+| `generateIndex`       | boolean  | ❌   | `true`     | (仅 `directory` 模式) 是否生成索引文件                                            |
+| `indexFileName`       | string   | ❌   | `index.md` | (仅 `directory` 模式) 索引文件名                                                  |
+| `skills`              | boolean  | ❌   | `false`    | (技能模式) 是否为技能适配器，技能文件直接复制不解析                               |
+| `sourceId`            | string   | ❌   | -          | (技能模式) 复用的规则源 ID，复用其 Git 仓库、分支、认证配置                       |
+| `subPath`             | string   | ❌   | `/`        | (技能模式) 技能文件在仓库中的子目录（相对于仓库根目录，如 `/skills`）             |
 
 ---
 
@@ -282,10 +283,10 @@ Continue 也支持从 `.continue/rules/` 目录加载规则，**完全支持递�
   "enabled": true,
   "autoUpdate": true,
   "outputPath": "rules",
-  "outputType": "directory",
-  "organizeBySource": true,
-  "generateIndex": true,
-  "indexFileName": "index.md"
+  "outputType": "directory"
+  // organizeBySource: false (默认) - 平铺结构
+  // useOriginalFilename: true (默认) - 使用原文件名如 1303.md
+  // generateIndex: true (默认)
   // 不设置 fileExtensions = 同步所有文件
 }
 ```
@@ -336,7 +337,8 @@ rules/
   "autoUpdate": true,
   "outputPath": "ai-rules-full",
   "outputType": "directory",
-  "organizeBySource": true,
+  "organizeBySource": true, // 明确按源组织
+  "useOriginalFilename": true,
   "generateIndex": true
   // 不设置 fileExtensions = 同步 .md, .mdc, .txt, .json 等所有文件
 }
@@ -496,9 +498,8 @@ docs/ai-rules/
       "name": "Generic Rules",
       "enabled": true,
       "outputPath": "rules",
-      "outputType": "directory",
-      "organizeBySource": true,
-      "generateIndex": true
+      "outputType": "directory"
+      // 使用默认值: organizeBySource=false, useOriginalFilename=true
     },
     {
       "id": "windsurf",

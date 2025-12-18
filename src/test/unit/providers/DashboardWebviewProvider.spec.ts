@@ -33,8 +33,8 @@ vi.mock('@/services/ConfigManager', () => ({
     getInstance: vi.fn(() => ({
       getConfig: vi.fn(() => ({
         sources: [
-          { id: 'source1', name: 'Source 1', enabled: true, lastSync: new Date() },
-          { id: 'source2', name: 'Source 2', enabled: false, lastSync: null },
+          { id: 'source1', name: 'Source 1', enabled: true },
+          { id: 'source2', name: 'Source 2', enabled: false },
         ],
         adapters: {
           copilot: { enabled: true },
@@ -43,6 +43,18 @@ vi.mock('@/services/ConfigManager', () => ({
           custom: [{ id: 'custom1', name: 'Custom 1', enabled: true }],
         },
       })),
+    })),
+  },
+}));
+
+// Mock WorkspaceStateManager
+vi.mock('@/services/WorkspaceStateManager', () => ({
+  WorkspaceStateManager: {
+    getInstance: vi.fn(() => ({
+      getLastSyncTime: vi.fn((sourceId: string) => {
+        if (sourceId === 'source1') return Promise.resolve(new Date('2024-01-01'));
+        return Promise.resolve(null);
+      }),
     })),
   },
 }));
@@ -93,7 +105,8 @@ describe('DashboardWebviewProvider', () => {
       expect(state.sources).toHaveProperty('enabled');
       expect(state.sources).toHaveProperty('total');
       expect(state.sources).toHaveProperty('totalRules');
-      expect(state.sources).toHaveProperty('lastSync');
+      expect(state.sources).toHaveProperty('list');
+      expect(Array.isArray(state.sources.list)).toBe(true);
 
       expect(state).toHaveProperty('adapters');
       expect(Array.isArray(state.adapters)).toBe(true);

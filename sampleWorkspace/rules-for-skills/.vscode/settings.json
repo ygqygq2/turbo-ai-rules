@@ -1,0 +1,42 @@
+{
+  // Skills Adapter Test Scenario
+  "turbo-ai-rules.adapters": {
+    "cursor": { "enabled": false },
+    "copilot": { "enabled": true },
+    "continue": { "enabled": false }
+  },
+  "turbo-ai-rules.sync.conflictStrategy": "priority",
+  "turbo-ai-rules.sync.auto": false,
+  "turbo-ai-rules.sync.onStartup": false,
+
+  // Pre-configured skills rule source
+  "turbo-ai-rules.sources": [
+    {
+      "id": "turbo-skills-source",
+      "name": "Turbo AI Skills",
+      "gitUrl": "https://github.com/ygqygq2/ai-rules.git",
+      "branch": "main",
+      "subPath": "1300-skills/",
+      "enabled": true,
+      "authentication": {
+        "type": "none"
+      }
+    }
+  ],
+
+  // Custom Skills Adapter Configuration
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "dev-skills",
+      "name": "Development Skills",
+      "enabled": true,
+      "sourceId": "turbo-skills-source",
+      "subPath": "1300-skills/",
+      "outputPath": ".skills/",
+      "outputType": "directory",
+      "organizeBySource": false,
+      "isRuleType": false,
+      "description": "Development skills including Python, TypeScript, debugging and code review"
+    }
+  ]
+}

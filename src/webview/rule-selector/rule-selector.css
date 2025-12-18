@@ -2,6 +2,8 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  max-width: 1400px; /* ✅ 限制最大宽度，统一风格 */
+  margin: 0 auto; /* ✅ 居中显示 */
   background: var(--vscode-editor-background);
   color: var(--vscode-foreground);
   font-size: 14px;

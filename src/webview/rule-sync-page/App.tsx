@@ -25,6 +25,7 @@ export const App: React.FC = () => {
     setInitialData,
     toggleTreeNode,
     selectNode,
+    updateSelectionFromExtension, // ✅ 新增：从扩展更新选择
     toggleAllAdapters,
     toggleAdapter,
     setSearchTerm,
@@ -52,18 +53,13 @@ export const App: React.FC = () => {
     const offSelectionChanged = rpc.on(
       'selectionChanged',
       (payload: { sourceId: string; selectedPaths: string[]; totalCount: number }) => {
-        console.log('Selection changed from extension', {
+        console.log('✅ [RuleSyncPage] Selection changed from extension', {
           sourceId: payload.sourceId,
           selectedCount: payload.selectedPaths.length,
+          paths: payload.selectedPaths.slice(0, 3), // 显示前3个路径
         });
-        // ✅ 更新该源的选择状态（复用规则选择器逻辑）
-        const store = useRuleSyncPageStore.getState();
-        useRuleSyncPageStore.setState({
-          selectedPathsBySource: {
-            ...store.selectedPathsBySource,
-            [payload.sourceId]: payload.selectedPaths, // ✅ 直接使用后端返回的路径数组
-          },
-        });
+        // ✅ 使用 store action 更新状态（触发 React 重新渲染）
+        updateSelectionFromExtension(payload.sourceId, payload.selectedPaths);
       },
     );
 
@@ -83,7 +79,7 @@ export const App: React.FC = () => {
       offSelectionChanged();
       offSyncComplete();
     };
-  }, [rpc, setInitialData]);
+  }, [rpc, setInitialData, updateSelectionFromExtension]);
 
   // 处理同步
   const handleSync = async () => {

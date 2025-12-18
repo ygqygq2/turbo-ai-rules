@@ -457,7 +457,7 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
           outputType: adapter.format === 'directory' ? 'directory' : 'file',
           fileExtensions:
             adapter.fileExtensions || adapter.directoryStructure?.filePattern?.split(', ') || [],
-          organizeBySource: adapter.organizeBySource ?? true,
+          organizeBySource: adapter.organizeBySource ?? false,
           generateIndex: true,
           indexFileName: adapter.directoryStructure?.pathTemplate || 'index.md',
           isRuleType: adapter.isRuleType,

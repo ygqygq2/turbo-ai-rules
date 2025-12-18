@@ -198,9 +198,8 @@ Continue also supports loading rules from `.continue/rules/` directory with **fu
       "enabled": true,
       "outputPath": ".continue/rules",
       "outputType": "directory",
-      "fileExtensions": [".md"],
-      "organizeBySource": true,
-      "generateIndex": true
+      "fileExtensions": [".md"]
+      // organizeBySource: false (default), useOriginalFilename: true (default)
     }
   ]
 }
@@ -243,7 +242,8 @@ Custom adapters are one of the core features of Turbo AI Rules,
       "outputPath": "path/to/output", // Output path (relative to workspace root)
       "outputType": "file",           // Output type: "file" | "directory"
       "fileExtensions": [".md"],      // File filter (optional)
-      "organizeBySource": true,       // Organize by source (directory mode only)
+      "organizeBySource": false,      // Organize by source (directory mode only, default: false)
+      "useOriginalFilename": true,    // Use original filename (directory mode only, default: true)
       "generateIndex": true,          // Generate index (directory mode only)
       "indexFileName": "index.md"     // Index filename (directory mode only)
     }
@@ -253,21 +253,22 @@ Custom adapters are one of the core features of Turbo AI Rules,
 
 ##### Parameter Details
 
-| Parameter          | Type     | Required | Default    | Description                                                                                  |
-| ------------------ | -------- | -------- | ---------- | -------------------------------------------------------------------------------------------- |
-| `id`               | string   | ✅       | -          | Unique identifier, use kebab-case (e.g., `windsurf`, `my-custom-ai`)                         |
-| `name`             | string   | ✅       | -          | Display name, appears in logs and UI                                                         |
-| `enabled`          | boolean  | ❌       | `true`     | Whether this adapter is enabled                                                              |
-| `autoUpdate`       | boolean  | ❌       | `true`     | Whether to auto-update output after syncing rules                                            |
-| `outputPath`       | string   | ✅       | -          | Output path, relative to workspace root                                                      |
-| `outputType`       | enum     | ✅       | -          | `"file"`: Single file output<br>`"directory"`: Directory structure output                    |
-| `fileExtensions`   | string[] | ❌       | `[]`       | File extension filter (e.g., `[".md", ".mdc"]`)<br>**Empty array or unset = sync all files** |
-| `organizeBySource` | boolean  | ❌       | `true`     | (`directory` mode only) Whether to create subdirectories by source ID                        |
-| `generateIndex`    | boolean  | ❌       | `true`     | (`directory` mode only) Whether to generate index file                                       |
-| `indexFileName`    | string   | ❌       | `index.md` | (`directory` mode only) Index filename                                                       |
-| `skills`           | boolean  | ❌       | `false`    | (Skills mode) Whether this is a skills adapter, files are copied directly without parsing    |
-| `sourceId`         | string   | ❌       | -          | (Skills mode) Source ID to reuse its Git repo, branch, and auth config                       |
-| `subPath`          | string   | ❌       | `/`        | (Skills mode) Skills subdirectory in repo (relative to repo root, e.g., `/skills`)           |
+| Parameter             | Type     | Required | Default    | Description                                                                                     |
+| --------------------- | -------- | -------- | ---------- | ----------------------------------------------------------------------------------------------- |
+| `id`                  | string   | ✅       | -          | Unique identifier, use kebab-case (e.g., `windsurf`, `my-custom-ai`)                            |
+| `name`                | string   | ✅       | -          | Display name, appears in logs and UI                                                            |
+| `enabled`             | boolean  | ❌       | `true`     | Whether this adapter is enabled                                                                 |
+| `autoUpdate`          | boolean  | ❌       | `true`     | Whether to auto-update output after syncing rules                                               |
+| `outputPath`          | string   | ✅       | -          | Output path, relative to workspace root                                                         |
+| `outputType`          | enum     | ✅       | -          | `"file"`: Single file output<br>`"directory"`: Directory structure output                       |
+| `fileExtensions`      | string[] | ❌       | `[]`       | File extension filter (e.g., `[".md", ".mdc"]`)<br>**Empty array or unset = sync all files**    |
+| `organizeBySource`    | boolean  | ❌       | `false`    | (`directory` mode only) Whether to create subdirectories by source ID                           |
+| `useOriginalFilename` | boolean  | ❌       | `true`     | (`directory` mode only) Use original filename. When `false`, uses `{sourceId-}ruleId.md` format |
+| `generateIndex`       | boolean  | ❌       | `true`     | (`directory` mode only) Whether to generate index file                                          |
+| `indexFileName`       | string   | ❌       | `index.md` | (`directory` mode only) Index filename                                                          |
+| `skills`              | boolean  | ❌       | `false`    | (Skills mode) Whether this is a skills adapter, files are copied directly without parsing       |
+| `sourceId`            | string   | ❌       | -          | (Skills mode) Source ID to reuse its Git repo, branch, and auth config                          |
+| `subPath`             | string   | ❌       | `/`        | (Skills mode) Skills subdirectory in repo (relative to repo root, e.g., `/skills`)              |
 
 ---
 
@@ -282,10 +283,10 @@ Custom adapters are one of the core features of Turbo AI Rules,
   "enabled": true,
   "autoUpdate": true,
   "outputPath": "rules",
-  "outputType": "directory",
-  "organizeBySource": true,
-  "generateIndex": true,
-  "indexFileName": "index.md"
+  "outputType": "directory"
+  // organizeBySource: false (default) - flat structure
+  // useOriginalFilename: true (default) - use original filenames like 1303.md
+  // generateIndex: true (default)
   // Not setting fileExtensions = sync all files
 }
 ```
@@ -336,7 +337,8 @@ rules/
   "autoUpdate": true,
   "outputPath": "ai-rules-full",
   "outputType": "directory",
-  "organizeBySource": true,
+  "organizeBySource": true, // Explicitly organize by source
+  "useOriginalFilename": true,
   "generateIndex": true
   // Not setting fileExtensions = sync .md, .mdc, .txt, .json, etc. all files
 }
@@ -496,9 +498,8 @@ docs/ai-rules/
       "name": "Generic Rules",
       "enabled": true,
       "outputPath": "rules",
-      "outputType": "directory",
-      "organizeBySource": true,
-      "generateIndex": true
+      "outputType": "directory"
+      // Uses defaults: organizeBySource=false, useOriginalFilename=true
     },
     {
       "id": "windsurf",

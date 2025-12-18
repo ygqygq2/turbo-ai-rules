@@ -140,11 +140,11 @@ export class SourceDetailDataHelper {
   async getSyncInfo(source: RuleSource): Promise<SyncInfo> {
     // 从 WorkspaceStateManager 读取同步时间（与状态栏、仪表板保持一致）
     const stateManager = WorkspaceStateManager.getInstance();
-    const lastSync = stateManager.getLastSyncTime(source.id);
+    const lastSync = await stateManager.getLastSyncTime(source.id);
 
     const syncInfo: SyncInfo = {
       status: lastSync ? 'success' : 'never',
-      lastSynced: lastSync,
+      lastSynced: lastSync || undefined,
     };
 
     // 计算缓存大小

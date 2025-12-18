@@ -163,7 +163,7 @@ export class CustomAdapter extends BaseAdapter {
     }
 
     const files: Map<string, string> = new Map();
-    const organizeBySource = this.config.organizeBySource ?? true;
+    const organizeBySource = this.config.organizeBySource ?? false;
 
     if (organizeBySource) {
       // 按源 ID 组织
@@ -214,9 +214,11 @@ export class CustomAdapter extends BaseAdapter {
     }
 
     // 为每个源生成文件
+    const useOriginalFilename = this.config.useOriginalFilename ?? true;
     for (const [sourceId, sourceRules] of rulesBySource) {
       for (const rule of sourceRules) {
-        const relativePath = path.join(this.config.outputPath, sourceId, `${rule.id}.md`);
+        const fileName = useOriginalFilename ? path.basename(rule.filePath) : `${rule.id}.md`;
+        const relativePath = path.join(this.config.outputPath, sourceId, fileName);
         const absolutePath = path.join(workspaceRoot, relativePath);
         // 使用原始内容（包含 frontmatter）
         const content = rule.rawContent;
@@ -236,9 +238,12 @@ export class CustomAdapter extends BaseAdapter {
     workspaceRoot: string,
     files: Map<string, string>,
   ): Promise<void> {
+    const useOriginalFilename = this.config.useOriginalFilename ?? true;
     for (const rule of rules) {
-      // 使用 sourceId-ruleId 作为文件名避免冲突
-      const fileName = `${rule.sourceId}-${rule.id}.md`;
+      // 使用原文件名或 sourceId-ruleId 格式
+      const fileName = useOriginalFilename
+        ? path.basename(rule.filePath)
+        : `${rule.sourceId}-${rule.id}.md`;
       const relativePath = path.join(this.config.outputPath, fileName);
       const absolutePath = path.join(workspaceRoot, relativePath);
       // 使用原始内容（包含 frontmatter）

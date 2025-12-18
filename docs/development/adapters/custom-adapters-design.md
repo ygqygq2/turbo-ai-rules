@@ -7,8 +7,8 @@
 - 将 `RulesAdapter` 抽象为通用 `CustomAdapter`，支持多适配器并存。
 - 输出模式：`file`（单文件合并）与 `directory`（多文件组织）。
 - 过滤：可选 `fileExtensions`；不配置=不过滤。
-- 组织：目录模式可按源 ID 分目录，支持生成索引。
-- **Skills 支持**：通过 `skills: true` 标识技能类型，使用 `sourceId + subPath` 复用已有规则源配置。
+- 组织：目录模式可按源 ID 分目录（默认 false 为平铺），支持生成索引。
+- **Skills 支持**：通过 `isRuleType: false` 标识技能类型，使用 `sourceId + subPath` 复用已有规则源配置。
 
 ## 配置结构（摘录）
 
@@ -19,14 +19,14 @@ export interface CustomAdapterConfig extends AdapterConfig {
   outputPath: string;
   outputType: 'file' | 'directory';
   fileExtensions?: string[];
-  organizeBySource?: boolean;
+  organizeBySource?: boolean; // 默认 false
+  useOriginalFilename?: boolean; // 默认 true
   generateIndex?: boolean;
   indexFileName?: string;
 
-  // Skills 专用配置
-  skills?: boolean; // 标识为技能适配器
+  // Skills 适配器配置（isRuleType=false 时使用）
   sourceId?: string; // 复用已有规则源的 ID
-  subPath?: string; // 技能文件在源仓库中的子目录（相对于仓库根目录，如 '/skills'）
+  subPath?: string; // 技能文件在源仓库中的子目录
 }
 ```
 

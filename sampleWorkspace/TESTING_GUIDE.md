@@ -2,14 +2,15 @@
 
 ## 测试工作区概览
 
-本项目包含 **6 个测试场景**，全面覆盖插件的各种功能：
+本项目包含 **7 个测试场景**，全面覆盖插件的各种功能：
 
 1. **rules-for-cursor** - Cursor 适配器 + 单一公开源
 2. **rules-for-copilot** - Copilot 适配器 + 单一公开源
 3. **rules-for-continue** - Continue 适配器 + 单一公开源
 4. **rules-for-default** - 自定义适配器 (rules/ 目录) + 单一公开源
-5. **rules-multi-source** - 多规则源 + 冲突解决策略
-6. **rules-with-user-rules** - 多适配器同时启用 + 用户规则保护功能
+5. **rules-for-skills** - 技能适配器 + 规则同步页与快速同步的区分测试
+6. **rules-multi-source** - 多规则源 + 冲突解决策略
+7. **rules-with-user-rules** - 多适配器同时启用 + 用户规则保护功能
 
 所有测试场景已预配置规则源，**无需交互输入**，可直接运行自动化测试。
 
@@ -213,6 +214,73 @@ GitHub Actions 会自动运行所有测试（包括 xvfb-run for Linux headless 
 - 冲突规则按优先级处理
 - 多个配置文件同时生成
 - 无重复规则 ID 错误
+
+### 场景 5: 技能适配器 + 同步策略测试（rules-for-skills）
+
+**测试目标**：
+
+- 技能适配器的配置和生成
+- 规则同步页可以选择技能适配器进行同步
+- 快速同步不会同步到技能适配器
+- 技能规则与普通规则的区分
+
+**预配置源**：
+
+```json
+{
+  "id": "example-skills",
+  "name": "示例技能规则",
+  "gitUrl": "https://github.com/ygqygq2/turbo-ai-rules.git",
+  "branch": "main",
+  "subPath": "rules"
+}
+```
+
+**技能适配器配置**：
+
+```json
+{
+  "turboAiRules.adapters.skills": [
+    {
+      "id": "python-skills",
+      "name": "Python 开发技能",
+      "enabled": true,
+      "outputPath": ".skills/python-dev.md",
+      "description": "Python 开发相关的技能和最佳实践"
+    },
+    {
+      "id": "typescript-skills",
+      "name": "TypeScript 开发技能",
+      "enabled": true,
+      "outputPath": ".skills/typescript-dev.md",
+      "description": "TypeScript 开发相关的技能和最佳实践"
+    }
+  ]
+}
+```
+
+**测试步骤**：
+
+1. **规则同步页测试**：
+
+   - 打开规则同步页
+   - 验证技能适配器出现在列表中
+   - 勾选技能适配器
+   - 点击同步
+   - 验证 `.skills/` 目录下生成了技能文件
+
+2. **快速同步测试**：
+   - 执行快速同步命令
+   - 验证只有 Copilot 适配器被更新
+   - 验证技能适配器**不会**被同步
+   - 验证 `.skills/` 目录内容未改变
+
+**验证点**：
+
+- `.skills/python-dev.md` 生成（仅在规则同步页勾选时）
+- `.skills/typescript-dev.md` 生成（仅在规则同步页勾选时）
+- 快速同步不影响技能文件
+- `.github/copilot-instructions.md` 正常更新（快速同步和规则同步页都会）
 
 ### 场景 6: 多适配器 + 用户规则保护（rules-with-user-rules）
 

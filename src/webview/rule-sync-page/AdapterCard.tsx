@@ -7,6 +7,8 @@ interface AdapterInfo {
   type: 'preset' | 'custom';
   enabled: boolean;
   outputPath: string;
+  selectDisabled: boolean;
+  isRuleType: boolean;
 }
 
 interface AdapterCardProps {
@@ -40,23 +42,36 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
     if ((e.target as HTMLElement).tagName === 'INPUT') {
       return;
     }
+    // 如果适配器被禁用或因互斥被禁止选择，不响应点击
+    if (!adapter.enabled || adapter.selectDisabled) {
+      return;
+    }
     onToggle();
   };
 
+  const isDisabled = !adapter.enabled || adapter.selectDisabled;
+  const disabledReason = adapter.selectDisabled
+    ? adapter.isRuleType
+      ? '已选择 Skills 适配器，无法选择规则适配器'
+      : '已选择规则适配器，无法选择 Skills 适配器'
+    : !adapter.enabled
+      ? '适配器未启用'
+      : '';
+
   return (
     <div
-      className={`adapter-card ${isSelected ? 'checked' : ''} ${
-        !adapter.enabled ? 'disabled' : ''
-      }`}
+      className={`adapter-card ${isSelected ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}`}
       onClick={handleClick}
+      title={disabledReason}
     >
       <div className="adapter-card-header">
         <input
           type="checkbox"
           className="adapter-card-checkbox"
           checked={isSelected}
-          disabled={!adapter.enabled}
+          disabled={isDisabled}
           onChange={onToggle}
+          title={disabledReason}
         />
         <span className="adapter-card-icon">
           <Icon icon={iconName} size={16} />

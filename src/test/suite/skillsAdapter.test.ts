@@ -15,9 +15,12 @@ describe('Skills Adapter Tests', () => {
   before(async () => {
     const folders = vscode.workspace.workspaceFolders;
     assert.ok(folders && folders.length > 0, 'No workspace folder found');
-    workspaceFolder = folders[0];
 
-    // 激活扩展
+    // Find the "Test: Skills Adapter" workspace folder
+    const skillsFolder = folders.find((f) => f.name === 'Test: Skills Adapter');
+    workspaceFolder = skillsFolder || folders[0];
+
+    // Activate extension
     const ext = vscode.extensions.getExtension('ygqygq2.turbo-ai-rules');
     if (ext && !ext.isActive) {
       await ext.activate();
@@ -43,17 +46,20 @@ describe('Skills Adapter Tests', () => {
   });
 
   it('Should sync skills files via skills adapter', async function () {
-    this.timeout(180000); // 3分钟
+    this.timeout(180000); // 3 minutes
 
-    // 获取配置
+    // Get configuration
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
     const customAdapters = config.get<any[]>(CONFIG_KEYS.ADAPTERS_CUSTOM, []);
 
-    // 检查是否有 skills 适配器配置
+    console.log(`⚙️  Testing in workspace folder: ${workspaceFolder.name}`);
+    console.log(`⚙️  Found ${customAdapters.length} custom adapters`);
+
+    // Check if skills adapter is configured
     const skillsAdapter = customAdapters.find((adapter) => adapter.skills === true);
 
     if (!skillsAdapter) {
-      console.log('⚠️ No skills adapter configured, skipping test');
+      console.log('⚠️  No skills adapter configured, skipping test');
       this.skip();
       return;
     }

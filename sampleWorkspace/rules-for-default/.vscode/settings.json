@@ -14,7 +14,7 @@
         "name": "Generic Rules",
         "enabled": true,
         "autoUpdate": true,
-        "outputPath": "rules",
+        "outputPath": "rules/",
         "outputType": "directory",
         "organizeBySource": true,
         "generateIndex": true,

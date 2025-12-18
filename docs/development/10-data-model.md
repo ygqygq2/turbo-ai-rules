@@ -143,7 +143,10 @@
   - `directory`: 保持原有目录结构
 - `fileExtensions`: 文件过滤规则（可选，如 `['.md', '.mdc']`）
   - 为空或不设置时同步所有文件
-- `organizeBySource`: 是否按源 ID 组织子目录（仅 directory 类型，默认 true）
+- `organizeBySource`: 是否按源 ID 组织子目录（仅 directory 类型，默认 false）
+- `useOriginalFilename`: 是否使用原文件名（仅 directory 类型，默认 true）
+  - true: 使用原文件名（如 `1303.md`）
+  - false: 使用 `{sourceId-}ruleId.md` 格式
 - `generateIndex`: 是否生成索引文件（仅 directory 类型，默认 true）
 - `indexFileName`: 索引文件名（默认 'index.md'）
 
@@ -151,13 +154,13 @@
 
 - 每个适配器独立配置，互不影响
 - 自定义适配器支持数组，允许多个自定义工具
-- **Skills 适配器**: 作为普通自定义适配器处理
-  - 用户通过命名识别（如 "AI Skills"）
-  - 通过 `outputPath` 指定独立目录（如 `skills/`）
-  - 不需要特殊的 `skills`/`sourceId`/`subPath` 字段
-  - 推荐配合规则的 `skill` 标签使用
+- **Skills 适配器**: 通过 `isRuleType: false` 标识
+  - 与规则适配器互斥，不能同时选中
+  - 使用 `sourceId` 和 `subPath` 指定技能文件来源
+  - 文件直接复制，不经过规则解析
 - `autoUpdate` 控制是否随同步自动生成配置
-- 移除了 `skills`/`sourceId`/`subPath` 字段（简化设计）
+- `organizeBySource` 默认 false，保持原目录结构平铺
+- `useOriginalFilename` 默认 true，使用原文件名便于查看
 
 ---
 
@@ -359,18 +362,21 @@ interface AdapterState {
 
 **选择互斥逻辑**:
 
-- **初始状态**：所有启用的适配器都可选
+- **初始状态**：
+  - 打开规则同步页时，所有适配器默认不选中（`checked=false`）
+  - 所有启用的适配器都可选（`selectDisabled=false`）
 - **选择第一个适配器后**：
-  - 选择规则适配器（`isRuleType=true`）→ 所有非规则适配器变为禁止选择（`selectDisabled=true`）
-  - 选择非规则适配器（`isRuleType=false`）→ 所有规则适配器变为禁止选择
-- **取消所有选择后**：恢复初始状态，所有适配器重新可选
+  - 选择规则适配器（`isRuleType=true`）→ 所有非规则适配器（Skills）变为禁止选择（`selectDisabled=true`）
+  - 选择非规则适配器（Skills, `isRuleType=false`）→ 所有规则适配器变为禁止选择（`selectDisabled=true`）
+- **取消所有选择后**：恢复初始状态，所有适配器重新可选（`selectDisabled=false`）
 
 **设计考量**:
 
 - `enabled`: 从配置读取，禁用的适配器无法勾选
-- `checked`: 用户临时操作，决定是否同步到该适配器
+- `checked`: 用户临时操作，决定是否同步到该适配器，**默认不选中**
 - `selectDisabled`: 因类型互斥而临时禁止选择
 - `ruleCount`: 根据左侧选中的规则实时计算
+- `isRuleType`: 区分规则适配器（true）和 Skills 适配器（false），用于互斥逻辑
 
 ---
 

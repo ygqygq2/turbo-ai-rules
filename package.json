@@ -533,8 +533,13 @@
               },
               "organizeBySource": {
                 "type": "boolean",
-                "default": true,
+                "default": false,
                 "description": "%turboAiRules.adapters.custom.items.properties.organizeBySource.description%"
+              },
+              "useOriginalFilename": {
+                "type": "boolean",
+                "default": true,
+                "description": "%turboAiRules.adapters.custom.items.properties.useOriginalFilename.description%"
               },
               "generateIndex": {
                 "type": "boolean",

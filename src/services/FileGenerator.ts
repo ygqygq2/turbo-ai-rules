@@ -168,11 +168,11 @@ export class FileGenerator {
     // 为每个适配器生成配置
     for (const [name, adapter] of this.adapters.entries()) {
       try {
-        // 检查是否为 skills 适配器
+        // 检查是否为 skills 适配器（isRuleType=false 表示非规则类型，即 skills 类型）
         let adapterRules = rules;
         if (adapter instanceof CustomAdapter) {
           const customConfig = adapter.config;
-          if (customConfig.skills && customConfig.sourceId) {
+          if (!customConfig.isRuleType && customConfig.sourceId) {
             // Skills 适配器：从指定源路径读取文件作为规则
             adapterRules = await this.getSkillsRules(customConfig);
             Logger.debug(`Loaded skills for adapter: ${name}`, {

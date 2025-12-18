@@ -33,16 +33,19 @@ interface AdapterInfo {
   type: 'preset' | 'custom';
   enabled: boolean;
   outputPath: string;
+  checked: boolean;
+  selectDisabled: boolean;
+  isRuleType: boolean;
 }
 
 interface InitialData {
-  ruleTree: {
-    type: 'source';
+  sources: Array<{
     id: string;
     name: string;
-    children?: FileTreeNode[];
-    stats?: { total: number; selected: number };
-  }[];
+    fileTree: FileTreeNode[]; // ✅ 纯树结构
+    selectedPaths: string[]; // ✅ 选中路径数组
+    stats: { total: number; selected: number };
+  }>;
   adapters: AdapterInfo[];
 }
 
@@ -67,6 +70,7 @@ interface RuleSyncPageState {
   setInitialData: (data: InitialData) => void;
   toggleTreeNode: (sourceId: string, path: string) => void;
   selectNode: (sourceId: string, path: string, checked: boolean, isDirectory: boolean) => void;
+  updateSelectionFromExtension: (sourceId: string, selectedPaths: string[]) => void; // ✅ 新增：从扩展更新选择
   toggleAllRules: () => void;
   toggleAllAdapters: () => void;
   toggleAdapter: (adapterId: string) => void;
@@ -80,6 +84,7 @@ interface RuleSyncPageState {
   getSelectedRulesCount: () => number;
   getSelectedAdaptersCount: () => number;
   getTotalRulesCount: () => number;
+  getAdapterSelectDisabled: (adapterId: string, selectedAdapters?: Set<string>) => boolean;
 }
 
 /**
@@ -100,7 +105,7 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
       syncing: false,
 
       /**
-       * @description 设置初始数据（✅ 复用规则选择器的数据处理逻辑）
+       * @description 设置初始数据（✅ 与规则选择器100%复用逻辑）
        */
       setInitialData: (data) => {
         const sources: SourceInfo[] = [];
@@ -108,81 +113,33 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
         const selectedPathsBySource: { [sourceId: string]: string[] } = {};
         const expandedNodes = new Set<string>();
 
-        // 处理规则树数据（每个源独立处理，与规则选择器逻辑一致）
-        for (const source of data.ruleTree || []) {
+        // ✅ 处理每个源（与规则选择器完全一致）
+        for (const source of data.sources || []) {
           sources.push({
             id: source.id,
             name: source.name,
             totalRules: source.stats?.total || 0,
           });
 
-          // ✅ 调试：打印后端原始数据的第一个文件节点
-          const sampleFile = source.children?.find((n: FileTreeNode) => n.type === 'file');
-          console.log(`[setInitialData] Source ${source.id} - 后端原始数据样本:`, {
-            totalChildren: source.children?.length || 0,
-            sampleFile: sampleFile
-              ? {
-                  path: sampleFile.path,
-                  checked: sampleFile.checked,
-                  hasCheckedField: 'checked' in sampleFile,
-                }
-              : 'no file found',
-          });
-
-          // 构建树结构
-          const tree = buildTree(source.children || []);
+          // ✅ 构建 UI 树结构（FileTreeNode → TreeNode）
+          const tree = buildTree(source.fileTree);
           treeNodesBySource[source.id] = tree;
 
-          // ✅ 调试：打印 buildTree 后的第一个文件节点
-          const sampleTreeFile = tree.find((n: TreeNode) => n.type === 'file');
-          console.log(`[setInitialData] Source ${source.id} - buildTree后的数据样本:`, {
-            totalTreeNodes: tree.length,
-            sampleTreeFile: sampleTreeFile
-              ? {
-                  path: sampleTreeFile.path,
-                  checked: sampleTreeFile.checked,
-                  hasCheckedField: 'checked' in sampleTreeFile,
-                }
-              : 'no file found',
-          });
+          // ✅ 直接使用后端返回的 selectedPaths（不需要从树中提取）
+          selectedPathsBySource[source.id] = source.selectedPaths || [];
 
           // 默认展开源节点
           expandedNodes.add(source.id);
 
-          // ✅ 提取已选择的文件路径（从 buildTree 处理后的树中提取）
-          const selectedPaths: string[] = [];
-          const extractSelectedPaths = (nodes: TreeNode[], depth = 0): void => {
-            for (const node of nodes) {
-              if (node.type === 'file') {
-                if (node.checked && node.path) {
-                  selectedPaths.push(node.path); // ✅ 纯路径，不带 sourceId 前缀
-                  console.log(`  ${'  '.repeat(depth)}✓ ${node.path} (checked)`);
-                } else if (node.path) {
-                  console.log(`  ${'  '.repeat(depth)}○ ${node.path} (not checked)`);
-                }
-              } else if (node.children) {
-                console.log(`  ${'  '.repeat(depth)}📁 ${node.name || node.path}`);
-                extractSelectedPaths(node.children, depth + 1);
-              }
-            }
-          };
-          console.log(`[setInitialData] Extracting from tree (${tree.length} root nodes):`);
-          extractSelectedPaths(tree); // ✅ 从处理后的 tree 提取，不是 source.children
-          selectedPathsBySource[source.id] = selectedPaths;
-
           console.log(
-            `[setInitialData] Source ${source.id}: ${selectedPaths.length} selected paths`,
-            selectedPaths.slice(0, 5),
+            `[setInitialData] Source ${source.id}: ${source.selectedPaths?.length || 0}/${
+              source.stats?.total || 0
+            } selected`,
           );
         }
 
-        // 处理适配器数据，默认选中已启用的
+        // ✅ 默认不选中任何适配器（用户需要明确选择）
         const selectedAdapters = new Set<string>();
-        for (const adapter of data.adapters || []) {
-          if (adapter.enabled) {
-            selectedAdapters.add(adapter.id);
-          }
-        }
 
         set({
           sources,
@@ -190,7 +147,7 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
           selectedPathsBySource, // ✅ 按源分组的选择状态
           expandedNodes,
           adapters: data.adapters || [],
-          selectedAdapters,
+          selectedAdapters, // ✅ 初始为空
         });
       },
 
@@ -265,6 +222,19 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
       },
 
       /**
+       * @description 从扩展更新选择状态（用于左侧树视图同步）
+       */
+      updateSelectionFromExtension: (sourceId: string, selectedPaths: string[]) => {
+        const state = get();
+        set({
+          selectedPathsBySource: {
+            ...state.selectedPathsBySource,
+            [sourceId]: selectedPaths,
+          },
+        });
+      },
+
+      /**
        * @description 全选/全不选规则切换
        */
       toggleAllRules: () => {
@@ -291,35 +261,62 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
         const state = get();
         const isAllSelected = state.isAllAdaptersSelected();
 
+        let newSelected: Set<string>;
         if (isAllSelected) {
           // 全不选
-          set({ selectedAdapters: new Set() });
+          newSelected = new Set();
         } else {
           // 全选所有启用的适配器
-          const newSelected = new Set<string>();
+          newSelected = new Set<string>();
           state.adapters.forEach((a) => {
             if (a.enabled) {
               newSelected.add(a.id);
             }
           });
-          set({ selectedAdapters: newSelected });
         }
+
+        // 更新所有适配器的 selectDisabled 状态
+        const updatedAdapters = state.adapters.map((a) => {
+          const selectDisabled = state.getAdapterSelectDisabled(a.id, newSelected);
+          return { ...a, selectDisabled };
+        });
+
+        set({
+          selectedAdapters: newSelected,
+          adapters: updatedAdapters,
+        });
       },
 
       /**
-       * @description 切换单个适配器选中状态
+       * @description 切换单个适配器选中状态（支持规则/技能适配器互斥）
        */
       toggleAdapter: (adapterId) => {
         const state = get();
+        const adapter = state.adapters.find((a) => a.id === adapterId);
+        if (!adapter) {
+          return;
+        }
+
         const newSelected = new Set(state.selectedAdapters);
 
         if (newSelected.has(adapterId)) {
+          // 取消选中
           newSelected.delete(adapterId);
         } else {
+          // 选中该适配器
           newSelected.add(adapterId);
         }
 
-        set({ selectedAdapters: newSelected });
+        // 更新所有适配器的 selectDisabled 状态
+        const updatedAdapters = state.adapters.map((a) => {
+          const selectDisabled = state.getAdapterSelectDisabled(a.id, newSelected);
+          return { ...a, selectDisabled };
+        });
+
+        set({
+          selectedAdapters: newSelected,
+          adapters: updatedAdapters,
+        });
       },
 
       /**
@@ -399,6 +396,55 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
           total += getAllFilePaths(tree).length;
         }
         return total;
+      },
+
+      /**
+       * @description 判断适配器是否因互斥而被禁用
+       * @return default {boolean}
+       * @param adapterId {string} 适配器ID
+       * @param selectedAdapters {Set<string> | undefined} 选中的适配器集合（可选，默认使用当前状态）
+       */
+      getAdapterSelectDisabled: (adapterId, selectedAdapters) => {
+        const state = get();
+        const selected = selectedAdapters ?? state.selectedAdapters;
+
+        // 没有选中任何适配器，所有适配器都可选
+        if (selected.size === 0) {
+          return false;
+        }
+
+        const adapter = state.adapters.find((a) => a.id === adapterId);
+        if (!adapter) {
+          return false;
+        }
+
+        // 如果该适配器已被选中，不应被禁用
+        if (selected.has(adapterId)) {
+          return false;
+        }
+
+        // 检查是否有相反类型的适配器被选中
+        const hasRuleTypeSelected = Array.from(selected).some((id) => {
+          const a = state.adapters.find((adapter) => adapter.id === id);
+          return a?.isRuleType === true;
+        });
+
+        const hasSkillsTypeSelected = Array.from(selected).some((id) => {
+          const a = state.adapters.find((adapter) => adapter.id === id);
+          return a?.isRuleType === false;
+        });
+
+        // 如果选中了规则类型，禁用 skills 类型
+        if (hasRuleTypeSelected && adapter.isRuleType === false) {
+          return true;
+        }
+
+        // 如果选中了 skills 类型，禁用规则类型
+        if (hasSkillsTypeSelected && adapter.isRuleType === true) {
+          return true;
+        }
+
+        return false;
       },
     }),
     {

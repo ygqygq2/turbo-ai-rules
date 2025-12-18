@@ -23,6 +23,10 @@
     {
       "path": "rules-with-user-rules",
       "name": "Test: Multi-Adapter + User Protection"
+    },
+    {
+      "path": "rules-for-skills",
+      "name": "Test: Skills Adapter"
     }
   ],
   "settings": {

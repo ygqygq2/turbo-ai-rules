@@ -10,18 +10,19 @@
         "name": "Default Rules",
         "enabled": true,
         "outputType": "directory",
-        "outputPath": "/rules",
+        "outputPath": "rules/",
         "fileExtension": ".md"
       },
       {
         "id": "skills",
         "name": "skills",
         "enabled": true,
-        "skills": true,
+        "isRuleType": false,
         "sourceId": "ai-rules-7008d805",
-        "subPath": "/skills",
+        "subPath": "1300-skills/",
         "outputType": "directory",
-        "outputPath": "/skills",
+        "organizeBySource": false,
+        "outputPath": "skills/",
         "fileExtension": ".md"
       }
     ]

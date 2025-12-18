@@ -335,7 +335,7 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
             name: s.name || s.id,
             enabled: s.enabled,
             ruleCount: sourceRules.length,
-            lastSync, // 每个源自己的同步时间
+            lastSync: lastSync || null, // 每个源自己的同步时间
           };
         }),
       );
@@ -396,7 +396,6 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
           enabled: 0,
           total: 0,
           totalRules: 0,
-          lastSync: null,
           list: [],
         },
         adapters: [],

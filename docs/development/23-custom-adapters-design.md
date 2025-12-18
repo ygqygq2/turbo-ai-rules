@@ -35,7 +35,8 @@
 - **fileExtensions**: 文件扩展名过滤列表（如 ['.md', '.mdc']）
   - 不配置或为空：同步所有文件
   - 配置后：只同步匹配的文件
-- **organizeBySource**: 是否按源 ID 组织子目录（仅 directory 模式）
+- **organizeBySource**: 是否按源 ID 组织子目录（仅 directory 模式，默认 false）
+- **useOriginalFilename**: 是否使用原文件名（仅 directory 模式，默认 true）
 - **generateIndex**: 是否生成索引文件（仅 directory 模式）
 - **indexFileName**: 索引文件名（默认 index.md）
 

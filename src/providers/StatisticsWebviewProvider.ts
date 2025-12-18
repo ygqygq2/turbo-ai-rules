@@ -148,7 +148,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
   /**
    * 获取统计数据
    */
-  private getStatisticsData(): StatisticsData {
+  private async getStatisticsData(): Promise<StatisticsData> {
     // 检查缓存
     const now = Date.now();
     if (this.cachedData && now - this.lastRefresh < this.CACHE_DURATION) {
@@ -176,17 +176,19 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
 
     // 收集源统计
     const stateManager = WorkspaceStateManager.getInstance();
-    const sourceStats = config.sources.map((source) => {
-      const sourceRules = this.rulesManager.getRulesBySource(source.id);
-      // 从 WorkspaceStateManager 读取同步时间（与状态栏、仪表板保持一致）
-      const lastSyncTime = stateManager.getLastSyncTime(source.id);
-      return {
-        name: source.name,
-        ruleCount: sourceRules.length,
-        enabled: source.enabled,
-        lastSync: lastSyncTime || undefined,
-      };
-    });
+    const sourceStats = await Promise.all(
+      config.sources.map(async (source) => {
+        const sourceRules = this.rulesManager.getRulesBySource(source.id);
+        // 从 WorkspaceStateManager 读取同步时间（与状态栏、仪表板保持一致）
+        const lastSyncTime = await stateManager.getLastSyncTime(source.id);
+        return {
+          name: source.name,
+          ruleCount: sourceRules.length,
+          enabled: source.enabled,
+          lastSync: lastSyncTime || undefined,
+        };
+      }),
+    );
 
     // 收集热门标签
     const tagMap = new Map<string, number>();
@@ -265,7 +267,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
    * 发送统计数据到 Webview
    */
   private async sendStatistics(): Promise<void> {
-    const data = this.getStatisticsData();
+    const data = await this.getStatisticsData();
 
     // 直接发送完整的统计数据（与 React 组件的 StatisticsData 接口匹配）
     this.postMessage({
@@ -292,7 +294,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
    * 导出统计数据
    */
   private async exportStatistics(): Promise<void> {
-    const data = this.getStatisticsData();
+    const data = await this.getStatisticsData();
     const json = JSON.stringify(data, null, 2);
 
     const uri = await vscode.window.showSaveDialog({

@@ -11,12 +11,14 @@ import { ConfigManager } from '../../services/ConfigManager';
 import { GitManager } from '../../services/GitManager';
 import { RulesManager } from '../../services/RulesManager';
 import { SelectionStateManager } from '../../services/SelectionStateManager';
-import type { AdapterConfig, RuleTreeNode } from '../../types/config';
-import { EXTENSION_ICON_PATH, RULE_FILE_EXTENSIONS } from '../../utils/constants';
+import type { AdapterConfig } from '../../types/config';
+import { EXTENSION_ICON_PATH } from '../../utils/constants';
+import { buildFileTreeFromRules, type FileTreeNode } from '../../utils/fileTreeBuilder';
 import { Logger } from '../../utils/logger';
 import { notify } from '../../utils/notifications';
 import { normalizeOutputPathForDisplay } from '../../utils/path';
 import { BaseWebviewProvider, type WebviewMessage } from '../BaseWebviewProvider';
+import { createExtensionMessenger, ExtensionMessenger } from '../messaging/ExtensionMessenger';
 
 /**
  * 适配器状态（用于前端展示）
@@ -27,8 +29,10 @@ interface AdapterState {
   type: 'preset' | 'custom';
   enabled: boolean;
   checked: boolean;
+  selectDisabled: boolean;
   outputPath: string;
   ruleCount: number;
+  isRuleType: boolean;
 }
 
 /**
@@ -40,6 +44,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
   private rulesManager: RulesManager;
   private gitManager: GitManager;
   private selectionStateManager: SelectionStateManager;
+  private messenger?: ExtensionMessenger; // ✅ 新增消息管理器
   private stateChangeDisposable?: () => void;
 
   private constructor(context: vscode.ExtensionContext) {
@@ -49,21 +54,20 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
     this.gitManager = GitManager.getInstance();
     this.selectionStateManager = SelectionStateManager.getInstance();
 
-    // 订阅状态变更事件，自动向 Webview 发送消息
+    // ✅ 订阅状态变更事件，自动向 Webview 发送消息（使用 ExtensionMessenger）
     this.stateChangeDisposable = this.selectionStateManager.onStateChanged((event) => {
-      // 当 Webview 打开且任何源的选择发生变化时推送更新
-      if (this.panel) {
+      // 规则同步页监听所有源的变化（与规则选择器不同，规则选择器只监听当前源）
+      if (this.panel && this.messenger) {
         Logger.debug('Selection state changed, notifying rule sync page', {
           sourceId: event.sourceId,
+          selectedCount: event.selectedPaths.length,
         });
-        this.postMessage({
-          type: 'selectionChanged',
-          payload: {
-            sourceId: event.sourceId,
-            selectedPaths: event.selectedPaths,
-            totalCount: event.totalCount,
-            timestamp: event.timestamp,
-          },
+        // ✅ 使用 messenger.pushEvent（与规则选择器保持一致）
+        this.messenger.pushEvent('selectionChanged', {
+          sourceId: event.sourceId,
+          selectedPaths: event.selectedPaths,
+          totalCount: event.totalCount,
+          timestamp: event.timestamp,
         });
       }
     });
@@ -105,6 +109,12 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         viewColumn: vscode.ViewColumn.One,
         iconPath: EXTENSION_ICON_PATH,
       });
+
+      // ✅ 初始化消息层（仅首次创建 panel 时）
+      if (this.panel && !this.messenger) {
+        this.messenger = createExtensionMessenger(this.panel.webview);
+        this.registerMessageHandlers();
+      }
 
       Logger.info('Rule sync page webview opened');
     } catch (error) {
@@ -222,155 +232,117 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
   }
 
   /**
-   * @description 处理来自 Webview 的消息
+   * @description 注册 RPC 消息处理器（与规则选择器保持一致）
+   */
+  private registerMessageHandlers(): void {
+    if (!this.messenger) return;
+
+    // ✅ 处理 getInitialData RPC 请求
+    this.messenger.register('getInitialData', async () => {
+      return await this.getRuleSyncData();
+    });
+
+    // ✅ 处理选择变更通知
+    this.messenger.register<{ sourceId?: string; selectedPaths?: string[] }, { message: string }>(
+      'selectionChanged',
+      async (payload) => {
+        const sourceId = payload?.sourceId;
+        const paths = payload?.selectedPaths || [];
+
+        if (!sourceId) {
+          Logger.warn('Selection changed without sourceId');
+          return { message: 'Missing sourceId' };
+        }
+
+        try {
+          const workspaceFolders = vscode.workspace.workspaceFolders;
+          const workspacePath = workspaceFolders?.[0]?.uri.fsPath;
+
+          // 更新状态并触发延时落盘，会自动通知其他页面刷新
+          this.selectionStateManager.updateSelection(sourceId, paths, true, workspacePath);
+
+          Logger.debug('Selection changed from rule sync page', {
+            sourceId,
+            pathCount: paths.length,
+          });
+
+          return { message: 'Selection updated' };
+        } catch (error) {
+          Logger.error('Failed to handle selection change from rule sync page', error as Error, {
+            sourceId,
+          });
+          throw error;
+        }
+      },
+    );
+
+    // ✅ 处理同步请求
+    this.messenger.register<
+      { data?: { rules?: string[]; adapters?: string[] } },
+      { success: boolean; ruleCount?: number; adapterCount?: number; error?: string }
+    >('sync', async (payload) => {
+      try {
+        await this.handleSyncInternal(payload);
+        return { success: true };
+      } catch (error) {
+        Logger.error('Failed to sync rules', error as Error, { code: 'TAI-5021' });
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    });
+
+    // ✅ 处理取消/关闭
+    this.messenger.register('close', async () => {
+      if (this.panel) this.panel.dispose();
+      return { closed: true };
+    });
+  }
+
+  /**
+   * @description 兼容旧消息协议（如果前端还在使用 postMessage）
    * @return default {Promise<void>}
    * @param message {WebviewMessage}
    */
   protected async handleMessage(message: WebviewMessage): Promise<void> {
-    try {
-      const messageType = message.type || (message as { command?: string }).command;
-      const requestId = (message as { requestId?: string }).requestId;
-
-      Logger.debug('Rule sync page message received', {
-        type: messageType,
-        requestId,
-        payload: message.payload,
-      });
-
-      switch (messageType) {
-        case 'ready':
-          await this.sendInitialData();
-          break;
-
-        case 'getInitialData':
-          // 处理 RPC 请求
-          await this.handleGetInitialData(requestId);
-          break;
-
-        case 'selectionChanged':
-          await this.handleSelectionChanged(message.payload);
-          break;
-
-        case 'sync':
-          await this.handleSync(message.payload, requestId);
-          break;
-
-        case 'cancel':
-          this.panel?.dispose();
-          break;
-
-        default:
-          Logger.warn('Unknown rule sync page message type', { type: messageType });
-      }
-    } catch (error) {
-      Logger.error('Failed to handle rule sync page message', error as Error, {
-        message: message.type,
-        code: 'TAI-5018',
-      });
-      notify(
-        `Rule sync operation failed: ${error instanceof Error ? error.message : String(error)}`,
-        'error',
-      );
-    }
-  }
-
-  /**
-   * @description 处理选择变更
-   * @return default {Promise<void>}
-   * @param payload {any}
-   */
-  private async handleSelectionChanged(payload: {
-    sourceId?: string;
-    selectedPaths?: string[];
-  }): Promise<void> {
-    const sourceId = payload?.sourceId;
-    const paths = payload?.selectedPaths || [];
-
-    if (!sourceId) {
-      Logger.warn('Selection changed without sourceId');
-      return;
-    }
-
-    try {
-      // 获取工作区路径
-      const workspaceFolders = vscode.workspace.workspaceFolders;
-      const workspacePath = workspaceFolders?.[0]?.uri.fsPath;
-
-      // 更新状态并触发延时落盘，会自动通知其他页面刷新
-      this.selectionStateManager.updateSelection(sourceId, paths, true, workspacePath);
-
-      Logger.debug('Selection changed from rule sync page', {
-        sourceId,
-        pathCount: paths.length,
-      });
-    } catch (error) {
-      Logger.error('Failed to handle selection change from rule sync page', error as Error, {
-        sourceId,
-      });
-    }
-  }
-
-  /**
-   * @description 处理 getInitialData RPC 请求
-   * @return default {Promise<void>}
-   * @param requestId {string | undefined}
-   */
-  private async handleGetInitialData(requestId?: string): Promise<void> {
-    try {
+    // ✅ 兼容旧的 ready 消息（如果需要）
+    if (message.type === 'ready') {
+      Logger.debug('Legacy ready message received, sending initial data');
       const data = await this.getRuleSyncData();
-      this.postMessage({
-        type: 'getInitialData',
-        payload: data,
-        ...(requestId && { requestId }),
-      } as WebviewMessage & { requestId?: string });
-    } catch (error) {
-      Logger.error('Failed to get rule sync page initial data', error as Error, {
-        code: 'TAI-5019',
-      });
-      if (requestId) {
-        this.postMessage({
-          type: 'getInitialData',
-          error: error instanceof Error ? error.message : String(error),
-          requestId,
-        } as WebviewMessage & { requestId: string; error?: string });
-      }
+      await this.postMessage({ type: 'init', payload: data });
     }
   }
 
   /**
-   * @description 发送初始数据到 Webview
-   * @return default {Promise<void>}
-   */
-  private async sendInitialData(): Promise<void> {
-    try {
-      const data = await this.getRuleSyncData();
-      await this.postMessage({
-        type: 'init',
-        payload: data,
-      });
-    } catch (error) {
-      Logger.error('Failed to send rule sync page initial data', error as Error, {
-        code: 'TAI-5019',
-      });
-    }
-  }
-
-  /**
-   * @description 获取规则同步数据
-   * @return default {Promise<{ ruleTree: RuleTreeNode[]; adapters: AdapterState[] }>}
+   * @description 获取规则同步数据（✅ 与规则选择器保持一致的数据格式）
+   * @return default {Promise<{ sources: SourceData[]; adapters: AdapterState[] }>}
    */
   private async getRuleSyncData(): Promise<{
-    ruleTree: RuleTreeNode[];
+    sources: Array<{
+      id: string;
+      name: string;
+      fileTree: FileTreeNode[]; // ✅ 纯树结构
+      selectedPaths: string[]; // ✅ 选中路径数组
+      stats: { total: number; selected: number };
+    }>;
     adapters: AdapterState[];
   }> {
     const config = this.configManager.getConfig();
-    const sources = config.sources || [];
+    const allSources = config.sources || [];
 
-    // 构建规则树（所有规则源）
-    const ruleTree: RuleTreeNode[] = [];
+    // 构建规则数据（所有规则源，与规则选择器格式一致）
+    const sources: Array<{
+      id: string;
+      name: string;
+      fileTree: FileTreeNode[];
+      selectedPaths: string[];
+      stats: { total: number; selected: number };
+    }> = [];
 
-    for (const source of sources) {
+    for (const source of allSources) {
       try {
+        // ✅ 使用源根目录路径（与左侧树视图和规则选择器保持一致）
         const sourcePath = this.gitManager.getSourcePath(source.id);
         const exists = await this.gitManager.repositoryExists(source.id);
 
@@ -383,7 +355,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         const rules = this.rulesManager.getRulesBySource(source.id);
         let totalRules = rules.length;
 
-        // 如果内存中没有，尝试从磁盘加载
+        // 如果内存中没有，尝试从磁盘加载（使用 sourcePath 扫描）
         if (totalRules === 0) {
           const MdcParser = (await import('../../parsers/MdcParser')).MdcParser;
           const parser = new MdcParser();
@@ -400,40 +372,34 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
 
         // 获取该源的已选规则路径（已经是相对路径）
         const selectedPaths = this.selectionStateManager.getSelection(source.id);
-        const selectedSet = new Set(selectedPaths);
 
         Logger.debug(
           `[getRuleSyncData] Source ${source.id}: ${selectedPaths.length} selected paths`,
           {
             sourceId: source.id,
+            sourcePath,
             samplePaths: selectedPaths.slice(0, 3),
           },
         );
 
-        // 构建该源的文件树
-        const children = await this.buildFileTree(sourcePath, sourcePath, source.id);
+        // ✅ 从规则构建文件树（使用源根目录路径，与左侧树和规则选择器一致）
+        const fileTree = buildFileTreeFromRules(rules, sourcePath);
 
-        // 标记已选择的节点
-        this.markSelectedNodes(children, selectedSet);
-
-        const checkedCount = this.countSelectedFiles(children);
-        Logger.debug(`[getRuleSyncData] Source ${source.id}: marked ${checkedCount} checked nodes`);
-
-        const sourceNode: RuleTreeNode = {
-          type: 'source',
+        // ✅ 直接返回 FileTreeNode 和 selectedPaths，不转换为 RuleTreeNode
+        sources.push({
           id: source.id,
           name: source.name || source.gitUrl,
-          sourceId: source.id,
-          checked: false,
-          expanded: true,
-          children,
+          fileTree, // ✅ 纯树结构
+          selectedPaths, // ✅ 选中路径数组
           stats: {
             total: totalRules,
             selected: selectedPaths.length,
           },
-        };
+        });
 
-        ruleTree.push(sourceNode);
+        Logger.debug(
+          `[getRuleSyncData] Source ${source.id}: ${selectedPaths.length}/${totalRules} selected`,
+        );
       } catch (error) {
         Logger.warn('Failed to load source for rule tree', {
           sourceId: source.id,
@@ -445,128 +411,10 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
     // 构建适配器列表
     const adapters = await this.getAdapterStates();
 
-    return { ruleTree, adapters };
+    return { sources, adapters };
   }
 
-  /**
-   * @description 构建文件树
-   * @return default {Promise<RuleTreeNode[]>}
-   * @param dirPath {string} 目录路径
-   * @param basePath {string} 基础路径
-   * @param sourceId {string} 源ID
-   */
-  private async buildFileTree(
-    dirPath: string,
-    basePath: string,
-    sourceId: string,
-  ): Promise<RuleTreeNode[]> {
-    const nodes: RuleTreeNode[] = [];
-
-    try {
-      const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
-
-      for (const entry of entries) {
-        const fullPath = path.join(dirPath, entry.name);
-        const relativePath = path.relative(basePath, fullPath);
-
-        // 跳过隐藏文件和 node_modules
-        if (entry.name.startsWith('.') || entry.name === 'node_modules') {
-          continue;
-        }
-
-        if (entry.isDirectory()) {
-          const children = await this.buildFileTree(fullPath, basePath, sourceId);
-          if (children.length > 0) {
-            nodes.push({
-              type: 'directory',
-              id: `${sourceId}:${relativePath}`,
-              name: entry.name,
-              path: relativePath,
-              sourceId,
-              checked: false,
-              expanded: false,
-              children,
-            });
-          }
-        } else if (entry.isFile()) {
-          const ext = path.extname(entry.name);
-          if (RULE_FILE_EXTENSIONS.includes(ext)) {
-            nodes.push({
-              type: 'file',
-              id: `${sourceId}:${relativePath}`,
-              name: entry.name,
-              path: relativePath,
-              sourceId,
-              checked: false,
-            });
-          }
-        }
-      }
-    } catch (error) {
-      Logger.warn('Failed to build file tree', {
-        dirPath,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-
-    return nodes;
-  }
-
-  /**
-   * @description 标记已选择的节点
-   * @return default {void}
-   * @param nodes {RuleTreeNode[]} 树节点
-   * @param selectedPaths {Set<string>} 已选路径集合
-   */
-  private markSelectedNodes(nodes: RuleTreeNode[], selectedPaths: Set<string>): void {
-    for (const node of nodes) {
-      if (node.type === 'file' && node.path) {
-        // 文件节点：检查路径是否在已选集合中
-        node.checked = selectedPaths.has(node.path);
-      } else if (node.type === 'directory' && node.children) {
-        // 目录节点：递归标记子节点
-        this.markSelectedNodes(node.children, selectedPaths);
-        // 计算目录的选中状态（部分选中/全选）
-        const totalFiles = this.countFiles(node.children);
-        const selectedFiles = this.countSelectedFiles(node.children);
-        node.checked = totalFiles > 0 && selectedFiles === totalFiles;
-      }
-    }
-  }
-
-  /**
-   * @description 统计文件数量
-   * @return default {number}
-   * @param nodes {RuleTreeNode[]}
-   */
-  private countFiles(nodes: RuleTreeNode[]): number {
-    let count = 0;
-    for (const node of nodes) {
-      if (node.type === 'file') {
-        count++;
-      } else if (node.children) {
-        count += this.countFiles(node.children);
-      }
-    }
-    return count;
-  }
-
-  /**
-   * @description 统计已选文件数量
-   * @return default {number}
-   * @param nodes {RuleTreeNode[]}
-   */
-  private countSelectedFiles(nodes: RuleTreeNode[]): number {
-    let count = 0;
-    for (const node of nodes) {
-      if (node.type === 'file' && node.checked) {
-        count++;
-      } else if (node.children) {
-        count += this.countSelectedFiles(node.children);
-      }
-    }
-    return count;
-  }
+  // ✅ 不再需要转换方法，直接使用 FileTreeNode 和 selectedPaths 数组
 
   /**
    * @description 获取适配器状态列表
@@ -590,29 +438,36 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
     for (const preset of presetAdapters) {
       const enabled = preset.config?.enabled ?? true;
       const outputPath = this.getAdapterOutputPath(preset.id);
+      const isRuleType = preset.config?.isRuleType ?? true;
 
       adapters.push({
         id: preset.id,
         name: preset.name,
         type: 'preset',
         enabled,
-        checked: enabled,
+        checked: false, // 默认不选中任何适配器
+        selectDisabled: false, // 初始状态可选
         outputPath,
         ruleCount: 0, // 前端会实时计算
+        isRuleType,
       });
     }
 
     // 自定义适配器
     const customAdapters = config.adapters.custom || [];
     for (const custom of customAdapters) {
+      const isRuleType = custom.isRuleType ?? true;
+
       adapters.push({
         id: custom.id,
         name: custom.name,
         type: 'custom',
         enabled: custom.enabled ?? true,
-        checked: custom.enabled ?? true,
+        checked: false, // 默认不选中任何适配器
+        selectDisabled: false, // 初始状态可选
         outputPath: normalizeOutputPathForDisplay(custom.outputPath || ''),
         ruleCount: 0,
+        isRuleType,
       });
     }
 
@@ -638,120 +493,100 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
   }
 
   /**
-   * @description 处理同步操作
-   * @return default {Promise<void>}
+   * @description 同步操作的内部实现（供 RPC 调用）
+   * @return default {Promise<{ ruleCount: number; adapterCount: number }>}
    * @param payload {unknown}
-   * @param requestId {string | undefined}
    */
-  private async handleSync(payload: unknown, requestId?: string): Promise<void> {
-    try {
-      let syncData: { rules: string[]; adapters: string[] };
+  private async handleSyncInternal(
+    payload: unknown,
+  ): Promise<{ ruleCount: number; adapterCount: number }> {
+    let syncData: { rules: string[]; adapters: string[] };
 
-      if (typeof payload === 'object' && payload !== null) {
-        syncData =
-          'data' in payload
-            ? (payload as { data: { rules: string[]; adapters: string[] } }).data
-            : (payload as { rules: string[]; adapters: string[] });
-      } else {
-        throw new Error('Invalid sync payload format');
+    if (typeof payload === 'object' && payload !== null) {
+      syncData =
+        'data' in payload
+          ? (payload as { data: { rules: string[]; adapters: string[] } }).data
+          : (payload as { rules: string[]; adapters: string[] });
+    } else {
+      throw new Error('Invalid sync payload format');
+    }
+
+    const { rules, adapters } = syncData;
+
+    if (!rules || !adapters || !Array.isArray(rules) || !Array.isArray(adapters)) {
+      throw new Error('Invalid sync payload: missing or invalid rules/adapters array');
+    }
+
+    Logger.info('Starting rule sync from webview', {
+      ruleCount: rules.length,
+      adapterCount: adapters.length,
+    });
+
+    // 解析选中的规则路径
+    const selectedRulePaths: Map<string, string[]> = new Map();
+    for (const ruleId of rules) {
+      const [sourceId, ...pathParts] = ruleId.split(':');
+      const relativePath = pathParts.join(':');
+
+      if (!selectedRulePaths.has(sourceId)) {
+        selectedRulePaths.set(sourceId, []);
       }
+      selectedRulePaths.get(sourceId)!.push(relativePath);
+    }
 
-      const { rules, adapters } = syncData;
+    // 更新所有规则源的选择状态
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      throw new Error('No workspace folder open');
+    }
+    const workspaceRoot = workspaceFolders[0].uri.fsPath;
 
-      if (!rules || !adapters || !Array.isArray(rules) || !Array.isArray(adapters)) {
-        throw new Error('Invalid sync payload: missing or invalid rules/adapters array');
-      }
+    // 获取所有启用的规则源
+    const allSources = this.configManager.getSources(workspaceFolders[0].uri);
+    const enabledSources = allSources.filter((s: { enabled: boolean }) => s.enabled);
 
-      Logger.info('Starting rule sync from webview', {
-        ruleCount: rules.length,
+    // 更新每个启用源的选择状态
+    for (const source of enabledSources) {
+      const selectedPaths = selectedRulePaths.get(source.id) || [];
+      this.selectionStateManager.updateSelection(
+        source.id,
+        selectedPaths,
+        true, // 立即安排持久化
+        workspaceRoot,
+      );
+      Logger.debug('Updated selection state from sync page', {
+        sourceId: source.id,
+        selectedCount: selectedPaths.length,
+      });
+    }
+
+    // 执行完整的同步流程
+    await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+
+    // 获取实际同步的规则数量
+    let totalSelectedRules = 0;
+    for (const source of enabledSources) {
+      const selectedPaths = this.selectionStateManager.getSelection(source.id);
+      totalSelectedRules += selectedPaths.length;
+    }
+
+    notify(
+      `Successfully synced ${totalSelectedRules} rules to ${adapters.length} adapters`,
+      'info',
+    );
+
+    // ✅ 使用 messenger 推送事件通知前端
+    if (this.messenger) {
+      this.messenger.pushEvent('syncComplete', {
+        success: true,
+        ruleCount: totalSelectedRules,
         adapterCount: adapters.length,
       });
-
-      // 解析选中的规则路径
-      const selectedRulePaths: Map<string, string[]> = new Map();
-      for (const ruleId of rules) {
-        const [sourceId, ...pathParts] = ruleId.split(':');
-        const relativePath = pathParts.join(':');
-
-        if (!selectedRulePaths.has(sourceId)) {
-          selectedRulePaths.set(sourceId, []);
-        }
-        selectedRulePaths.get(sourceId)!.push(relativePath);
-      }
-
-      // 更新所有规则源的选择状态（包括没有选中任何规则的源 - 清空选择）
-      const workspaceFolders = vscode.workspace.workspaceFolders;
-      if (!workspaceFolders || workspaceFolders.length === 0) {
-        throw new Error('No workspace folder open');
-      }
-      const workspaceRoot = workspaceFolders[0].uri.fsPath;
-
-      // 获取所有启用的规则源
-      const allSources = this.configManager.getSources(workspaceFolders[0].uri);
-      const enabledSources = allSources.filter((s: { enabled: boolean }) => s.enabled);
-
-      // 更新每个启用源的选择状态
-      for (const source of enabledSources) {
-        const selectedPaths = selectedRulePaths.get(source.id) || [];
-        // 即使是空数组也要更新，这样可以清空之前的选择
-        this.selectionStateManager.updateSelection(
-          source.id,
-          selectedPaths,
-          true, // 立即安排持久化
-          workspaceRoot,
-        );
-        Logger.debug('Updated selection state from sync page', {
-          sourceId: source.id,
-          selectedCount: selectedPaths.length,
-        });
-      }
-
-      // 执行完整的同步流程（拉取最新规则 + 更新 RulesManager + 生成配置）
-      // 使用 syncRulesCommand 确保规则列表完整且最新
-      await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
-
-      // 获取实际同步的规则数量（从 SelectionStateManager）
-      let totalSelectedRules = 0;
-      for (const source of enabledSources) {
-        const selectedPaths = this.selectionStateManager.getSelection(source.id);
-        totalSelectedRules += selectedPaths.length;
-      }
-
-      notify(
-        `Successfully synced ${totalSelectedRules} rules to ${adapters.length} adapters`,
-        'info',
-      );
-
-      // 发送成功消息到前端
-      this.postMessage({
-        type: 'syncComplete',
-        payload: {
-          success: true,
-          ruleCount: totalSelectedRules,
-          adapterCount: adapters.length,
-        },
-        ...(requestId && { requestId }),
-      } as WebviewMessage & { requestId?: string });
-
-      // 关闭 webview
-      setTimeout(() => {
-        this.panel?.dispose();
-      }, 1000);
-    } catch (error) {
-      Logger.error('Failed to sync rules', error as Error, { code: 'TAI-5021' });
-      notify(
-        `Failed to sync rules: ${error instanceof Error ? error.message : String(error)}`,
-        'error',
-      );
-
-      this.postMessage({
-        type: 'syncComplete',
-        payload: {
-          success: false,
-          error: error instanceof Error ? error.message : String(error),
-        },
-        ...(requestId && { requestId }),
-      } as WebviewMessage & { requestId?: string });
     }
+
+    return {
+      ruleCount: totalSelectedRules,
+      adapterCount: adapters.length,
+    };
   }
 }
