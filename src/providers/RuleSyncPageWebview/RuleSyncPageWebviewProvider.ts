@@ -520,6 +520,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
     Logger.info('Starting rule sync from webview', {
       ruleCount: rules.length,
       adapterCount: adapters.length,
+      selectedAdapters: adapters,
     });
 
     // 解析选中的规则路径
@@ -560,8 +561,10 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
       });
     }
 
-    // 执行完整的同步流程
-    await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+    // ✅ 修复：直接传递目标适配器列表给 syncRules 命令
+    // 导入 syncRulesCommand 的选项类型
+    const { syncRulesCommand } = await import('../../commands/syncRules');
+    await syncRulesCommand({ targetAdapters: adapters });
 
     // 获取实际同步的规则数量
     let totalSelectedRules = 0;

@@ -85,14 +85,14 @@ export class StatusBarProvider {
       }
 
       // 获取所有源的最后同步时间，取最近的一个
-      const configManager = (await import('../services/ConfigManager')).ConfigManager.getInstance();
-      const sources = configManager.getSources();
+      // ✅ 从 allSourceSyncStats 获取，避免额外调用 getSources
+      const allSourceSyncStats = await stateManager.getAllSourceSyncStats();
 
       const syncTimes: Date[] = [];
-      for (const source of sources) {
-        const timeStr = await stateManager.getLastSyncTime(source.id);
-        if (timeStr) {
-          const date = new Date(timeStr);
+      for (const sourceId of Object.keys(allSourceSyncStats)) {
+        const sourceStats = allSourceSyncStats[sourceId];
+        if (sourceStats?.lastSyncTime) {
+          const date = new Date(sourceStats.lastSyncTime);
           if (!isNaN(date.getTime())) {
             syncTimes.push(date);
           }

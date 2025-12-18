@@ -100,6 +100,17 @@ vi.mock('@/services/GitManager', () => ({
   },
 }));
 
+// Mock StatusBarProvider
+vi.mock('@/providers/StatusBarProvider', () => ({
+  StatusBarProvider: {
+    getInstance: vi.fn(() => ({
+      setSyncStatus: vi.fn(),
+      updateLastSyncTime: vi.fn(),
+      dispose: vi.fn(),
+    })),
+  },
+}));
+
 describe('RuleSyncPageWebviewProvider', () => {
   let provider: RuleSyncPageWebviewProvider;
   let mockContext: any;

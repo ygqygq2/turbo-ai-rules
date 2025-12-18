@@ -46,11 +46,26 @@ function groupSourcesByRepository(sources: RuleSource[]): RepositoryGroup[] {
 }
 
 /**
- * 同步规则命令处理器
- * @param sourceId 规则源 ID（可选，如果提供则只同步指定源）
+ * 同步选项
  */
-export async function syncRulesCommand(sourceId?: string): Promise<void> {
-  Logger.info('Executing syncRules command', { sourceId });
+export interface SyncRulesOptions {
+  /** 规则源 ID（可选，如果提供则只同步指定源） */
+  sourceId?: string;
+  /** 目标适配器列表（可选，如果提供则只为这些适配器生成配置） */
+  targetAdapters?: string[];
+}
+
+/**
+ * 同步规则命令处理器
+ * @param options 同步选项（可选）
+ */
+export async function syncRulesCommand(options?: string | SyncRulesOptions): Promise<void> {
+  // 兼容旧的 sourceId 参数格式
+  const syncOptions: SyncRulesOptions =
+    typeof options === 'string' ? { sourceId: options } : options || {};
+  const { sourceId, targetAdapters } = syncOptions;
+
+  Logger.info('Executing syncRules command', { sourceId, targetAdapters });
 
   // 获取状态栏提供者实例
   const statusBarProvider = StatusBarProvider.getInstance();
@@ -300,6 +315,7 @@ export async function syncRulesCommand(sourceId?: string): Promise<void> {
           mergedRules,
           workspaceRoot,
           config.sync.conflictStrategy || 'priority',
+          targetAdapters, // ✅ 传递目标适配器列表
         );
 
         pm.report(generateConfigProgress - 4, 'Saving metadata...');

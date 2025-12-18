@@ -179,9 +179,49 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
           await this.sendInitialState();
           break;
 
-        case 'syncAll':
-          await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+        case 'syncAll': {
+          // ✅ 快速同步规则：只同步到规则类型适配器（isRuleType !== false）
+          const configManager = (
+            await import('../services/ConfigManager')
+          ).ConfigManager.getInstance();
+          const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+          const config = await configManager.getConfig(workspaceFolder?.uri);
+
+          // 获取所有启用的规则类型适配器
+          const ruleAdapters: string[] = [];
+
+          // 遍历所有预置适配器（PRESET_ADAPTERS 中定义的）
+          for (const presetConfig of PRESET_ADAPTERS) {
+            const adapterConfig = (
+              config.adapters as Record<
+                string,
+                { enabled?: boolean; isRuleType?: boolean } | undefined
+              >
+            )[presetConfig.id];
+            const enabled = adapterConfig?.enabled ?? presetConfig.defaultEnabled ?? false;
+            const isRuleType = adapterConfig?.isRuleType ?? true; // 默认为 true
+
+            if (enabled && isRuleType) {
+              ruleAdapters.push(presetConfig.id);
+            }
+          }
+
+          // 自定义适配器（只包含 isRuleType !== false 的）
+          if (config.adapters?.custom) {
+            for (const adapter of config.adapters.custom) {
+              const isRuleType = adapter.isRuleType ?? true; // 默认为 true
+              if (adapter.enabled && isRuleType) {
+                ruleAdapters.push(adapter.id);
+              }
+            }
+          }
+
+          Logger.debug('Quick sync to rule adapters', { ruleAdapters });
+          await vscode.commands.executeCommand('turbo-ai-rules.syncRules', {
+            targetAdapters: ruleAdapters,
+          });
           break;
+        }
 
         case 'addSource':
           await vscode.commands.executeCommand('turbo-ai-rules.addSource');

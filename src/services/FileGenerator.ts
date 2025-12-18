@@ -16,18 +16,17 @@ import {
   PRESET_ADAPTERS,
   PresetAdapter,
 } from '../adapters';
-import type { AdaptersConfig, CustomAdapterConfig } from '../types/config';
+import type { AdaptersConfig } from '../types/config';
 import { GenerateError, SystemError } from '../types/errors';
 import type { PartialUpdateOptions } from '../types/ruleMarker';
 import type { ConflictStrategy, ParsedRule } from '../types/rules';
 import { CONFIG_KEYS, CONFIG_PREFIX } from '../utils/constants';
-import { ensureDir, pathExists, readDir, safeReadFile, safeWriteFile } from '../utils/fileSystem';
+import { ensureDir, safeWriteFile } from '../utils/fileSystem';
 import { ensureIgnored } from '../utils/gitignore';
 import { Logger } from '../utils/logger';
 import { partialUpdate } from '../utils/ruleMarkerMerger';
 import type { UserRulesProtectionConfig } from '../utils/userRulesProtection';
 import { extractUserContent, isUserDefinedFile, mergeContent } from '../utils/userRulesProtection';
-import { GitManager } from './GitManager';
 
 /**
  * 生成结果
@@ -134,17 +133,20 @@ export class FileGenerator {
    * @param rules 规则列表
    * @param workspaceRoot 工作区根目录
    * @param strategy 冲突解决策略
+   * @param targetAdapters 目标适配器列表（可选，如果提供则只为这些适配器生成配置）
    * @returns 生成结果
    */
   public async generateAll(
     rules: ParsedRule[],
     workspaceRoot: string,
     strategy: ConflictStrategy = 'priority',
+    targetAdapters?: string[],
   ): Promise<GenerateResult> {
     Logger.debug('Generating all config files', {
       ruleCount: rules.length,
       adapterCount: this.adapters.size,
       conflictStrategy: strategy,
+      targetAdapters: targetAdapters || 'all',
     });
     const result: GenerateResult = {
       success: [],
@@ -167,21 +169,24 @@ export class FileGenerator {
 
     // 为每个适配器生成配置
     for (const [name, adapter] of this.adapters.entries()) {
-      try {
-        // 检查是否为 skills 适配器（isRuleType=false 表示非规则类型，即 skills 类型）
-        let adapterRules = rules;
-        if (adapter instanceof CustomAdapter) {
-          const customConfig = adapter.config;
-          if (!customConfig.isRuleType && customConfig.sourceId) {
-            // Skills 适配器：从指定源路径读取文件作为规则
-            adapterRules = await this.getSkillsRules(customConfig);
-            Logger.debug(`Loaded skills for adapter: ${name}`, {
-              sourceId: customConfig.sourceId,
-              subPath: customConfig.subPath,
-              skillsCount: adapterRules.length,
-            });
-          }
+      // ✅ 如果指定了目标适配器，只为目标适配器生成配置
+      if (targetAdapters && targetAdapters.length > 0) {
+        // 适配器名称匹配规则：
+        // - 预置适配器：直接匹配（如 'copilot', 'cursor', 'continue'）
+        // - 自定义适配器：name 格式为 'custom-{id}'，需要匹配 id 部分
+        const adapterId = name.startsWith('custom-') ? name.substring(7) : name;
+        if (!targetAdapters.includes(adapterId) && !targetAdapters.includes(name)) {
+          Logger.debug(`Skipping adapter ${name} (not in target list)`, {
+            adapterId,
+            targetAdapters,
+          });
+          continue;
         }
+      }
+      try {
+        // ✅ 所有适配器都使用传入的规则列表（用户选择的规则）
+        // 不再为 skills 适配器做特殊处理，统一使用用户选择的规则
+        const adapterRules = rules;
 
         const config = await this.generateForAdapter(adapter, adapterRules, workspaceRoot);
         result.success.push(config);
@@ -210,115 +215,6 @@ export class FileGenerator {
     });
 
     return result;
-  }
-
-  /**
-   * @description 从源仓库读取技能文件作为规则
-   * @return default {Promise<ParsedRule[]>}
-   * @param config {CustomAdapterConfig}
-   */
-  private async getSkillsRules(config: CustomAdapterConfig): Promise<ParsedRule[]> {
-    const gitManager = GitManager.getInstance();
-    const sourceId = config.sourceId!;
-    const subPath = config.subPath || '/';
-
-    // 获取源仓库路径
-    const repoPath = gitManager.getSourcePath(sourceId);
-    const skillsPath = path.join(repoPath, subPath);
-
-    Logger.debug(`Reading skills from: ${skillsPath}`, {
-      sourceId,
-      subPath,
-      repoPath,
-    });
-
-    // 检查路径是否存在
-    if (!(await pathExists(skillsPath))) {
-      Logger.warn(`Skills path does not exist: ${skillsPath}`);
-      return [];
-    }
-
-    // 读取所有文件（递归）
-    const fileExtensions = config.fileExtensions || ['.md', '.mdc'];
-    const skillFiles = await this.readSkillsFiles(skillsPath, fileExtensions);
-
-    Logger.info(`Found ${skillFiles.length} skill files`, {
-      sourceId,
-      subPath,
-    });
-
-    // 将文件转换为 ParsedRule 格式
-    const rules: ParsedRule[] = [];
-    for (const filePath of skillFiles) {
-      try {
-        const content = await safeReadFile(filePath);
-        const relativePath = path.relative(repoPath, filePath);
-        const fileName = path.basename(filePath, path.extname(filePath));
-
-        // 创建简单的规则对象（skills 不需要解析 frontmatter）
-        const rule: ParsedRule = {
-          id: fileName,
-          title: fileName,
-          content: content,
-          rawContent: content,
-          sourceId: sourceId,
-          filePath: relativePath,
-          metadata: {},
-        };
-
-        rules.push(rule);
-        Logger.debug(`Loaded skill file: ${relativePath}`);
-      } catch (error) {
-        Logger.warn(
-          `Failed to read skill file: ${filePath}`,
-          error instanceof Error
-            ? { error: error.message, stack: error.stack }
-            : { error: String(error) },
-        );
-      }
-    }
-
-    return rules;
-  }
-
-  /**
-   * @description 递归读取技能文件
-   * @return default {Promise<string[]>}
-   * @param dirPath {string}
-   * @param extensions {string[]}
-   */
-  private async readSkillsFiles(dirPath: string, extensions: string[]): Promise<string[]> {
-    const files: string[] = [];
-
-    try {
-      const entries = await readDir(dirPath);
-
-      for (const entry of entries) {
-        const fullPath = path.join(dirPath, entry);
-        const stat = await fs.promises.stat(fullPath);
-
-        if (stat.isDirectory()) {
-          // 递归读取子目录
-          const subFiles = await this.readSkillsFiles(fullPath, extensions);
-          files.push(...subFiles);
-        } else if (stat.isFile()) {
-          // 检查文件扩展名
-          const ext = path.extname(entry);
-          if (extensions.length === 0 || extensions.includes(ext)) {
-            files.push(fullPath);
-          }
-        }
-      }
-    } catch (error) {
-      Logger.warn(
-        `Failed to read directory: ${dirPath}`,
-        error instanceof Error
-          ? { error: error.message, stack: error.stack }
-          : { error: String(error) },
-      );
-    }
-
-    return files;
   }
 
   /**
