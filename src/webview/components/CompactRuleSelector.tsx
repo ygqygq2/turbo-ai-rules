@@ -39,39 +39,35 @@ export const CompactRuleSelector: React.FC<CompactRuleSelectorProps> = ({
   const allPaths = getAllFilePaths(treeNodes);
   const selectedCount = selectedPaths.length;
   const isAllSelected = selectedCount === allPaths.length && allPaths.length > 0;
-  const isIndeterminate = selectedCount > 0 && selectedCount < allPaths.length;
+
+  const handleToggleAll = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const shouldSelect = !isAllSelected;
+    allPaths.forEach((path) => onSelectNode(path, shouldSelect, false));
+  };
 
   return (
     <div className="compact-rule-selector">
       {/* 源节点头部 */}
-      <div className="source-header">
+      <div className="source-header" onClick={onToggleSource}>
         <div className="source-header-left">
-          <span className="source-chevron" onClick={onToggleSource}>
+          <span className="source-chevron">
             <Icon icon={isExpanded ? 'chevron-down' : 'chevron-right'} />
           </span>
-          <input
-            type="checkbox"
-            className="source-checkbox"
-            checked={isAllSelected}
-            ref={(input) => {
-              if (input) {
-                input.indeterminate = isIndeterminate;
-              }
-            }}
-            onChange={(e) => {
-              // 全选/全不选该源的所有规则
-              const shouldSelect = e.target.checked;
-              allPaths.forEach((path) => onSelectNode(path, shouldSelect, false));
-            }}
-          />
-          <Icon icon="folder" />
+          <Icon icon="repo" />
           <span className="source-name">{sourceName}</span>
-        </div>
-        <div className="source-stats">
-          <span>
+          <span className="source-stats">
             {selectedCount} / {allPaths.length}
           </span>
         </div>
+        <button
+          className="source-select-all-btn"
+          onClick={handleToggleAll}
+          title={isAllSelected ? '全不选' : '全选'}
+        >
+          <Icon icon={isAllSelected ? 'circle-slash' : 'check-all'} />
+          {isAllSelected ? '全不选' : '全选'}
+        </button>
       </div>
 
       {/* 树内容 */}

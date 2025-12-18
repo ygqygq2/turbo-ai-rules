@@ -12,6 +12,7 @@ import { ConfigManager } from '../../services/ConfigManager';
 import { FileGenerator } from '../../services/FileGenerator';
 import { GitManager } from '../../services/GitManager';
 import { RulesManager } from '../../services/RulesManager';
+import { WorkspaceStateManager } from '../../services/WorkspaceStateManager';
 import type { GitAuthentication, RuleSource } from '../../types';
 import { Logger } from '../../utils/logger';
 import { validateBranchName, validateGitUrl } from '../../utils/validator';
@@ -185,7 +186,10 @@ export class SourceDetailMessageHandler {
       const rulesManager = RulesManager.getInstance();
       rulesManager.addRules(sourceId, validRules);
 
-      source.lastSync = new Date().toISOString();
+      // 使用 WorkspaceStateManager 记录同步时间（与状态栏、仪表板保持一致）
+      const stateManager = WorkspaceStateManager.getInstance();
+      stateManager.setLastSyncTime(sourceId, new Date().toISOString());
+
       await configManager.addSource(source);
 
       // 生成配置文件
@@ -568,7 +572,10 @@ export class SourceDetailMessageHandler {
     });
 
     await this.generateConfigFiles(configManager);
-    updates.lastSync = new Date().toISOString();
+
+    // 使用 WorkspaceStateManager 记录同步时间（与状态栏、仪表板保持一致）
+    const stateManager = WorkspaceStateManager.getInstance();
+    stateManager.setLastSyncTime(sourceId, new Date().toISOString());
   }
 
   /**

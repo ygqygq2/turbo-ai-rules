@@ -18,13 +18,13 @@ interface DashboardState {
     enabled: number;
     total: number;
     totalRules: number;
-    lastSync: string | null;
     /** 规则源列表（简要信息） */
     list: Array<{
       id: string;
       name: string;
       enabled: boolean;
       ruleCount: number;
+      lastSync: string | null; // 每个源自己的同步时间
     }>;
   };
   /** 适配器状态列表 */
@@ -122,27 +122,25 @@ export const App: React.FC = () => {
                   key={source.id}
                   className={`source-chip ${source.enabled ? 'enabled' : 'disabled'}`}
                 >
-                  <Icon
-                    icon={source.enabled ? 'pass' : 'circle-slash'}
-                    size={14}
-                    className="source-chip-icon"
-                  />
-                  <span className="source-chip-name">{source.name}</span>
-                  <span className="source-chip-count">{source.ruleCount}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Icon
+                      icon={source.enabled ? 'pass' : 'circle-slash'}
+                      size={14}
+                      className="source-chip-icon"
+                    />
+                    <span className="source-chip-name">{source.name}</span>
+                    <span className="source-chip-count">{source.ruleCount}</span>
+                  </div>
+                  <span className="source-chip-sync">
+                    <Icon icon="clock" size={12} />
+                    {source.lastSync
+                      ? new Date(source.lastSync).toLocaleString()
+                      : t('common.never')}
+                  </span>
                 </div>
               ))}
             </div>
           )}
-
-          {/* 统计信息行 */}
-          <div className="sources-summary">
-            <span className="summary-item">
-              <Icon icon="clock" size={14} />
-              {t('dashboard.sources.lastSync', {
-                time: stats.sources.lastSync || t('common.never'),
-              })}
-            </span>
-          </div>
 
           <div className="button-group">
             <Button type="primary" icon="sync" onClick={handleSyncAll}>
@@ -210,17 +208,17 @@ export const App: React.FC = () => {
               <Icon icon="book" size={24} />
               <span>{t('dashboard.quickActions.quickStart')}</span>
             </button>
-            <button className="quick-action-button" onClick={handleOpenStatistics}>
-              <Icon icon="graph" size={24} />
-              <span>{t('dashboard.quickActions.statistics')}</span>
+            <button className="quick-action-button" onClick={handleOpenRuleSyncPage}>
+              <Icon icon="list-tree" size={24} />
+              <span>{t('dashboard.quickActions.ruleSyncPage')}</span>
             </button>
             <button className="quick-action-button" onClick={handleOpenAdvancedSearch}>
               <Icon icon="search" size={24} />
               <span>{t('dashboard.quickActions.advancedSearch')}</span>
             </button>
-            <button className="quick-action-button" onClick={handleOpenRuleSyncPage}>
-              <Icon icon="list-tree" size={24} />
-              <span>{t('dashboard.quickActions.ruleSyncPage')}</span>
+            <button className="quick-action-button" onClick={handleOpenStatistics}>
+              <Icon icon="graph" size={24} />
+              <span>{t('dashboard.quickActions.statistics')}</span>
             </button>
           </div>
         </Card>

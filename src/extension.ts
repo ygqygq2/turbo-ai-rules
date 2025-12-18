@@ -129,9 +129,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<{
     const workspaceStateManager = WorkspaceStateManager.getInstance(context);
     const workspaceDataManager = WorkspaceDataManager.getInstance();
     const selectionStateManager = SelectionStateManager.getInstance();
-    const _gitManager = GitManager.getInstance();
     const rulesManager = RulesManager.getInstance();
-    const _fileGenerator = FileGenerator.getInstance();
+    // gitManager 和 fileGenerator 在需要时通过单例获取，避免未使用警告
 
     // 初始化工作区数据目录（如果有工作区）
     const workspaceFolders = vscode.workspace.workspaceFolders;

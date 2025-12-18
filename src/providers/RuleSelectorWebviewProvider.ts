@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import * as fsPromises from 'fs/promises';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
@@ -10,8 +9,8 @@ import { SelectionStateManager } from '../services/SelectionStateManager';
 import type { RuleSelection } from '../services/WorkspaceDataManager';
 import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
 import { SystemError } from '../types/errors';
+import type { ParsedRule } from '../types/rules';
 import { EXTENSION_ICON_PATH } from '../utils/constants';
-import { RULE_FILE_EXTENSIONS } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 import { createExtensionMessenger, ExtensionMessenger } from './messaging/ExtensionMessenger';
@@ -126,37 +125,71 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
   }
 
   /**
-   * @description 递归读取目录树
-   * @return {Promise<FileTreeNode[]>}
-   * @param dirPath {string}
-   * @param basePath {string}
+   * @description 从 MdcParser 解析的规则构建文件树（FileTreeNode格式）
+   * @return {FileTreeNode[]}
+   * @param rules {ParsedRule[]} 解析后的规则列表
+   * @param basePath {string} 基础路径
    */
-  private async readDirectoryTree(dirPath: string, basePath: string): Promise<FileTreeNode[]> {
-    try {
-      const entries = await fsPromises.readdir(dirPath, { withFileTypes: true });
+  private buildFileTreeFromRules(rules: ParsedRule[], basePath: string): FileTreeNode[] {
+    // 按目录分组规则
+    const dirMap = new Map<string, ParsedRule[]>();
+
+    for (const rule of rules) {
+      const relativePath = path.relative(basePath, rule.filePath);
+      const dirPath = path.dirname(relativePath);
+
+      if (!dirMap.has(dirPath)) {
+        dirMap.set(dirPath, []);
+      }
+      dirMap.get(dirPath)!.push(rule);
+    }
+
+    // 递归构建树结构
+    const buildTreeRecursive = (currentPath: string): FileTreeNode[] => {
       const nodes: FileTreeNode[] = [];
+      const filesInCurrentDir = dirMap.get(currentPath) || [];
 
-      for (const entry of entries) {
-        // 跳过隐藏文件和 .git 目录
-        if (entry.name.startsWith('.')) continue;
+      // 添加文件节点
+      for (const rule of filesInCurrentDir) {
+        const relativePath = path.relative(basePath, rule.filePath);
+        const fileName = path.basename(rule.filePath);
 
-        const fullPath = path.join(dirPath, entry.name);
-        // 使用相对路径，与 SelectionStateManager 存储格式一致
-        const relativePath = path.relative(basePath, fullPath);
+        nodes.push({
+          path: relativePath,
+          name: fileName,
+          type: 'file',
+        });
+      }
 
-        if (entry.isDirectory()) {
-          const children = await this.readDirectoryTree(fullPath, basePath);
+      // 查找子目录
+      const subDirs = new Set<string>();
+      for (const dirPath of dirMap.keys()) {
+        const isSubDir =
+          currentPath === '.'
+            ? dirPath !== '.' && !dirPath.includes(path.sep)
+            : dirPath.startsWith(currentPath + path.sep);
+
+        if (isSubDir) {
+          const relativePart =
+            currentPath === '.' ? dirPath : dirPath.substring(currentPath.length + 1);
+          const firstDir = relativePart.split(path.sep)[0];
+          if (firstDir) {
+            subDirs.add(firstDir);
+          }
+        }
+      }
+
+      // 递归处理子目录
+      for (const subDir of subDirs) {
+        const subDirPath = currentPath === '.' ? subDir : path.join(currentPath, subDir);
+        const children = buildTreeRecursive(subDirPath);
+
+        if (children.length > 0) {
           nodes.push({
-            path: relativePath,
-            name: entry.name,
+            path: subDirPath,
+            name: subDir,
             type: 'directory',
             children,
-          });
-        } else if (entry.isFile() && RULE_FILE_EXTENSIONS.includes(path.extname(entry.name))) {
-          nodes.push({
-            path: relativePath,
-            name: entry.name,
-            type: 'file',
           });
         }
       }
@@ -168,10 +201,9 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
         }
         return a.name.localeCompare(b.name);
       });
-    } catch (error) {
-      Logger.error('Failed to read directory tree', error as Error);
-      return [];
-    }
+    };
+
+    return buildTreeRecursive('.');
   }
 
   /**
@@ -239,6 +271,13 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
           await this.selectionStateManager.initializeState(source.id, totalRules, allRulePaths);
           const selectedPaths = this.selectionStateManager.getSelection(source.id);
 
+          Logger.debug('Rule selector: loaded selection state', {
+            sourceId: source.id,
+            totalRules,
+            selectedCount: selectedPaths.length,
+            sampleSelectedPaths: selectedPaths.slice(0, 3),
+          });
+
           // 构建选择数据
           selectionsData[source.id] = {
             mode: 'include',
@@ -251,8 +290,11 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
             sourceEntry.totalRules = totalRules;
           }
 
-          const sourcePath = gitManager.getSourcePath(source.id);
-          fileTreeBySource[source.id] = await this.readDirectoryTree(sourcePath, sourcePath);
+          // 从规则构建文件树（确保与 MdcParser 过滤逻辑一致）
+          fileTreeBySource[source.id] = this.buildFileTreeFromRules(
+            rules,
+            gitManager.getSourcePath(source.id),
+          );
         } catch (error) {
           // 源未同步，提示用户并跳过该源
           const errorMsg = error instanceof Error ? error.message : '未知错误';
@@ -506,7 +548,7 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
     // 监听源切换通知（Webview 切换源时）
     this.messenger.register<
       { sourceId: string; selectedPaths: string[]; totalCount: number },
-      { message: string }
+      { fileTree: FileTreeNode[]; selection: RuleSelection; totalRules: number }
     >('sourceChanged', async (payload) => {
       const newSourceId = payload?.sourceId;
       if (!newSourceId) {
@@ -517,7 +559,47 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
       this.currentSourceId = newSourceId;
 
       Logger.info('Source switched in webview', { newSourceId });
-      return { message: '源已切换' };
+
+      // 加载新源的数据
+      try {
+        const gitManager = GitManager.getInstance();
+        const rules = await this.loadRulesFromCache(newSourceId);
+        const totalRules = rules.length;
+
+        // 初始化选择状态（如果尚未初始化）
+        await this.selectionStateManager.initializeState(newSourceId, totalRules, []);
+        const selectedPaths = this.selectionStateManager.getSelection(newSourceId);
+
+        // 构建文件树
+        // 从规则构建文件树（确保与 MdcParser 过滤逻辑一致）
+        const fileTree = this.buildFileTreeFromRules(rules, gitManager.getSourcePath(sourceId));
+
+        Logger.debug('Loaded data for switched source', {
+          sourceId: newSourceId,
+          totalRules,
+          selectedCount: selectedPaths.length,
+        });
+
+        return {
+          fileTree,
+          selection: {
+            mode: 'include',
+            paths: selectedPaths,
+          },
+          totalRules,
+        };
+      } catch (error) {
+        Logger.error('Failed to load data for switched source', error as Error, {
+          sourceId: newSourceId,
+        });
+        throw new SystemError(
+          `加载源 '${newSourceId}' 的数据失败: ${
+            error instanceof Error ? error.message : '未知错误'
+          }`,
+          'TAI-5002',
+          error as Error,
+        );
+      }
     });
   }
 }

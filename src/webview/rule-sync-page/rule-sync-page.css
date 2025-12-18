@@ -321,3 +321,101 @@
   color: var(--vscode-descriptionForeground);
   text-align: center;
 }
+/* Compact Rule Selector - 源节点样式 */
+.compact-rule-selector {
+  margin-bottom: var(--spacing-sm);
+}
+
+.source-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  padding: 0 var(--spacing-sm);
+  margin-bottom: 4px;
+  border-radius: var(--border-radius);
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.source-header:hover {
+  background: var(--vscode-list-hoverBackground);
+  border-color: var(--vscode-focusBorder);
+}
+
+.source-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex: 1;
+  min-width: 0;
+}
+
+.source-chevron {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  color: var(--vscode-icon-foreground);
+}
+
+.source-checkbox {
+  margin: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.source-name {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.source-stats {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  margin-left: var(--spacing-sm);
+  padding: 2px 6px;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.source-select-all-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  border: none;
+  border-radius: var(--border-radius);
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.source-select-all-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.source-tree-content {
+  margin-left: 8px;
+  border-left: 1px solid var(--vscode-editorWidget-border);
+  padding-left: 8px;
+  margin-top: 2px;
+}
+
+.source-tree-content .tree-nodes {
+  margin-left: 0;
+}

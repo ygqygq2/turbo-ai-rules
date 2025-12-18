@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 
 import { ConfigManager } from '../services/ConfigManager';
 import { RulesManager } from '../services/RulesManager';
+import { WorkspaceStateManager } from '../services/WorkspaceStateManager';
 import { EXTENSION_ICON_PATH } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
@@ -174,13 +175,16 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
     });
 
     // 收集源统计
+    const stateManager = WorkspaceStateManager.getInstance();
     const sourceStats = config.sources.map((source) => {
       const sourceRules = this.rulesManager.getRulesBySource(source.id);
+      // 从 WorkspaceStateManager 读取同步时间（与状态栏、仪表板保持一致）
+      const lastSyncTime = stateManager.getLastSyncTime(source.id);
       return {
         name: source.name,
         ruleCount: sourceRules.length,
         enabled: source.enabled,
-        lastSync: source.lastSync,
+        lastSync: lastSyncTime || undefined,
       };
     });
 

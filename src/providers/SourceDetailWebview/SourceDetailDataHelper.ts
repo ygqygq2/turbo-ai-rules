@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 
 import { ConfigManager } from '../../services/ConfigManager';
 import { RulesManager } from '../../services/RulesManager';
+import { WorkspaceStateManager } from '../../services/WorkspaceStateManager';
 import type { RuleSource } from '../../types/config';
 import type { ParsedRule } from '../../types/rules';
 import { formatBytes } from '../../utils/format';
@@ -137,9 +138,13 @@ export class SourceDetailDataHelper {
    * 获取同步信息
    */
   async getSyncInfo(source: RuleSource): Promise<SyncInfo> {
+    // 从 WorkspaceStateManager 读取同步时间（与状态栏、仪表板保持一致）
+    const stateManager = WorkspaceStateManager.getInstance();
+    const lastSync = stateManager.getLastSyncTime(source.id);
+
     const syncInfo: SyncInfo = {
-      status: source.lastSync ? 'success' : 'never',
-      lastSynced: source.lastSync,
+      status: lastSync ? 'success' : 'never',
+      lastSynced: lastSync,
     };
 
     // 计算缓存大小
@@ -155,8 +160,8 @@ export class SourceDetailDataHelper {
     }
 
     // 计算下次自动同步时间
-    if (source.syncInterval && source.syncInterval > 0 && source.lastSync) {
-      const lastSyncTime = new Date(source.lastSync).getTime();
+    if (source.syncInterval && source.syncInterval > 0 && lastSync) {
+      const lastSyncTime = new Date(lastSync).getTime();
       const nextSyncTime = lastSyncTime + source.syncInterval * 60 * 1000;
       const now = Date.now();
 

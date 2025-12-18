@@ -17,7 +17,7 @@ vi.mock('vscode', async () => {
         showInformationMessage: vi.fn(),
       },
       l10n: {
-        t: vi.fn((key: string, args?: any) => key),
+        t: vi.fn((key: string, _args?: any) => key),
       },
       ConfigurationTarget: {
         Global: 1,
@@ -32,7 +32,7 @@ vi.mock('vscode', async () => {
       showInformationMessage: vi.fn(),
     },
     l10n: {
-      t: vi.fn((key: string, args?: any) => key),
+      t: vi.fn((key: string, _args?: any) => key),
     },
     ConfigurationTarget: {
       Global: 1,

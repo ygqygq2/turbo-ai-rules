@@ -39,10 +39,9 @@ export interface RuleSource {
   enabled: boolean;
   /** 自动同步间隔(分钟)，0 表示禁用自动同步 */
   syncInterval?: number;
-  /** 上次同步时间 (ISO 8601) - 存储在 workspaceState */
-  lastSync?: string;
   /** 认证配置 - Token 存储在 Secret Storage */
   authentication?: GitAuthentication;
+  /** 注意：同步时间不存储在此配置中，而是通过 WorkspaceStateManager.getLastSyncTime(sourceId) 获取 */
 }
 
 /**

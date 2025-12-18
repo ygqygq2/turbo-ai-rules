@@ -8,7 +8,7 @@ export { BaseWebviewProvider } from './BaseWebviewProvider';
 export { DashboardWebviewProvider } from './DashboardWebviewProvider';
 export { RuleDetailsWebviewProvider } from './RuleDetailsWebviewProvider';
 export { RulesTreeProvider } from './RulesTreeProvider';
-export { RuleSyncPageWebviewProvider } from './RuleSyncPageWebviewProvider';
+export { RuleSyncPageWebviewProvider } from './RuleSyncPageWebview';
 export { SearchWebviewProvider } from './SearchWebviewProvider';
 export { SourceDetailWebviewProvider } from './SourceDetailWebview';
 export { SourceManagerWebviewProvider } from './SourceManagerWebviewProvider';

@@ -65,9 +65,16 @@ Turbo AI Rules 包含以下主要 UI 组件：
 
 - 📁 完整文件树形结构展示（三层：源 → 目录 → 文件）
 - ☑️ 文件级别可视化选择
-- 🔍 搜索和过滤
-- 📊 统计信息显示
+- 🔍 实时搜索和过滤（支持文件名和路径匹配，不区分大小写）
+- 📊 统计信息显示（总数/已选/未选）
 - 💾 保存选择配置
+- 🔄 全选/全不选智能切换按钮（根据当前状态自动切换）
+
+**数据一致性**（v2.0.3 改进）:
+
+- 文件树构建：复用 `MdcParser` 解析结果，确保与左侧树视图数据一致
+- 过滤规则：自动过滤 README.md 等非规则文件（与 MdcParser 配置统一）
+- 路径处理：统一使用相对路径，通过 `toRelativePath(absolutePath, sourceId)` 转换
 
 **同步机制**（文件路径同步）:
 
@@ -94,7 +101,25 @@ Turbo AI Rules 包含以下主要 UI 组件：
 
 ---
 
-### 4. 统计仪表板（Webview）
+### 4. Dashboard 仪表盘（Webview）
+
+**文件**: `src/providers/DashboardWebviewProvider.ts`  
+**核心功能**:
+
+- 📊 规则源管理：显示所有规则源及其统计信息
+- ⚙️ 适配器状态：显示所有适配器的启用状态和规则数量
+- ⚡ 快速操作：提供常用功能的快捷入口
+- 📖 快速入门：新用户引导和文档链接
+
+**规则源显示**（v2.0.3 改进）:
+
+- 每个规则源卡片显示：
+  - 第一行：状态图标 + 源名称 + 规则数量徽章
+  - 第二行：同步时间（从 `WorkspaceStateManager` 读取，与状态栏保持一致）
+- 卡片样式：两行布局，最小宽度 200px
+- 数据来源：与状态栏使用相同的 `WorkspaceStateManager.getLastSyncTime(sourceId)`
+
+### 5. 统计仪表板（Webview）
 
 **文件**: `src/providers/StatisticsWebviewProvider.ts`  
 **设计文档**: `.superdesign/design_docs/02-statistics-dashboard.md`

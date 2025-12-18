@@ -59,7 +59,6 @@ export const App: React.FC = () => {
     selectNode,
     selectAll,
     clearAll,
-    reset,
     setSearchTerm,
     setSaving,
     updateAfterSave,
@@ -190,14 +189,25 @@ export const App: React.FC = () => {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <button className="button button-secondary" onClick={selectAll}>
-          <Icon icon="check-all" /> {t('ruleSelector.selectAll')}
-        </button>
-        <button className="button button-secondary" onClick={clearAll}>
-          <Icon icon="circle-slash" /> {t('ruleSelector.deselectAll')}
-        </button>
-        <button className="button button-secondary" onClick={reset} disabled={!hasChanges}>
-          <Icon icon="refresh" /> {t('form.reset')}
+        <button
+          className="button button-secondary"
+          onClick={() => {
+            if (selectedCount === totalRules) {
+              clearAll();
+            } else {
+              selectAll();
+            }
+          }}
+        >
+          {selectedCount === totalRules ? (
+            <>
+              <Icon icon="circle-slash" /> {t('ruleSelector.deselectAll')}
+            </>
+          ) : (
+            <>
+              <Icon icon="check-all" /> {t('ruleSelector.selectAll')}
+            </>
+          )}
         </button>
       </div>
       {/* Statistics */}

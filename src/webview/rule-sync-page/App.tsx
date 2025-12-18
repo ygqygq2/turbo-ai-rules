@@ -25,13 +25,11 @@ export const App: React.FC = () => {
     setInitialData,
     toggleTreeNode,
     selectNode,
-    toggleAllRules,
     toggleAllAdapters,
     toggleAdapter,
     setSearchTerm,
     sync,
     cancel,
-    isAllRulesSelected,
     isAllAdaptersSelected,
     getSelectedRulesCount,
     getSelectedAdaptersCount,
@@ -114,7 +112,6 @@ export const App: React.FC = () => {
       return (
         <CompactRuleSelector
           key={source.id}
-          sourceId={source.id}
           sourceName={source.name}
           treeNodes={tree}
           selectedPaths={selectedPaths}
@@ -167,11 +164,6 @@ export const App: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <div className="panel-actions">
-              <button className="btn btn-secondary btn-small" onClick={toggleAllRules}>
-                {isAllRulesSelected() ? t('common.deselectAll') : t('common.selectAll')}
-              </button>
-            </div>
           </div>
           <div className="rules-tree-container">{renderRuleTree()}</div>
         </div>

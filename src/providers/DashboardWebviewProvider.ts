@@ -25,13 +25,13 @@ interface DashboardState {
     enabled: number;
     total: number;
     totalRules: number;
-    lastSync: string | null;
     /** 规则源列表（简要信息） */
     list: Array<{
       id: string;
       name: string;
       enabled: boolean;
       ruleCount: number;
+      lastSync: string | null; // 每个源自己的同步时间
     }>;
   };
   /** 适配器状态列表 */
@@ -320,23 +320,22 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
       const allRules = await this.rulesManager.getAllRules();
       const totalRules = allRules.length;
 
-      // 获取最后同步时间
-      const lastSyncTimes = enabledSources
-        .map((s) => s.lastSync)
-        .filter((t): t is string => !!t)
-        .sort()
-        .reverse();
-      const lastSync = lastSyncTimes[0] || null;
+      // 获取WorkspaceStateManager来读取每个源的同步时间
+      const { WorkspaceStateManager } = await import('../services/WorkspaceStateManager');
+      const stateManager = WorkspaceStateManager.getInstance();
 
       // 构建规则源列表（简要信息）
       const sourceList = await Promise.all(
         sources.map(async (s) => {
           const sourceRules = allRules.filter((r) => r.sourceId === s.id);
+          // 从WorkspaceStateManager获取该源的同步时间（与状态栏保持一致）
+          const lastSync = await stateManager.getLastSyncTime(s.id);
           return {
             id: s.id,
             name: s.name || s.id,
             enabled: s.enabled,
             ruleCount: sourceRules.length,
+            lastSync, // 每个源自己的同步时间
           };
         }),
       );
@@ -384,7 +383,6 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
           enabled: enabledSources.length,
           total: sources.length,
           totalRules,
-          lastSync,
           list: sourceList,
         },
         adapters,

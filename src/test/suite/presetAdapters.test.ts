@@ -43,7 +43,7 @@ describe('Preset Adapters Integration Tests', () => {
         const fullPath = path.join(workspaceFolder.uri.fsPath, filePath);
         try {
           await fs.remove(fullPath);
-        } catch (error) {
+        } catch (_error) {
           // 忽略删除失败的错误
         }
       }

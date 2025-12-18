@@ -308,9 +308,15 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
         const absolutePath = item.data.rule.filePath;
 
         // 转换为相对路径（SelectionStateManager 内部存储相对路径）
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders?.length) continue;
-        const relativePath = toRelativePath(absolutePath, workspaceFolders[0].uri.fsPath);
+        // 注意：toRelativePath 的第二个参数是 sourceId，不是 workspacePath
+        const relativePath = toRelativePath(absolutePath, sourceId);
+
+        Logger.debug('[handleCheckboxChange] Processing item', {
+          title: item.data.rule.title,
+          absolutePath,
+          relativePath,
+          checkState: checkState === vscode.TreeItemCheckboxState.Checked ? 'Checked' : 'Unchecked',
+        });
 
         if (!changesBySource.has(sourceId)) {
           // 从 SelectionStateManager 获取当前状态
@@ -331,6 +337,12 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
       const workspacePath = workspaceFolders?.[0]?.uri.fsPath;
 
       for (const [sourceId, paths] of changesBySource.entries()) {
+        Logger.debug('[handleCheckboxChange] Before update', {
+          sourceId,
+          newPathsCount: paths.size,
+          samplePaths: Array.from(paths).slice(0, 3),
+        });
+
         // 更新状态，会自动触发 stateChanged 事件并刷新树视图
         this.selectionStateManager.updateSelection(
           sourceId,
@@ -339,9 +351,10 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
           workspacePath,
         );
 
-        Logger.debug('Checkbox change - state updated via SelectionStateManager', {
+        Logger.debug('[handleCheckboxChange] After update', {
           sourceId,
           selectedCount: paths.size,
+          verifyCount: this.selectionStateManager.getSelection(sourceId).length,
         });
       }
     } catch (error) {
@@ -534,10 +547,26 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
           .filter((p) => p) as string[],
       );
     }
+    Logger.debug('[getSourceRules] Building tree items', {
+      sourceId: source.id,
+      totalRules: rules.length,
+      selectedPathsCount: selectedPaths.size,
+      sampleSelectedPaths: Array.from(selectedPaths).slice(0, 3),
+    });
+
     return rules.map((rule) => {
       // 将 rule.filePath 转为相对路径后比较（SelectionStateManager 存储相对路径）
       const relativeFilePath = rule.filePath ? toRelativePath(rule.filePath, source.id) : null;
       const isSelected = relativeFilePath ? selectedPaths.has(relativeFilePath) : true;
+
+      if (relativeFilePath && rules.indexOf(rule) < 3) {
+        Logger.debug('[getSourceRules] Sample rule check', {
+          title: rule.title,
+          relativeFilePath,
+          isSelected,
+          inSelectedPaths: selectedPaths.has(relativeFilePath),
+        });
+      }
 
       return new RuleTreeItem(
         {

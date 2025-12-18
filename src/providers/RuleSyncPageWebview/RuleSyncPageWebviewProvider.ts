@@ -7,16 +7,16 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { ConfigManager } from '../services/ConfigManager';
-import { GitManager } from '../services/GitManager';
-import { RulesManager } from '../services/RulesManager';
-import { SelectionStateManager } from '../services/SelectionStateManager';
-import type { AdapterConfig, RuleTreeNode } from '../types/config';
-import { EXTENSION_ICON_PATH, RULE_FILE_EXTENSIONS } from '../utils/constants';
-import { Logger } from '../utils/logger';
-import { notify } from '../utils/notifications';
-import { normalizeOutputPathForDisplay } from '../utils/path';
-import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
+import { ConfigManager } from '../../services/ConfigManager';
+import { GitManager } from '../../services/GitManager';
+import { RulesManager } from '../../services/RulesManager';
+import { SelectionStateManager } from '../../services/SelectionStateManager';
+import type { AdapterConfig, RuleTreeNode } from '../../types/config';
+import { EXTENSION_ICON_PATH, RULE_FILE_EXTENSIONS } from '../../utils/constants';
+import { Logger } from '../../utils/logger';
+import { notify } from '../../utils/notifications';
+import { normalizeOutputPathForDisplay } from '../../utils/path';
+import { BaseWebviewProvider, type WebviewMessage } from '../BaseWebviewProvider';
 
 /**
  * 适配器状态（用于前端展示）
@@ -385,7 +385,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
 
         // 如果内存中没有，尝试从磁盘加载
         if (totalRules === 0) {
-          const MdcParser = (await import('../parsers/MdcParser')).MdcParser;
+          const MdcParser = (await import('../../parsers/MdcParser')).MdcParser;
           const parser = new MdcParser();
           const parsedRules = await parser.parseDirectory(sourcePath, source.id, {
             recursive: true,

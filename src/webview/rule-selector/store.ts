@@ -102,9 +102,8 @@ export const useRuleSelectorStore = create<RuleSelectorState>()(
         const sourceFileTree = data.fileTreeBySource[firstSourceId] || [];
         const tree = buildTree(sourceFileTree);
         const selection = data.selections[firstSourceId];
-        // 默认策略统一为“无配置 = 全选”
-        const allPaths = getAllFilePaths(tree);
-        const paths = selection?.paths && selection.paths.length > 0 ? selection.paths : allPaths;
+        // 使用后端返回的选择状态：空数组 = 全不选，有值 = 已选择的路径
+        const paths = selection?.paths || [];
 
         // 优先使用后端传递的真实规则数，否则使用文件树计算的文件数
         const firstSource = sourceList.find((s) => s.id === firstSourceId);
@@ -127,7 +126,7 @@ export const useRuleSelectorStore = create<RuleSelectorState>()(
        * @description 切换规则源
        * @param newSourceId {string}
        */
-      switchSource: (newSourceId) => {
+      switchSource: async (newSourceId) => {
         const state = get();
         if (newSourceId === state.currentSourceId) return;
 
@@ -140,33 +139,64 @@ export const useRuleSelectorStore = create<RuleSelectorState>()(
           },
         };
 
-        // 切换到新源
-        const sourceFileTree = state.allFileTreeBySource[newSourceId] || [];
-        const tree = buildTree(sourceFileTree);
-        const selection = updatedSelections[newSourceId];
-        const allPaths = getAllFilePaths(tree);
-        const paths = selection?.paths && selection.paths.length > 0 ? selection.paths : allPaths;
+        // 先检查本地缓存
+        const cachedFileTree = state.allFileTreeBySource[newSourceId];
+        const cachedSelection = updatedSelections[newSourceId];
 
-        // 优先使用后端传递的真实规则数，否则使用文件树计算的文件数
-        const newSource = state.availableSources.find((s) => s.id === newSourceId);
-        const totalFiles = newSource?.totalRules ?? getAllFilePaths(tree).length;
+        if (cachedFileTree && cachedFileTree.length > 0) {
+          // 使用本地缓存的数据
+          const tree = buildTree(cachedFileTree);
+          const paths = cachedSelection?.paths || [];
+          const newSource = state.availableSources.find((s) => s.id === newSourceId);
+          const totalFiles = newSource?.totalRules ?? getAllFilePaths(tree).length;
 
-        set({
-          allSelections: updatedSelections,
-          currentSourceId: newSourceId,
-          treeNodes: tree,
-          selectedPaths: [...paths],
-          originalPaths: [...paths],
-          totalRules: totalFiles,
-          searchTerm: '',
-        });
+          set({
+            allSelections: updatedSelections,
+            currentSourceId: newSourceId,
+            treeNodes: tree,
+            selectedPaths: [...paths],
+            originalPaths: [...paths],
+            totalRules: totalFiles,
+            searchTerm: '',
+          });
+        } else {
+          // 从后端请求新源的数据
+          try {
+            const response = await getRpc().request<{
+              fileTree: FileTreeNode[];
+              selection: RuleSelection;
+              totalRules: number;
+            }>('sourceChanged', {
+              sourceId: newSourceId,
+              selectedPaths: state.selectedPaths,
+              totalCount: state.totalRules,
+            });
 
-        // 通知 Extension 端切换源（用于初始化 MessageChannel）
-        getRpc().notify('sourceChanged', {
-          sourceId: newSourceId,
-          selectedPaths: [...paths],
-          totalCount: totalFiles,
-        });
+            const tree = buildTree(response.fileTree);
+            const paths = response.selection.paths || [];
+
+            // 更新缓存和状态
+            set({
+              allSelections: {
+                ...updatedSelections,
+                [newSourceId]: response.selection,
+              },
+              allFileTreeBySource: {
+                ...state.allFileTreeBySource,
+                [newSourceId]: response.fileTree,
+              },
+              currentSourceId: newSourceId,
+              treeNodes: tree,
+              selectedPaths: [...paths],
+              originalPaths: [...paths],
+              totalRules: response.totalRules,
+              searchTerm: '',
+            });
+          } catch (error) {
+            console.error('Failed to switch source', error);
+            alert(`切换源失败: ${error instanceof Error ? error.message : '未知错误'}`);
+          }
+        }
       },
 
       /**
@@ -262,11 +292,46 @@ export const useRuleSelectorStore = create<RuleSelectorState>()(
       },
 
       /**
-       * @description 设置搜索词
+       * @description 设置搜索词并过滤树节点
        * @param term {string}
        */
       setSearchTerm: (term) => {
-        set({ searchTerm: term });
+        const state = get();
+        const rawTree = state.allFileTreeBySource[state.currentSourceId] || [];
+
+        // 如果没有搜索词，显示完整树
+        if (!term.trim()) {
+          const fullTree = buildTree(rawTree, state.selectedPaths);
+          set({ searchTerm: term, treeNodes: fullTree });
+          return;
+        }
+
+        // 过滤树节点：匹配文件名或路径
+        const filterTree = (nodes: FileTreeNode[]): FileTreeNode[] => {
+          const filtered: FileTreeNode[] = [];
+          for (const node of nodes) {
+            if (node.type === 'file') {
+              // 文件节点：检查名称或路径是否包含搜索词（不区分大小写）
+              const searchLower = term.toLowerCase();
+              const matchesName = node.name.toLowerCase().includes(searchLower);
+              const matchesPath = node.path.toLowerCase().includes(searchLower);
+              if (matchesName || matchesPath) {
+                filtered.push(node);
+              }
+            } else if (node.type === 'directory' && node.children) {
+              // 目录节点：递归过滤子节点
+              const filteredChildren = filterTree(node.children);
+              if (filteredChildren.length > 0) {
+                filtered.push({ ...node, children: filteredChildren });
+              }
+            }
+          }
+          return filtered;
+        };
+
+        const filteredTree = filterTree(rawTree);
+        const builtTree = buildTree(filteredTree, state.selectedPaths);
+        set({ searchTerm: term, treeNodes: builtTree });
       },
 
       /**

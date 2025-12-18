@@ -391,3 +391,201 @@ private totalCountCache = new Map<string, number>();
 > 2. 所有监听器都能正确收到事件
 > 3. 持久化逻辑不会丢失用户操作
 > 4. **重要**：空选择（0 个规则）也需要正确持久化，不能被忽略
+
+---
+
+## 8. 文件树构建数据一致性改进
+
+### 8.1 问题背景
+
+**问题描述**：
+
+之前的实现中，左侧规则树视图和规则同步页面使用了两套不同的数据获取方式：
+
+- **左侧树视图**：使用 `MdcParser.parseDirectory()` 解析规则，自动过滤 `README.md` 等无效文件
+- **规则同步页面**：使用 `fs.readdir()` 扫描文件系统，需要手动实现过滤逻辑
+
+这导致：
+
+1. **代码重复**：过滤逻辑在两个地方重复实现
+2. **数据不一致风险**：两套逻辑可能产生不同的文件列表（例如 README.md 在同步页显示但左侧树不显示）
+3. **维护成本高**：修改过滤规则需要同时修改两处
+
+### 8.2 解决方案
+
+**核心思路**：复用 `MdcParser` 的解析结果构建文件树，确保两个视图使用相同的数据源。
+
+**实施步骤**：
+
+1. **移除旧的 `buildFileTree()` 方法**
+
+   - 删除使用 `fs.readdir()` 的文件系统扫描代码
+   - 移除重复的过滤逻辑（`excludeFiles` 判断）
+
+2. **新增 `buildFileTreeFromRules()` 方法**
+
+   - 接受 `ParsedRule[]` 作为输入（来自 `MdcParser`）
+   - 从规则的 `filePath` 属性提取目录结构
+   - 构建与原有 `RuleTreeNode[]` 接口兼容的树结构
+
+3. **修改 `getRuleSyncData()` 流程**
+   - 先使用 `MdcParser.parseDirectory()` 解析规则
+   - 调用 `buildFileTreeFromRules()` 构建树结构
+   - 确保与左侧树视图使用相同的数据源
+
+**核心代码**：
+
+```typescript
+/**
+ * @description 从 MdcParser 解析的规则构建文件树
+ * @return default {RuleTreeNode[]}
+ * @param rules {ParsedRule[]} 解析后的规则列表
+ * @param basePath {string} 基础路径
+ * @param sourceId {string} 源ID
+ */
+private buildFileTreeFromRules(
+  rules: ParsedRule[],
+  basePath: string,
+  sourceId: string,
+): RuleTreeNode[] {
+  // 按目录分组规则
+  const dirMap = new Map<string, ParsedRule[]>();
+
+  for (const rule of rules) {
+    const relativePath = path.relative(basePath, rule.filePath);
+    const dirPath = path.dirname(relativePath);
+
+    if (!dirMap.has(dirPath)) {
+      dirMap.set(dirPath, []);
+    }
+    dirMap.get(dirPath)!.push(rule);
+  }
+
+  // 递归构建树结构
+  const buildTreeRecursive = (currentPath: string): RuleTreeNode[] => {
+    const nodes: RuleTreeNode[] = [];
+    const filesInCurrentDir = dirMap.get(currentPath) || [];
+
+    // 添加文件节点
+    for (const rule of filesInCurrentDir) {
+      const relativePath = path.relative(basePath, rule.filePath);
+      const fileName = path.basename(rule.filePath);
+
+      nodes.push({
+        type: 'file',
+        id: `${sourceId}:${relativePath}`,
+        name: fileName,
+        path: relativePath,
+        sourceId,
+        checked: false,
+      });
+    }
+
+    // 查找并递归处理子目录
+    const subDirs = new Set<string>();
+    for (const dirPath of dirMap.keys()) {
+      if (dirPath.startsWith(currentPath + path.sep)) {
+        const relativePart = dirPath.substring(currentPath.length + 1);
+        const firstDir = relativePart.split(path.sep)[0];
+        if (firstDir) {
+          subDirs.add(firstDir);
+        }
+      }
+    }
+
+    for (const subDir of subDirs) {
+      const subDirPath = currentPath === '.' ? subDir : path.join(currentPath, subDir);
+      const children = buildTreeRecursive(subDirPath);
+
+      if (children.length > 0) {
+        nodes.push({
+          type: 'directory',
+          id: `${sourceId}:${subDirPath}`,
+          name: subDir,
+          path: subDirPath,
+          sourceId,
+          checked: false,
+          expanded: false,
+          children,
+        });
+      }
+    }
+
+    return nodes;
+  };
+
+  return buildTreeRecursive('.');
+}
+```
+
+### 8.3 修改文件
+
+**涉及文件**：
+
+- `src/providers/RuleSyncPageWebviewProvider.ts`
+  - 删除 `buildFileTree()` 方法（约 70 行代码）
+  - 新增 `buildFileTreeFromRules()` 方法（约 75 行代码）
+  - 修改导入：移除 `fs` 和 `RULE_FILE_EXTENSIONS`，添加 `ParsedRule` 类型
+  - 在 `getRuleSyncData()` 中调用新方法
+
+**导入变更**：
+
+```typescript
+// 移除
+import * as fs from 'fs';
+import { RULE_FILE_EXTENSIONS } from '../utils/constants';
+
+// 添加
+import type { ParsedRule } from '../types/config';
+```
+
+### 8.4 优势对比
+
+| 对比维度           | 旧方案（`buildFileTree`）           | 新方案（`buildFileTreeFromRules`）       |
+| ------------------ | ----------------------------------- | ---------------------------------------- |
+| **数据源**         | 文件系统（`fs.readdir`）            | MdcParser 解析结果                       |
+| **过滤逻辑**       | 手动实现 `excludeFiles` 判断        | 复用 MdcParser 的过滤配置                |
+| **与左侧树一致性** | ❌ 使用不同的数据获取方式           | ✅ 使用完全相同的数据源                  |
+| **代码重复度**     | ❌ 过滤逻辑重复实现                 | ✅ 复用 MdcParser                        |
+| **维护成本**       | ❌ 需要同步维护两套逻辑             | ✅ 只需维护 MdcParser                    |
+| **扩展性**         | ❌ 添加新的过滤规则需要修改多处代码 | ✅ 在 MdcParser 配置中统一管理           |
+| **性能**           | 文件系统扫描 + 手动过滤             | 复用已解析的规则，避免重复 I/O           |
+| **可测试性**       | 依赖文件系统，难以隔离测试          | 纯函数转换，易于单元测试                 |
+| **错误一致性**     | ❌ README.md 可能在两处表现不一致   | ✅ 确保 README.md 等文件在两处都不会显示 |
+
+### 8.5 测试要点
+
+**验证清单**：
+
+- [x] README.md 不出现在规则同步页面
+- [ ] 文件树结构与左侧树视图完全一致
+- [ ] 选择状态正确同步到左侧树视图
+- [ ] 目录折叠/展开功能正常工作
+- [ ] 多级目录结构正确显示
+- [ ] 性能无明显下降（大规则源测试）
+
+**测试场景**：
+
+1. **过滤规则验证**：确认 README.md、.DS_Store 等文件不显示
+2. **多级目录**：测试包含子目录的规则源
+3. **空目录处理**：确认空目录不出现在树中
+4. **选择状态同步**：在规则同步页选择规则后，左侧树视图立即更新
+
+### 8.6 维护指南
+
+**未来扩展建议**：
+
+1. **添加新的过滤规则**：在 `MdcParser` 配置中统一添加，无需修改 `RuleSyncPageWebviewProvider`
+2. **修改文件扩展名支持**：修改 `MdcParser` 的 `RULE_FILE_EXTENSIONS` 常量
+3. **性能优化**：如果规则源过大，可在 `MdcParser` 层面实现缓存或分页
+
+**避免陷阱**：
+
+- ❌ **不要**直接使用 `fs.readdir()` 扫描文件
+- ❌ **不要**在 `RuleSyncPageWebviewProvider` 中重复实现过滤逻辑
+- ✅ **务必**使用 `MdcParser` 作为唯一的规则文件数据源
+- ✅ **务必**确保新功能与左侧树视图的数据一致性
+
+---
+
+> **提交记录**: 该改进对应 commit：`refactor: use MdcParser results for rule sync page file tree construction`

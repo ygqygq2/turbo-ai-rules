@@ -45,14 +45,15 @@
 /* 规则源芯片样式 */
 .source-chip {
   display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-xs) var(--spacing-sm);
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--spacing-sm);
   background-color: var(--vscode-editorWidget-background);
   border: 1px solid var(--vscode-editorWidget-border);
-  border-radius: 16px;
+  border-radius: 8px;
   font-size: 0.85rem;
   transition: all 0.2s ease;
+  min-width: 200px;
 }
 
 .source-chip:hover {
@@ -77,7 +78,7 @@
 
 .source-chip-name {
   font-weight: 500;
-  max-width: 150px;
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -94,12 +95,16 @@
   text-align: center;
 }
 
-/* 统计摘要行 */
-.sources-summary {
+/* 同步时间行 */
+.source-chip-sync {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--vscode-descriptionForeground);
+}
+
+.sources-summary {
   padding: var(--spacing-sm) 0;
   border-top: 1px solid var(--vscode-editorWidget-border);
   color: var(--vscode-descriptionForeground);
