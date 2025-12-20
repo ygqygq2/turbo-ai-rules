@@ -262,6 +262,8 @@ Continue 也支持从 `.continue/rules/` 目录加载规则，**完全支持递�
 | `outputPath`          | string   | ✅   | -          | 输出路径，相对于工作区根目录                                                      |
 | `outputType`          | enum     | ✅   | -          | `"file"`: 单文件输出<br>`"directory"`: 目录结构输出                               |
 | `fileExtensions`      | string[] | ❌   | `[]`       | 文件扩展名过滤 (如 `[".md", ".mdc"]`)<br>**空数组或不配置 = 同步所有文件**        |
+| `sortBy`              | enum     | ❌   | `priority` | (仅 `file` 模式) 规则排序方式: `"id"` / `"priority"` / `"none"`                   |
+| `sortOrder`           | enum     | ❌   | `asc`      | (仅 `file` 模式) 排序顺序: `"asc"` (升序) / `"desc"` (降序)                       |
 | `organizeBySource`    | boolean  | ❌   | `false`    | (仅 `directory` 模式) 是否按源 ID 创建子目录                                      |
 | `useOriginalFilename` | boolean  | ❌   | `true`     | (仅 `directory` 模式) 使用原文件名。为 `false` 时使用 `{sourceId-}ruleId.md` 格式 |
 | `generateIndex`       | boolean  | ❌   | `true`     | (仅 `directory` 模式) 是否生成索引文件                                            |
@@ -315,15 +317,21 @@ rules/
   "autoUpdate": true,
   "outputPath": ".windsurfrules",
   "outputType": "file",
-  "fileExtensions": [".md"]
+  "fileExtensions": [".md"],
+  "sortBy": "priority",    // 按优先级排序（默认）
+  "sortOrder": "asc"       // 升序: low → medium → high（默认）
 }
 ```
 
 **输出**:
 
 - 单个文件 `.windsurfrules`
-- 包含所有 `.md` 规则，按优先级排序
+- 包含所有 `.md` 规则，按优先级升序排序（low → medium → high）
 - 自动添加分隔符和元数据
+
+**排序选项**（仅单文件模式）:
+- `sortBy`: `"id"` (字母序 A→Z)、`"priority"` (优先级，默认 low→high，desc 时 high→low)、`"none"` (保持源顺序)
+- `sortOrder`: `"asc"` (升序)、`"desc"` (降序)
 
 ---
 

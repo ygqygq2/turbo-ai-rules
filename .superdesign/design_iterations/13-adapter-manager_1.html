@@ -913,6 +913,26 @@
             <small class="form-hint">使用 {{rules}} 作为规则内容占位符</small>
           </div>
 
+          <!-- 单文件模式排序选项 -->
+          <div class="form-group hidden" id="sortingOptions">
+            <label for="sortBy" class="form-label">排序依据</label>
+            <select id="sortBy" class="form-input">
+              <option value="priority">优先级 (Priority)</option>
+              <option value="id">规则 ID (Rule ID)</option>
+              <option value="none">无排序 (No Sort)</option>
+            </select>
+            <small class="form-hint">规则在文件中的排列顺序</small>
+          </div>
+
+          <div class="form-group hidden" id="sortOrderGroup">
+            <label for="sortOrder" class="form-label">排序顺序</label>
+            <select id="sortOrder" class="form-input">
+              <option value="asc">升序 (Ascending)</option>
+              <option value="desc">降序 (Descending)</option>
+            </select>
+            <small class="form-hint">升序: A→Z, low→high; 降序: Z→A, high→low</small>
+          </div>
+
           <!-- 目录模式选项 -->
           <div class="form-group" id="directoryOptions">
             <label for="filePattern" class="form-label required">文件名模式</label>
@@ -1084,17 +1104,23 @@
           const pathTemplateGroup = document.getElementById('pathTemplateGroup');
           const directoryCheckboxes = document.getElementById('directoryCheckboxes');
           const fileOptions = document.getElementById('fileOptions');
+          const sortingOptions = document.getElementById('sortingOptions');
+          const sortOrderGroup = document.getElementById('sortOrderGroup');
 
           if (this.value === 'directory') {
             directoryOptions.classList.remove('hidden');
             pathTemplateGroup.classList.remove('hidden');
             directoryCheckboxes.classList.remove('hidden');
             fileOptions.classList.add('hidden');
+            sortingOptions.classList.add('hidden');
+            sortOrderGroup.classList.add('hidden');
           } else {
             directoryOptions.classList.add('hidden');
             pathTemplateGroup.classList.add('hidden');
             directoryCheckboxes.classList.add('hidden');
             fileOptions.classList.remove('hidden');
+            sortingOptions.classList.remove('hidden');
+            sortOrderGroup.classList.remove('hidden');
           }
         });
       });

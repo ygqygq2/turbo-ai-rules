@@ -262,6 +262,8 @@ Custom adapters are one of the core features of Turbo AI Rules,
 | `outputPath`          | string   | ✅       | -          | Output path, relative to workspace root                                                         |
 | `outputType`          | enum     | ✅       | -          | `"file"`: Single file output<br>`"directory"`: Directory structure output                       |
 | `fileExtensions`      | string[] | ❌       | `[]`       | File extension filter (e.g., `[".md", ".mdc"]`)<br>**Empty array or unset = sync all files**    |
+| `sortBy`              | enum     | ❌       | `priority` | (`file` mode only) Rule sorting: `"id"` / `"priority"` / `"none"`                               |
+| `sortOrder`           | enum     | ❌       | `asc`      | (`file` mode only) Sort order: `"asc"` (ascending) / `"desc"` (descending)                      |
 | `organizeBySource`    | boolean  | ❌       | `false`    | (`directory` mode only) Whether to create subdirectories by source ID                           |
 | `useOriginalFilename` | boolean  | ❌       | `true`     | (`directory` mode only) Use original filename. When `false`, uses `{sourceId-}ruleId.md` format |
 | `generateIndex`       | boolean  | ❌       | `true`     | (`directory` mode only) Whether to generate index file                                          |
@@ -315,15 +317,21 @@ rules/
   "autoUpdate": true,
   "outputPath": ".windsurfrules",
   "outputType": "file",
-  "fileExtensions": [".md"]
+  "fileExtensions": [".md"],
+  "sortBy": "priority",    // Sort by priority (default)
+  "sortOrder": "asc"       // Ascending: low → medium → high (default)
 }
 ```
 
 **Output**:
 
 - Single file `.windsurfrules`
-- Contains all `.md` rules, sorted by priority
+- Contains all `.md` rules, sorted by priority (ascending: low → medium → high)
 - Automatically adds separators and metadata
+
+**Sorting Options** (Single File Mode Only):
+- `sortBy`: `"id"` (alphabetical A→Z), `"priority"` (low→high default, high→low when desc), `"none"` (keep source order)
+- `sortOrder`: `"asc"` (ascending), `"desc"` (descending)
 
 ---
 

@@ -45,6 +45,8 @@
   "turboAiRules.adapters.custom.items.properties.useOriginalFilename.description": "使用源文件的原始文件名 (仅目录模式，默认: true)。设为 false 时使用 'ruleId.md' 格式。",
   "turboAiRules.adapters.custom.items.properties.generateIndex.description": "生成包含所有规则的索引文件 (仅目录模式)",
   "turboAiRules.adapters.custom.items.properties.indexFileName.description": "索引文件的名称 (仅目录模式)",
+  "turboAiRules.adapters.custom.items.properties.sortBy.description": "按 ID、优先级或不排序 (仅单文件模式)。默认: priority",
+  "turboAiRules.adapters.custom.items.properties.sortOrder.description": "排序顺序: 升序或降序 (仅单文件模式)。默认: asc",
   "turboAiRules.sync.auto.description": "启用自动同步",
   "turboAiRules.sync.interval.description": "同步间隔(分钟)",
   "turboAiRules.sync.onStartup.description": "启动时同步规则",

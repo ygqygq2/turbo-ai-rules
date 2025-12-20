@@ -16,6 +16,10 @@ export interface AdapterCardProps {
   fileExtensions?: string[];
   /** 是否按源组织子目录 */
   organizeBySource?: boolean;
+  /** 排序依据（仅单文件模式） */
+  sortBy?: 'id' | 'priority' | 'none';
+  /** 排序顺序（仅单文件模式） */
+  sortOrder?: 'asc' | 'desc';
   /** 是否为预设适配器 */
   isPreset: boolean;
   /** 切换启用状态（仅预设适配器） */
@@ -38,6 +42,8 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
   format,
   fileExtensions,
   organizeBySource,
+  sortBy,
+  sortOrder,
   isPreset,
   onToggle,
   onEdit,
@@ -106,6 +112,29 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
                 </span>
                 <span className="value">{fileExtensions.join(', ')}</span>
               </div>
+            )}
+            {/* 单文件模式排序选项 */}
+            {format === 'single-file' && (sortBy || sortOrder) && (
+              <>
+                {sortBy && (
+                  <div className="info-row">
+                    <span className="label">
+                      <i className="codicon codicon-symbol-numeric"></i>
+                      {t('adapterManager.sortBy')}
+                    </span>
+                    <span className="value">{t(`adapterManager.sortBy.${sortBy}`)}</span>
+                  </div>
+                )}
+                {sortOrder && (
+                  <div className="info-row">
+                    <span className="label">
+                      <i className="codicon codicon-arrow-swap"></i>
+                      {t('adapterManager.sortOrder')}
+                    </span>
+                    <span className="value">{t(`adapterManager.sortOrder.${sortOrder}`)}</span>
+                  </div>
+                )}
+              </>
             )}
             {format === 'directory' && organizeBySource && (
               <div className="info-row">

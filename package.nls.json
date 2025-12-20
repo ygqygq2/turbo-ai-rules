@@ -45,6 +45,8 @@
   "turboAiRules.adapters.custom.items.properties.useOriginalFilename.description": "Use original filename from source (directory mode only, default: true). When false, uses 'ruleId.md' format.",
   "turboAiRules.adapters.custom.items.properties.generateIndex.description": "Generate index file with all rules (directory mode only)",
   "turboAiRules.adapters.custom.items.properties.indexFileName.description": "Name of the index file (directory mode only)",
+  "turboAiRules.adapters.custom.items.properties.sortBy.description": "Sort rules by ID, priority, or none (single-file mode only). Default: priority",
+  "turboAiRules.adapters.custom.items.properties.sortOrder.description": "Sort order: ascending or descending (single-file mode only). Default: asc",
   "turboAiRules.sync.auto.description": "Enable automatic synchronization",
   "turboAiRules.sync.interval.description": "Sync interval in minutes",
   "turboAiRules.sync.onStartup.description": "Sync rules on startup",
