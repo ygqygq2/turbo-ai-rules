@@ -324,10 +324,12 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
 
     // 清理旧的配置键（无论是否迁移，只要存在旧配置就清理）
     if (legacyKeysToClean.length > 0) {
+      let removedCount = 0;
       for (const configKey of legacyKeysToClean) {
         const inspection = vscodeConfig.inspect(configKey);
         if (!inspection) continue;
 
+        let hasValue = false;
         // 清理所有作用域的旧配置
         if (inspection.workspaceFolderValue !== undefined) {
           await vscodeConfig.update(
@@ -335,18 +337,27 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
             undefined,
             vscode.ConfigurationTarget.WorkspaceFolder,
           );
+          hasValue = true;
         }
         if (inspection.workspaceValue !== undefined) {
           await vscodeConfig.update(configKey, undefined, vscode.ConfigurationTarget.Workspace);
+          hasValue = true;
         }
         if (inspection.globalValue !== undefined) {
           await vscodeConfig.update(configKey, undefined, vscode.ConfigurationTarget.Global);
+          hasValue = true;
         }
 
-        Logger.info(`Removed legacy config key: ${configKey}`);
+        // 只有当实际删除了配置时才记录
+        if (hasValue) {
+          Logger.debug(`Removed legacy config key: ${configKey}`);
+          removedCount++;
+        }
       }
 
-      Logger.info('Legacy adapter configuration keys removed', { count: legacyKeysToClean.length });
+      if (removedCount > 0) {
+        Logger.debug('Legacy adapter configuration keys removed', { count: removedCount });
+      }
 
       // 显示清理提示（仅一次）
       const migrationNoticeKey = 'adapterConfigMigrated';
