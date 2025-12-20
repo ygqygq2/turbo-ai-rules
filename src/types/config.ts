@@ -65,6 +65,16 @@ export interface StorageConfig {
 }
 
 /**
+ * 规则排序方式（仅单文件适配器有效）
+ */
+export type RuleSortBy = 'id' | 'priority' | 'none';
+
+/**
+ * 排序顺序
+ */
+export type SortOrder = 'asc' | 'desc';
+
+/**
  * AI 工具适配器配置
  */
 export interface AdapterConfig {
@@ -72,6 +82,10 @@ export interface AdapterConfig {
   enabled: boolean;
   /** 是否是规则类型（默认 true，skills 类设为 false 不参与规则同步页） */
   isRuleType?: boolean;
+  /** 排序方式（仅单文件适配器有效，默认 'priority'） */
+  sortBy?: RuleSortBy;
+  /** 排序顺序（仅单文件适配器有效，默认 'asc'） */
+  sortOrder?: SortOrder;
 }
 
 /**

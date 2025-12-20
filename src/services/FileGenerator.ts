@@ -84,10 +84,14 @@ export class FileGenerator {
 
     // 注册预设适配器（配置驱动）
     for (const presetConfig of PRESET_ADAPTERS) {
-      const enabled =
-        (config as Record<string, { enabled?: boolean }>)[presetConfig.id]?.enabled ?? false;
+      const adapterConfig = (
+        config as Record<string, { enabled?: boolean; sortBy?: string; sortOrder?: string }>
+      )[presetConfig.id];
+      const enabled = adapterConfig?.enabled ?? false;
       if (enabled) {
-        const adapter = new PresetAdapter(presetConfig, true);
+        const sortBy = (adapterConfig.sortBy as 'id' | 'priority' | 'none') || 'priority';
+        const sortOrder = (adapterConfig.sortOrder as 'asc' | 'desc') || 'asc';
+        const adapter = new PresetAdapter(presetConfig, true, sortBy, sortOrder);
         this.adapters.set(presetConfig.id, adapter);
         Logger.debug(`Registered preset adapter: ${presetConfig.id} (${presetConfig.name})`);
       }

@@ -177,6 +177,49 @@ export abstract class BaseAdapter implements AIToolAdapter {
   }
 
   /**
+   * 按 ID 排序规则（字符串排序）
+   * @param rules 规则列表
+   * @returns 排序后的规则列表
+   */
+  protected sortById(rules: ParsedRule[]): ParsedRule[] {
+    return [...rules].sort((a, b) => a.id.localeCompare(b.id));
+  }
+
+  /**
+   * 通用排序方法（根据配置）
+   * @param rules 规则列表
+   * @param sortBy 排序方式
+   * @param sortOrder 排序顺序
+   * @returns 排序后的规则列表
+   */
+  protected sortRules(
+    rules: ParsedRule[],
+    sortBy: 'id' | 'priority' | 'none' = 'priority',
+    sortOrder: 'asc' | 'desc' = 'asc',
+  ): ParsedRule[] {
+    if (sortBy === 'none') {
+      return rules;
+    }
+
+    let sorted: ParsedRule[];
+    if (sortBy === 'id') {
+      sorted = this.sortById(rules);
+    } else {
+      // priority - 默认是高优先级在前（相当于 desc）
+      sorted = this.sortByPriority(rules);
+      // 如果配置的是 asc，需要反转
+      if (sortOrder === 'asc') {
+        sorted = sorted.reverse();
+        return sorted;
+      }
+      return sorted;
+    }
+
+    // 对于 ID 排序，desc 需要反转
+    return sortOrder === 'desc' ? sorted.reverse() : sorted;
+  }
+
+  /**
    * 按标签分组规则
    * @param rules 规则列表
    * @returns 按标签分组的 Map

@@ -139,17 +139,28 @@ export class PresetAdapter extends BaseAdapter {
   readonly name: string;
   readonly enabled: boolean;
   private config: PresetAdapterConfig;
+  private sortBy: 'id' | 'priority' | 'none';
+  private sortOrder: 'asc' | 'desc';
 
   /**
    * 创建预设适配器实例
    * @param config 预设配置
    * @param enabled 是否启用
+   * @param sortBy 排序方式（默认 priority）
+   * @param sortOrder 排序顺序（默认 asc）
    */
-  constructor(config: PresetAdapterConfig, enabled: boolean = false) {
+  constructor(
+    config: PresetAdapterConfig,
+    enabled: boolean = false,
+    sortBy: 'id' | 'priority' | 'none' = 'priority',
+    sortOrder: 'asc' | 'desc' = 'asc',
+  ) {
     super();
     this.config = config;
     this.name = config.name;
     this.enabled = enabled;
+    this.sortBy = sortBy;
+    this.sortOrder = sortOrder;
   }
 
   /**
@@ -172,8 +183,8 @@ export class PresetAdapter extends BaseAdapter {
       };
     }
 
-    // 按优先级排序
-    const sortedRules = this.sortByPriority(rules);
+    // 使用配置的排序方式
+    const sortedRules = this.sortRules(rules, this.sortBy, this.sortOrder);
 
     // 生成内容
     let content = '';

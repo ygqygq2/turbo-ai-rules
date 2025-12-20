@@ -76,7 +76,11 @@ export class CustomAdapter extends BaseAdapter {
 
       // 根据输出类型生成
       if (this.config.outputType === 'file') {
-        return await this.generateFile(filteredRules);
+        // 单文件模式：使用配置的排序方式
+        const sortBy = this.config.sortBy || 'priority';
+        const sortOrder = this.config.sortOrder || 'asc';
+        const sortedRules = this.sortRules(filteredRules, sortBy, sortOrder);
+        return await this.generateFile(sortedRules);
       } else {
         // 目录模式：合并用户保护规则
         const finalRules = this.mergeWithProtectedRules(filteredRules, allRules);
