@@ -451,8 +451,6 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
           id: adapter.id,
           name: adapter.name,
           enabled: adapter.enabled ?? true,
-          autoUpdate: true,
-          includeMetadata: true,
           outputPath: adapter.outputPath,
           outputType: adapter.format === 'directory' ? 'directory' : 'file',
           fileExtensions:
@@ -514,8 +512,6 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         id: adapterData.id,
         name: adapterData.name,
         enabled: true,
-        autoUpdate: true,
-        includeMetadata: true,
         outputPath: adapterData.outputPath,
         outputType: adapterData.format === 'directory' ? 'directory' : 'file',
         fileExtensions: adapterData.directoryStructure?.filePattern?.split(', ') || [],

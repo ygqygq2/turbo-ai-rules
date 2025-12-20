@@ -99,11 +99,42 @@ export class SelectionStateManager {
       let paths: string[] = [];
 
       if (selection) {
-        if (selection.mode === 'include') {
+        // 兼容旧格式（有 mode 字段）
+        if ('mode' in selection) {
+          const legacySelection = selection as {
+            mode: 'include' | 'exclude';
+            paths?: string[];
+            excludePaths?: string[];
+          };
+
+          if (legacySelection.mode === 'include') {
+            const savedPaths = legacySelection.paths || [];
+
+            // 兼容性处理：如果磁盘中存储的是绝对路径，转换为相对路径
+            const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+            if (savedPaths.length > 0 && workspacePath && path.isAbsolute(savedPaths[0])) {
+              Logger.info('Converting legacy absolute paths to relative paths', {
+                sourceId,
+                pathCount: savedPaths.length,
+                samplePath: savedPaths[0],
+              });
+              paths = toRelativePaths(savedPaths, workspacePath);
+            } else {
+              paths = savedPaths;
+            }
+          } else {
+            // exclude 模式：转换为空选择（用户需要重新选择）
+            Logger.warn('Legacy exclude mode detected, converting to empty selection', {
+              sourceId,
+              excludePathsCount: legacySelection.excludePaths?.length || 0,
+            });
+            paths = [];
+          }
+        } else {
+          // 新格式：直接使用 paths
           const savedPaths = selection.paths || [];
 
-          // 兼容性处理：如果磁盘中存储的是绝对路径，转换为相对路径
-          // 检测第一个路径是否为绝对路径来判断
+          // 兼容性处理：如果是绝对路径，转换为相对路径
           const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
           if (savedPaths.length > 0 && workspacePath && path.isAbsolute(savedPaths[0])) {
             Logger.info('Converting legacy absolute paths to relative paths', {
@@ -113,19 +144,8 @@ export class SelectionStateManager {
             });
             paths = toRelativePaths(savedPaths, workspacePath);
           } else {
-            // 磁盘存储的已经是相对路径，直接使用
             paths = savedPaths;
           }
-        } else if (selection.mode === 'exclude') {
-          // exclude 模式：存储排除的路径，返回时需要特殊标记
-          // 这里我们存储为负数标记，在其他地方处理
-          Logger.info('Loaded selection in exclude mode', {
-            sourceId,
-            excludePathsCount: selection.excludePaths?.length || 0,
-          });
-          // 返回空数组表示使用 exclude 模式
-          paths = [];
-          // TODO: 需要在 getSelection 时根据 exclude 计算实际选中的规则
         }
       } else {
         // 如果没有保存的选择状态，默认全不选（等待用户主动勾选）
@@ -244,13 +264,12 @@ export class SelectionStateManager {
       const relativePaths = toRelativePaths(Array.from(selectedPaths), sourceId);
 
       const selection: RuleSelection = {
-        mode: 'include',
         paths: relativePaths,
       };
 
       await this.workspaceDataManager.setRuleSelection(workspacePath, sourceId, selection);
 
-      Logger.info('Selection persisted to disk (relative paths)', {
+      Logger.debug('Selection persisted to disk (relative paths)', {
         sourceId,
         workspacePath,
         selectedCount: relativePaths.length,

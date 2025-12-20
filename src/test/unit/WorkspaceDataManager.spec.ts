@@ -256,12 +256,10 @@ describe('WorkspaceDataManager', () => {
     it('应该能够写入和读取规则选择', async () => {
       const selections = {
         'source-1': {
-          mode: 'include' as const,
           paths: ['rule1.md', 'rule2.md'],
         },
         'source-2': {
-          mode: 'exclude' as const,
-          excludePaths: ['skip.md'],
+          paths: ['rule3.md'],
         },
       };
 
@@ -269,14 +267,12 @@ describe('WorkspaceDataManager', () => {
       const data = await manager.readRuleSelections();
 
       expect(data).not.toBeNull();
-      expect(data?.selections['source-1'].mode).toBe('include');
       expect(data?.selections['source-1'].paths).toEqual(['rule1.md', 'rule2.md']);
-      expect(data?.selections['source-2'].mode).toBe('exclude');
+      expect(data?.selections['source-2'].paths).toEqual(['rule3.md']);
     });
 
     it('应该能够设置单个源的规则选择', async () => {
       const selection = {
-        mode: 'include' as const,
         paths: ['rule1.md'],
       };
 
@@ -284,13 +280,11 @@ describe('WorkspaceDataManager', () => {
       const result = await manager.getRuleSelection('test-source');
 
       expect(result).not.toBeNull();
-      expect(result?.mode).toBe('include');
       expect(result?.paths).toEqual(['rule1.md']);
     });
 
     it('应该能够删除单个源的规则选择', async () => {
       const selection = {
-        mode: 'include' as const,
         paths: ['rule1.md'],
       };
 
@@ -306,7 +300,6 @@ describe('WorkspaceDataManager', () => {
     it('应该能够写入和读取 Skill 选择', async () => {
       const selections = {
         'source-1': {
-          mode: 'include' as const,
           paths: ['skill1.md', 'skill2.md'],
         },
       };
@@ -315,13 +308,11 @@ describe('WorkspaceDataManager', () => {
       const data = await manager.readSkillSelections();
 
       expect(data).not.toBeNull();
-      expect(data?.selections['source-1'].mode).toBe('include');
       expect(data?.selections['source-1'].paths).toEqual(['skill1.md', 'skill2.md']);
     });
 
     it('应该能够设置单个源的 Skill 选择', async () => {
       const selection = {
-        mode: 'include' as const,
         paths: ['skill1.md'],
       };
 
@@ -329,13 +320,11 @@ describe('WorkspaceDataManager', () => {
       const result = await manager.getSkillSelection('test-source');
 
       expect(result).not.toBeNull();
-      expect(result?.mode).toBe('include');
       expect(result?.paths).toEqual(['skill1.md']);
     });
 
     it('应该能够删除单个源的 Skill 选择', async () => {
       const selection = {
-        mode: 'include' as const,
         paths: ['skill1.md'],
       };
 
@@ -348,11 +337,9 @@ describe('WorkspaceDataManager', () => {
 
     it('Skill 选择应该独立于规则选择', async () => {
       const ruleSelection = {
-        mode: 'include' as const,
         paths: ['rule1.md'],
       };
       const skillSelection = {
-        mode: 'include' as const,
         paths: ['skill1.md'],
       };
 

@@ -102,7 +102,6 @@ export async function presetAllRulesSelected(
   // 写入一个"全选"标记到磁盘
   // 使用通配符 ["**/*"] 表示选中所有规则
   await workspaceDataManager.setRuleSelection(workspacePath, sourceId, {
-    mode: 'include',
     paths: ['**/*'], // 通配符表示全选
   });
 }

@@ -48,6 +48,7 @@ describe('Generate Config Files Tests', () => {
       path.join(workspaceFolder.uri.fsPath, '.github'),
       path.join(workspaceFolder.uri.fsPath, '.continue'),
       path.join(workspaceFolder.uri.fsPath, 'rules'),
+      path.join(workspaceFolder.uri.fsPath, 'skills'),
     ];
 
     for (const cleanPath of pathsToClean) {

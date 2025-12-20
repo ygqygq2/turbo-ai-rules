@@ -72,6 +72,32 @@ vi.mock('@/services/RulesManager', () => ({
   },
 }));
 
+// Mock WorkspaceDataManager
+vi.mock('@/services/WorkspaceDataManager', () => ({
+  WorkspaceDataManager: {
+    getInstance: vi.fn(() => ({
+      readGenerationManifest: vi.fn(() =>
+        Promise.resolve({
+          artifacts: [
+            {
+              adapter: 'cursor',
+              generatedAt: '2024-01-01T12:00:00Z',
+              filePath: '.cursorrules',
+              ruleCount: 2,
+            },
+            {
+              adapter: 'copilot',
+              generatedAt: '2024-01-02T12:00:00Z',
+              filePath: '.github/copilot-instructions.md',
+              ruleCount: 3,
+            },
+          ],
+        }),
+      ),
+    })),
+  },
+}));
+
 describe('DashboardWebviewProvider', () => {
   let provider: DashboardWebviewProvider;
   let mockContext: any;

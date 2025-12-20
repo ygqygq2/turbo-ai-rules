@@ -10,10 +10,9 @@ import { Logger } from '../utils/logger';
 /**
  * Webview 消息类型
  */
-export interface WebviewMessage {
+export interface WebviewMessage<T = unknown> {
   type: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  payload?: any; // 消息负载类型由具体消息决定，使用 any 提供灵活性
+  payload?: T; // 消息负载类型由泛型参数决定，默认为 unknown
 }
 
 /**
@@ -83,7 +82,7 @@ export abstract class BaseWebviewProvider {
 
     // 监听消息
     this.panel.webview.onDidReceiveMessage(
-      (message: WebviewMessage) => this.handleMessage(message),
+      (message: WebviewMessage<unknown>) => this.handleMessage(message),
       null,
       this.disposables,
     );
@@ -104,7 +103,7 @@ export abstract class BaseWebviewProvider {
   /**
    * 发送消息到 Webview
    */
-  protected postMessage(message: WebviewMessage): void {
+  protected postMessage<T = unknown>(message: WebviewMessage<T>): void {
     if (this.panel) {
       Logger.debug(`Sending message to webview: ${message.type}`, { payload: message.payload });
       this.panel.webview.postMessage(message);

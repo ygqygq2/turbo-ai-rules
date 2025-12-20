@@ -382,6 +382,7 @@
   "ruleSyncPage.selectAdapters": "目标适配器",
   "ruleSyncPage.noSources": "未配置规则源。请先添加规则源。",
   "ruleSyncPage.footerInfo": "已选择 {0} 条规则将同步到 {1} 个适配器",
+  "ruleSyncPage.clearRulesHint": "未选择规则，将清空 {0} 个适配器的所有规则（保留用户自定义规则）",
   "ruleSyncPage.sync": "开始同步",
   "ruleSyncPage.syncing": "同步中...",
   "ruleSyncPage.syncFailed": "同步失败",
@@ -446,8 +447,7 @@
   "adapterManager.cursorDesc": "Cursor IDE 规则目录",
   "adapterManager.continueDesc": "Continue 扩展规则",
   "adapterManager.detailConfig": "详细配置",
-  "adapterManager.autoUpdate": "自动更新配置文件",
-  "adapterManager.includeMetadata": "包含元数据",
+
   "adapterManager.fileFilter": "文件过滤",
   "adapterManager.fileFilterPlaceholder": ".md, .mdc",
   "adapterManager.fileFilterHint": "逗号分隔的扩展名，为空则同步所有文件",

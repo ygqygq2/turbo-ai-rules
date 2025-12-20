@@ -56,7 +56,6 @@ import { EXTENSION_NAME } from './utils/constants';
 import { ensureIgnored } from './utils/gitignore';
 import { Logger } from './utils/logger';
 import { notify } from './utils/notifications';
-import { parseAndLoadRules } from './utils/ruleLoader';
 
 /**
  * 从缓存目录加载已同步的规则
@@ -85,14 +84,22 @@ async function loadRulesFromCache(
         continue;
       }
 
-      // 复用解析和加载逻辑
-      const result = await parseAndLoadRules(source, parser, validator, gitManager, rulesManager);
-      totalLoaded += result.valid;
+      // 复用解析和加载逻辑（从缓存加载，不重新克隆）
+      // 直接解析缓存目录中的规则
+      const parsedRules = await parser.parseDirectory(rulesPath, source.id, { recursive: true });
+      const validationResults = validator.validateRules(parsedRules);
+      const validRules = parsedRules.filter((rule) => {
+        const result = validationResults.get(rule.id);
+        return result && result.valid;
+      });
+
+      rulesManager.addRules(source.id, validRules);
+      totalLoaded += validRules.length;
 
       Logger.debug('Rules loaded from cache', {
         sourceId: source.id,
-        total: result.total,
-        valid: result.valid,
+        total: parsedRules.length,
+        valid: validRules.length,
       });
     } catch (error) {
       Logger.warn('Failed to load rules from cache', {
@@ -480,9 +487,8 @@ async function updateGitignoreForAdapters(): Promise<void> {
   for (const adapterName of enabledAdapters) {
     try {
       // 通过适配器名称获取文件路径
-      const { ContinueAdapter, CopilotAdapter, CursorAdapter, CustomAdapter } = await import(
-        './adapters'
-      );
+      const { ContinueAdapter, CopilotAdapter, CursorAdapter, CustomAdapter } =
+        await import('./adapters');
 
       let filePath: string | undefined;
 

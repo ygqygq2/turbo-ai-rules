@@ -17,6 +17,14 @@ import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider'
 import { SourceDetailWebviewProvider } from './SourceDetailWebview';
 
 /**
+ * Source Manager 消息 payload 类型
+ */
+interface SourceManagerMessagePayload {
+  sourceId?: string;
+  enabled?: boolean;
+}
+
+/**
  * Source Manager 提供者
  */
 export class SourceManagerWebviewProvider extends BaseWebviewProvider {
@@ -158,23 +166,27 @@ export class SourceManagerWebviewProvider extends BaseWebviewProvider {
           // 直接打开编辑规则源的 Webview 表单
           {
             const provider = SourceDetailWebviewProvider.getInstance(this.context);
-            await provider.showSourceForm(message.payload.sourceId);
+            const payload = message.payload as SourceManagerMessagePayload;
+            await provider.showSourceForm(payload.sourceId!);
           }
           break;
 
         case 'deleteSource':
           // 删除规则源
-          await this.handleDeleteSource(message.payload.sourceId);
+          await this.handleDeleteSource((message.payload as SourceManagerMessagePayload).sourceId!);
           break;
 
         case 'toggleSource':
           // 启用/禁用规则源
-          await this.handleToggleSource(message.payload.sourceId, message.payload.enabled);
+          {
+            const payload = message.payload as SourceManagerMessagePayload;
+            await this.handleToggleSource(payload.sourceId!, payload.enabled!);
+          }
           break;
 
         case 'syncSource':
           // 同步规则源
-          await this.handleSyncSource(message.payload.sourceId);
+          await this.handleSyncSource((message.payload as SourceManagerMessagePayload).sourceId!);
           break;
 
         default:

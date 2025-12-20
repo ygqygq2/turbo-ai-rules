@@ -61,7 +61,6 @@ describe('RuleSelectorWebviewProvider', () => {
         lastUpdated: new Date().toISOString(),
         selections: {
           source1: {
-            mode: 'include',
             paths: ['rule1.md'],
           },
         },

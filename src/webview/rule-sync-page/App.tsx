@@ -123,7 +123,8 @@ export const App: React.FC = () => {
   const selectedRulesCount = getSelectedRulesCount();
   const selectedAdaptersCount = getSelectedAdaptersCount();
   const totalRulesCount = getTotalRulesCount();
-  const canSync = selectedRulesCount > 0 && selectedAdaptersCount > 0;
+  // 只要选择了适配器就可以同步，0条规则表示清空（保留用户自定义规则）
+  const canSync = selectedAdaptersCount > 0;
 
   return (
     <div className="rule-sync-page">
@@ -194,7 +195,11 @@ export const App: React.FC = () => {
       {/* Footer */}
       <footer className="footer">
         <div className="footer-info">
-          💡 {t('ruleSyncPage.footerInfo', selectedRulesCount, selectedAdaptersCount)}
+          {selectedRulesCount === 0 ? (
+            <>💡 {t('ruleSyncPage.clearRulesHint', selectedAdaptersCount)}</>
+          ) : (
+            <>💡 {t('ruleSyncPage.footerInfo', selectedRulesCount, selectedAdaptersCount)}</>
+          )}
         </div>
         <div className="footer-actions">
           <button className="btn btn-secondary" onClick={cancel}>

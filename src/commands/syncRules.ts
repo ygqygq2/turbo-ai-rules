@@ -2,7 +2,6 @@
  * 同步规则命令
  */
 
-import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { MdcParser } from '../parsers/MdcParser';

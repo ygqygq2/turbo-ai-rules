@@ -200,7 +200,6 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
 
           // 构建选择数据
           selectionsData[source.id] = {
-            mode: 'include',
             paths: selectedPaths,
           };
 
@@ -412,7 +411,7 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
       }
       const workspacePath = workspaceFolders[0].uri.fsPath;
       const dataManager = WorkspaceDataManager.getInstance();
-      const selection: RuleSelection = { mode: 'include', paths };
+      const selection: RuleSelection = { paths };
       try {
         await dataManager.setRuleSelection(workspacePath, sourceId, selection);
         // 通过 SelectionStateManager 更新状态（不延时落盘，因为已经保存到磁盘）
@@ -502,7 +501,6 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
         return {
           fileTree,
           selection: {
-            mode: 'include',
             paths: selectedPaths,
           },
           totalRules,

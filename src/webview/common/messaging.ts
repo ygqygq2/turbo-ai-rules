@@ -3,6 +3,8 @@
  * 提供类型安全的 RPC 请求-响应机制
  */
 
+import type { WebviewMessage } from '../../types/webviewMessages';
+
 /**
  * 消息基础结构
  */
@@ -12,6 +14,14 @@ export interface Message<T = unknown> {
   payload?: T;
   error?: string;
 }
+
+/**
+ * 完整的 Webview 消息结构（带 requestId 和 error）
+ */
+export type WebviewMessageEnvelope = WebviewMessage & {
+  requestId?: string;
+  error?: string;
+};
 
 /**
  * VSCode API 类型
@@ -77,10 +87,10 @@ export class WebviewRPC {
   }
 
   /**
-   * @description 发送请求并等待响应
+   * @description 发送请求并等待响应（类型安全版本）
    * @return {Promise<T>}
    * @param type {string} 消息类型
-   * @param payload {any} 请求数据
+   * @param payload {unknown} 请求数据
    * @param timeout {number} 超时时间（毫秒），默认 30 秒
    */
   request<T = unknown>(type: string, payload?: unknown, timeout = 30000): Promise<T> {
@@ -103,13 +113,29 @@ export class WebviewRPC {
   }
 
   /**
+   * @description 发送类型安全的请求
+   * @return {Promise<TResponse>}
+   * @param message {TMessage} 消息对象
+   * @param timeout {number} 超时时间（毫秒），默认 30 秒
+   */
+  requestTyped<TMessage extends WebviewMessage, TResponse = unknown>(
+    message: TMessage,
+    timeout = 30000,
+  ): Promise<TResponse> {
+    return this.request<TResponse>(
+      message.type,
+      'payload' in message ? message.payload : undefined,
+      timeout,
+    );
+  }
+
+  /**
    * @description 发送单向消息（不等待响应）
    * @return {void}
    * @param type {string} 消息类型
-   * @param payload {any} 消息数据
+   * @param payload {unknown} 消息数据
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  notify(type: string, payload?: any): void {
+  notify(type: string, payload?: unknown): void {
     this.vscode.postMessage({
       type,
       payload,
@@ -117,21 +143,28 @@ export class WebviewRPC {
   }
 
   /**
+   * @description 发送类型安全的单向消息
+   * @return {void}
+   * @param message {TMessage} 消息对象
+   */
+  notifyTyped<TMessage extends WebviewMessage>(message: TMessage): void {
+    this.notify(message.type, 'payload' in message ? message.payload : undefined);
+  }
+
+  /**
    * @description 监听来自扩展的事件推送
    * @return {() => void} 取消监听的函数
    * @param type {string} 事件类型
-   * @param handler {(data: any) => void} 事件处理函数
+   * @param handler {(data: unknown) => void} 事件处理函数
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  on(type: string, handler: (data: any) => void): () => void {
+  on(type: string, handler: (data: unknown) => void): () => void {
     const handlers = this.eventHandlers.get(type) || [];
     handlers.push(handler);
     this.eventHandlers.set(type, handlers);
 
     // 返回取消监听函数
     return () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const handlers = this.eventHandlers.get(type) || ([] as any[]);
+      const handlers = this.eventHandlers.get(type) || [];
       const index = handlers.indexOf(handler);
       if (index !== -1) {
         handlers.splice(index, 1);

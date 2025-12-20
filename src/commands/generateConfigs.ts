@@ -96,9 +96,9 @@ export async function generateConfigsCommand(): Promise<void> {
       selectedRules: selectedRules.length,
     });
 
+    // 允许 0 条规则：表示清空所有规则（用户自定义规则会被保护）
     if (selectedRules.length === 0) {
-      notify('No rules selected. Please select rules first.', 'info');
-      return;
+      Logger.info('No rules selected - will generate empty configurations to clear rules');
     }
 
     // 5. 合并规则（解决冲突）

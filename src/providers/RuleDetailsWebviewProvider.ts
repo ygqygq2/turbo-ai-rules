@@ -14,6 +14,13 @@ import { Logger } from '../utils/logger';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 import { SearchWebviewProvider } from './SearchWebviewProvider';
 
+/**
+ * 规则详情页面消息 payload 类型
+ */
+interface RuleDetailsMessagePayload {
+  tag?: string;
+}
+
 export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
   private static instance: RuleDetailsWebviewProvider | undefined;
   private currentRule: ParsedRule | null = null;
@@ -157,8 +164,13 @@ export class RuleDetailsWebviewProvider extends BaseWebviewProvider {
           break;
 
         case 'searchByTag':
-          Logger.debug(`[RuleDetails] Handling searchByTag: ${message.payload?.tag}`);
-          await this.handleSearchByTag(message.payload?.tag);
+          {
+            const payload = message.payload as RuleDetailsMessagePayload;
+            if (payload?.tag) {
+              Logger.debug(`[RuleDetails] Handling searchByTag: ${payload.tag}`);
+              await this.handleSearchByTag(payload.tag);
+            }
+          }
           break;
 
         default:

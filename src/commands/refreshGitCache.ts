@@ -14,7 +14,7 @@ import { SelectionStateManager } from '../services/SelectionStateManager';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { ProgressManager } from '../utils/progressManager';
-import { parseAndLoadRules, syncAndParseSource } from '../utils/ruleLoader';
+import { syncAndParseSource } from '../utils/ruleLoader';
 
 /**
  * @description 刷新 Git 缓存 - 对所有已启用的源执行 git pull 并重新解析规则
@@ -97,7 +97,7 @@ export async function refreshGitCacheCommand(): Promise<void> {
               rulesManager.addRules(source.id, result.rules);
 
               // 初始化选择状态
-              await selectionStateManager.initializeState(source.id, result.rules, []);
+              await selectionStateManager.initializeState(source.id, result.valid, []);
 
               Logger.info('Rules refreshed from cache', {
                 sourceId: source.id,

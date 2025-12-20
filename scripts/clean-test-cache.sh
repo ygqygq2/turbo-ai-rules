@@ -43,6 +43,7 @@ for workspace_dir in sampleWorkspace/*/; do
     rm -rf "$workspace_dir/.github"
     rm -rf "$workspace_dir/.continue"
     rm -rf "$workspace_dir/rules"
+    rm -rf "$workspace_dir/skills"
     rm -rf "$workspace_dir/.turbo-ai-rules"
   fi
 done

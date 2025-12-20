@@ -70,10 +70,6 @@ export interface StorageConfig {
 export interface AdapterConfig {
   /** 是否启用 */
   enabled: boolean;
-  /** 同步后自动更新配置文件 */
-  autoUpdate: boolean;
-  /** 是否在生成的文件中包含元数据 */
-  includeMetadata?: boolean;
   /** 是否是规则类型（默认 true，skills 类设为 false 不参与规则同步页） */
   isRuleType?: boolean;
 }
@@ -202,24 +198,18 @@ export const DEFAULT_CONFIG: ExtensionConfig = {
   adapters: {
     cursor: {
       enabled: true,
-      autoUpdate: true,
-      includeMetadata: true,
     },
     copilot: {
       enabled: true,
-      autoUpdate: true,
-      includeMetadata: false,
     },
     continue: {
       enabled: false,
-      autoUpdate: true,
     },
     custom: [
       {
         id: 'default-rules',
         name: 'Generic Rules',
         enabled: true,
-        autoUpdate: true,
         outputPath: 'rules',
         outputType: 'directory',
         // fileExtensions 不设置 = 同步所有文件,不过滤

@@ -17,6 +17,14 @@ import { type MessageSender, SourceDetailMessageHandler } from './SourceDetailMe
 export type { SourceDetailData, SourceStatistics, SyncInfo } from './SourceDetailDataHelper';
 
 /**
+ * Source Detail 消息 payload 类型
+ */
+interface SourceDetailMessagePayload {
+  sourceId?: string;
+  rulePath?: string;
+}
+
+/**
  * 规则源详情页面提供者
  */
 export class SourceDetailWebviewProvider extends BaseWebviewProvider implements MessageSender {
@@ -266,7 +274,12 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider implements 
           break;
 
         case 'loadSourceData':
-          await this.messageHandler.handleLoadSourceData(message.payload?.sourceId);
+          {
+            const sourceId = (message.payload as SourceDetailMessagePayload)?.sourceId;
+            if (sourceId) {
+              await this.messageHandler.handleLoadSourceData(sourceId);
+            }
+          }
           break;
 
         case 'addSource':
@@ -286,25 +299,48 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider implements 
           break;
 
         case 'syncSource':
-          await this.messageHandler.handleSyncSource(message.payload?.sourceId);
+          {
+            const sourceId = (message.payload as SourceDetailMessagePayload)?.sourceId;
+            if (sourceId) {
+              await this.messageHandler.handleSyncSource(sourceId);
+            }
+          }
           break;
 
         case 'editSource':
-          await this.messageHandler.handleEditSource(message.payload?.sourceId);
+          {
+            const sourceId = (message.payload as SourceDetailMessagePayload)?.sourceId;
+            if (sourceId) {
+              await this.messageHandler.handleEditSource(sourceId);
+            }
+          }
           break;
 
         case 'toggleSource':
-          await this.messageHandler.handleToggleSource(message.payload?.sourceId);
+          {
+            const sourceId = (message.payload as SourceDetailMessagePayload)?.sourceId;
+            if (sourceId) {
+              await this.messageHandler.handleToggleSource(sourceId);
+            }
+          }
           break;
 
         case 'deleteSource':
-          await this.messageHandler.handleDeleteSource(message.payload?.sourceId, () =>
-            this.dispose(),
-          );
+          {
+            const sourceId = (message.payload as SourceDetailMessagePayload)?.sourceId;
+            if (sourceId) {
+              await this.messageHandler.handleDeleteSource(sourceId, () => this.dispose());
+            }
+          }
           break;
 
         case 'viewRule':
-          await this.messageHandler.handleViewRule(message.payload?.rulePath);
+          {
+            const rulePath = (message.payload as SourceDetailMessagePayload)?.rulePath;
+            if (rulePath) {
+              await this.messageHandler.handleViewRule(rulePath);
+            }
+          }
           break;
 
         case 'filterByTag':

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '../components/Button';
 import { t } from '../utils/i18n';
 
@@ -43,7 +43,6 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
   onEdit,
   onDelete,
 }) => {
-  const [expanded, setExpanded] = useState(false);
   const typeLabel = isRuleType ? t('adapterManager.ruleType') : t('adapterManager.skillType');
   const typeIcon = isRuleType ? 'codicon-law' : 'codicon-tools';
 
@@ -71,19 +70,6 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
           </div>
           {isPreset && description && <p className="adapter-description">{description}</p>}
         </div>
-        {/* 展开/折叠按钮（仅预设适配器） */}
-        {isPreset && (
-          <button
-            className="expand-toggle"
-            onClick={() => setExpanded(!expanded)}
-            aria-expanded={expanded}
-          >
-            <span>{t('adapterManager.detailConfig')}</span>
-            <i
-              className={`codicon ${expanded ? 'codicon-chevron-up' : 'codicon-chevron-down'}`}
-            ></i>
-          </button>
-        )}
       </div>
 
       {/* 卡片内容 */}
@@ -150,20 +136,6 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
           </span>
         </div>
       </div>
-
-      {/* 展开的详细配置（仅预设适配器） */}
-      {isPreset && expanded && (
-        <div className="adapter-options">
-          <div className="option-item">
-            <input type="checkbox" id={`${name}-auto-update`} defaultChecked />
-            <label htmlFor={`${name}-auto-update`}>{t('adapterManager.autoUpdate')}</label>
-          </div>
-          <div className="option-item">
-            <input type="checkbox" id={`${name}-metadata`} />
-            <label htmlFor={`${name}-metadata`}>{t('adapterManager.includeMetadata')}</label>
-          </div>
-        </div>
-      )}
 
       {/* 卡片操作 */}
       <div className="card-actions">

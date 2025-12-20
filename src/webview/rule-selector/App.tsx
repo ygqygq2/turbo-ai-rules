@@ -10,9 +10,7 @@ import './rule-selector.css';
 import { createWebviewRPC } from '../common/messaging';
 
 interface RuleSelection {
-  mode: 'include' | 'exclude';
-  paths?: string[];
-  excludePaths?: string[];
+  paths: string[]; // 选中的规则路径（相对路径）
 }
 
 interface SourceInfo {

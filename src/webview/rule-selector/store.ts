@@ -15,9 +15,7 @@ const getRpc = () => createWebviewRPC();
 
 // 类型定义
 interface RuleSelection {
-  mode: 'include' | 'exclude';
-  paths?: string[];
-  excludePaths?: string[];
+  paths: string[]; // 选中的规则路径（相对路径）
 }
 
 interface FileTreeNode {
@@ -134,7 +132,6 @@ export const useRuleSelectorStore = create<RuleSelectorState>()(
         const updatedSelections = {
           ...state.allSelections,
           [state.currentSourceId]: {
-            mode: 'include' as const,
             paths: state.selectedPaths,
           },
         };

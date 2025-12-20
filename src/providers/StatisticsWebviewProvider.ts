@@ -13,6 +13,13 @@ import { Logger } from '../utils/logger';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 
 /**
+ * 统计页面消息 payload 类型
+ */
+interface StatisticsMessagePayload {
+  tag?: string;
+}
+
+/**
  * 统计数据接口
  */
 interface StatisticsData {
@@ -243,7 +250,12 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
           break;
 
         case 'searchByTag':
-          await this.searchByTag(message.payload?.tag);
+          {
+            const tag = (message.payload as StatisticsMessagePayload)?.tag;
+            if (tag) {
+              await this.searchByTag(tag);
+            }
+          }
           break;
 
         default:

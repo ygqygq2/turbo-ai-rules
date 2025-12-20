@@ -14,6 +14,14 @@ import { notify } from '../utils/notifications';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 
 /**
+ * 欢迎页面消息 payload 类型
+ */
+interface WelcomeMessagePayload {
+  template?: string;
+  checked?: boolean;
+}
+
+/**
  * 欢迎页面提供者
  */
 export class WelcomeWebviewProvider extends BaseWebviewProvider {
@@ -169,8 +177,14 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
           break;
 
         case 'useTemplate':
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await this.handleUseTemplate(message.payload?.template || (message as any).template);
+          {
+            const template =
+              (message.payload as WelcomeMessagePayload)?.template ||
+              (message as { template?: string }).template;
+            if (template) {
+              await this.handleUseTemplate(template);
+            }
+          }
           break;
 
         case 'viewDocs':
@@ -193,12 +207,12 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
         case 'dismiss':
         case 'dismissWelcome':
           Logger.debug('Received dismiss message', { payload: message.payload });
-          await this.handleDismiss(message.payload?.checked);
+          await this.handleDismiss((message.payload as WelcomeMessagePayload)?.checked);
           break;
 
         case 'updateDontShowAgain':
           Logger.debug('Received updateDontShowAgain message', { payload: message.payload });
-          await this.handleUpdateDontShowAgain(message.payload?.checked);
+          await this.handleUpdateDontShowAgain((message.payload as WelcomeMessagePayload)?.checked);
           break;
 
         default:

@@ -49,7 +49,6 @@ describe('SelectionStateManager 单元测试', () => {
   describe('状态初始化', () => {
     it('应该从磁盘加载已保存的选择状态', async () => {
       mockWorkspaceStateManager.getRuleSelection.mockResolvedValue({
-        mode: 'include',
         paths: ['/path/rule1.md'],
       });
 
@@ -102,10 +101,9 @@ describe('SelectionStateManager 单元测试', () => {
       expect(mockWorkspaceStateManager.setRuleSelection).toHaveBeenCalledWith(
         expect.any(String), // workspacePath
         'source-1',
-        expect.objectContaining({
-          mode: 'include',
+        {
           paths: ['/path/rule1.md'],
-        }),
+        },
       );
     });
 
@@ -126,10 +124,9 @@ describe('SelectionStateManager 单元测试', () => {
       expect(mockWorkspaceStateManager.setRuleSelection).toHaveBeenCalledWith(
         expect.any(String), // workspacePath
         'source-1',
-        expect.objectContaining({
-          mode: 'include',
+        {
           paths: ['/path/rule1.md'],
-        }),
+        },
       );
 
       vi.useRealTimers();
@@ -234,7 +231,6 @@ describe('SelectionStateManager 单元测试', () => {
         expect.any(String), // workspacePath
         'source-1',
         expect.objectContaining({
-          mode: 'include',
           paths: ['/path/rule1.md', '/path/rule2.md', '/path/rule3.md'],
         }),
       );

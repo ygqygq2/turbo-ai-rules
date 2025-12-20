@@ -10,6 +10,7 @@ import * as vscode from 'vscode';
 import { PRESET_ADAPTERS } from '../adapters';
 import { ConfigManager } from '../services/ConfigManager';
 import { RulesManager } from '../services/RulesManager';
+import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
 import { EXTENSION_ICON_PATH } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
@@ -364,6 +365,22 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
       const { WorkspaceStateManager } = await import('../services/WorkspaceStateManager');
       const stateManager = WorkspaceStateManager.getInstance();
 
+      // 获取生成清单（用于显示 lastGenerated 时间）
+      const workspaceDataManager = WorkspaceDataManager.getInstance();
+      const generationManifest = await workspaceDataManager.readGenerationManifest();
+
+      // 构建适配器生成时间映射（adapterId -> lastGenerated）
+      const adapterGenerationTimes = new Map<string, string>();
+      if (generationManifest?.artifacts) {
+        for (const artifact of generationManifest.artifacts) {
+          const currentTime = adapterGenerationTimes.get(artifact.adapter);
+          // 使用最新的时间
+          if (!currentTime || artifact.generatedAt > currentTime) {
+            adapterGenerationTimes.set(artifact.adapter, artifact.generatedAt);
+          }
+        }
+      }
+
       // 构建规则源列表（简要信息）
       const sourceList = await Promise.all(
         sources.map(async (s) => {
@@ -398,7 +415,7 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
           enabled,
           ruleCount: enabled ? totalRules : 0, // 未启用的适配器规则数为 0
           outputPath: presetConfig.filePath,
-          lastGenerated: null, // TODO: 从工作区状态获取
+          lastGenerated: adapterGenerationTimes.get(presetConfig.id) || null,
         });
       }
 
@@ -413,7 +430,7 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
             enabled,
             ruleCount: enabled ? totalRules : 0, // 未启用的适配器规则数为 0
             outputPath: normalizeOutputPathForDisplay(custom.outputPath),
-            lastGenerated: null,
+            lastGenerated: adapterGenerationTimes.get(custom.id) || null,
           });
         }
       }

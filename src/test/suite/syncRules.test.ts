@@ -266,7 +266,7 @@ describe('Sync Rules Tests', () => {
     }
   });
 
-  it('Should clear selection when no rules selected', async function () {
+  it('Should allow generating empty config when no rules selected (to clear rules)', async function () {
     this.timeout(120000); // 2分钟
 
     // 1. 首先同步并选择一些规则
@@ -296,7 +296,7 @@ describe('Sync Rules Tests', () => {
       assert.ok(selectedPaths.length > 0, 'Should have selected rules');
     }
 
-    // 2. 清空选择（模拟用户不选择任何规则）
+    // 2. 清空选择（模拟用户不选择任何规则，表示要清空所有规则）
     selectionStateManager.updateSelection(enabledSource.id, []);
 
     // 等待状态更新
@@ -306,7 +306,17 @@ describe('Sync Rules Tests', () => {
     const clearedPaths = selectionStateManager.getSelection(enabledSource.id);
     assert.strictEqual(clearedPaths.length, 0, 'Selection should be cleared');
 
-    // 4. 再次同步，验证不会恢复之前的选择
+    // 4. 生成配置，应该允许 0 条规则（清空规则）
+    try {
+      await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+      // 等待生成完成
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      assert.ok(true, 'Should allow generating config with 0 rules selected');
+    } catch (_error) {
+      assert.fail('Should not throw error when generating with 0 rules');
+    }
+
+    // 5. 再次同步，验证不会恢复之前的选择
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
 
     // 等待同步完成

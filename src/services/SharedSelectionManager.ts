@@ -109,7 +109,6 @@ export class SharedSelectionManager {
 
     for (const [sourceId, selectedPaths] of selections.entries()) {
       selectionsData[sourceId] = {
-        mode: 'include',
         paths: Array.from(selectedPaths),
       };
     }
@@ -157,7 +156,7 @@ export class SharedSelectionManager {
     const result = new Map(mergeMode === 'replace' ? [] : currentSelections);
 
     for (const [sourceId, selection] of Object.entries(sharedData.selections)) {
-      if (selection.mode === 'include' && selection.paths) {
+      if (selection.paths) {
         // 磁盘存储的已经是相对路径，直接使用
         const paths = selection.paths;
 

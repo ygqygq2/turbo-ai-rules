@@ -29,6 +29,16 @@ interface SearchResult {
   matchedFields: string[];
 }
 
+/**
+ * 搜索页面消息 payload 类型
+ */
+interface SearchMessagePayload {
+  ruleId?: string;
+  ruleIds?: string[];
+  format?: string;
+  criteria?: SearchCriteria;
+}
+
 interface SearchHistoryItem {
   criteria: SearchCriteria;
   resultCount: number;
@@ -190,19 +200,32 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
           await this.performSearch(message.payload as SearchCriteria);
           break;
         case 'viewRule':
-          await this.previewMarkdown(message.payload?.ruleId);
+          {
+            const ruleId = (message.payload as SearchMessagePayload)?.ruleId;
+            if (ruleId) {
+              await this.previewMarkdown(ruleId);
+            }
+          }
           break;
         case 'selectRules':
-          await this.selectRules(message.payload?.ruleIds || []);
+          await this.selectRules((message.payload as SearchMessagePayload)?.ruleIds || []);
           break;
         case 'exportResults':
-          await this.exportResults(message.payload?.format || 'json', message.payload?.ruleIds);
+          await this.exportResults(
+            ((message.payload as SearchMessagePayload)?.format as 'json' | 'csv') || 'json',
+            (message.payload as SearchMessagePayload)?.ruleIds,
+          );
           break;
         case 'loadHistory':
           this.sendSearchHistory();
           break;
         case 'applyHistory':
-          await this.applyHistory(message.payload?.criteria);
+          {
+            const criteria = (message.payload as SearchMessagePayload)?.criteria;
+            if (criteria) {
+              await this.applyHistory(criteria);
+            }
+          }
           break;
         case 'clearHistory':
           this.clearHistory();

@@ -93,8 +93,8 @@ export class FileGenerator {
       }
     }
 
-    // 兼容旧的独立适配器类（待废弃）
-    // TODO: 在下一个主版本中移除这些独立类
+    // 兼容旧的独立适配器类（保留 3 个版本后移除）
+    // @deprecated 计划在 v2.0.5 移除，再迁移到 PresetAdapter
     if (config.cursor?.enabled && !this.adapters.has('cursor')) {
       this.adapters.set('cursor', new CursorAdapter(true));
       Logger.warn('Using legacy CursorAdapter, please update to PresetAdapter');
