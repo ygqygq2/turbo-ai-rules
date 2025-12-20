@@ -1,0 +1,10 @@
+node_modules
+out
+dist
+*.vsix
+.vscode-test
+coverage
+.nyc_output
+**/*.d.ts
+pnpm-lock.yaml
+CHANGELOG.md

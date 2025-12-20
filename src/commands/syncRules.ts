@@ -20,6 +20,7 @@ import type { ConflictStrategy, ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { ProgressManager } from '../utils/progressManager';
+import { syncAndParseSource } from '../utils/ruleLoader';
 import { toRelativePath } from '../utils/rulePath';
 
 /**
@@ -106,11 +107,11 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
 
     const workspaceRoot = workspaceFolder.uri.fsPath;
 
-    // 2. 获取配置（传递 workspace folder URI）
+    // 2. 获取配置和源（避免重复调用 getSources）
     const config = await configManager.getConfig(workspaceFolder.uri);
-    const sources = sourceId
-      ? configManager.getSources(workspaceFolder.uri).filter((s) => s.id === sourceId)
-      : configManager.getSources(workspaceFolder.uri);
+
+    // 复用 config 中已获取的 sources，避免再次调用 getSources
+    const sources = sourceId ? config.sources.filter((s) => s.id === sourceId) : config.sources;
 
     // 过滤启用的源
     const enabledSources = sources.filter((s) => s.enabled);
@@ -261,15 +262,16 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
 
         // 6. 持久化规则索引到磁盘
         const workspaceDataManager = WorkspaceDataManager.getInstance();
-        const allRules = rulesManager.getAllRules();
+        // 获取所有规则用于保存索引和保护判断
+        const allRulesForIndex = rulesManager.getAllRules();
 
         pm.report(2, 'Saving rules index...');
 
         try {
-          await workspaceDataManager.writeRulesIndex(workspaceRoot, allRules);
+          await workspaceDataManager.writeRulesIndex(workspaceRoot, allRulesForIndex);
           Logger.debug('Rules index saved to disk', {
             workspaceRoot,
-            totalRules: allRules.length,
+            totalRules: allRulesForIndex.length,
           });
         } catch (error) {
           Logger.error('Failed to save rules index', error instanceof Error ? error : undefined);
@@ -283,7 +285,7 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
 
         const selectedRules: ParsedRule[] = [];
 
-        for (const rule of allRules) {
+        for (const rule of allRulesForIndex) {
           const selectedPaths = selectionStateManager.getSelection(rule.sourceId);
 
           // 只包含用户主动勾选的规则（空数组 = 全不选）
@@ -295,7 +297,7 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
         }
 
         Logger.debug('Rules filtered by selection', {
-          totalRules: allRules.length,
+          totalRules: allRulesForIndex.length,
           selectedRules: selectedRules.length,
         });
 
@@ -311,11 +313,13 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
           conflictStrategy: config.sync.conflictStrategy || 'priority',
         });
 
+        // 使用之前获取的 allRulesForIndex 用于保护判断
         const generateResult = await fileGenerator.generateAll(
           mergedRules,
           workspaceRoot,
           config.sync.conflictStrategy || 'priority',
           targetAdapters, // ✅ 传递目标适配器列表
+          allRulesForIndex, // ✅ 传递所有规则用于保护判断
         );
 
         pm.report(generateConfigProgress - 4, 'Saving metadata...');
@@ -357,7 +361,7 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
 
         // 持久化聚合统计信息到 workspaceState（用于状态栏显示）
         await workspaceStateManager.setRulesStats({
-          totalRules: allRules.length,
+          totalRules: allRulesForIndex.length,
           totalSyncedRules,
           sourceCount: sources.length,
           enabledSourceCount: enabledSources.length,
@@ -367,7 +371,7 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
         Logger.debug('Sync metadata persisted to workspace state', {
           syncTime,
           sourceCount: enabledSources.length,
-          totalRules: allRules.length,
+          totalRules: allRulesForIndex.length,
           totalSyncedRules,
           syncedSourceCount,
         });
@@ -428,63 +432,9 @@ async function syncSingleSource(
   parser: MdcParser,
   validator: RulesValidator,
 ): Promise<ParsedRule[]> {
-  // 1. 克隆或拉取仓库
-  const exists = await gitManager.repositoryExists(source.id);
-
-  if (!exists) {
-    Logger.debug('Cloning repository', { sourceId: source.id });
-    await gitManager.cloneRepository(source);
-  } else {
-    Logger.debug('Pulling updates', { sourceId: source.id });
-    await gitManager.pullUpdates(source.id, source.branch);
-  }
-
-  // 2. 获取本地仓库路径
-  const localPath = gitManager.getSourcePath(source.id); // 3. 验证 subPath（必须以 / 开头）
-  let subPath = source.subPath || '/';
-  if (!subPath.startsWith('/')) {
-    Logger.warn('subPath does not start with /, prepending /', {
-      sourceId: source.id,
-      originalSubPath: subPath,
-    });
-    subPath = '/' + subPath;
-  }
-
-  // 4. 构建规则目录路径
-  const rulesPath = subPath === '/' ? localPath : path.join(localPath, subPath.substring(1)); // 移除开头的 /
-
-  Logger.debug('Parsing rules directory', {
-    sourceId: source.id,
-    rulesPath,
-    subPath,
-  });
-
-  // 5. 解析规则（使用默认参数确保解析所有规则）
-  const parsedRules = await parser.parseDirectory(rulesPath, source.id, {
-    recursive: true,
-  });
-
-  // 6. 为规则添加 sourceId
-  const rulesWithSource = parsedRules.map((rule) => ({
-    ...rule,
-    sourceId: source.id,
-  }));
-
-  // 7. 验证规则
-  const validationResults = validator.validateRules(rulesWithSource);
-
-  // 检查是否有验证错误
-  const invalidCount = Array.from(validationResults.values()).filter((r) => !r.valid).length;
-
-  if (invalidCount > 0) {
-    Logger.warn('Some rules are invalid', {
-      sourceId: source.id,
-      invalidCount,
-    });
-  }
-
-  // 8. 返回有效的规则
-  return validator.getValidRules(rulesWithSource);
+  // 使用共享的同步和解析函数
+  const result = await syncAndParseSource(source, gitManager, parser, validator);
+  return result.rules;
 }
 
 /**

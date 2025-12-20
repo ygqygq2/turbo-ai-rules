@@ -529,10 +529,14 @@ export class SourceDetailMessageHandler {
 
     const rulesManager = RulesManager.getInstance();
     const mergedRules = rulesManager.mergeRules(config.sync.conflictStrategy || 'priority');
+    const allRules = rulesManager.getAllRules();
+
     await fileGenerator.generateAll(
       mergedRules,
       workspaceRoot,
       config.sync.conflictStrategy || 'priority',
+      undefined, // targetAdapters
+      allRules, // 传递所有规则用于保护
     );
   }
 

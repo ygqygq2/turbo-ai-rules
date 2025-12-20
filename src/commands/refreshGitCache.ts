@@ -14,7 +14,7 @@ import { SelectionStateManager } from '../services/SelectionStateManager';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { ProgressManager } from '../utils/progressManager';
-import { parseAndLoadRules } from '../utils/ruleLoader';
+import { parseAndLoadRules, syncAndParseSource } from '../utils/ruleLoader';
 
 /**
  * @description 刷新 Git 缓存 - 对所有已启用的源执行 git pull 并重新解析规则
@@ -73,7 +73,7 @@ export async function refreshGitCacheCommand(): Promise<void> {
         const pm = new ProgressManager({ progress, verbose: false });
         let successCount = 0;
         let failCount = 0;
-        let updatedCount = 0;
+        const updatedCount = 0;
 
         // 计算每个源的进度增量（保留一些空间用于最后的完成步骤）
         const progressPerSource = enabledSources.length > 0 ? 95 / enabledSources.length : 0;
@@ -88,62 +88,21 @@ export async function refreshGitCacheCommand(): Promise<void> {
           );
 
           try {
-            // 检查仓库是否存在
-            const exists = await gitManager.repositoryExists(source.id);
+            // 使用共享的同步和解析函数（自动处理克隆或拉取）
+            const result = await syncAndParseSource(source, gitManager, parser, validator);
 
-            if (!exists) {
-              Logger.warn(`Repository not found for source: ${source.id}. Skipping pull.`);
-              failCount++;
-              continue;
-            }
+            successCount++;
+            if (result.total > 0) {
+              // 加载规则到 RulesManager
+              rulesManager.addRules(source.id, result.rules);
 
-            // 执行 git pull
-            Logger.debug(`Pulling updates for source: ${source.id}`, {
-              branch: source.branch || 'main',
-            });
+              // 初始化选择状态
+              await selectionStateManager.initializeState(source.id, result.rules, []);
 
-            const result = await gitManager.pullUpdates(source.id, source.branch);
-
-            if (result.success) {
-              successCount++;
-              if (result.hasUpdates) {
-                updatedCount++;
-                Logger.info(`Source updated: ${source.id}`, {
-                  filesChanged: result.updatedFiles?.length || 0,
-                });
-              } else {
-                Logger.debug(`Source already up-to-date: ${source.id}`);
-              }
-
-              // 重新解析规则（无论是否有更新，都重新解析以确保规则列表完整）
-              try {
-                // 复用共享的解析和加载逻辑
-                const result = await parseAndLoadRules(
-                  source,
-                  parser,
-                  validator,
-                  gitManager,
-                  rulesManager,
-                );
-
-                // 初始化选择状态（如果之前没有选择状态）
-                await selectionStateManager.initializeState(source.id, result.valid, []);
-
-                Logger.info('Rules re-parsed after git pull', {
-                  sourceId: source.id,
-                  totalRules: result.total,
-                  validRules: result.valid,
-                });
-              } catch (parseError) {
-                Logger.error('Failed to re-parse rules after git pull', parseError as Error, {
-                  sourceId: source.id,
-                  code: 'TAI-3002',
-                });
-              }
-            } else {
-              failCount++;
-              Logger.warn(`Failed to pull source: ${source.id}`, {
-                error: result.error,
+              Logger.info('Rules refreshed from cache', {
+                sourceId: source.id,
+                totalRules: result.total,
+                validRules: result.valid,
               });
             }
           } catch (error) {

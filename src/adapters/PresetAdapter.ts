@@ -157,8 +157,9 @@ export class PresetAdapter extends BaseAdapter {
    * @description 生成文件内容
    * @return default {Promise<GeneratedConfig>}
    * @param rules {ParsedRule[]}
+   * @param _allRules {ParsedRule[]} - 所有可用规则（未使用，保持接口一致性）
    */
-  async generate(rules: ParsedRule[]): Promise<GeneratedConfig> {
+  async generate(rules: ParsedRule[], _allRules?: ParsedRule[]): Promise<GeneratedConfig> {
     Logger.info(`Generating ${this.name} configuration`, { ruleCount: rules.length });
 
     if (rules.length === 0) {

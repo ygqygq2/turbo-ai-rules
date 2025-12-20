@@ -28,7 +28,7 @@ export class RulesAdapter extends BaseAdapter {
   /**
    * 生成输出配置
    */
-  public async generate(rules: ParsedRule[]): Promise<GeneratedConfig> {
+  public async generate(rules: ParsedRule[], _allRules?: ParsedRule[]): Promise<GeneratedConfig> {
     try {
       Logger.info('Generating rules output', { ruleCount: rules.length });
 

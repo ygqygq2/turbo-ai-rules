@@ -26,7 +26,7 @@ import { ensureIgnored } from '../utils/gitignore';
 import { Logger } from '../utils/logger';
 import { partialUpdate } from '../utils/ruleMarkerMerger';
 import type { UserRulesProtectionConfig } from '../utils/userRulesProtection';
-import { extractUserContent, isUserDefinedFile, mergeContent } from '../utils/userRulesProtection';
+import { extractUserContent, mergeContent } from '../utils/userRulesProtection';
 
 /**
  * 生成结果
@@ -134,6 +134,7 @@ export class FileGenerator {
    * @param workspaceRoot 工作区根目录
    * @param strategy 冲突解决策略
    * @param targetAdapters 目标适配器列表（可选，如果提供则只为这些适配器生成配置）
+   * @param allRules 所有可用规则（用于用户规则保护）
    * @returns 生成结果
    */
   public async generateAll(
@@ -141,6 +142,7 @@ export class FileGenerator {
     workspaceRoot: string,
     strategy: ConflictStrategy = 'priority',
     targetAdapters?: string[],
+    allRules?: ParsedRule[],
   ): Promise<GenerateResult> {
     Logger.debug('Generating all config files', {
       ruleCount: rules.length,
@@ -188,7 +190,12 @@ export class FileGenerator {
         // 不再为 skills 适配器做特殊处理，统一使用用户选择的规则
         const adapterRules = rules;
 
-        const config = await this.generateForAdapter(adapter, adapterRules, workspaceRoot);
+        const config = await this.generateForAdapter(
+          adapter,
+          adapterRules,
+          workspaceRoot,
+          allRules,
+        );
         result.success.push(config);
 
         Logger.debug(`Generated config for ${name}`, {
@@ -222,15 +229,17 @@ export class FileGenerator {
    * @param adapter 适配器
    * @param rules 规则列表
    * @param workspaceRoot 工作区根目录
+   * @param allRules 所有可用规则（用于用户规则保护）
    * @returns 生成的配置
    */
   private async generateForAdapter(
     adapter: AIToolAdapter,
     rules: ParsedRule[],
     workspaceRoot: string,
+    allRules?: ParsedRule[],
   ): Promise<GeneratedConfig> {
-    // 生成配置内容
-    const config = await adapter.generate(rules);
+    // 生成配置内容（传递 allRules 用于用户规则保护）
+    const config = await adapter.generate(rules, allRules);
 
     // 验证内容
     if (!adapter.validate(config.content)) {
@@ -306,34 +315,12 @@ export class FileGenerator {
    * 目录模式写入（前缀保护）
    */
   private async writeDirectoryModeFile(
-    dir: string,
+    _dir: string,
     filePath: string,
     content: string,
   ): Promise<void> {
-    const filename = path.basename(filePath);
-
-    // 检查是否为用户自定义文件
-    if (isUserDefinedFile(filename, this.protectionConfig)) {
-      Logger.warn('Skipping user-defined file', { filename });
-      vscode.window.showWarningMessage(
-        vscode.l10n.t(
-          'File "{0}" is in user-defined range (80000-99999). Skipped to protect your custom rules.',
-          filename,
-        ),
-      );
-      return;
-    }
-
-    // 扫描目录，检查冲突
-    try {
-      if (fs.existsSync(dir)) {
-        fs.readdirSync(dir).map((f) => path.join(dir, f));
-      }
-    } catch (error) {
-      Logger.warn('Failed to read directory for conflict detection', { dir, error });
-    }
-
-    // 写入文件
+    // 目录模式下，我们不再检查单个文件，而是通过 cleanDirectoryByRules 统一处理
+    // 这里直接写入文件
     await safeWriteFile(filePath, content);
   }
 

@@ -52,22 +52,14 @@ describe('Skills Adapter Tests', () => {
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
     const customAdapters = config.get<any[]>(CONFIG_KEYS.ADAPTERS_CUSTOM, []);
 
-    console.log(`⚙️  Testing in workspace folder: ${workspaceFolder.name}`);
-    console.log(`⚙️  Found ${customAdapters.length} custom adapters`);
-
     // Check if skills adapter is configured
     const skillsAdapter = customAdapters.find((adapter) => adapter.skills === true);
 
     if (!skillsAdapter) {
-      console.log('⚠️  No skills adapter configured, skipping test');
+      // Skills adapter not configured in this workspace, skip test
       this.skip();
       return;
     }
-
-    console.log(`Testing skills adapter: ${skillsAdapter.name}`);
-    console.log(`  - sourceId: ${skillsAdapter.sourceId}`);
-    console.log(`  - subPath: ${skillsAdapter.subPath}`);
-    console.log(`  - outputPath: ${skillsAdapter.outputPath}`);
 
     // 先同步规则（确保源仓库已克隆）
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
@@ -94,14 +86,10 @@ describe('Skills Adapter Tests', () => {
         (file) => file.endsWith('.md') || file.endsWith('.mdc') || file.endsWith('.txt'),
       );
 
-      console.log(`✅ Found ${skillFiles.length} skills files: ${skillFiles.join(', ')}`);
-
       if (skillFiles.length > 0) {
         // 验证文件内容（检查是否是直接复制，而不是经过规则解析）
         const firstFile = path.join(skillsOutputPath, skillFiles[0]);
         const content = await fs.readFile(firstFile, 'utf-8');
-
-        console.log(`  - Sample file: ${skillFiles[0]} (${content.length} bytes)`);
 
         // Skills 文件应该保持原始格式，可能包含或不包含 frontmatter
         assert.ok(content.length > 0, 'Skill file should have content');
@@ -145,7 +133,7 @@ describe('Skills Adapter Tests', () => {
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // 应该能够处理错误而不崩溃
-      console.log('✅ Handled missing sourceId without crashing');
+      assert.ok(true, 'Should handle missing sourceId without crashing');
     } finally {
       // 恢复配置
       await config.update(

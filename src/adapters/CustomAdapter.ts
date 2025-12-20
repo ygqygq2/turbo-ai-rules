@@ -8,8 +8,15 @@ import * as vscode from 'vscode';
 
 import type { CustomAdapterConfig } from '../types/config';
 import type { ParsedRule } from '../types/rules';
+import { CONFIG_KEYS, CONFIG_PREFIX } from '../utils/constants';
 import { safeWriteFile } from '../utils/fileSystem';
 import { Logger } from '../utils/logger';
+import type { UserRulesProtectionConfig } from '../utils/userRulesProtection';
+import {
+  cleanDirectoryByRules,
+  isUserDefinedRule,
+  mergeRuleLists,
+} from '../utils/userRulesProtection';
 import { BaseAdapter, GeneratedConfig } from './AIToolAdapter';
 
 /**
@@ -20,12 +27,26 @@ export class CustomAdapter extends BaseAdapter {
   public readonly name: string;
   public readonly enabled: boolean;
   public readonly config: CustomAdapterConfig;
+  private protectionConfig: UserRulesProtectionConfig;
 
   constructor(config: CustomAdapterConfig) {
     super();
     this.config = config;
     this.name = config.name;
     this.enabled = config.enabled;
+    this.protectionConfig = this.loadProtectionConfig();
+  }
+
+  /**
+   * 加载用户规则保护配置
+   */
+  private loadProtectionConfig(): UserRulesProtectionConfig {
+    const config = vscode.workspace.getConfiguration(CONFIG_PREFIX);
+    return {
+      enabled: config.get<boolean>(CONFIG_KEYS.PROTECT_USER_RULES, true),
+      userPrefixRange: config.get(CONFIG_KEYS.USER_PREFIX_RANGE, { min: 80000, max: 99999 }),
+      blockMarkers: config.get(CONFIG_KEYS.BLOCK_MARKERS),
+    };
   }
 
   /**
@@ -38,7 +59,7 @@ export class CustomAdapter extends BaseAdapter {
   /**
    * 生成输出配置
    */
-  public async generate(rules: ParsedRule[]): Promise<GeneratedConfig> {
+  public async generate(rules: ParsedRule[], allRules?: ParsedRule[]): Promise<GeneratedConfig> {
     try {
       Logger.info(`Generating custom adapter output: ${this.config.id}`, {
         ruleCount: rules.length,
@@ -57,12 +78,41 @@ export class CustomAdapter extends BaseAdapter {
       if (this.config.outputType === 'file') {
         return await this.generateFile(filteredRules);
       } else {
-        return await this.generateDirectory(filteredRules);
+        // 目录模式：合并用户保护规则
+        const finalRules = this.mergeWithProtectedRules(filteredRules, allRules);
+        return await this.generateDirectory(finalRules, allRules);
       }
     } catch (error) {
       Logger.error(`Failed to generate custom adapter output: ${this.config.id}`, error as Error);
       throw error;
     }
+  }
+
+  /**
+   * 合并过滤后的规则和用户保护规则
+   */
+  private mergeWithProtectedRules(
+    filteredRules: ParsedRule[],
+    allRules?: ParsedRule[],
+  ): ParsedRule[] {
+    if (!this.protectionConfig.enabled || !allRules) {
+      return filteredRules;
+    }
+
+    // 从所有规则中识别用户保护规则
+    const protectedRules = allRules.filter((rule) =>
+      isUserDefinedRule(rule, this.protectionConfig),
+    );
+
+    if (protectedRules.length > 0) {
+      Logger.info('Merging user-protected rules', {
+        filtered: filteredRules.length,
+        protected: protectedRules.length,
+      });
+      return mergeRuleLists(filteredRules, protectedRules);
+    }
+
+    return filteredRules;
   }
 
   /**
@@ -156,7 +206,10 @@ export class CustomAdapter extends BaseAdapter {
   /**
    * 生成目录结构输出
    */
-  private async generateDirectory(rules: ParsedRule[]): Promise<GeneratedConfig> {
+  private async generateDirectory(
+    rules: ParsedRule[],
+    _allRules?: ParsedRule[],
+  ): Promise<GeneratedConfig> {
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (!workspaceRoot) {
       throw new Error('No workspace folder found');
@@ -184,9 +237,23 @@ export class CustomAdapter extends BaseAdapter {
       await safeWriteFile(indexAbsolutePath, indexContent);
     }
 
+    // 清理未选中的文件（所有目录类型适配器都执行清理）
+    const outputDir = path.join(workspaceRoot, this.config.outputPath);
+    const cleanupResult = await cleanDirectoryByRules(outputDir, rules, this.protectionConfig);
+
+    if (cleanupResult.deleted.length > 0) {
+      Logger.info('Cleaned unselected rules from directory', {
+        adapter: this.config.id,
+        deleted: cleanupResult.deleted.length,
+        protected: cleanupResult.protectedFiles.length,
+        kept: cleanupResult.kept.length,
+      });
+    }
+
     Logger.info(`Generated directory: ${this.config.outputPath}`, {
       fileCount: files.size,
       ruleCount: rules.length,
+      cleaned: cleanupResult.deleted.length,
     });
 
     return {

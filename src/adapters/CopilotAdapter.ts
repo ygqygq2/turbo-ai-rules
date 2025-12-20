@@ -30,7 +30,7 @@ export class CopilotAdapter extends BaseAdapter {
    * 生成 .github/copilot-instructions.md 文件内容
    * 使用规则源标记格式，支持部分更新
    */
-  async generate(rules: ParsedRule[]): Promise<GeneratedConfig> {
+  async generate(rules: ParsedRule[], _allRules?: ParsedRule[]): Promise<GeneratedConfig> {
     Logger.info('Generating GitHub Copilot configuration', { ruleCount: rules.length });
 
     if (rules.length === 0) {

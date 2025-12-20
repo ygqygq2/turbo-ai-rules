@@ -73,7 +73,20 @@ export async function generateConfigsCommand(): Promise<void> {
       // 只包含用户主动勾选的规则（空数组 = 全不选）
       // 将 rule.filePath 转为相对路径后比较（SelectionStateManager 存储相对路径）
       const relativeFilePath = toRelativePath(rule.filePath, rule.sourceId);
-      if (selectedPaths.length > 0 && selectedPaths.includes(relativeFilePath)) {
+      const isSelected = selectedPaths.length > 0 && selectedPaths.includes(relativeFilePath);
+
+      Logger.debug('[generateConfigs] Rule selection check', {
+        ruleId: rule.id,
+        sourceId: rule.sourceId,
+        ruleFilePath: rule.filePath,
+        relativeFilePath,
+        selectedPathsCount: selectedPaths.length,
+        isSelected,
+        inSelectedPaths: selectedPaths.includes(relativeFilePath),
+        sampleSelectedPaths: selectedPaths.slice(0, 3),
+      });
+
+      if (isSelected) {
         selectedRules.push(rule);
       }
     }
@@ -124,11 +137,13 @@ export async function generateConfigsCommand(): Promise<void> {
 
         pm.report(30, 'Generating files...');
 
-        // 生成配置文件
+        // 生成配置文件（生成配置命令没有所有规则的概念，传入 undefined）
         const result = await fileGenerator.generateAll(
           mergedRules,
           workspaceRoot,
           config.sync.conflictStrategy || 'priority',
+          undefined, // targetAdapters
+          mergedRules, // 使用合并后的规则作为 allRules
         );
 
         pm.report(50, 'Finalizing...');

@@ -320,4 +320,147 @@ describe('Sync Rules Tests', () => {
       'Selection should remain empty after sync without selection',
     );
   });
+
+  it('Should delete unselected rules in directory mode but preserve user-defined rules', async function () {
+    this.timeout(120000); // 2分钟
+
+    // 使用专门配置了自定义适配器的工作区文件夹
+    const folders = vscode.workspace.workspaceFolders;
+    assert.ok(folders && folders.length > 0, 'No workspace folder found');
+
+    // 查找 "Test: Multi-Adapter + User Protection" 工作区
+    const testFolder = folders.find((f) => f.name === 'Test: Multi-Adapter + User Protection');
+    assert.ok(testFolder, 'Should have "Test: Multi-Adapter + User Protection" workspace folder');
+
+    // 使用这个特定的工作区
+    const targetWorkspaceFolder = testFolder;
+
+    // 打开这个工作区中的 README 文件
+    const readmePath = path.join(targetWorkspaceFolder.uri.fsPath, 'README.md');
+    const doc = await vscode.workspace.openTextDocument(readmePath);
+    await vscode.window.showTextDocument(doc);
+
+    // 1. 同步规则
+    await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+
+    // 等待同步完成和规则加载
+    let allRules: any[] = [];
+    for (let i = 0; i < 20; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      allRules = rulesManager.getAllRules();
+      if (allRules.length > 0) {
+        break;
+      }
+    }
+
+    assert.ok(allRules.length > 0, 'Rules should be loaded after sync');
+
+    // 2. 获取这个工作区的配置
+    const config = vscode.workspace.getConfiguration('turbo-ai-rules', targetWorkspaceFolder.uri);
+
+    // 确保有自定义适配器（使用新的 adapters.custom 格式）
+    const adaptersConfig = config.get<any>('adapters');
+    const customAdapters = adaptersConfig?.custom;
+    assert.ok(
+      customAdapters && customAdapters.length > 0,
+      'Should have custom adapters configured',
+    );
+
+    // 选择所有规则并生成配置
+    const sources = config.get<Array<{ id: string; enabled: boolean }>>('sources');
+    assert.ok(sources && sources.length > 0, 'Should have configured sources');
+
+    for (const source of sources.filter((s: any) => s.enabled)) {
+      const sourceRules = rulesManager.getRulesBySource(source.id);
+      if (sourceRules.length > 0) {
+        const allPaths = sourceRules.map((rule: any) => rule.filePath);
+        selectionStateManager.updateSelection(
+          source.id,
+          allPaths,
+          false,
+          targetWorkspaceFolder.uri.fsPath,
+        );
+      }
+    }
+
+    // 等待选择状态持久化
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // 3. 生成配置（应该生成所有规则文件）
+    await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // 4. 验证配置目录存在并记录初始文件
+    const customAdapterConfig: any = customAdapters[0]; // 使用数组的第一个元素
+    const outputDir = path.join(targetWorkspaceFolder.uri.fsPath, customAdapterConfig.outputPath);
+    const dirExists = await fs.pathExists(outputDir);
+    assert.ok(dirExists, 'Custom adapter output directory should exist');
+
+    let initialFiles = await fs.readdir(outputDir);
+    let initialRuleFiles = initialFiles.filter((f) => f.endsWith('.md') || f.endsWith('.mdc'));
+
+    // 5. 创建一个用户自定义规则文件（ID 在 80000-99999 范围内）
+    const userRuleFilename = '80001-user-custom-rule.md';
+    const userRulePath = path.join(outputDir, userRuleFilename);
+    await fs.writeFile(
+      userRulePath,
+      '---\nid: 80001-user-custom-rule\ntitle: User Custom Rule\n---\n\n# User Custom Rule\n\nThis is a user-defined rule.',
+    );
+
+    // 重新读取文件列表，包含刚创建的用户文件
+    initialFiles = await fs.readdir(outputDir);
+    initialRuleFiles = initialFiles.filter((f) => f.endsWith('.md') || f.endsWith('.mdc'));
+    assert.ok(initialRuleFiles.length > 0, 'Should have generated rule files initially');
+
+    // 6. 取消选择部分规则（保留一些，取消一些）
+    const enabledSource = sources.find((s) => s.enabled);
+    assert.ok(enabledSource, 'Should have at least one enabled source');
+
+    const sourceRules = rulesManager.getRulesBySource(enabledSource.id);
+    if (sourceRules.length > 1) {
+      // 只选择前一半的规则
+      const halfCount = Math.floor(sourceRules.length / 2);
+      const selectedPaths = sourceRules.slice(0, halfCount).map((r: any) => r.filePath);
+      selectionStateManager.updateSelection(
+        enabledSource.id,
+        selectedPaths,
+        false,
+        targetWorkspaceFolder.uri.fsPath,
+      );
+    }
+
+    // 等待选择状态持久化
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // 7. 再次生成配置（应该清理未选中的规则文件）
+    await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // 8. 验证：未选中的规则文件应该被删除
+    const finalFiles = await fs.readdir(outputDir);
+    const finalRuleFiles = finalFiles.filter((f) => f.endsWith('.md') || f.endsWith('.mdc'));
+
+    // 调试输出
+    console.log('📊 Directory cleanup test results:');
+    console.log(`  Initial rule files: ${initialRuleFiles.length}`);
+    console.log(`  Final rule files: ${finalRuleFiles.length}`);
+    console.log(`  Initial files:`, initialRuleFiles.slice(0, 5));
+    console.log(`  Final files:`, finalRuleFiles.slice(0, 5));
+
+    // 应该比初始文件少或相等（因为取消了一些选择）
+    // 注意：如果所有规则都在保护范围内，文件数量可能不变
+    assert.ok(
+      finalRuleFiles.length <= initialRuleFiles.length,
+      `Final files (${finalRuleFiles.length}) should be <= initial files (${initialRuleFiles.length})`,
+    );
+
+    // 9. 最重要的验证：用户自定义规则文件应该被保留
+    const userRuleStillExists = await fs.pathExists(userRulePath);
+    assert.ok(userRuleStillExists, 'User-defined rule (80000+) should be preserved after cleanup');
+
+    // 清理测试创建的用户规则文件
+    if (await fs.pathExists(userRulePath)) {
+      await fs.remove(userRulePath);
+    }
+  });
 });

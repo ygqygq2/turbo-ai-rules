@@ -31,10 +31,11 @@ export interface AIToolAdapter {
 
   /**
    * 生成配置文件内容
-   * @param rules 规则列表
+   * @param rules 选中的规则列表
+   * @param allRules 所有可用规则（用于用户规则保护）
    * @returns 生成的配置信息
    */
-  generate(rules: ParsedRule[]): Promise<GeneratedConfig>;
+  generate(rules: ParsedRule[], allRules?: ParsedRule[]): Promise<GeneratedConfig>;
 
   /**
    * 验证生成的配置
@@ -57,7 +58,7 @@ export abstract class BaseAdapter implements AIToolAdapter {
   abstract readonly name: string;
   abstract readonly enabled: boolean;
 
-  abstract generate(rules: ParsedRule[]): Promise<GeneratedConfig>;
+  abstract generate(rules: ParsedRule[], allRules?: ParsedRule[]): Promise<GeneratedConfig>;
   abstract getFilePath(): string;
 
   /**

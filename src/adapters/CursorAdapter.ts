@@ -26,7 +26,7 @@ export class CursorAdapter extends BaseAdapter {
   /**
    * 生成 .cursorrules 文件内容
    */
-  async generate(rules: ParsedRule[]): Promise<GeneratedConfig> {
+  async generate(rules: ParsedRule[], _allRules?: ParsedRule[]): Promise<GeneratedConfig> {
     Logger.info('Generating Cursor configuration', { ruleCount: rules.length });
 
     if (rules.length === 0) {
