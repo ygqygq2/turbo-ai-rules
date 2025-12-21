@@ -4,6 +4,7 @@ import { t } from '../utils/i18n';
 
 export interface AdapterCardProps {
   // id is reserved for future use (e.g., data-testid)
+  id?: string;
   name: string;
   description?: string;
   enabled?: boolean;
@@ -28,6 +29,8 @@ export interface AdapterCardProps {
   onEdit?: () => void;
   /** 删除（仅自定义适配器） */
   onDelete?: () => void;
+  /** 设置（预设适配器） */
+  onSettings?: () => void;
 }
 
 /**
@@ -48,6 +51,7 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
   onToggle,
   onEdit,
   onDelete,
+  onSettings,
 }) => {
   const typeLabel = isRuleType ? t('adapterManager.ruleType') : t('adapterManager.skillType');
   const typeIcon = isRuleType ? 'codicon-law' : 'codicon-tools';
@@ -64,10 +68,10 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
           <div className="adapter-name">
             <i
               className={`codicon ${
-                isPreset ? 'codicon-verified-filled' : 'codicon-symbol-misc'
+                isPreset ? 'codicon-verified-filled' : 'codicon-symbol-property'
               } adapter-icon`}
             ></i>
-            <h3>{name}</h3>
+            <h3 title={name}>{name}</h3>
             {/* 类型标签 */}
             <div className={`type-badge ${isRuleType ? 'rule-type' : 'skill-type'}`}>
               <i className={`codicon ${typeIcon}`}></i>
@@ -76,6 +80,12 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
           </div>
           {isPreset && description && <p className="adapter-description">{description}</p>}
         </div>
+        {/* 设置按钮（所有适配器都显示） */}
+        {onSettings && (
+          <button className="settings-button" onClick={onSettings} title={t('common.settings')}>
+            <i className="codicon codicon-gear"></i>
+          </button>
+        )}
       </div>
 
       {/* 卡片内容 */}
@@ -149,21 +159,6 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
             )}
           </>
         )}
-        {/* 状态显示（预设和自定义适配器都显示） */}
-        <div className="info-row">
-          <span className="label">
-            <i className="codicon codicon-circle-large-outline"></i>
-            {t('form.label.status')}
-          </span>
-          <span className={`value status-value ${enabled ? 'status-enabled' : 'status-disabled'}`}>
-            <i
-              className={`codicon ${
-                enabled ? 'codicon-pass-filled' : 'codicon-circle-large-outline'
-              }`}
-            ></i>
-            {enabled ? t('enabled') : t('disabled')}
-          </span>
-        </div>
       </div>
 
       {/* 卡片操作 */}

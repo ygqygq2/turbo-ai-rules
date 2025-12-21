@@ -470,11 +470,32 @@
             "properties": {
               "enabled": {
                 "type": "boolean",
+                "default": false,
                 "description": "Enable or disable this adapter"
               },
               "autoUpdate": {
                 "type": "boolean",
+                "default": true,
                 "description": "Automatically update config files"
+              },
+              "sortBy": {
+                "type": "string",
+                "enum": [
+                  "id",
+                  "priority",
+                  "none"
+                ],
+                "default": "priority",
+                "description": "Sort rules by ID, priority, or none (source order)"
+              },
+              "sortOrder": {
+                "type": "string",
+                "enum": [
+                  "asc",
+                  "desc"
+                ],
+                "default": "asc",
+                "description": "Sort order (ascending or descending)"
               }
             }
           }

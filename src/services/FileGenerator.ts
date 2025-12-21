@@ -88,9 +88,18 @@ export class FileGenerator {
         config as Record<string, { enabled?: boolean; sortBy?: string; sortOrder?: string }>
       )[presetConfig.id];
       const enabled = adapterConfig?.enabled ?? false;
+      Logger.debug(`Preset adapter ${presetConfig.id} config:`, {
+        enabled,
+        sortBy: adapterConfig?.sortBy,
+        sortOrder: adapterConfig?.sortOrder,
+        rawConfig: adapterConfig,
+      });
       if (enabled) {
-        const sortBy = (adapterConfig.sortBy as 'id' | 'priority' | 'none') || 'priority';
-        const sortOrder = (adapterConfig.sortOrder as 'asc' | 'desc') || 'asc';
+        const sortBy = (adapterConfig?.sortBy as 'id' | 'priority' | 'none') || 'priority';
+        const sortOrder = (adapterConfig?.sortOrder as 'asc' | 'desc') || 'asc';
+        Logger.debug(
+          `Creating PresetAdapter ${presetConfig.id} with sortBy=${sortBy}, sortOrder=${sortOrder}`,
+        );
         const adapter = new PresetAdapter(presetConfig, true, sortBy, sortOrder);
         this.adapters.set(presetConfig.id, adapter);
         Logger.debug(`Registered preset adapter: ${presetConfig.id} (${presetConfig.name})`);
@@ -175,18 +184,31 @@ export class FileGenerator {
 
     // 为每个适配器生成配置
     for (const [name, adapter] of this.adapters.entries()) {
+      // 适配器名称匹配规则：
+      // - 预置适配器：直接匹配（如 'copilot', 'cursor', 'continue'）
+      // - 自定义适配器：name 格式为 'custom-{id}'，需要匹配 id 部分
+      const adapterId = name.startsWith('custom-') ? name.substring(7) : name;
+
       // ✅ 如果指定了目标适配器，只为目标适配器生成配置
       if (targetAdapters && targetAdapters.length > 0) {
-        // 适配器名称匹配规则：
-        // - 预置适配器：直接匹配（如 'copilot', 'cursor', 'continue'）
-        // - 自定义适配器：name 格式为 'custom-{id}'，需要匹配 id 部分
-        const adapterId = name.startsWith('custom-') ? name.substring(7) : name;
         if (!targetAdapters.includes(adapterId) && !targetAdapters.includes(name)) {
           Logger.debug(`Skipping adapter ${name} (not in target list)`, {
             adapterId,
             targetAdapters,
           });
           continue;
+        }
+      } else {
+        // ✅ 未指定目标适配器时，只为规则类型（isRuleType=true）的适配器生成配置
+        // 预设适配器默认都是规则类型，自定义适配器需要检查 isRuleType 属性
+        if (adapter instanceof CustomAdapter) {
+          const isRuleType = adapter.config.isRuleType ?? true;
+          if (!isRuleType) {
+            Logger.debug(`Skipping skills adapter ${name} (isRuleType=false, not in target list)`, {
+              adapterId,
+            });
+            continue;
+          }
         }
       }
       try {

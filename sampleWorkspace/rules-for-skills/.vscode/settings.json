@@ -1,9 +1,51 @@
 {
   // Skills Adapter Test Scenario
   "turbo-ai-rules.adapters": {
-    "cursor": { "enabled": false },
-    "copilot": { "enabled": true },
-    "continue": { "enabled": false }
+    "cursor": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "copilot": {
+      "enabled": true,
+      "sortBy": "id",
+      "sortOrder": "desc"
+    },
+    "continue": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "windsurf": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "cline": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "roo-cline": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "aider": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "bolt": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "qodo-gen": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    }
   },
   "turbo-ai-rules.sync.conflictStrategy": "priority",
   "turbo-ai-rules.sync.auto": false,
@@ -30,13 +72,30 @@
       "id": "dev-skills",
       "name": "Development Skills",
       "enabled": true,
-      "sourceId": "turbo-skills-source",
-      "subPath": "1300-skills/",
       "outputPath": ".skills/",
       "outputType": "directory",
+      "fileExtensions": [
+        ".md"
+      ],
       "organizeBySource": false,
+      "generateIndex": true,
+      "indexFileName": "index.md",
+      "isRuleType": false
+    },
+    {
+      "id": "tt",
+      "name": "T",
+      "enabled": true,
+      "outputPath": ".testrules",
+      "outputType": "file",
+      "fileExtensions": [],
+      "organizeBySource": false,
+      "generateIndex": true,
+      "indexFileName": "index.md",
       "isRuleType": false,
-      "description": "Development skills including Python, TypeScript, debugging and code review"
+      "fileTemplate": "{{rules}}",
+      "sortBy": "id",
+      "sortOrder": "desc"
     }
   ]
 }

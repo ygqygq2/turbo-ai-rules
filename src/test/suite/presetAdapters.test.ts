@@ -171,4 +171,78 @@ describe('Preset Adapters Integration Tests', () => {
     // 清理配置
     await config.update('adapters', {}, vscode.ConfigurationTarget.Workspace);
   });
+
+  describe('Adapter Sorting Configuration', () => {
+    it('Should be able to configure sortBy and sortOrder for preset adapters', async () => {
+      const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+
+      // 设置排序配置
+      const adapters = {
+        copilot: {
+          enabled: true,
+          sortBy: 'id',
+          sortOrder: 'desc',
+        },
+      };
+      await config.update('adapters', adapters, vscode.ConfigurationTarget.WorkspaceFolder);
+
+      // 验证配置读取
+      const readConfig = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+      const readAdapters = readConfig.get<Record<string, any>>('adapters', {});
+
+      assert.strictEqual(readAdapters.copilot?.enabled, true);
+      assert.strictEqual(readAdapters.copilot?.sortBy, 'id');
+      assert.strictEqual(readAdapters.copilot?.sortOrder, 'desc');
+
+      // 清理配置
+      await config.update('adapters', {}, vscode.ConfigurationTarget.WorkspaceFolder);
+    });
+
+    it('Should support all sortBy options: id, priority, none', async function () {
+      this.timeout(10000);
+      const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+
+      const sortByOptions = ['id', 'priority', 'none'];
+
+      for (const sortBy of sortByOptions) {
+        const adapters = {
+          cursor: { enabled: true, sortBy },
+        };
+        await config.update('adapters', adapters, vscode.ConfigurationTarget.Workspace);
+
+        const readConfig = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+        const readAdapters = readConfig.get<Record<string, any>>('adapters', {});
+
+        assert.strictEqual(readAdapters.cursor?.sortBy, sortBy, `sortBy should be ${sortBy}`);
+      }
+
+      // 清理配置
+      await config.update('adapters', {}, vscode.ConfigurationTarget.Workspace);
+    });
+
+    it('Should support all sortOrder options: asc, desc', async () => {
+      const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+
+      const sortOrderOptions = ['asc', 'desc'];
+
+      for (const sortOrder of sortOrderOptions) {
+        const adapters = {
+          cursor: { enabled: true, sortOrder },
+        };
+        await config.update('adapters', adapters, vscode.ConfigurationTarget.Workspace);
+
+        const readConfig = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+        const readAdapters = readConfig.get<Record<string, any>>('adapters', {});
+
+        assert.strictEqual(
+          readAdapters.cursor?.sortOrder,
+          sortOrder,
+          `sortOrder should be ${sortOrder}`,
+        );
+      }
+
+      // 清理配置
+      await config.update('adapters', {}, vscode.ConfigurationTarget.Workspace);
+    });
+  });
 });

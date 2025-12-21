@@ -34,13 +34,19 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({ adapter, isNew, onSa
   const [fileExtensions, setFileExtensions] = useState(adapter.fileExtensions?.join(', ') || '');
   const [organizeBySource, setOrganizeBySource] = useState(adapter.organizeBySource ?? true);
   const [generateIndex, setGenerateIndex] = useState(adapter.generateIndex ?? false);
+  // 排序设置（仅单文件模式）
+  const [sortBy, setSortBy] = useState<'id' | 'priority' | 'none'>(adapter.sortBy || 'priority');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(adapter.sortOrder || 'asc');
 
   // 验证状态
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // 当 id 变更时，自动生成建议名称
+  // 跟踪用户是否手动修改过 Display Name
+  const [nameManuallyEdited, setNameManuallyEdited] = useState(false);
+
+  // 当 id 变更时，自动生成建议名称（仅当用户未手动修改过 name 时）
   useEffect(() => {
-    if (isNew && id && !name) {
+    if (isNew && id && !nameManuallyEdited) {
       // 将 kebab-case 转换为 Title Case
       const suggestedName = id
         .split('-')
@@ -48,7 +54,7 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({ adapter, isNew, onSa
         .join(' ');
       setName(suggestedName);
     }
-  }, [id, isNew, name]);
+  }, [id, isNew, nameManuallyEdited]);
 
   /**
    * @description 验证表单
@@ -116,9 +122,12 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({ adapter, isNew, onSa
       outputPath,
       format,
       isRuleType,
+      enabled: adapter.enabled ?? true,
       fileExtensions: parsedExtensions.length > 0 ? parsedExtensions : undefined,
       organizeBySource: format === 'directory' ? organizeBySource : undefined,
       generateIndex: format === 'directory' ? generateIndex : undefined,
+      sortBy: format === 'single-file' ? sortBy : undefined,
+      sortOrder: format === 'single-file' ? sortOrder : undefined,
       ...(format === 'single-file'
         ? { singleFileTemplate }
         : {
@@ -176,7 +185,10 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({ adapter, isNew, onSa
             <Input
               id="adapter-name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                setNameManuallyEdited(true);
+              }}
               placeholder={t('adapterManager.adapterNamePlaceholder')}
               className={errors.name ? 'error' : ''}
             />
@@ -284,25 +296,94 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({ adapter, isNew, onSa
 
           {/* 单文件模板 */}
           {format === 'single-file' && (
-            <div className="form-group">
-              <label htmlFor="single-file-template">
-                <i className="codicon codicon-symbol-string"></i>
-                {t('adapterManager.singleFileTemplate')}
-                <span className="required">*</span>
-              </label>
-              <textarea
-                id="single-file-template"
-                value={singleFileTemplate}
-                onChange={(e) => setSingleFileTemplate(e.target.value)}
-                placeholder={t('adapterManager.singleFileTemplatePlaceholder')}
-                className={`textarea ${errors.singleFileTemplate ? 'error' : ''}`}
-                rows={6}
-              />
-              {errors.singleFileTemplate && (
-                <span className="error-text">{errors.singleFileTemplate}</span>
+            <>
+              <div className="form-group">
+                <label htmlFor="single-file-template">
+                  <i className="codicon codicon-symbol-string"></i>
+                  {t('adapterManager.singleFileTemplate')}
+                  <span className="required">*</span>
+                </label>
+                <textarea
+                  id="single-file-template"
+                  value={singleFileTemplate}
+                  onChange={(e) => setSingleFileTemplate(e.target.value)}
+                  placeholder={t('adapterManager.singleFileTemplatePlaceholder')}
+                  className={`textarea ${errors.singleFileTemplate ? 'error' : ''}`}
+                  rows={6}
+                />
+                {errors.singleFileTemplate && (
+                  <span className="error-text">{errors.singleFileTemplate}</span>
+                )}
+                <span className="hint">{t('adapterManager.templateHint')}</span>
+              </div>
+
+              {/* 排序设置 */}
+              <div className="form-group">
+                <label>
+                  <i className="codicon codicon-symbol-numeric"></i>
+                  {t('adapterManager.sortBy')}
+                </label>
+                <div className="radio-group">
+                  <label className="radio-option">
+                    <input
+                      type="radio"
+                      name="sortBy"
+                      checked={sortBy === 'priority'}
+                      onChange={() => setSortBy('priority')}
+                    />
+                    <span className="radio-label">{t('adapterManager.sortBy.priority')}</span>
+                  </label>
+                  <label className="radio-option">
+                    <input
+                      type="radio"
+                      name="sortBy"
+                      checked={sortBy === 'id'}
+                      onChange={() => setSortBy('id')}
+                    />
+                    <span className="radio-label">{t('adapterManager.sortBy.id')}</span>
+                  </label>
+                  <label className="radio-option">
+                    <input
+                      type="radio"
+                      name="sortBy"
+                      checked={sortBy === 'none'}
+                      onChange={() => setSortBy('none')}
+                    />
+                    <span className="radio-label">{t('adapterManager.sortBy.none')}</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* 排序顺序（仅当选择了排序依据时显示） */}
+              {sortBy !== 'none' && (
+                <div className="form-group">
+                  <label>
+                    <i className="codicon codicon-arrow-swap"></i>
+                    {t('adapterManager.sortOrder')}
+                  </label>
+                  <div className="radio-group">
+                    <label className="radio-option">
+                      <input
+                        type="radio"
+                        name="sortOrder"
+                        checked={sortOrder === 'asc'}
+                        onChange={() => setSortOrder('asc')}
+                      />
+                      <span className="radio-label">{t('adapterManager.sortOrder.asc')}</span>
+                    </label>
+                    <label className="radio-option">
+                      <input
+                        type="radio"
+                        name="sortOrder"
+                        checked={sortOrder === 'desc'}
+                        onChange={() => setSortOrder('desc')}
+                      />
+                      <span className="radio-label">{t('adapterManager.sortOrder.desc')}</span>
+                    </label>
+                  </div>
+                </div>
               )}
-              <span className="hint">{t('adapterManager.templateHint')}</span>
-            </div>
+            </>
           )}
 
           {/* 目录结构配置 */}

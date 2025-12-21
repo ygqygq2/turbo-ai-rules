@@ -390,11 +390,11 @@
 ### 图标使用
 
 ```html
-<!-- 预置适配器 -->
-<i class="codicon codicon-extensions"></i>
+<!-- 预置适配器标签页和卡片 -->
+<i class="codicon codicon-verified-filled"></i>
 
-<!-- 自定义适配器 -->
-<i class="codicon codicon-tools"></i>
+<!-- 自定义适配器标签页和卡片 -->
+<i class="codicon codicon-symbol-property"></i>
 
 <!-- 添加 -->
 <i class="codicon codicon-add"></i>
@@ -755,6 +755,7 @@ function validateFileExtensions(extensions: string): ValidationResult {
 **适用范围**: 仅单文件模式适配器显示排序选项
 
 **字段说明**:
+
 - `sortBy`: 排序依据
   - `'id'`: 按规则 ID 字典序排序
   - `'priority'`: 按优先级排序 (high > medium > low)
@@ -767,12 +768,14 @@ function validateFileExtensions(extensions: string): ValidationResult {
   - 默认值: `'asc'`
 
 **UI 行为**:
+
 - 仅在输出格式选择"📄 单个文件"时显示
 - 输出格式切换为"📁 目录结构"时,自动隐藏
 - 下拉框默认值为 Priority / Ascending
 - 修改后立即更新配置,无需手动保存
 
 **状态管理**:
+
 ```typescript
 interface AdapterFormState {
   // ... 其他字段
@@ -786,6 +789,7 @@ const showSortingOptions = formState.outputType === 'file';
 ```
 
 **验证规则**:
+
 - 无需特殊验证 (下拉框限制了有效值)
 - 保存时确保 sortBy 和 sortOrder 一起保存
 - 如果 outputType 为 'directory', sortBy 和 sortOrder 不发送到后端
@@ -804,7 +808,10 @@ const showSortingOptions = formState.outputType === 'file';
 
 ```typescript
 export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
-  constructor(context: vscode.ExtensionContext, private configManager: ConfigManager) {
+  constructor(
+    context: vscode.ExtensionContext,
+    private configManager: ConfigManager,
+  ) {
     super(context);
   }
 

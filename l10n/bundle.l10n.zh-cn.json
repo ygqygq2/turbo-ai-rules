@@ -391,6 +391,12 @@
   "common.deselectAll": "全不选",
   "common.cancel": "取消",
 
+  "Dashboard": "仪表板",
+  "Adapter Manager": "适配器管理",
+  "Source Manager": "规则源管理",
+  "Statistics Dashboard": "统计面板",
+  "Rule Sync Page": "规则同步页",
+
   "adapterManager.title": "适配器管理",
   "adapterManager.subtitle": "配置预设和自定义适配器以生成 AI 规则",
   "adapterManager.presetAdapters": "预设适配器",
@@ -460,6 +466,9 @@
   "adapterManager.sortBy.none": "不排序（源顺序）",
   "adapterManager.sortOrder.asc": "升序",
   "adapterManager.sortOrder.desc": "降序",
+  "adapterManager.adapterSettings": "{name} 设置",
+  "adapterManager.searchPlaceholder": "搜索适配器...",
+  "adapterManager.noMatchingAdapters": "没有找到匹配的适配器",
   "adapterManager.tips": "提示",
   "adapterManager.tip1": "适配器 ID 用于标识适配器，创建后不可修改",
   "adapterManager.tip2": "输出路径将自动创建，无需手动创建目录",

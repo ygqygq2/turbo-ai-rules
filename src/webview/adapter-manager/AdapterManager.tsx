@@ -4,6 +4,7 @@ import { t } from '../utils/i18n';
 import { vscodeApi } from '../utils/vscode-api';
 import { AdapterCard } from './AdapterCard';
 import { AdapterModal } from './AdapterModal';
+import { PresetSettingsModal, PresetAdapterSettings } from './PresetSettingsModal';
 
 /**
  * 适配器类型定义
@@ -27,6 +28,10 @@ export interface PresetAdapter {
   outputPath: string;
   /** 是否为规则类型适配器 */
   isRuleType: boolean;
+  /** 排序依据 */
+  sortBy?: 'id' | 'priority' | 'none';
+  /** 排序顺序 */
+  sortOrder?: 'asc' | 'desc';
 }
 
 /**
@@ -52,6 +57,10 @@ export interface CustomAdapter {
   organizeBySource?: boolean;
   /** 是否生成索引文件 */
   generateIndex?: boolean;
+  /** 排序依据（仅单文件模式） */
+  sortBy?: 'id' | 'priority' | 'none';
+  /** 排序顺序（仅单文件模式） */
+  sortOrder?: 'asc' | 'desc';
 }
 
 /**
@@ -73,14 +82,30 @@ export const AdapterManager: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // 分页状态
-  const [presetPage, setPresetPage] = useState(1);
-  const [customPage, setCustomPage] = useState(1);
-  const PAGE_SIZE = 6; // 每页显示6个
+  // Tab 和搜索状态
+  const [activeTab, setActiveTab] = useState<'preset' | 'custom'>('preset');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // 模态框状态
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAdapter, setEditingAdapter] = useState<EditingAdapter | null>(null);
+
+  // 预设适配器设置弹出框状态
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [editingPresetAdapter, setEditingPresetAdapter] = useState<PresetAdapter | null>(null);
+
+  // 过滤后的适配器列表
+  const filteredPresetAdapters = presetAdapters.filter(
+    (adapter) =>
+      adapter.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      adapter.description?.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  const filteredCustomAdapters = customAdapters.filter(
+    (adapter) =>
+      adapter.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      adapter.outputPath.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   // 初始化数据
   useEffect(() => {
@@ -137,6 +162,37 @@ export const AdapterManager: React.FC = () => {
   };
 
   /**
+   * @description 打开预设适配器设置弹出框
+   * @param adapter {PresetAdapter}
+   */
+  const handleOpenPresetSettings = (adapter: PresetAdapter) => {
+    setEditingPresetAdapter(adapter);
+    setSettingsModalOpen(true);
+  };
+
+  /**
+   * @description 保存预设适配器设置（直接持久化到配置）
+   * @param settings {PresetAdapterSettings}
+   */
+  const handleSavePresetSettings = (settings: PresetAdapterSettings) => {
+    // 更新本地状态
+    const updatedPresetAdapters = presetAdapters.map((adapter) =>
+      adapter.id === settings.id
+        ? { ...adapter, sortBy: settings.sortBy, sortOrder: settings.sortOrder }
+        : adapter,
+    );
+    setPresetAdapters(updatedPresetAdapters);
+    setSettingsModalOpen(false);
+    setEditingPresetAdapter(null);
+
+    // 直接保存到配置（不需要点击底部的 Save All）
+    vscodeApi.postMessage('saveAll', {
+      presetAdapters: updatedPresetAdapters,
+      customAdapters,
+    });
+  };
+
+  /**
    * @description 切换自定义适配器启用状态
    * @param adapterId {string}
    */
@@ -163,7 +219,7 @@ export const AdapterManager: React.FC = () => {
       enabled: true, // 默认启用
       directoryStructure: {
         filePattern: '*.md',
-        pathTemplate: '{{ruleId}}.md',
+        pathTemplate: '{{ruleName}}.md',
       },
     });
     setModalOpen(true);
@@ -232,20 +288,6 @@ export const AdapterManager: React.FC = () => {
     vscodeApi.postMessage('cancel');
   };
 
-  // 计算分页数据
-  const presetTotalPages = Math.ceil(presetAdapters.length / PAGE_SIZE);
-  const customTotalPages = Math.ceil(customAdapters.length / PAGE_SIZE);
-
-  const paginatedPresetAdapters = presetAdapters.slice(
-    (presetPage - 1) * PAGE_SIZE,
-    presetPage * PAGE_SIZE,
-  );
-
-  const paginatedCustomAdapters = customAdapters.slice(
-    (customPage - 1) * PAGE_SIZE,
-    customPage * PAGE_SIZE,
-  );
-
   return (
     <div className="adapter-manager-container">
       {/* 页面标题 */}
@@ -267,20 +309,66 @@ export const AdapterManager: React.FC = () => {
           <span>{t('loading')}</span>
         </div>
       ) : (
-        <div className="adapter-sections">
-          {/* 预设适配器区块 */}
-          <section className="adapter-section preset-section">
-            <div className="section-header">
-              <h2>
-                <i className="codicon codicon-package"></i>
+        <div className="adapter-content">
+          {/* 搜索框 */}
+          <div className="search-bar">
+            <i className="codicon codicon-search"></i>
+            <input
+              type="text"
+              placeholder={t('adapterManager.searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+            {searchQuery && (
+              <button
+                className="clear-search"
+                onClick={() => setSearchQuery('')}
+                title={t('common.clear')}
+              >
+                <i className="codicon codicon-close"></i>
+              </button>
+            )}
+          </div>
+
+          {/* Tab 切换 */}
+          <div className="tabs-container">
+            <div className="tabs">
+              <button
+                className={`tab ${activeTab === 'preset' ? 'active' : ''}`}
+                onClick={() => setActiveTab('preset')}
+              >
+                <i className="codicon codicon-verified-filled"></i>
                 {t('adapterManager.presetAdapters')}
-              </h2>
-              <span className="section-description">{t('adapterManager.presetAdaptersDesc')}</span>
+                <span className="tab-count">{filteredPresetAdapters.length}</span>
+              </button>
+              <button
+                className={`tab ${activeTab === 'custom' ? 'active' : ''}`}
+                onClick={() => setActiveTab('custom')}
+              >
+                <i className="codicon codicon-symbol-property"></i>
+                {t('adapterManager.customAdapters')}
+                <span className="tab-count">{filteredCustomAdapters.length}</span>
+              </button>
             </div>
-            <div className="adapter-section-content">
-              <div className="adapter-cards-container">
-                <div className="adapter-cards-grid">
-                  {paginatedPresetAdapters.map((adapter) => (
+            {activeTab === 'custom' && (
+              <Button type="primary" icon="add" onClick={handleAddCustomAdapter}>
+                {t('adapterManager.addCustomAdapter')}
+              </Button>
+            )}
+          </div>
+
+          {/* Tab 内容 */}
+          <div className="tab-content">
+            {activeTab === 'preset' ? (
+              <div className="adapter-cards-grid">
+                {filteredPresetAdapters.length === 0 ? (
+                  <div className="empty-state">
+                    <i className="codicon codicon-search icon"></i>
+                    <div className="message">{t('adapterManager.noMatchingAdapters')}</div>
+                  </div>
+                ) : (
+                  filteredPresetAdapters.map((adapter) => (
                     <AdapterCard
                       key={adapter.id}
                       name={adapter.name}
@@ -288,108 +376,58 @@ export const AdapterManager: React.FC = () => {
                       enabled={adapter.enabled}
                       outputPath={adapter.outputPath}
                       isRuleType={adapter.isRuleType}
+                      sortBy={adapter.sortBy}
+                      sortOrder={adapter.sortOrder}
                       isPreset={true}
                       onToggle={() => handleTogglePreset(adapter.id)}
+                      onSettings={() => handleOpenPresetSettings(adapter)}
                     />
-                  ))}
-                </div>
+                  ))
+                )}
               </div>
-              {presetTotalPages > 1 && (
-                <div className="pagination">
-                  <button
-                    className="pagination-button"
-                    onClick={() => setPresetPage((p) => Math.max(1, p - 1))}
-                    disabled={presetPage === 1}
-                  >
-                    <i className="codicon codicon-chevron-left"></i>
-                    {t('common.previous')}
-                  </button>
-                  <span className="pagination-info">
-                    {presetPage} / {presetTotalPages}
-                  </span>
-                  <button
-                    className="pagination-button"
-                    onClick={() => setPresetPage((p) => Math.min(presetTotalPages, p + 1))}
-                    disabled={presetPage === presetTotalPages}
-                  >
-                    {t('common.next')}
-                    <i className="codicon codicon-chevron-right"></i>
-                  </button>
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* 自定义适配器区块 */}
-          <section className="adapter-section custom-section">
-            <div className="section-header">
-              <h2>
-                <i className="codicon codicon-symbol-misc"></i>
-                {t('adapterManager.customAdapters')}
-              </h2>
-              <span className="section-description">{t('adapterManager.customAdaptersDesc')}</span>
-              <Button type="primary" icon="add" onClick={handleAddCustomAdapter}>
-                {t('adapterManager.addCustomAdapter')}
-              </Button>
-            </div>
-            <div className="adapter-section-content">
-              {customAdapters.length === 0 ? (
-                <div className="empty-state">
-                  <i className="codicon codicon-symbol-misc icon"></i>
-                  <div className="message">{t('adapterManager.noCustomAdapters')}</div>
-                  <Button type="primary" icon="add" onClick={handleAddCustomAdapter}>
-                    {t('adapterManager.addCustomAdapter')}
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <div className="adapter-cards-container">
-                    <div className="adapter-cards-grid">
-                      {paginatedCustomAdapters.map((adapter) => (
-                        <AdapterCard
-                          key={adapter.id}
-                          name={adapter.name}
-                          outputPath={adapter.outputPath}
-                          isRuleType={adapter.isRuleType}
-                          enabled={adapter.enabled}
-                          format={adapter.format}
-                          fileExtensions={adapter.fileExtensions}
-                          organizeBySource={adapter.organizeBySource}
-                          isPreset={false}
-                          onToggle={() => handleToggleCustom(adapter.id)}
-                          onEdit={() => handleEditCustomAdapter(adapter)}
-                          onDelete={() => handleDeleteCustomAdapter(adapter.id)}
-                        />
-                      ))}
-                    </div>
+            ) : (
+              <div className="adapter-cards-grid">
+                {filteredCustomAdapters.length === 0 ? (
+                  <div className="empty-state">
+                    {searchQuery ? (
+                      <>
+                        <i className="codicon codicon-search icon"></i>
+                        <div className="message">{t('adapterManager.noMatchingAdapters')}</div>
+                      </>
+                    ) : (
+                      <>
+                        <i className="codicon codicon-symbol-misc icon"></i>
+                        <div className="message">{t('adapterManager.noCustomAdapters')}</div>
+                        <Button type="primary" icon="add" onClick={handleAddCustomAdapter}>
+                          {t('adapterManager.addCustomAdapter')}
+                        </Button>
+                      </>
+                    )}
                   </div>
-                  {customTotalPages > 1 && (
-                    <div className="pagination">
-                      <button
-                        className="pagination-button"
-                        onClick={() => setCustomPage((p) => Math.max(1, p - 1))}
-                        disabled={customPage === 1}
-                      >
-                        <i className="codicon codicon-chevron-left"></i>
-                        {t('common.previous')}
-                      </button>
-                      <span className="pagination-info">
-                        {customPage} / {customTotalPages}
-                      </span>
-                      <button
-                        className="pagination-button"
-                        onClick={() => setCustomPage((p) => Math.min(customTotalPages, p + 1))}
-                        disabled={customPage === customTotalPages}
-                      >
-                        {t('common.next')}
-                        <i className="codicon codicon-chevron-right"></i>
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </section>
+                ) : (
+                  filteredCustomAdapters.map((adapter) => (
+                    <AdapterCard
+                      key={adapter.id}
+                      name={adapter.name}
+                      outputPath={adapter.outputPath}
+                      isRuleType={adapter.isRuleType}
+                      enabled={adapter.enabled}
+                      format={adapter.format}
+                      fileExtensions={adapter.fileExtensions}
+                      organizeBySource={adapter.organizeBySource}
+                      sortBy={adapter.sortBy}
+                      sortOrder={adapter.sortOrder}
+                      isPreset={false}
+                      onToggle={() => handleToggleCustom(adapter.id)}
+                      onEdit={() => handleEditCustomAdapter(adapter)}
+                      onDelete={() => handleDeleteCustomAdapter(adapter.id)}
+                      onSettings={() => handleEditCustomAdapter(adapter)}
+                    />
+                  ))
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -402,6 +440,23 @@ export const AdapterManager: React.FC = () => {
           onClose={() => {
             setModalOpen(false);
             setEditingAdapter(null);
+          }}
+        />
+      )}
+
+      {/* 预设适配器设置弹出框 */}
+      {settingsModalOpen && editingPresetAdapter && (
+        <PresetSettingsModal
+          adapter={{
+            id: editingPresetAdapter.id,
+            name: editingPresetAdapter.name,
+            sortBy: editingPresetAdapter.sortBy || 'priority',
+            sortOrder: editingPresetAdapter.sortOrder || 'asc',
+          }}
+          onSave={handleSavePresetSettings}
+          onClose={() => {
+            setSettingsModalOpen(false);
+            setEditingPresetAdapter(null);
           }}
         />
       )}

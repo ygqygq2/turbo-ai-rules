@@ -391,6 +391,12 @@
   "common.deselectAll": "Deselect All",
   "common.cancel": "Cancel",
 
+  "Dashboard": "Dashboard",
+  "Adapter Manager": "Adapter Manager",
+  "Source Manager": "Source Manager",
+  "Statistics Dashboard": "Statistics Dashboard",
+  "Rule Sync Page": "Rule Sync Page",
+
   "adapterManager.title": "Adapter Manager",
   "adapterManager.subtitle": "Configure preset and custom adapters for AI rule generation",
   "adapterManager.presetAdapters": "Preset Adapters",
