@@ -399,10 +399,7 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
         // 显示通知
         if (successCount === enabledSources.length && generateResult.failures.length === 0) {
           notify(
-            t('Successfully synced {0} rule(s) from {1} source(s)', {
-              0: totalSyncedRules,
-              1: successCount,
-            }),
+            t('Successfully synced {0} rule(s) from {1} source(s)', totalSyncedRules, successCount),
             'info',
           );
         } else {

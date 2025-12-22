@@ -218,8 +218,10 @@ export class GitManager {
 
   /**
    * 克隆仓库
+   * @param source 规则源配置
+   * @param timeoutMs 超时时间（毫秒），默认 60 秒
    */
-  public async cloneRepository(source: RuleSource): Promise<string> {
+  public async cloneRepository(source: RuleSource, timeoutMs: number = 60000): Promise<string> {
     try {
       // 验证 URL
       if (!this.validateGitUrl(source.gitUrl)) {
@@ -252,6 +254,7 @@ export class GitManager {
         gitUrl: source.gitUrl,
         branch: source.branch || DEFAULT_BRANCH,
         authType: authentication?.type || 'none',
+        timeoutMs,
       });
 
       const git = simpleGit();
@@ -272,7 +275,13 @@ export class GitManager {
         }
       }
 
-      await git.clone(cloneUrl, targetPath, cloneOptions);
+      // 添加超时控制
+      const clonePromise = git.clone(cloneUrl, targetPath, cloneOptions);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Clone operation timeout')), timeoutMs);
+      });
+
+      await Promise.race([clonePromise, timeoutPromise]);
 
       Logger.info('Repository cloned successfully', {
         sourceId: source.id,
@@ -297,8 +306,15 @@ export class GitManager {
 
   /**
    * 拉取更新
+   * @param sourceId 规则源 ID
+   * @param branch 分支名称
+   * @param timeoutMs 超时时间（毫秒），默认 30 秒
    */
-  public async pullUpdates(sourceId: string, branch?: string): Promise<PullResult> {
+  public async pullUpdates(
+    sourceId: string,
+    branch?: string,
+    timeoutMs: number = 30000,
+  ): Promise<PullResult> {
     try {
       const repoPath = this.getSourcePath(sourceId);
 
@@ -311,7 +327,7 @@ export class GitManager {
         );
       }
 
-      Logger.info('Pulling updates', { sourceId, branch });
+      Logger.info('Pulling updates', { sourceId, branch, timeoutMs });
 
       // 获取认证配置
       const authentication = await this.getAuthentication(sourceId);
@@ -320,9 +336,14 @@ export class GitManager {
       // 获取当前提交 SHA
       const beforeSha = await git.revparse(['HEAD']);
 
-      // 拉取更新
+      // 拉取更新（添加超时控制）
       const branchToPull = branch || DEFAULT_BRANCH;
-      await git.pull('origin', branchToPull);
+      const pullPromise = git.pull('origin', branchToPull);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Pull operation timeout')), timeoutMs);
+      });
+
+      await Promise.race([pullPromise, timeoutPromise]);
 
       // 获取更新后的提交 SHA
       const afterSha = await git.revparse(['HEAD']);

@@ -11,6 +11,7 @@ import { ConfigManager } from '../services/ConfigManager';
 import { RulesManager } from '../services/RulesManager';
 import type { ParsedRule } from '../types/rules';
 import { EXTENSION_ICON_PATH } from '../utils/constants';
+import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { toRelativePath } from '../utils/rulePath';
@@ -646,12 +647,24 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
 
   private generateSearchSummary(criteria: SearchCriteria): string {
     const parts: string[] = [];
-    if (criteria.namePattern) parts.push(`标题:"${criteria.namePattern}"`);
-    if (criteria.contentPattern) parts.push(`内容:"${criteria.contentPattern}"`);
-    if (criteria.tags?.length) parts.push(`标签:[${criteria.tags.join(', ')}]`);
-    if (criteria.priorities?.length) parts.push(`优先级:[${criteria.priorities.join('+')}]`);
-    if (criteria.source) parts.push(`源:"${criteria.source}"`);
-    return parts.length > 0 ? parts.join(' + ') : '全部规则';
+
+    if (criteria.namePattern) {
+      parts.push(`${t('search.field.title')}:"${criteria.namePattern}"`);
+    }
+    if (criteria.contentPattern) {
+      parts.push(`${t('search.field.content')}:"${criteria.contentPattern}"`);
+    }
+    if (criteria.tags?.length) {
+      parts.push(`${t('search.field.tags')}:[${criteria.tags.join(', ')}]`);
+    }
+    if (criteria.priorities?.length) {
+      parts.push(`${t('search.field.priority')}:[${criteria.priorities.join('+')}]`);
+    }
+    if (criteria.source) {
+      parts.push(`${t('search.field.source')}:"${criteria.source}"`);
+    }
+
+    return parts.length > 0 ? parts.join(' + ') : t('search.summary.allRules');
   }
 
   private sendSearchHistory(): void {

@@ -252,6 +252,7 @@
   "search.field.tags": "Tags",
   "search.field.priority": "Priority",
   "search.field.source": "Source",
+  "search.summary.allRules": "All Rules",
   "statistics.title": "Statistics Dashboard",
   "statistics.loading": "Loading statistics...",
   "statistics.noData": "No statistics data",
@@ -480,5 +481,12 @@
   "adapterManager.tip2": "Output path will be created automatically",
   "adapterManager.tip3": "Skills type adapters are recommended for skill/capability related rule sets",
   "common.previous": "Previous",
-  "common.next": "Next"
+  "common.next": "Next",
+  "treeView.enabled": "Enabled",
+  "treeView.disabled": "Disabled",
+  "treeView.noRules": "No Rules",
+  "treeView.notSelected": "Not Selected",
+  "treeView.allSelected": "All Selected ({0})",
+  "treeView.partialSelected": "{0}/{1} Selected",
+  "treeView.selected": "Selected"
 }

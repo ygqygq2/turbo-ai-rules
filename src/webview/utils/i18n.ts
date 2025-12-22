@@ -74,13 +74,30 @@ export function getLocale(): string {
 }
 
 /**
- * @description 翻译函数
+ * @description 翻译函数（支持 l10n 格式 {0}, {1} 和 i18next 格式 {{key}}）
  * @return default {string}
  * @param key {string} - 翻译键
- * @param options {i18next.TOptions} - i18next 参数（支持字符串、对象、数字等）
+ * @param options {any} - 可以是对象（i18next 格式）或其他类型（l10n 格式）
  */
-export function t(key: string, options?: i18next.TOptions): string {
-  return i18next.t(key, options) as string;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function t(key: string, options?: any): string {
+  let translated = i18next.t(key) as string;
+
+  // 如果翻译键不存在或返回空值，返回键本身
+  if (!translated) {
+    return key;
+  }
+
+  // 如果参数是对象且包含具名属性，使用 i18next 原生插值
+  if (options && typeof options === 'object' && !Array.isArray(options)) {
+    translated = i18next.t(key, options) as string;
+  }
+  // 否则作为位置参数处理 l10n 格式 {0}
+  else if (options !== undefined) {
+    translated = translated.replace(/\{0\}/g, String(options));
+  }
+
+  return translated;
 }
 
 // 注意：不再自动初始化，由各个入口文件显式调用 initI18n()

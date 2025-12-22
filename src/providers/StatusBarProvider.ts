@@ -214,13 +214,14 @@ export class StatusBarProvider {
         icon = '$(sync~spin)';
         if (this.syncProgress) {
           const { completed, total, currentSource, operation } = this.syncProgress;
-          text = t('statusBar.syncingProgress', { 0: completed, 1: total });
-          tooltip = t('statusBar.tooltip.syncingDetail', {
-            0: completed,
-            1: total,
-            2: currentSource || '',
-            3: operation || '',
-          });
+          text = t('statusBar.syncingProgress', completed, total);
+          tooltip = t(
+            'statusBar.tooltip.syncingDetail',
+            completed,
+            total,
+            currentSource || '',
+            operation || '',
+          );
         } else {
           text = t('statusBar.syncing');
           tooltip = t('statusBar.tooltip.syncing');
@@ -256,7 +257,7 @@ export class StatusBarProvider {
           }
         } else {
           text = t('statusBar.noRules');
-          tooltip = t('statusBar.tooltip.idle', { 0: 0, 1: 0, 2: 0 });
+          tooltip = t('statusBar.tooltip.idle', 0, 0, 0);
         }
         break;
     }
@@ -290,8 +291,8 @@ export class StatusBarProvider {
       t('statusBar.tooltip.syncSuccess'),
       '',
       t('statusBar.tooltip.statsTitle'),
-      t('statusBar.tooltip.syncedRules', { '0': totalSyncedRules }),
-      t('statusBar.tooltip.sources', { '0': syncedSourceCount, '1': sourceCount }),
+      t('statusBar.tooltip.syncedRules', totalSyncedRules),
+      t('statusBar.tooltip.sources', syncedSourceCount, sourceCount),
     ];
 
     // 添加各规则源详情
@@ -329,8 +330,8 @@ export class StatusBarProvider {
       'Turbo AI Rules',
       '',
       t('statusBar.tooltip.statsTitle'),
-      t('statusBar.tooltip.syncedRules', { '0': totalSyncedRules }),
-      t('statusBar.tooltip.sources', { '0': syncedSourceCount, '1': sourceCount }),
+      t('statusBar.tooltip.syncedRules', totalSyncedRules),
+      t('statusBar.tooltip.sources', syncedSourceCount, sourceCount),
     ];
 
     // 添加各规则源详情
@@ -376,10 +377,7 @@ export class StatusBarProvider {
           // 同步成功
           const timeStr = this.formatTime(new Date(stats.lastSyncTime));
           lines.push(
-            `  ✅ ${source.name} (${t('statusBar.tooltip.sourceSuccess', {
-              '0': stats.syncedRulesCount,
-              '1': timeStr,
-            })})`,
+            `  ✅ ${source.name} (${t('statusBar.tooltip.sourceSuccess', stats.syncedRulesCount, timeStr)})`,
           );
         } else if (stats.syncStatus === 'failed') {
           // 同步失败

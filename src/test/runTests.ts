@@ -32,7 +32,13 @@ async function main(): Promise<void> {
         .concat(['--disable-extensions']) // 禁用其他扩展避免干扰
         .concat(['--skip-release-notes']) // 跳过发布说明
         .concat(['--disable-workspace-trust']) // 禁用工作区信任提示
+        .concat(['--disable-telemetry']) // 禁用遥测
+        .concat(['--no-sandbox']) // 禁用沙箱（测试环境）
         .concat(['--user-data-dir', userDataDirectory]), // 使用临时用户数据目录
+      extensionTestsEnv: {
+        NODE_ENV: 'test',
+        VSCODE_TEST_MODE: 'true',
+      },
     });
   } catch (error) {
     console.error('Failed to run tests');

@@ -11,6 +11,7 @@ import { SelectionStateManager } from '../services/SelectionStateManager';
 import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
 import type { RuleSource } from '../types/config';
 import type { ParsedRule } from '../types/rules';
+import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 import { toRelativePath } from '../utils/rulePath';
 
@@ -184,9 +185,9 @@ class RuleTreeItem extends vscode.TreeItem {
 
         // 状态标记
         if (this.data.source.enabled) {
-          parts.push('✅ 已启用');
+          parts.push(`✅ ${t('treeView.enabled')}`);
         } else {
-          parts.push('❌ 已禁用');
+          parts.push(`❌ ${t('treeView.disabled')}`);
         }
 
         // 分支信息
@@ -195,13 +196,15 @@ class RuleTreeItem extends vscode.TreeItem {
         // 规则选择状态
         if (this.data.selectedCount !== undefined && this.data.totalCount !== undefined) {
           if (this.data.totalCount === 0) {
-            parts.push('📭 无规则');
+            parts.push(`📭 ${t('treeView.noRules')}`);
           } else if (this.data.selectedCount === 0) {
-            parts.push('⚠️ 未选择');
+            parts.push(`⚠️ ${t('treeView.notSelected')}`);
           } else if (this.data.selectedCount === this.data.totalCount) {
-            parts.push(`✅ 全部已选 (${this.data.totalCount})`);
+            parts.push(`✅ ${t('treeView.allSelected', this.data.totalCount)}`);
           } else {
-            parts.push(`📊 ${this.data.selectedCount}/${this.data.totalCount} 已选`);
+            parts.push(
+              `📊 ${t('treeView.partialSelected', this.data.selectedCount, this.data.totalCount)}`,
+            );
           }
         }
 
@@ -213,7 +216,7 @@ class RuleTreeItem extends vscode.TreeItem {
 
         // 选择状态标记
         if (this.data.isSelected) {
-          parts.push('✓ 已选');
+          parts.push(`✓ ${t('treeView.selected')}`);
         }
 
         const tags = this.data.rule.metadata.tags;

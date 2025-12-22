@@ -38,15 +38,32 @@ function normalizeLocale(locale: string): string {
 }
 
 /**
- * @description 翻译函数
+ * @description 翻译函数（支持 l10n 格式 {0}, {1} 和 i18next 格式 {{key}}）
  * @return default {string}
- * @param key {string}
- * @param args {any}
+ * @param key {string} - 翻译键
+ * @param args {any} - 可以是数组（l10n 格式）或对象（i18next 格式）
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function t(key: string, ...args: any[]): string {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (i18next.t as any)(key, ...args) as string;
+  let translated = i18next.t(key) as string;
+
+  // 如果翻译键不存在或返回空值，返回键本身
+  if (!translated) {
+    return key;
+  }
+
+  // 如果第一个参数是对象，使用 i18next 原生插值
+  if (args.length > 0 && typeof args[0] === 'object' && !Array.isArray(args[0])) {
+    translated = i18next.t(key, args[0]) as string;
+  }
+  // 否则使用 l10n 格式 {0}, {1}, {2}...
+  else if (args.length > 0) {
+    args.forEach((arg, index) => {
+      translated = translated.replace(new RegExp(`\\{${index}\\}`, 'g'), String(arg));
+    });
+  }
+
+  return translated;
 }
 
 export async function changeLanguage(locale: string): Promise<void> {
