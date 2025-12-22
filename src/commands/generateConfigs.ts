@@ -8,7 +8,9 @@ import { ConfigManager } from '../services/ConfigManager';
 import { FileGenerator } from '../services/FileGenerator';
 import { RulesManager } from '../services/RulesManager';
 import { SelectionStateManager } from '../services/SelectionStateManager';
+import { WorkspaceContextManager } from '../services/WorkspaceContextManager';
 import type { ParsedRule } from '../types/rules';
+import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { ProgressManager } from '../utils/progressManager';
@@ -20,30 +22,27 @@ import { toRelativePath } from '../utils/rulePath';
 export async function generateConfigsCommand(): Promise<void> {
   Logger.info('Executing generateConfigs command');
 
+  // 检查多工作空间环境，如果用户取消则中断操作
+  const { checkMultiRootWorkspaceForOperation } = await import('../utils/workspace');
+  const shouldContinue = await checkMultiRootWorkspaceForOperation();
+  if (!shouldContinue) {
+    Logger.info('Generate configs operation cancelled by user due to multi-root workspace');
+    return;
+  }
+
   try {
     const configManager = ConfigManager.getInstance();
     const rulesManager = RulesManager.getInstance();
     const selectionStateManager = SelectionStateManager.getInstance();
     const fileGenerator = FileGenerator.getInstance();
 
-    // 1. 获取工作区根目录
-    // 优先使用活动编辑器所在的 workspace folder，如果没有则使用第一个
-    const allWorkspaceFolders = vscode.workspace.workspaceFolders;
+    // 1. 使用 WorkspaceContextManager 获取当前工作空间
+    const workspaceContextManager = WorkspaceContextManager.getInstance();
+    const workspaceFolder = workspaceContextManager.getCurrentWorkspaceFolder();
 
-    if (!allWorkspaceFolders || allWorkspaceFolders.length === 0) {
-      notify(vscode.l10n.t('No workspace folder opened'), 'error');
+    if (!workspaceFolder) {
+      notify(t('No workspace folder opened'), 'error');
       return;
-    }
-
-    let workspaceFolder = allWorkspaceFolders[0];
-
-    // 尝试获取活动编辑器的 workspace folder
-    const activeEditor = vscode.window.activeTextEditor;
-    if (activeEditor) {
-      const activeWorkspaceFolder = vscode.workspace.getWorkspaceFolder(activeEditor.document.uri);
-      if (activeWorkspaceFolder) {
-        workspaceFolder = activeWorkspaceFolder;
-      }
     }
 
     Logger.debug('Using workspace folder for generation', {
@@ -60,7 +59,7 @@ export async function generateConfigsCommand(): Promise<void> {
     const allRules = rulesManager.getAllRules();
 
     if (allRules.length === 0) {
-      notify(vscode.l10n.t('No rules available. Please sync rules first.'), 'info');
+      notify(t('No rules available. Please sync rules first.'), 'info');
       return;
     }
 
@@ -124,7 +123,7 @@ export async function generateConfigsCommand(): Promise<void> {
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
-        title: vscode.l10n.t('Generating Config Files'),
+        title: t('Generating Config Files'),
         cancellable: false,
       },
       async (progress) => {
@@ -168,6 +167,6 @@ export async function generateConfigsCommand(): Promise<void> {
     Logger.error('Failed to generate configs', error instanceof Error ? error : undefined);
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    notify(vscode.l10n.t('Failed to generate configs', errorMessage), 'error');
+    notify(t('Failed to generate configs', errorMessage), 'error');
   }
 }

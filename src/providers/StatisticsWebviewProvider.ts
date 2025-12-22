@@ -9,6 +9,7 @@ import { ConfigManager } from '../services/ConfigManager';
 import { RulesManager } from '../services/RulesManager';
 import { WorkspaceStateManager } from '../services/WorkspaceStateManager';
 import { EXTENSION_ICON_PATH } from '../utils/constants';
+import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 
@@ -88,7 +89,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
   public async showStatistics(): Promise<void> {
     await this.show({
       viewType: 'turboAiRules.statistics',
-      title: vscode.l10n.t('statistics.title'),
+      title: t('statistics.title'),
       viewColumn: vscode.ViewColumn.Active,
       iconPath: EXTENSION_ICON_PATH,
     });
@@ -163,7 +164,8 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
     }
 
     // 收集数据
-    const config = this.configManager.getConfig();
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    const config = this.configManager.getConfig(workspaceFolder?.uri);
     const rulesStats = this.rulesManager.getStats();
     const allRules = this.rulesManager.getAllRules();
 
@@ -299,7 +301,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
     // 重新发送数据到 Webview
     await this.sendStatistics();
 
-    vscode.window.showInformationMessage(vscode.l10n.t('statistics.refreshed'));
+    vscode.window.showInformationMessage(t('statistics.refreshed'));
   }
 
   /**
@@ -318,7 +320,7 @@ export class StatisticsWebviewProvider extends BaseWebviewProvider {
 
     if (uri) {
       await vscode.workspace.fs.writeFile(uri, Buffer.from(json, 'utf8'));
-      vscode.window.showInformationMessage(vscode.l10n.t('statistics.exported', uri.fsPath));
+      vscode.window.showInformationMessage(t('statistics.exported', uri.fsPath));
     }
   }
 

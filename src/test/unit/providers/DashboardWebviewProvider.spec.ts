@@ -98,6 +98,19 @@ vi.mock('@/services/WorkspaceDataManager', () => ({
   },
 }));
 
+// Mock WorkspaceContextManager
+vi.mock('@/services/WorkspaceContextManager', () => ({
+  WorkspaceContextManager: {
+    getInstance: vi.fn(() => ({
+      getCurrentWorkspaceFolder: vi.fn(() => ({
+        uri: { fsPath: '/test/workspace' },
+        name: 'test-workspace',
+        index: 0,
+      })),
+    })),
+  },
+}));
+
 describe('DashboardWebviewProvider', () => {
   let provider: DashboardWebviewProvider;
   let mockContext: any;

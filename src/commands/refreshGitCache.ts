@@ -11,6 +11,7 @@ import { ConfigManager } from '../services/ConfigManager';
 import { GitManager } from '../services/GitManager';
 import { RulesManager } from '../services/RulesManager';
 import { SelectionStateManager } from '../services/SelectionStateManager';
+import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { ProgressManager } from '../utils/progressManager';
@@ -35,7 +36,7 @@ export async function refreshGitCacheCommand(): Promise<void> {
     const allWorkspaceFolders = vscode.workspace.workspaceFolders;
 
     if (!allWorkspaceFolders || allWorkspaceFolders.length === 0) {
-      notify(vscode.l10n.t('No workspace folder opened'), 'error');
+      notify(t('No workspace folder opened'), 'error');
       return;
     }
 
@@ -55,7 +56,7 @@ export async function refreshGitCacheCommand(): Promise<void> {
     const enabledSources = sources.filter((s) => s.enabled);
 
     if (enabledSources.length === 0) {
-      notify(vscode.l10n.t('No enabled sources to sync'), 'info');
+      notify(t('No enabled sources to sync'), 'info');
       Logger.info('No enabled sources found');
       return;
     }
@@ -131,12 +132,12 @@ export async function refreshGitCacheCommand(): Promise<void> {
         // 显示结果通知
         if (failCount === 0) {
           if (updatedCount > 0) {
-            notify(vscode.l10n.t('Git cache cleared successfully'), 'info');
+            notify(t('Git cache cleared successfully'), 'info');
           } else {
-            notify(vscode.l10n.t('No Git cache to clear'), 'info');
+            notify(t('No Git cache to clear'), 'info');
           }
         } else {
-          notify(vscode.l10n.t('Sync completed with errors'), 'warning');
+          notify(t('Sync completed with errors'), 'warning');
         }
       },
     );
@@ -145,6 +146,6 @@ export async function refreshGitCacheCommand(): Promise<void> {
     Logger.error('Failed to refresh Git cache', error instanceof Error ? error : undefined, {
       code: 'TAI-2003',
     });
-    notify(vscode.l10n.t('Failed to sync rules', message), 'error');
+    notify(t('Failed to sync rules', message), 'error');
   }
 }

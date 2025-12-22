@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 
 import { ConfigManager } from '../services/ConfigManager';
 import { CONFIG_KEYS, CONFIG_PREFIX, EXTENSION_ICON_PATH } from '../utils/constants';
+import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
@@ -47,7 +48,7 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
   public async showWelcome(): Promise<void> {
     await this.show({
       viewType: 'turboAiRules.welcome',
-      title: vscode.l10n.t('Welcome to Turbo AI Rules'),
+      title: t('Welcome to Turbo AI Rules'),
       viewColumn: vscode.ViewColumn.One,
       iconPath: EXTENSION_ICON_PATH,
     });
@@ -280,13 +281,13 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
 
     // 显示确认对话框
     const confirmed = await vscode.window.showInformationMessage(
-      vscode.l10n.t('Add "{0}" template as a rule source?', template.name),
+      t('Add "{0}" template as a rule source?', template.name),
       { modal: true },
-      vscode.l10n.t('Add Source'),
-      vscode.l10n.t('Cancel'),
+      t('Add Source'),
+      t('Cancel'),
     );
 
-    if (confirmed !== vscode.l10n.t('Add Source')) {
+    if (confirmed !== t('Add Source')) {
       return;
     }
 
@@ -295,11 +296,11 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
       await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
-          title: vscode.l10n.t('Adding template source...'),
+          title: t('Adding template source...'),
           cancellable: false,
         },
         async (progress) => {
-          progress.report({ message: vscode.l10n.t('Adding source...') });
+          progress.report({ message: t('Adding source...') });
 
           // 1. 添加规则源到配置
           const configManager = ConfigManager.getInstance();
@@ -314,7 +315,7 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
           // 检查源是否已存在
           const existingSource = configManager.getSourceById(sourceId);
           if (existingSource) {
-            notify(vscode.l10n.t('Source "{0}" already exists', existingSource.name), 'warning');
+            notify(t('Source "{0}" already exists', existingSource.name), 'warning');
             return;
           }
 
@@ -339,7 +340,7 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
             gitUrl: template.url,
           });
 
-          progress.report({ message: vscode.l10n.t('Syncing rules...') });
+          progress.report({ message: t('Syncing rules...') });
 
           // 2. 触发同步规则（这会克隆仓库并解析规则）
           await vscode.commands.executeCommand('turbo-ai-rules.syncRules', sourceId);
@@ -350,7 +351,7 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
           Logger.info('Template setup complete', { sourceId });
 
           // 4. 通知用户成功
-          notify(vscode.l10n.t('Successfully added template "{0}"', template.name), 'info');
+          notify(t('Successfully added template "{0}"', template.name), 'info');
 
           // 5. 更新前端状态：现在有规则源了，可以启用步骤2
           this.postMessage({
@@ -362,7 +363,7 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
     } catch (error) {
       Logger.error('Failed to add template source', error instanceof Error ? error : undefined);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      notify(vscode.l10n.t('Failed to add template: {0}', errorMessage), 'error');
+      notify(t('Failed to add template: {0}', errorMessage), 'error');
     }
   }
 

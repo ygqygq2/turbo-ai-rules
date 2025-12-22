@@ -11,6 +11,7 @@ import { ConfigManager } from '../services/ConfigManager';
 import { RulesManager } from '../services/RulesManager';
 import { WorkspaceStateManager } from '../services/WorkspaceStateManager';
 import { EXTENSION_ICON_PATH } from '../utils/constants';
+import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
@@ -54,7 +55,7 @@ export class SourceManagerWebviewProvider extends BaseWebviewProvider {
   public async showSourceManager(): Promise<void> {
     await this.show({
       viewType: 'turboAiRules.sourceManager',
-      title: vscode.l10n.t('sourceManager.title'),
+      title: t('sourceManager.title'),
       viewColumn: vscode.ViewColumn.One,
       iconPath: EXTENSION_ICON_PATH,
     });

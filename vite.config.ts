@@ -78,7 +78,7 @@ export default defineConfig(({ mode }) => ({
       : undefined,
   test: {
     include: ['src/test/unit/**/*.spec.ts'],
-    setupFiles: 'src/test/unit/setup.ts',
+    setupFiles: ['src/test/unit/setup.ts', 'src/test/setup.ts'],
     globals: true,
     environment: 'node',
     testTimeout: 10000,

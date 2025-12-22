@@ -12,10 +12,12 @@ import { FileGenerator } from '../services/FileGenerator';
 import { GitManager } from '../services/GitManager';
 import { RulesManager } from '../services/RulesManager';
 import { SelectionStateManager } from '../services/SelectionStateManager';
+import { WorkspaceContextManager } from '../services/WorkspaceContextManager';
 import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
 import { WorkspaceStateManager } from '../services/WorkspaceStateManager';
 import type { RuleSource } from '../types/config';
 import type { ConflictStrategy, ParsedRule } from '../types/rules';
+import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { ProgressManager } from '../utils/progressManager';
@@ -67,6 +69,14 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
 
   Logger.info('Executing syncRules command', { sourceId, targetAdapters });
 
+  // 检查多工作空间环境，如果用户取消则中断操作
+  const { checkMultiRootWorkspaceForOperation } = await import('../utils/workspace');
+  const shouldContinue = await checkMultiRootWorkspaceForOperation();
+  if (!shouldContinue) {
+    Logger.info('Sync operation cancelled by user due to multi-root workspace');
+    return;
+  }
+
   // 获取状态栏提供者实例
   const statusBarProvider = StatusBarProvider.getInstance();
 
@@ -81,22 +91,14 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
 
     // 1. 获取工作区根目录
     // 优先使用活动编辑器所在的 workspace folder，如果没有则使用第一个
-    const allWorkspaceFolders = vscode.workspace.workspaceFolders;
+    // 使用 WorkspaceContextManager 获取当前工作空间
+    // 即使切换到 Webview 也能正确获取用户上次使用的工作空间
+    const workspaceContextManager = WorkspaceContextManager.getInstance();
+    const workspaceFolder = workspaceContextManager.getCurrentWorkspaceFolder();
 
-    if (!allWorkspaceFolders || allWorkspaceFolders.length === 0) {
-      notify(vscode.l10n.t('No workspace folder opened'), 'error');
+    if (!workspaceFolder) {
+      notify(t('No workspace folder opened'), 'error');
       return;
-    }
-
-    let workspaceFolder = allWorkspaceFolders[0];
-
-    // 尝试获取活动编辑器的 workspace folder
-    const activeEditor = vscode.window.activeTextEditor;
-    if (activeEditor) {
-      const activeWorkspaceFolder = vscode.workspace.getWorkspaceFolder(activeEditor.document.uri);
-      if (activeWorkspaceFolder) {
-        workspaceFolder = activeWorkspaceFolder;
-      }
     }
 
     Logger.debug('Using workspace folder', {
@@ -121,7 +123,7 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
     });
 
     if (enabledSources.length === 0) {
-      notify(vscode.l10n.t('No enabled sources to sync'), 'info');
+      notify(t('No enabled sources to sync'), 'info');
       statusBarProvider.setSyncStatus('idle');
       return;
     }
@@ -136,7 +138,7 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
-        title: vscode.l10n.t('Syncing rules from {0} source(s)...', enabledSources.length),
+        title: t('Syncing rules from {0} source(s)...', enabledSources.length),
         cancellable: false,
       },
       async (progress) => {
@@ -185,7 +187,7 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
 
             pm.report(
               progressPerSource * 0.3,
-              vscode.l10n.t('Syncing', `${sourceName} (${currentIndex}/${enabledSources.length})`),
+              t('Syncing', `${sourceName} (${currentIndex}/${enabledSources.length})`),
             );
 
             try {
@@ -397,15 +399,14 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
         // 显示通知
         if (successCount === enabledSources.length && generateResult.failures.length === 0) {
           notify(
-            vscode.l10n.t(
-              'Successfully synced {0} rule(s) from {1} source(s)',
-              totalSyncedRules,
-              successCount,
-            ),
+            t('Successfully synced {0} rule(s) from {1} source(s)', {
+              0: totalSyncedRules,
+              1: successCount,
+            }),
             'info',
           );
         } else {
-          const message = vscode.l10n.t('Sync completed with errors');
+          const message = t('Sync completed with errors');
           notify(message, 'warning');
           await fileGenerator.showGenerationNotification(generateResult);
         }
@@ -418,7 +419,7 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
     statusBarProvider.setSyncStatus('error');
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    notify(vscode.l10n.t('Failed to sync rules', errorMessage), 'error');
+    notify(t('Failed to sync rules', errorMessage), 'error');
   }
 }
 

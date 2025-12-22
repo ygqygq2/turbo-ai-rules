@@ -2,9 +2,8 @@
  * 添加规则源命令
  */
 
-import * as vscode from 'vscode';
-
 import { SourceDetailWebviewProvider } from '../providers/SourceDetailWebview';
+import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 
@@ -21,6 +20,6 @@ export async function addSourceCommand(): Promise<void> {
   } catch (error: unknown) {
     Logger.error('Failed to add rule source', error instanceof Error ? error : undefined);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    notify(vscode.l10n.t('Failed to add source', errorMessage), 'error');
+    notify(t('Failed to add source', errorMessage), 'error');
   }
 }

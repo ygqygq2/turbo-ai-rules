@@ -10,11 +10,14 @@ import * as vscode from 'vscode';
 import { PRESET_ADAPTERS } from '../adapters';
 import { ConfigManager } from '../services/ConfigManager';
 import { RulesManager } from '../services/RulesManager';
+import { WorkspaceContextManager } from '../services/WorkspaceContextManager';
 import { WorkspaceDataManager } from '../services/WorkspaceDataManager';
 import { EXTENSION_ICON_PATH } from '../utils/constants';
+import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { normalizeOutputPathForDisplay } from '../utils/path';
+import { checkWorkspaceEnvironment } from '../utils/workspace';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 
 /**
@@ -79,9 +82,12 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
    */
   public async showDashboard(): Promise<void> {
     try {
+      // 检查工作空间环境（显示警告但不阻止）
+      await checkWorkspaceEnvironment();
+
       await this.show({
         viewType: 'turboAiRules.dashboard',
-        title: vscode.l10n.t('dashboard.title'),
+        title: t('dashboard.title'),
         viewColumn: vscode.ViewColumn.One,
         iconPath: EXTENSION_ICON_PATH,
       });
@@ -353,7 +359,10 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
    */
   private async getDashboardState(): Promise<DashboardState> {
     try {
-      const config = this.configManager.getConfig();
+      // 使用 WorkspaceContextManager 获取当前工作空间
+      const workspaceContextManager = WorkspaceContextManager.getInstance();
+      const workspaceFolder = workspaceContextManager.getCurrentWorkspaceFolder();
+      const config = this.configManager.getConfig(workspaceFolder?.uri);
       const sources = config.sources || [];
       const enabledSources = sources.filter((s) => s.enabled);
 

@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 
 import { RulesManager } from '../services/RulesManager';
+import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 
 /**
@@ -70,5 +71,5 @@ export async function debugRulesCommand(): Promise<void> {
 
   output.show();
 
-  await vscode.window.showInformationMessage(vscode.l10n.t('Rule Debug Information'));
+  await vscode.window.showInformationMessage(t('Rule Debug Information'));
 }

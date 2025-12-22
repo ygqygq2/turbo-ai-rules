@@ -49,13 +49,16 @@ import { FileGenerator } from './services/FileGenerator';
 import { GitManager } from './services/GitManager';
 import { RulesManager } from './services/RulesManager';
 import { SelectionStateManager } from './services/SelectionStateManager';
+import { WorkspaceContextManager } from './services/WorkspaceContextManager';
 import { WorkspaceDataManager } from './services/WorkspaceDataManager';
 import { WorkspaceStateManager } from './services/WorkspaceStateManager';
 import type { RuleSource } from './types/config';
 import { EXTENSION_NAME } from './utils/constants';
 import { ensureIgnored } from './utils/gitignore';
+import { initI18n } from './utils/i18n';
 import { Logger } from './utils/logger';
 import { notify } from './utils/notifications';
+import { isMultiRootWorkspace, showMultiRootWorkspaceWarning } from './utils/workspace';
 
 /**
  * 从缓存目录加载已同步的规则
@@ -121,11 +124,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<{
   rulesManager: RulesManager;
   selectionStateManager: SelectionStateManager;
   configManager: ConfigManager;
+  workspaceContextManager: WorkspaceContextManager;
 }> {
   try {
     // 初始化 Logger
     Logger.init();
     Logger.info(`Activating ${EXTENSION_NAME}`);
+
+    // 初始化 i18next
+    await initI18n(context);
 
     // 保存 context 到全局变量供命令使用
     // 将 context 保存到 global，供命令使用
@@ -134,10 +141,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<{
     // 1. 初始化服务
     const configManager = ConfigManager.getInstance(context);
     const workspaceStateManager = WorkspaceStateManager.getInstance(context);
+    const workspaceContextManager = WorkspaceContextManager.getInstance(context);
     const workspaceDataManager = WorkspaceDataManager.getInstance();
     const selectionStateManager = SelectionStateManager.getInstance();
     const rulesManager = RulesManager.getInstance();
     // gitManager 和 fileGenerator 在需要时通过单例获取，避免未使用警告
+
+    // 检测多工作空间环境并显示警告（但不阻止初始化）
+    if (isMultiRootWorkspace()) {
+      await showMultiRootWorkspaceWarning();
+    }
 
     // 初始化工作区数据目录（如果有工作区）
     const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -437,11 +450,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<{
 
     Logger.info(`${EXTENSION_NAME} activated successfully`);
 
-    // 返回服务实例供测试使用
+    // 导出 API（供测试使用）
     return {
+      configManager,
       rulesManager,
       selectionStateManager,
-      configManager,
+      workspaceContextManager,
     };
   } catch (error) {
     Logger.error('Failed to activate extension', error instanceof Error ? error : undefined);

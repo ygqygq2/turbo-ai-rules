@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 
 import { ConfigManager } from '../services/ConfigManager';
 import type { RuleSource } from '../types/config';
+import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 
 /**
@@ -22,8 +23,8 @@ export async function manageSourceCommand(): Promise<void> {
 
     if (sources.length === 0) {
       const action = await vscode.window.showInformationMessage(
-        vscode.l10n.t('No sources configured'),
-        vscode.l10n.t('Add Source'),
+        t('No sources configured'),
+        t('Add Source'),
       );
 
       if (action === 'Add Source') {
@@ -41,7 +42,7 @@ export async function manageSourceCommand(): Promise<void> {
     }));
 
     const selected = await vscode.window.showQuickPick(items, {
-      placeHolder: vscode.l10n.t('Select action'),
+      placeHolder: t('Select action'),
     });
 
     if (!selected) {
@@ -54,7 +55,7 @@ export async function manageSourceCommand(): Promise<void> {
     Logger.error('Failed to manage source', error instanceof Error ? error : undefined);
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    vscode.window.showErrorMessage(vscode.l10n.t('Failed to manage source', errorMessage));
+    vscode.window.showErrorMessage(t('Failed to manage source', errorMessage));
   }
 }
 
@@ -108,8 +109,8 @@ async function showSourceActions(source: RuleSource): Promise<void> {
       });
       vscode.window.showInformationMessage(
         source.enabled
-          ? vscode.l10n.t('Source disabled', source.name || source.gitUrl)
-          : vscode.l10n.t('Source enabled', source.name || source.gitUrl),
+          ? t('Source disabled', source.name || source.gitUrl)
+          : t('Source enabled', source.name || source.gitUrl),
       );
       break;
 

@@ -158,83 +158,73 @@ describe('AdapterManagerWebviewProvider', () => {
 
   describe('handleSaveAdapter', () => {
     it('应该保存新的自定义适配器', async () => {
-      const mockVscode = await import('vscode');
-      const mockUpdate = vi.fn().mockResolvedValue(undefined);
-      vi.mocked(mockVscode.workspace.getConfiguration).mockReturnValue({
-        get: vi.fn((key: string) => {
-          if (key === 'adapters.custom') {
-            return [];
-          }
-          return {};
-        }),
-        has: vi.fn(),
-        inspect: vi.fn(),
-        update: mockUpdate,
-      } as any);
+      // Mock configManager
+      const mockUpdateConfig = vi.fn().mockResolvedValue(undefined);
+      const mockGetConfig = vi.fn().mockReturnValue({
+        adapters: {
+          custom: [],
+        },
+      });
+
+      (provider as any).configManager = {
+        getConfig: mockGetConfig,
+        updateConfig: mockUpdateConfig,
+      };
 
       const newAdapter = {
         id: 'new-adapter',
         name: 'New Adapter',
         enabled: true,
-        outputPath: 'output/path',
-        format: 'directory',
-        directoryStructure: {
-          filePattern: '*.md',
-          pathTemplate: '{{ruleName}}.md',
-        },
-        isRuleType: false,
+        outputPath: 'new/path',
+        format: 'file' as const,
       };
 
       await (provider as any).handleSaveAdapter({ adapter: newAdapter });
 
-      expect(mockUpdate).toHaveBeenCalled();
-      const callArgs = mockUpdate.mock.calls[0];
-      expect(callArgs[0]).toBe('adapters.custom');
-      expect(Array.isArray(callArgs[1])).toBe(true);
-      expect(callArgs[1].some((a: any) => a.id === 'new-adapter')).toBe(true);
+      expect(mockUpdateConfig).toHaveBeenCalled();
+      const callArgs = mockUpdateConfig.mock.calls[0];
+      expect(callArgs[0]).toBe('adapters');
+      expect(callArgs[1].custom).toBeDefined();
+      expect(Array.isArray(callArgs[1].custom)).toBe(true);
+      expect(callArgs[1].custom.some((a: any) => a.id === 'new-adapter')).toBe(true);
     });
 
     it('应该更新现有的自定义适配器', async () => {
-      const mockVscode = await import('vscode');
-      const mockUpdate = vi.fn().mockResolvedValue(undefined);
-      vi.mocked(mockVscode.workspace.getConfiguration).mockReturnValue({
-        get: vi.fn((key: string) => {
-          if (key === 'adapters.custom') {
-            return [
-              {
-                id: 'custom1',
-                name: 'Custom Adapter 1',
-                enabled: true,
-                outputPath: 'custom/path',
-              },
-            ];
-          }
-          return {};
-        }),
-        has: vi.fn(),
-        inspect: vi.fn(),
-        update: mockUpdate,
-      } as any);
+      // Mock configManager
+      const mockUpdateConfig = vi.fn().mockResolvedValue(undefined);
+      const mockGetConfig = vi.fn().mockReturnValue({
+        adapters: {
+          custom: [
+            {
+              id: 'custom1',
+              name: 'Custom Adapter 1',
+              enabled: true,
+              outputPath: 'old/path',
+            },
+          ],
+        },
+      });
+
+      (provider as any).configManager = {
+        getConfig: mockGetConfig,
+        updateConfig: mockUpdateConfig,
+      };
 
       const updatedAdapter = {
         id: 'custom1',
-        name: 'Updated Custom Adapter',
-        enabled: false,
+        name: 'Custom Adapter 1',
+        enabled: true,
         outputPath: 'new/path',
-        format: 'directory',
-        directoryStructure: {
-          filePattern: '*.md',
-          pathTemplate: '{{ruleName}}.md',
-        },
-        isRuleType: false,
+        format: 'file' as const,
       };
 
       await (provider as any).handleSaveAdapter({ adapter: updatedAdapter });
 
-      expect(mockUpdate).toHaveBeenCalled();
-      const callArgs = mockUpdate.mock.calls[0];
-      expect(callArgs[0]).toBe('adapters.custom');
-      const updatedAdapterInCall = callArgs[1].find((a: any) => a.id === 'custom1');
+      expect(mockUpdateConfig).toHaveBeenCalled();
+      const callArgs = mockUpdateConfig.mock.calls[0];
+      expect(callArgs[0]).toBe('adapters');
+      expect(callArgs[1].custom).toBeDefined();
+      const updatedAdapterInCall = callArgs[1].custom.find((a: any) => a.id === 'custom1');
       expect(updatedAdapterInCall).toBeDefined();
       expect(updatedAdapterInCall.outputPath).toBe('new/path');
     });
@@ -242,49 +232,46 @@ describe('AdapterManagerWebviewProvider', () => {
 
   describe('handleDeleteAdapter', () => {
     it('应该删除指定的自定义适配器', async () => {
-      const mockVscode = await import('vscode');
-      const mockUpdate = vi.fn().mockResolvedValue(undefined);
-      vi.mocked(mockVscode.workspace.getConfiguration).mockReturnValue({
-        get: vi.fn((key: string) => {
-          if (key === 'adapters.custom') {
-            return [
-              {
-                id: 'custom1',
-                name: 'Custom Adapter 1',
-                enabled: true,
-                outputPath: 'custom/path',
-              },
-            ];
-          }
-          return {};
-        }),
-        has: vi.fn(),
-        inspect: vi.fn(),
-        update: mockUpdate,
-      } as any);
+      // Mock configManager
+      const mockUpdateConfig = vi.fn().mockResolvedValue(undefined);
+      const mockGetConfig = vi.fn().mockReturnValue({
+        adapters: {
+          custom: [
+            {
+              id: 'custom1',
+              name: 'Custom Adapter 1',
+              enabled: true,
+              outputPath: 'custom/path',
+            },
+          ],
+        },
+      });
 
-      await (provider as any).handleDeleteAdapter({ name: 'custom1' });
+      (provider as any).configManager = {
+        getConfig: mockGetConfig,
+        updateConfig: mockUpdateConfig,
+      };
 
-      expect(mockUpdate).toHaveBeenCalled();
-      const callArgs = mockUpdate.mock.calls[0];
-      expect(callArgs[0]).toBe('adapters.custom');
-      expect(Array.isArray(callArgs[1])).toBe(true);
-      expect(callArgs[1].some((a: any) => a.id === 'custom1')).toBe(false);
+      await (provider as any).handleDeleteAdapter({ id: 'custom1' });
+
+      expect(mockUpdateConfig).toHaveBeenCalled();
+      const callArgs = mockUpdateConfig.mock.calls[0];
+      expect(callArgs[0]).toBe('adapters');
+      expect(callArgs[1].custom).toBeDefined();
+      expect(Array.isArray(callArgs[1].custom)).toBe(true);
+      expect(callArgs[1].custom.some((a: any) => a.id === 'custom1')).toBe(false);
     });
 
     it('应该在适配器不存在时抛出错误', async () => {
-      const mockVscode = await import('vscode');
-      vi.mocked(mockVscode.workspace.getConfiguration).mockReturnValue({
-        get: vi.fn((key: string) => {
-          if (key === 'adapters.custom') {
-            return [];
-          }
-          return {};
+      // Mock configManager with empty custom adapters
+      (provider as any).configManager = {
+        getConfig: vi.fn().mockReturnValue({
+          adapters: {
+            custom: [],
+          },
         }),
-        has: vi.fn(),
-        inspect: vi.fn(),
-        update: vi.fn().mockResolvedValue(undefined),
-      } as any);
+        updateConfig: vi.fn().mockResolvedValue(undefined),
+      };
 
       // 删除不存在的适配器应该抛出错误
       await expect((provider as any).handleDeleteAdapter({ name: 'non-existent' })).rejects.toThrow(

@@ -11,6 +11,7 @@ import { PRESET_ADAPTERS } from '../adapters';
 import { ConfigManager } from '../services/ConfigManager';
 import type { CustomAdapterConfig } from '../types/config';
 import { EXTENSION_ICON_PATH } from '../utils/constants';
+import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
@@ -86,7 +87,7 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
     try {
       await this.show({
         viewType: 'turboAiRules.adapterManager',
-        title: vscode.l10n.t('adapterManager.title'),
+        title: t('adapterManager.title'),
         viewColumn: vscode.ViewColumn.One,
         iconPath: EXTENSION_ICON_PATH,
       });
@@ -366,7 +367,7 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         const message = needsMigration
           ? 'Adapter configuration has been automatically migrated to new format.'
           : 'Legacy adapter configuration keys have been cleaned up.';
-        notify(vscode.l10n.t(message), 'info');
+        notify(t(message), 'info');
         await this.context.globalState.update(migrationNoticeKey, true);
       }
     }
@@ -376,7 +377,8 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
    * @return default {Promise<AdapterData>}
    */
   private async getAdapterData(): Promise<AdapterData> {
-    const config = this.configManager.getConfig();
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    const config = this.configManager.getConfig(workspaceFolder?.uri);
     const vscodeConfig = vscode.workspace.getConfiguration('turbo-ai-rules');
 
     // 检测并迁移旧配置格式（仅迁移原有的3种预设适配器：cursor, copilot, continue）
@@ -483,7 +485,7 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         payload: { success: true },
       });
 
-      notify(vscode.l10n.t('adapterManager.saveSuccess'), 'info');
+      notify(t('adapterManager.saveSuccess'), 'info');
 
       // 刷新数据
       await this.sendInitialData();
@@ -516,7 +518,8 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
       }
 
       const adapterData = payload.adapter;
-      const config = this.configManager.getConfig();
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      const config = this.configManager.getConfig(workspaceFolder?.uri);
 
       // 构建适配器配置
       const adapterConfig: CustomAdapterConfig = {
@@ -553,7 +556,7 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         custom: customAdapters,
       });
 
-      notify(vscode.l10n.t('adapterManager.adapterSaved', { name: adapterData.name }), 'info');
+      notify(t('adapterManager.adapterSaved', { name: adapterData.name }), 'info');
 
       // 刷新数据
       await this.sendInitialData();
@@ -577,7 +580,8 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         throw new Error('Invalid delete request: missing adapter id or name');
       }
 
-      const config = this.configManager.getConfig();
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      const config = this.configManager.getConfig(workspaceFolder?.uri);
       const customAdapters = config.adapters.custom || [];
 
       // 找到要删除的适配器
@@ -597,7 +601,7 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
       });
 
       Logger.info('Custom adapter deleted', { id: deletedAdapter.id });
-      notify(vscode.l10n.t('adapterManager.adapterDeleted', { name: deletedAdapter.name }), 'info');
+      notify(t('adapterManager.adapterDeleted', { name: deletedAdapter.name }), 'info');
 
       // 刷新数据
       await this.sendInitialData();

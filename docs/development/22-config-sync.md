@@ -216,13 +216,13 @@ ExtensionConfig (存储在 settings.json)
       "branch": "main",
       "enabled": true,
       "syncInterval": 7200,
-      "auth": { "type": "token" }
-    }
+      "auth": { "type": "token" },
+    },
   ],
   "turboAiRules.adapters": {
     "cursor": { "enabled": true, "autoUpdate": true },
-    "copilot": { "enabled": true, "autoUpdate": true }
-  }
+    "copilot": { "enabled": true, "autoUpdate": true },
+  },
 }
 ```
 
@@ -236,17 +236,17 @@ ExtensionConfig (存储在 settings.json)
       "name": "My Personal Rules",
       "gitUrl": "https://github.com/user/ai-rules.git",
       "enabled": true,
-      "auth": { "type": "none" }
-    }
+      "auth": { "type": "none" },
+    },
   ],
   "turboAiRules.storage": {
-    "globalCacheDir": "~/.cache/.turbo-ai-rules"
+    "globalCacheDir": "~/.cache/.turbo-ai-rules",
   },
   "turboAiRules.sync": {
     "auto": true,
     "interval": 3600,
-    "onStartup": true
-  }
+    "onStartup": true,
+  },
 }
 ```
 
@@ -797,17 +797,36 @@ workspace.code-workspace
    └─ sources: [source-B]
 ```
 
-**处理策略**：
+**当前实现（v2.0.2+）**：
 
 ```
-聚合显示策略：
+简化策略（有限支持）：
+1. 仅使用第一个 WorkspaceFolder
+2. 激活时显示警告（一次性提示）
+3. 同步/生成时需用户确认
+4. 规则选择状态全局共享（不按文件夹隔离）
+
+原因：
+- 保持架构简单性和可靠性
+- 避免工作空间上下文丢失问题
+- 主要使用场景是单工作空间
+```
+
+**未来可能的完整支持策略**：
+
+```
+聚合显示策略（待实现）：
 1. 读取所有 WorkspaceFolder 的配置
 2. 合并显示，标注来源 Folder
 3. TreeView 结构：
    ├─ [Folder A] Source A
    ├─ [Folder B] Source B
    └─ [User] Source C
+4. 按工作空间隔离规则选择状态
 ```
+
+> **注意**: 完整的多工作空间支持需要重新设计 `SelectionStateManager` 和 `WorkspaceContextManager`，
+> 以支持按工作空间隔离的状态管理。当前版本优先保证单工作空间场景的稳定性。
 
 ### 10.3 配置变更检测
 

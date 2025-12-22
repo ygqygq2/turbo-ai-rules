@@ -640,9 +640,57 @@ Output → Turbo AI Rules
 
 ---
 
+### Workspace and Environment
+
+#### Q15: Does this extension support multi-root workspaces?
+
+**A**: Currently has **limited support**. The extension can work in multi-root workspace environments, but with the following limitations:
+
+**Current Behavior**:
+
+- ⚠️ Only the **first workspace folder** will be used for all operations
+- ⚠️ You'll be prompted to confirm before sync/generate operations
+- ⚠️ Cannot guarantee correct behavior across all workspace folders
+- ⚠️ Rule selection state is shared across all folders (not isolated per folder)
+
+**Example Scenario**:
+
+```
+workspace.code-workspace
+├─ project-a/  ← ✅ Will be used
+├─ project-b/  ← ⚠️ Will be ignored
+└─ project-c/  ← ⚠️ Will be ignored
+```
+
+**Recommended Approach**:
+
+1. **Single Workspace**: Open each project folder separately when using this extension
+2. **Confirmation Dialog**: When you run sync/generate commands in multi-root workspace, you'll see:
+
+   ```
+   ⚠️ Multi-root workspace detected
+   Cannot guarantee extension works properly.
+   Will use first workspace: "project-a"
+
+   Continue anyway?
+   [Continue] [Cancel]
+   ```
+
+3. **Best Practice**: If you need to manage rules for multiple projects, open them in separate VS Code windows
+
+**Why This Limitation?**
+
+- Workspace context can be lost when switching between webviews and editors
+- Rule selection state management becomes complex in multi-root scenarios
+- Maintaining simplicity and reliability for the primary use case (single workspace)
+
+**Future Plans**: Full multi-root workspace support may be added in future versions based on user feedback.
+
+---
+
 ### Advanced Questions
 
-#### Q15: How to use in CI/CD?
+#### Q16: How to use in CI/CD?
 
 **A**: You can automatically generate config files in CI/CD pipelines.
 
@@ -679,7 +727,7 @@ jobs:
 
 ---
 
-#### Q16: How to contribute rules to the community?
+#### Q17: How to contribute rules to the community?
 
 **A**: Create a public Git repository to share your rules.
 

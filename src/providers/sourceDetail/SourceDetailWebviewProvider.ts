@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 
 import { EXTENSION_ICON_PATH } from '../../utils/constants';
+import { t } from '../../utils/i18n';
 import { BaseWebviewProvider, type WebviewMessage } from '../BaseWebviewProvider';
 import { getSourceDetailHtmlContent } from './getSourceDetailHtmlContent.js';
 import { handleSourceDetailMessage } from './handleSourceDetailMessage.js';
@@ -28,7 +29,7 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider {
     this.currentSourceId = sourceId;
     await this.show({
       viewType: 'turboAiRules.sourceDetail',
-      title: vscode.l10n.t('Source Details'),
+      title: t('Source Details'),
       viewColumn: vscode.ViewColumn.One,
       iconPath: EXTENSION_ICON_PATH,
     });

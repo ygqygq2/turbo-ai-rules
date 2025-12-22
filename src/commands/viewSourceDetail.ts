@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 
 import { SourceDetailWebviewProvider } from '../providers/SourceDetailWebview';
+import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 
@@ -32,7 +33,7 @@ export async function viewSourceDetailCommand(
       const sources = configManager.getSources();
 
       if (sources.length === 0) {
-        notify(vscode.l10n.t('No sources configured'), 'info');
+        notify(t('No sources configured'), 'info');
         return;
       }
 
@@ -65,6 +66,6 @@ export async function viewSourceDetailCommand(
     Logger.error('Failed to view source detail', error instanceof Error ? error : undefined);
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    notify(vscode.l10n.t('Failed to manage source', errorMessage), 'error');
+    notify(t('Failed to manage source', errorMessage), 'error');
   }
 }

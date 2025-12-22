@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 
 import { ConfigManager } from '../services/ConfigManager';
 import type { ParsedRule } from '../types/rules';
+import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { ProgressManager } from '../utils/progressManager';
@@ -30,7 +31,7 @@ export async function editSourceCommand(
           : undefined;
 
     if (!actualSourceId) {
-      notify(vscode.l10n.t('Source not found'), 'error');
+      notify(t('Source not found'), 'error');
       return;
     }
 
@@ -38,7 +39,7 @@ export async function editSourceCommand(
     const source = sources.find((s) => s.id === actualSourceId);
 
     if (!source) {
-      notify(vscode.l10n.t('Source not found'), 'error');
+      notify(t('Source not found'), 'error');
       return;
     }
 
@@ -51,10 +52,7 @@ export async function editSourceCommand(
   } catch (error) {
     Logger.error('Failed to edit source', error instanceof Error ? error : undefined);
     notify(
-      vscode.l10n.t(
-        'Failed to manage source',
-        error instanceof Error ? error.message : 'Unknown error',
-      ),
+      t('Failed to manage source', error instanceof Error ? error.message : 'Unknown error'),
       'error',
     );
   }
@@ -76,7 +74,7 @@ export async function testConnectionCommand(
           : undefined;
 
     if (!actualSourceId) {
-      notify(vscode.l10n.t('Source not found'), 'error');
+      notify(t('Source not found'), 'error');
       return;
     }
 
@@ -129,10 +127,7 @@ export async function testConnectionCommand(
   } catch (error) {
     Logger.error('Failed to test connection', error instanceof Error ? error : undefined);
     notify(
-      vscode.l10n.t(
-        'Failed to manage source',
-        error instanceof Error ? error.message : 'Unknown error',
-      ),
+      t('Failed to manage source', error instanceof Error ? error.message : 'Unknown error'),
       'error',
     );
   }
@@ -154,7 +149,7 @@ export async function toggleSourceCommand(
           : undefined;
 
     if (!actualSourceId) {
-      notify(vscode.l10n.t('Source not found'), 'error');
+      notify(t('Source not found'), 'error');
       return;
     }
 
@@ -163,7 +158,7 @@ export async function toggleSourceCommand(
     const source = sources.find((s) => s.id === actualSourceId);
 
     if (!source) {
-      notify(vscode.l10n.t('Source not found'), 'error');
+      notify(t('Source not found'), 'error');
       return;
     }
 
@@ -171,8 +166,8 @@ export async function toggleSourceCommand(
     await configManager.updateSource(actualSourceId, { ...source, enabled: newStatus });
 
     const message = newStatus
-      ? vscode.l10n.t('Source enabled', source.name || source.gitUrl)
-      : vscode.l10n.t('Source disabled', source.name || source.gitUrl);
+      ? t('Source enabled', source.name || source.gitUrl)
+      : t('Source disabled', source.name || source.gitUrl);
     notify(message, 'info');
 
     // 刷新树视图
@@ -180,10 +175,7 @@ export async function toggleSourceCommand(
   } catch (error) {
     Logger.error('Failed to toggle source', error instanceof Error ? error : undefined);
     notify(
-      vscode.l10n.t(
-        'Failed to manage source',
-        error instanceof Error ? error.message : 'Unknown error',
-      ),
+      t('Failed to manage source', error instanceof Error ? error.message : 'Unknown error'),
       'error',
     );
   }
@@ -203,21 +195,18 @@ export async function copyRuleContentCommand(
         : (ruleOrItem as ParsedRule);
 
     if (!rule) {
-      notify(vscode.l10n.t('No rule selected'), 'error');
+      notify(t('No rule selected'), 'error');
       return;
     }
 
     // 使用原始内容（包含 frontmatter）
     const content = rule.rawContent;
     await vscode.env.clipboard.writeText(content);
-    notify(vscode.l10n.t('Rule "{0}" copied to clipboard', rule.title), 'info');
+    notify(t('Rule "{0}" copied to clipboard', rule.title), 'info');
   } catch (error) {
     Logger.error('Failed to copy rule content', error instanceof Error ? error : undefined);
     notify(
-      vscode.l10n.t(
-        'Failed to copy rule',
-        error instanceof Error ? error.message : 'Unknown error',
-      ),
+      t('Failed to copy rule', error instanceof Error ? error.message : 'Unknown error'),
       'error',
     );
   }
@@ -237,7 +226,7 @@ export async function exportRuleCommand(
         : (ruleOrItem as ParsedRule);
 
     if (!rule) {
-      notify(vscode.l10n.t('No rule selected'), 'error');
+      notify(t('No rule selected'), 'error');
       return;
     }
 
@@ -254,15 +243,12 @@ export async function exportRuleCommand(
       const content = rule.rawContent;
 
       await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf8'));
-      notify(vscode.l10n.t('Rule exported to {0}', uri.fsPath), 'info');
+      notify(t('Rule exported to {0}', uri.fsPath), 'info');
     }
   } catch (error) {
     Logger.error('Failed to export rule', error instanceof Error ? error : undefined);
     notify(
-      vscode.l10n.t(
-        'Failed to export rule',
-        error instanceof Error ? error.message : 'Unknown error',
-      ),
+      t('Failed to export rule', error instanceof Error ? error.message : 'Unknown error'),
       'error',
     );
   }
@@ -295,18 +281,18 @@ export async function ignoreRuleCommand(
         : (ruleOrItem as ParsedRule);
 
     if (!rule || !rule.filePath) {
-      notify(vscode.l10n.t('No rule selected'), 'error');
+      notify(t('No rule selected'), 'error');
       return;
     }
 
     const confirmed = await (notify(
-      vscode.l10n.t(
+      t(
         'Are you sure you want to ignore rule "{0}"? This will uncheck it and exclude from generated configs.',
         rule.title,
       ),
       'warning',
       undefined,
-      vscode.l10n.t('Ignore Rule'),
+      t('Ignore Rule'),
       true,
     ) as Promise<boolean>);
 
@@ -330,15 +316,12 @@ export async function ignoreRuleCommand(
       // 更新选择状态
       selectionStateManager.updateSelection(rule.sourceId, newPaths, true, workspacePath);
 
-      notify(vscode.l10n.t('Rule "{0}" unchecked and will be excluded', rule.title), 'info');
+      notify(t('Rule "{0}" unchecked and will be excluded', rule.title), 'info');
     }
   } catch (error) {
     Logger.error('Failed to ignore rule', error instanceof Error ? error : undefined);
     notify(
-      vscode.l10n.t(
-        'Failed to ignore rule',
-        error instanceof Error ? error.message : 'Unknown error',
-      ),
+      t('Failed to ignore rule', error instanceof Error ? error.message : 'Unknown error'),
       'error',
     );
   }

@@ -41,6 +41,8 @@
 
 ## 🚀 Quick Start
 
+> ⚠️ **Multi-root Workspace Limitation**: This extension currently has limited support for multi-root workspaces. It's recommended to use it in single workspace environments. [Learn more](#-known-limitations)
+
 ### 1. Install Extension
 
 Search for **Turbo AI Rules** in VS Code Extension Marketplace and install.
@@ -140,6 +142,34 @@ Use camelCase for variables...
 - 🎓 **Learning** - Apply best practices from community rule repositories
 - 🔄 **Multi-Project** - Sync same rules across multiple projects
 - 🛠️ **Custom Tools** - Support any AI tool with custom adapters
+
+---
+
+## ⚠️ Known Limitations
+
+### Multi-root Workspace Support
+
+This extension currently has **limited support for multi-root workspaces** (VS Code workspaces with multiple project folders).
+
+**Current Behavior**:
+
+- ✅ Extension can be activated in multi-root workspaces
+- ⚠️ Only the **first workspace folder** will be used for operations
+- ⚠️ User confirmation required before sync/generate operations
+- ❌ Cannot guarantee correct behavior across all workspace folders
+
+**Recommended Usage**:
+
+- 📁 Use in **single workspace** environments for best experience
+- 🔄 Open each project folder separately when using this extension
+
+**Why This Limitation?**
+
+- Rule selection state management becomes complex in multi-root scenarios
+- Workspace context can be lost when switching between webviews and editors
+- Maintaining simplicity and reliability for the primary use case
+
+**Future Plans**: We may add full multi-root workspace support in future versions based on user feedback.
 
 ---
 

@@ -8,6 +8,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { EXTENSION_ICON_PATH } from '../../utils/constants';
+import { t } from '../../utils/i18n';
 import { Logger } from '../../utils/logger';
 import { BaseWebviewProvider, type WebviewMessage } from '../BaseWebviewProvider';
 import { SourceDetailDataHelper } from './SourceDetailDataHelper';
@@ -86,7 +87,7 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider implements 
 
     await this.show({
       viewType: 'turboAiRules.addSource',
-      title: isNew ? vscode.l10n.t('Add New Rule Source') : vscode.l10n.t('Edit Source'),
+      title: isNew ? t('Add New Rule Source') : t('Edit Source'),
       viewColumn: vscode.ViewColumn.One,
       iconPath: EXTENSION_ICON_PATH,
       initialScript: isNew
@@ -110,7 +111,7 @@ export class SourceDetailWebviewProvider extends BaseWebviewProvider implements 
 
     await this.show({
       viewType: 'turboAiRules.sourceDetail',
-      title: vscode.l10n.t('Source Details'),
+      title: t('Source Details'),
       viewColumn: vscode.ViewColumn.One,
       iconPath: EXTENSION_ICON_PATH,
     });

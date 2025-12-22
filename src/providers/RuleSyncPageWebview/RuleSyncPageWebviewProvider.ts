@@ -14,6 +14,7 @@ import { SelectionStateManager } from '../../services/SelectionStateManager';
 import type { AdapterConfig } from '../../types/config';
 import { EXTENSION_ICON_PATH } from '../../utils/constants';
 import { buildFileTreeFromRules, type FileTreeNode } from '../../utils/fileTreeBuilder';
+import { t } from '../../utils/i18n';
 import { Logger } from '../../utils/logger';
 import { notify } from '../../utils/notifications';
 import { normalizeOutputPathForDisplay } from '../../utils/path';
@@ -105,7 +106,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
     try {
       await this.show({
         viewType: 'turboAiRules.ruleSyncPage',
-        title: vscode.l10n.t('dashboard.quickActions.ruleSyncPage'),
+        title: t('dashboard.quickActions.ruleSyncPage'),
         viewColumn: vscode.ViewColumn.One,
         iconPath: EXTENSION_ICON_PATH,
       });
@@ -328,7 +329,8 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
     }>;
     adapters: AdapterState[];
   }> {
-    const config = this.configManager.getConfig();
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    const config = this.configManager.getConfig(workspaceFolder?.uri);
     const allSources = config.sources || [];
 
     // 构建规则数据（所有规则源，与规则选择器格式一致）
@@ -421,7 +423,8 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
    * @return default {Promise<AdapterState[]>}
    */
   private async getAdapterStates(): Promise<AdapterState[]> {
-    const config = this.configManager.getConfig();
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    const config = this.configManager.getConfig(workspaceFolder?.uri);
     const adapters: AdapterState[] = [];
 
     // 预置适配器

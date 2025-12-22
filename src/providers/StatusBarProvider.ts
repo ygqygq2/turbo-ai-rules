@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 
 import { RulesManager } from '../services/RulesManager';
 import { WorkspaceStateManager } from '../services/WorkspaceStateManager';
+import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 
 /**
@@ -205,25 +206,24 @@ export class StatusBarProvider {
     switch (this.syncStatus) {
       case 'initializing':
         icon = '⏳'; // 沙漏
-        text = vscode.l10n.t('statusBar.loading');
-        tooltip = vscode.l10n.t('statusBar.initializing');
+        text = t('statusBar.loading');
+        tooltip = t('statusBar.initializing');
         break;
 
       case 'syncing':
         icon = '$(sync~spin)';
         if (this.syncProgress) {
           const { completed, total, currentSource, operation } = this.syncProgress;
-          text = vscode.l10n.t('statusBar.syncingProgress', completed, total);
-          tooltip = vscode.l10n.t(
-            'statusBar.tooltip.syncingDetail',
-            completed,
-            total,
-            currentSource || '',
-            operation || '',
-          );
+          text = t('statusBar.syncingProgress', { 0: completed, 1: total });
+          tooltip = t('statusBar.tooltip.syncingDetail', {
+            0: completed,
+            1: total,
+            2: currentSource || '',
+            3: operation || '',
+          });
         } else {
-          text = vscode.l10n.t('statusBar.syncing');
-          tooltip = vscode.l10n.t('statusBar.tooltip.syncing');
+          text = t('statusBar.syncing');
+          tooltip = t('statusBar.tooltip.syncing');
         }
         break;
 
@@ -237,8 +237,8 @@ export class StatusBarProvider {
 
       case 'error':
         icon = '$(error)';
-        text = vscode.l10n.t('statusBar.syncFailed');
-        tooltip = vscode.l10n.t('statusBar.tooltip.failed');
+        text = t('statusBar.syncFailed');
+        tooltip = t('statusBar.tooltip.failed');
         backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
         break;
 
@@ -255,8 +255,8 @@ export class StatusBarProvider {
             backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
           }
         } else {
-          text = vscode.l10n.t('statusBar.noRules');
-          tooltip = vscode.l10n.t('statusBar.tooltip.idle', 0, 0, 0);
+          text = t('statusBar.noRules');
+          tooltip = t('statusBar.tooltip.idle', { 0: 0, 1: 0, 2: 0 });
         }
         break;
     }
@@ -287,28 +287,28 @@ export class StatusBarProvider {
     sourceCount: number,
   ): Promise<string> {
     const lines = [
-      vscode.l10n.t('statusBar.tooltip.syncSuccess'),
+      t('statusBar.tooltip.syncSuccess'),
       '',
-      vscode.l10n.t('statusBar.tooltip.statsTitle'),
-      vscode.l10n.t('statusBar.tooltip.syncedRules', totalSyncedRules),
-      vscode.l10n.t('statusBar.tooltip.sources', syncedSourceCount, sourceCount),
+      t('statusBar.tooltip.statsTitle'),
+      t('statusBar.tooltip.syncedRules', { '0': totalSyncedRules }),
+      t('statusBar.tooltip.sources', { '0': syncedSourceCount, '1': sourceCount }),
     ];
 
     // 添加各规则源详情
     const sourceDetails = await this.getSourceDetails();
     if (sourceDetails.length > 0) {
       lines.push('');
-      lines.push(vscode.l10n.t('statusBar.tooltip.sourcesTitle'));
+      lines.push(t('statusBar.tooltip.sourcesTitle'));
       lines.push(...sourceDetails);
     }
 
     if (this.lastSyncTime) {
       lines.push('');
-      lines.push(vscode.l10n.t('statusBar.tooltip.lastSync', this.formatTime(this.lastSyncTime)));
+      lines.push(t('statusBar.tooltip.lastSync', this.formatTime(this.lastSyncTime)));
     }
 
     lines.push('');
-    lines.push(vscode.l10n.t('statusBar.clickToOpen'));
+    lines.push(t('statusBar.clickToOpen'));
 
     return lines.join('\n');
   }
@@ -328,26 +328,26 @@ export class StatusBarProvider {
     const lines = [
       'Turbo AI Rules',
       '',
-      vscode.l10n.t('statusBar.tooltip.statsTitle'),
-      vscode.l10n.t('statusBar.tooltip.syncedRules', totalSyncedRules),
-      vscode.l10n.t('statusBar.tooltip.sources', syncedSourceCount, sourceCount),
+      t('statusBar.tooltip.statsTitle'),
+      t('statusBar.tooltip.syncedRules', { '0': totalSyncedRules }),
+      t('statusBar.tooltip.sources', { '0': syncedSourceCount, '1': sourceCount }),
     ];
 
     // 添加各规则源详情
     const sourceDetails = await this.getSourceDetails();
     if (sourceDetails.length > 0) {
       lines.push('');
-      lines.push(vscode.l10n.t('statusBar.tooltip.sourcesTitle'));
+      lines.push(t('statusBar.tooltip.sourcesTitle'));
       lines.push(...sourceDetails);
     }
 
     if (this.lastSyncTime) {
       lines.push('');
-      lines.push(vscode.l10n.t('statusBar.tooltip.lastSync', this.formatTime(this.lastSyncTime)));
+      lines.push(t('statusBar.tooltip.lastSync', this.formatTime(this.lastSyncTime)));
     }
 
     lines.push('');
-    lines.push(vscode.l10n.t('statusBar.clickToOpen'));
+    lines.push(t('statusBar.clickToOpen'));
 
     return lines.join('\n');
   }
@@ -371,20 +371,19 @@ export class StatusBarProvider {
 
         if (!stats) {
           // 未同步过
-          lines.push(`  ⏳ ${source.name} (${vscode.l10n.t('statusBar.tooltip.sourceNever')})`);
+          lines.push(`  ⏳ ${source.name} (${t('statusBar.tooltip.sourceNever')})`);
         } else if (stats.syncStatus === 'success') {
           // 同步成功
           const timeStr = this.formatTime(new Date(stats.lastSyncTime));
           lines.push(
-            `  ✅ ${source.name} (${vscode.l10n.t(
-              'statusBar.tooltip.sourceSuccess',
-              stats.syncedRulesCount,
-              timeStr,
-            )})`,
+            `  ✅ ${source.name} (${t('statusBar.tooltip.sourceSuccess', {
+              '0': stats.syncedRulesCount,
+              '1': timeStr,
+            })})`,
           );
         } else if (stats.syncStatus === 'failed') {
           // 同步失败
-          lines.push(`  ❌ ${source.name} (${vscode.l10n.t('statusBar.tooltip.sourceFailed')})`);
+          lines.push(`  ❌ ${source.name} (${t('statusBar.tooltip.sourceFailed')})`);
         }
       }
     } catch (_error) {
@@ -405,11 +404,11 @@ export class StatusBarProvider {
     const hours = Math.floor(minutes / 60);
 
     if (seconds < 60) {
-      return vscode.l10n.t('time.justNow');
+      return t('time.justNow');
     } else if (minutes < 60) {
-      return vscode.l10n.t('time.minutesAgo', minutes);
+      return t('time.minutesAgo', minutes);
     } else if (hours < 24) {
-      return vscode.l10n.t('time.hoursAgo', hours);
+      return t('time.hoursAgo', hours);
     } else {
       return date.toLocaleString();
     }
