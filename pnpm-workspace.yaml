@@ -1,4 +1,7 @@
 # pnpm workspace settings
+packages:
+  - '.'
+
 # 仅允许这些依赖在安装时运行构建脚本（preinstall/install/postinstall）
 # 如需调整，可运行 `pnpm approve-builds` 或手动编辑此文件。
 onlyBuiltDependencies:
