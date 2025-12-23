@@ -307,30 +307,16 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         customAdapters?: CustomAdapterData[];
       };
 
-      const vscodeConfig = vscode.workspace.getConfiguration('turbo-ai-rules');
-      const target = vscode.ConfigurationTarget.Workspace;
-
-      // 更新预设适配器状态（使用嵌套对象方式，避免需要预先在 package.json 中定义每个适配器）
+      // 更新预设适配器状态
       if (data.presetAdapters) {
-        // 读取当前的 adapters 配置对象
-        const currentAdapters = vscodeConfig.get<
-          Record<string, { enabled?: boolean; autoUpdate?: boolean }>
-        >('adapters', {});
-
-        // 更新预设适配器的状态
+        const presetAdaptersConfig: Record<string, { enabled: boolean }> = {};
         for (const preset of data.presetAdapters) {
-          if (!currentAdapters[preset.id]) {
-            currentAdapters[preset.id] = {};
-          }
-          currentAdapters[preset.id].enabled = preset.enabled;
-          Logger.debug(`Updated preset adapter: ${preset.id} -> ${preset.enabled}`);
+          presetAdaptersConfig[preset.id] = { enabled: preset.enabled };
         }
-
-        // 整体更新 adapters 配置（保留 custom 字段）
-        await vscodeConfig.update('adapters', currentAdapters, target);
+        await this.configManager.updatePresetAdapters(presetAdaptersConfig);
       }
 
-      // 更新自定义适配器（custom 是独立的配置键）
+      // 更新自定义适配器
       if (data.customAdapters) {
         const customAdapters: CustomAdapterConfig[] = data.customAdapters.map((adapter) => ({
           id: adapter.id,
@@ -346,7 +332,7 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
           isRuleType: adapter.isRuleType,
           fileTemplate: adapter.singleFileTemplate,
         }));
-        await vscodeConfig.update('adapters.custom', customAdapters, target);
+        await this.configManager.updateCustomAdapters(customAdapters);
       }
 
       Logger.info('All adapter configurations saved', { payload });

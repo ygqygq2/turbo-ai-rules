@@ -262,7 +262,6 @@ GitHub Actions 会自动运行所有测试（包括 xvfb-run for Linux headless 
 **测试步骤**：
 
 1. **规则同步页测试**：
-
    - 打开规则同步页
    - 验证技能适配器出现在列表中
    - 勾选技能适配器
@@ -476,7 +475,7 @@ Turbo AI Rules: Remove Source
 - [ ] HTTPS Token 认证成功
 - [ ] SSH 默认 key 认证成功
 - [ ] SSH 自定义 key 认证成功
-- [ ] SubPath 验证（必须以 / 开头）
+- [ ] SubPath 验证（支持相对路径，如 rules 或 docs/rules）
 - [ ] 递归解析工作正常
 - [ ] Cursor 适配器生成 `.cursorrules`
 - [ ] Copilot 适配器生成 `.github/copilot-instructions.md`
@@ -537,7 +536,7 @@ rm -rf .turbo-ai-rules/
 
 #### Q: 递归解析未找到文件
 
-- 检查 SubPath 是否正确（必须以 / 开头）
+- 检查 SubPath 是否正确（支持相对路径，如 rules 或 docs/rules）
 - 确认仓库中有 `.md` 或 `.mdc` 文件
 - 检查文件深度（默认最多 6 层）
 

@@ -52,7 +52,7 @@ Markers in rule descriptions:
    - Public repo: `https://github.com/username/repo.git`
    - Private repo: Provide access token in subsequent steps
 3. Select branch (optional, defaults to `main`)
-4. Specify subpath (optional, must start with `/`, e.g., `/rules` or `/docs/rules`)
+4. Specify subpath (optional, e.g., `rules` or `docs/rules`)
 5. Set display name (optional, for easy identification in tree view)
 6. Provide access token (required for private repos only)
 
@@ -69,7 +69,7 @@ Token:    ghp_xxxxxxxxxxxx (private repo)
 ### Tips
 
 - 🔐 Access token only needs `repo` (full repository access) permission
-- 📁 Use subpath to sync only specific directories within the repository (must start with `/`)
+- 📁 Use subpath to sync only specific directories within the repository
 - 🏷️ Set clear names for managing multiple rule sources
 
 ---
