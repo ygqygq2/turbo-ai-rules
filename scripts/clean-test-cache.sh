@@ -19,10 +19,15 @@ if [ -d "$HOME/.config/.turbo-ai-rules" ]; then
   rm -rf "$HOME/.config/.turbo-ai-rules"
 fi
 
-# 3. 清理 VSCode 测试目录
+# 3. 清理 VSCode 测试用户数据（保留 VS Code 下载文件以提高效率）
 if [ -d ".vscode-test" ]; then
-  echo "🗑️  Removing .vscode-test directory"
-  rm -rf .vscode-test
+  echo "🗑️  Cleaning .vscode-test user data (keeping VS Code binary)"
+  
+  # 只清理用户数据目录，保留 vscode-linux-x64-* 下载文件
+  find .vscode-test -mindepth 1 -maxdepth 1 -type d ! -name "vscode-*" -exec rm -rf {} + 2>/dev/null || true
+  
+  # 清理可能的用户数据文件
+  find .vscode-test -mindepth 1 -maxdepth 1 -type f -exec rm -f {} + 2>/dev/null || true
 fi
 
 # 4. 清理编译输出
@@ -76,7 +81,7 @@ echo ""
 echo "📋 Cleaned locations:"
 echo "   - ~/.cache/.turbo-ai-rules (global cache)"
 echo "   - ~/.config/.turbo-ai-rules (global config)"
-echo "   - .vscode-test (VSCode test runtime)"
+echo "   - .vscode-test/extensions (user data, VS Code binary preserved)"
 echo "   - out (compiled output)"
 echo "   - sampleWorkspace/*/* (generated files)"
 echo "   - /tmp/tmp-* (temporary test directories)"
