@@ -14,7 +14,8 @@ vi.mock('vscode', () => ({
   window: {
     createWebviewPanel: vi.fn(),
     showInformationMessage: vi.fn(),
-    showErrorMessage: vi.fn(),
+    showErrorMessage: vi.fn().mockResolvedValue(undefined),
+    showWarningMessage: vi.fn().mockResolvedValue(undefined),
     setStatusBarMessage: vi.fn().mockReturnValue({ dispose: vi.fn() }),
   },
   Uri: {
@@ -159,7 +160,7 @@ describe('AdapterManagerWebviewProvider', () => {
   describe('handleSaveAdapter', () => {
     it('应该保存新的自定义适配器', async () => {
       // Mock configManager
-      const mockUpdateConfig = vi.fn().mockResolvedValue(undefined);
+      const mockAddAdapter = vi.fn().mockResolvedValue(undefined);
       const mockGetConfig = vi.fn().mockReturnValue({
         adapters: {
           custom: [],
@@ -168,7 +169,7 @@ describe('AdapterManagerWebviewProvider', () => {
 
       (provider as any).configManager = {
         getConfig: mockGetConfig,
-        updateConfig: mockUpdateConfig,
+        addAdapter: mockAddAdapter,
       };
 
       const newAdapter = {
@@ -181,17 +182,15 @@ describe('AdapterManagerWebviewProvider', () => {
 
       await (provider as any).handleSaveAdapter({ adapter: newAdapter });
 
-      expect(mockUpdateConfig).toHaveBeenCalled();
-      const callArgs = mockUpdateConfig.mock.calls[0];
-      expect(callArgs[0]).toBe('adapters');
-      expect(callArgs[1].custom).toBeDefined();
-      expect(Array.isArray(callArgs[1].custom)).toBe(true);
-      expect(callArgs[1].custom.some((a: any) => a.id === 'new-adapter')).toBe(true);
+      expect(mockAddAdapter).toHaveBeenCalled();
+      const callArgs = mockAddAdapter.mock.calls[0];
+      expect(callArgs[0].id).toBe('new-adapter');
+      expect(callArgs[0].name).toBe('New Adapter');
     });
 
     it('应该更新现有的自定义适配器', async () => {
       // Mock configManager
-      const mockUpdateConfig = vi.fn().mockResolvedValue(undefined);
+      const mockUpdateAdapter = vi.fn().mockResolvedValue(undefined);
       const mockGetConfig = vi.fn().mockReturnValue({
         adapters: {
           custom: [
@@ -207,7 +206,7 @@ describe('AdapterManagerWebviewProvider', () => {
 
       (provider as any).configManager = {
         getConfig: mockGetConfig,
-        updateConfig: mockUpdateConfig,
+        updateAdapter: mockUpdateAdapter,
       };
 
       const updatedAdapter = {
@@ -220,20 +219,21 @@ describe('AdapterManagerWebviewProvider', () => {
 
       await (provider as any).handleSaveAdapter({ adapter: updatedAdapter });
 
-      expect(mockUpdateConfig).toHaveBeenCalled();
-      const callArgs = mockUpdateConfig.mock.calls[0];
-      expect(callArgs[0]).toBe('adapters');
-      expect(callArgs[1].custom).toBeDefined();
-      const updatedAdapterInCall = callArgs[1].custom.find((a: any) => a.id === 'custom1');
-      expect(updatedAdapterInCall).toBeDefined();
-      expect(updatedAdapterInCall.outputPath).toBe('new/path');
+      expect(mockUpdateAdapter).toHaveBeenCalled();
+      const callArgs = mockUpdateAdapter.mock.calls[0];
+      expect(callArgs[0]).toBe('custom1');
+      expect(callArgs[1].outputPath).toBe('new/path');
     });
   });
 
   describe('handleDeleteAdapter', () => {
     it('应该删除指定的自定义适配器', async () => {
+      // Mock vscode.window.showWarningMessage to return delete button
+      const vscode = await import('vscode');
+      vi.mocked(vscode.window.showWarningMessage).mockResolvedValue('form.button.delete' as any);
+
       // Mock configManager
-      const mockUpdateConfig = vi.fn().mockResolvedValue(undefined);
+      const mockRemoveAdapter = vi.fn().mockResolvedValue(undefined);
       const mockGetConfig = vi.fn().mockReturnValue({
         adapters: {
           custom: [
@@ -249,28 +249,30 @@ describe('AdapterManagerWebviewProvider', () => {
 
       (provider as any).configManager = {
         getConfig: mockGetConfig,
-        updateConfig: mockUpdateConfig,
+        removeAdapter: mockRemoveAdapter,
       };
 
       await (provider as any).handleDeleteAdapter({ id: 'custom1' });
 
-      expect(mockUpdateConfig).toHaveBeenCalled();
-      const callArgs = mockUpdateConfig.mock.calls[0];
-      expect(callArgs[0]).toBe('adapters');
-      expect(callArgs[1].custom).toBeDefined();
-      expect(Array.isArray(callArgs[1].custom)).toBe(true);
-      expect(callArgs[1].custom.some((a: any) => a.id === 'custom1')).toBe(false);
+      expect(mockRemoveAdapter).toHaveBeenCalled();
+      const callArgs = mockRemoveAdapter.mock.calls[0];
+      expect(callArgs[0]).toBe('custom1');
     });
 
     it('应该在适配器不存在时抛出错误', async () => {
-      // Mock configManager with empty custom adapters
+      // Mock vscode.window.showWarningMessage to return delete button
+      const vscode = await import('vscode');
+      vi.mocked(vscode.window.showWarningMessage).mockResolvedValue('form.button.delete' as any);
+
+      // Mock configManager
+      const mockGetConfig = vi.fn().mockReturnValue({
+        adapters: {
+          custom: [],
+        },
+      });
+
       (provider as any).configManager = {
-        getConfig: vi.fn().mockReturnValue({
-          adapters: {
-            custom: [],
-          },
-        }),
-        updateConfig: vi.fn().mockResolvedValue(undefined),
+        getConfig: mockGetConfig,
       };
 
       // 删除不存在的适配器应该抛出错误

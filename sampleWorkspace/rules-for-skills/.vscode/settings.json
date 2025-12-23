@@ -1,51 +1,49 @@
 {
   // Skills Adapter Test Scenario
-  "turbo-ai-rules.adapters": {
-    "cursor": {
-      "enabled": false,
-      "sortBy": "priority",
-      "sortOrder": "asc"
-    },
-    "copilot": {
-      "enabled": true,
-      "sortBy": "id",
-      "sortOrder": "desc"
-    },
-    "continue": {
-      "enabled": false,
-      "sortBy": "priority",
-      "sortOrder": "asc"
-    },
-    "windsurf": {
-      "enabled": true,
-      "sortBy": "priority",
-      "sortOrder": "asc"
-    },
-    "cline": {
-      "enabled": false,
-      "sortBy": "priority",
-      "sortOrder": "asc"
-    },
-    "roo-cline": {
-      "enabled": false,
-      "sortBy": "priority",
-      "sortOrder": "asc"
-    },
-    "aider": {
-      "enabled": false,
-      "sortBy": "priority",
-      "sortOrder": "asc"
-    },
-    "bolt": {
-      "enabled": false,
-      "sortBy": "priority",
-      "sortOrder": "asc"
-    },
-    "qodo-gen": {
-      "enabled": false,
-      "sortBy": "priority",
-      "sortOrder": "asc"
-    }
+  "turbo-ai-rules.adapters.cursor": {
+    "enabled": false,
+    "sortBy": "priority",
+    "sortOrder": "asc"
+  },
+  "turbo-ai-rules.adapters.copilot": {
+    "enabled": true,
+    "sortBy": "id",
+    "sortOrder": "desc"
+  },
+  "turbo-ai-rules.adapters.continue": {
+    "enabled": false,
+    "sortBy": "priority",
+    "sortOrder": "asc"
+  },
+  "turbo-ai-rules.adapters.windsurf": {
+    "enabled": true,
+    "sortBy": "priority",
+    "sortOrder": "asc"
+  },
+  "turbo-ai-rules.adapters.cline": {
+    "enabled": false,
+    "sortBy": "priority",
+    "sortOrder": "asc"
+  },
+  "turbo-ai-rules.adapters.roo-cline": {
+    "enabled": false,
+    "sortBy": "priority",
+    "sortOrder": "asc"
+  },
+  "turbo-ai-rules.adapters.aider": {
+    "enabled": false,
+    "sortBy": "priority",
+    "sortOrder": "asc"
+  },
+  "turbo-ai-rules.adapters.bolt": {
+    "enabled": false,
+    "sortBy": "priority",
+    "sortOrder": "asc"
+  },
+  "turbo-ai-rules.adapters.qodo-gen": {
+    "enabled": false,
+    "sortBy": "priority",
+    "sortOrder": "asc"
   },
   "turbo-ai-rules.sync.conflictStrategy": "priority",
   "turbo-ai-rules.sync.auto": false,
@@ -74,28 +72,11 @@
       "enabled": true,
       "outputPath": ".skills/",
       "outputType": "directory",
-      "fileExtensions": [
-        ".md"
-      ],
-      "organizeBySource": false,
-      "generateIndex": true,
-      "indexFileName": "index.md",
-      "isRuleType": false
-    },
-    {
-      "id": "tt",
-      "name": "T",
-      "enabled": true,
-      "outputPath": ".testrules",
-      "outputType": "file",
       "fileExtensions": [],
       "organizeBySource": false,
       "generateIndex": true,
       "indexFileName": "index.md",
-      "isRuleType": false,
-      "fileTemplate": "{{rules}}",
-      "sortBy": "id",
-      "sortOrder": "desc"
+      "isRuleType": false
     }
   ]
 }

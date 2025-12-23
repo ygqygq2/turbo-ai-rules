@@ -30,6 +30,21 @@ describe('Sync Rules Tests', () => {
 
     assert.ok(rulesManager, 'RulesManager should be available from extension');
     assert.ok(selectionStateManager, 'SelectionStateManager should be available from extension');
+
+    // 为 Sync Rules 测试临时启用 Cursor 适配器
+    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    await config.update(
+      'adapters',
+      {
+        cursor: {
+          enabled: true,
+          autoUpdate: true,
+          sortBy: 'priority',
+          sortOrder: 'asc',
+        },
+      },
+      vscode.ConfigurationTarget.WorkspaceFolder,
+    );
   });
 
   afterEach(async () => {
@@ -37,8 +52,11 @@ describe('Sync Rules Tests', () => {
       return;
     }
 
-    // 清理选择状态（避免影响其他测试）
+    // 清理适配器配置
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    await config.update('adapters', {}, vscode.ConfigurationTarget.WorkspaceFolder);
+
+    // 清理选择状态（避免影响其他测试）
     const sources = config.get<Array<{ id: string }>>(CONFIG_KEYS.SOURCES);
     if (sources) {
       for (const source of sources) {
@@ -137,8 +155,10 @@ describe('Sync Rules Tests', () => {
 
     for (const source of sourcesForSelection.filter((s: any) => s.enabled)) {
       const sourceRules = rulesManager.getRulesBySource(source.id);
+      console.log(`Source ${source.id} has ${sourceRules.length} rules`);
       if (sourceRules.length > 0) {
         const allPaths = sourceRules.map((rule: any) => rule.filePath);
+        console.log(`Selecting ${allPaths.length} rules for source ${source.id}`);
         // 直接设置选择状态（模拟用户全选）
         selectionStateManager.updateSelection(
           source.id,
@@ -161,6 +181,13 @@ describe('Sync Rules Tests', () => {
     // 验证：检查是否生成了配置文件（Cursor adapter 应该生成 .cursorrules 文件）
     const cursorRulesPath = path.join(workspaceFolder.uri.fsPath, '.cursorrules');
     const cursorFileExists = await fs.pathExists(cursorRulesPath);
+
+    console.log('Cursor rules path:', cursorRulesPath);
+    console.log('Cursor file exists:', cursorFileExists);
+    if (cursorFileExists) {
+      const stat = await fs.stat(cursorRulesPath);
+      console.log('Is file:', stat.isFile(), 'Is directory:', stat.isDirectory());
+    }
 
     // 断言：应该成功同步并生成了配置文件
     assert.ok(

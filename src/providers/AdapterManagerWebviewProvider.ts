@@ -536,25 +536,16 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         fileTemplate: adapterData.singleFileTemplate,
       };
 
-      // 更新或添加适配器
-      const customAdapters = config.adapters.custom || [];
-      const index = customAdapters.findIndex((a) => a.id === adapterData.id);
+      // 检查是新增还是更新
+      const existingAdapter = config.adapters.custom?.find((a) => a.id === adapterData.id);
 
-      if (index >= 0) {
+      if (existingAdapter) {
         // 更新现有适配器
-        customAdapters[index] = adapterConfig;
-        Logger.info('Custom adapter updated', { id: adapterData.id });
+        await this.configManager.updateAdapter(adapterData.id, adapterConfig);
       } else {
         // 添加新适配器
-        customAdapters.push(adapterConfig);
-        Logger.info('Custom adapter created', { id: adapterData.id });
+        await this.configManager.addAdapter(adapterConfig);
       }
-
-      // 保存配置
-      await this.configManager.updateConfig('adapters', {
-        ...config.adapters,
-        custom: customAdapters,
-      });
 
       notify(t('adapterManager.adapterSaved', { name: adapterData.name }), 'info');
 
@@ -580,81 +571,54 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         throw new Error('Invalid delete request: missing adapter id or name');
       }
 
+      // 显示确认对话框
+      const confirmDelete = await vscode.window.showWarningMessage(
+        t('adapterManager.confirmDelete'),
+        { modal: true },
+        t('form.button.delete'),
+      );
+
+      if (confirmDelete !== t('form.button.delete')) {
+        // 用户取消删除
+        return;
+      }
+
+      // 获取适配器信息用于通知
       const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
       const config = this.configManager.getConfig(workspaceFolder?.uri);
-      const customAdapters = config.adapters.custom || [];
+      const existingAdapter = config.adapters.custom?.find(
+        (a) => a.id === identifier || a.name === identifier,
+      );
 
-      // 找到要删除的适配器
-      const index = customAdapters.findIndex((a) => a.id === identifier || a.name === identifier);
-
-      if (index < 0) {
+      if (!existingAdapter) {
         throw new Error(`Adapter "${identifier}" not found`);
       }
 
-      const deletedAdapter = customAdapters[index];
-      customAdapters.splice(index, 1);
+      // 使用 ConfigManager 删除适配器
+      await this.configManager.removeAdapter(existingAdapter.id);
 
-      // 保存配置
-      await this.configManager.updateConfig('adapters', {
-        ...config.adapters,
-        custom: customAdapters,
-      });
-
-      Logger.info('Custom adapter deleted', { id: deletedAdapter.id });
-      notify(t('adapterManager.adapterDeleted', { name: deletedAdapter.name }), 'info');
+      notify(t('adapterManager.adapterDeleted', { name: existingAdapter.name }), 'info');
 
       // 刷新数据
       await this.sendInitialData();
     } catch (error) {
-      Logger.error('Failed to delete adapter', error as Error, { code: 'TAI-5014' });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      // 如果错误已经显示过用户提示（包含"排查步骤"），则不再重复显示
+      if (!errorMessage.includes('排查步骤')) {
+        Logger.error('Failed to delete adapter', error as Error, { code: 'TAI-5014' });
+
+        // 显示简化的错误提示
+        vscode.window
+          .showErrorMessage(`删除适配器失败: ${errorMessage}`, '查看日志')
+          ?.then((action) => {
+            if (action === '查看日志') {
+              vscode.commands.executeCommand('workbench.action.showErrorLog');
+            }
+          });
+      }
+
       throw error;
     }
-  }
-
-  /**
-   * @description 生成错误提示 HTML
-   * @return default {string}
-   * @param errorMessage {string}
-   */
-  private getErrorHtml(errorMessage: string): string {
-    return `
-      <!DOCTYPE html>
-      <html lang="zh-CN">
-        <head>
-          <meta charset="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <title>Error</title>
-          <style>
-            body {
-              font-family: var(--vscode-font-family);
-              color: var(--vscode-foreground);
-              background-color: var(--vscode-editor-background);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              height: 100vh;
-              margin: 0;
-            }
-            .error-container {
-              text-align: center;
-              padding: 2rem;
-            }
-            .error-icon {
-              font-size: 3rem;
-              margin-bottom: 1rem;
-            }
-            .error-message {
-              color: var(--vscode-errorForeground);
-            }
-          </style>
-        </head>
-        <body>
-          <div class="error-container">
-            <div class="error-icon">⚠️</div>
-            <div class="error-message">${errorMessage}</div>
-          </div>
-        </body>
-      </html>
-    `;
   }
 }

@@ -27,6 +27,10 @@
     {
       "path": "rules-for-skills",
       "name": "Test: Skills Adapter"
+    },
+    {
+      "path": "rules-generate-test",
+      "name": "Test: Generate Config Files"
     }
   ],
   "settings": {

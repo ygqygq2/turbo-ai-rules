@@ -50,11 +50,19 @@ export async function createTempSettings(
   const vscodeDir = path.join(workspaceDir, '.vscode');
   await fs.ensureDir(vscodeDir);
 
+  // 使用新的 adapters 对象格式
+  const adapters: Record<string, { enabled: boolean }> = {};
+  if (adapterType === 'cursor') {
+    adapters.cursor = { enabled: true };
+  } else if (adapterType === 'copilot') {
+    adapters.copilot = { enabled: true };
+  } else if (adapterType === 'continue') {
+    adapters.continue = { enabled: true };
+  }
+  // rules 类型不是预设适配器，不需要在这里配置
+
   const settings = {
-    'turbo-ai-rules.adapters.cursor.enabled': adapterType === 'cursor',
-    'turbo-ai-rules.adapters.copilot.enabled': adapterType === 'copilot',
-    'turbo-ai-rules.adapters.continue.enabled': adapterType === 'continue',
-    'turbo-ai-rules.adapters.rules.enabled': adapterType === 'rules',
+    'turbo-ai-rules.adapters': adapters,
   };
 
   const settingsPath = path.join(vscodeDir, 'settings.json');

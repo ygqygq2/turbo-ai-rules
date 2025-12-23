@@ -17,7 +17,6 @@ import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 import { notify } from '../utils/notifications';
 import { normalizeOutputPathForDisplay } from '../utils/path';
-import { checkWorkspaceEnvironment } from '../utils/workspace';
 import { BaseWebviewProvider, type WebviewMessage } from './BaseWebviewProvider';
 
 /**
@@ -82,9 +81,6 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
    */
   public async showDashboard(): Promise<void> {
     try {
-      // 检查工作空间环境（显示警告但不阻止）
-      await checkWorkspaceEnvironment();
-
       await this.show({
         viewType: 'turboAiRules.dashboard',
         title: t('dashboard.title'),
@@ -467,52 +463,5 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
         adapters: [],
       };
     }
-  }
-
-  /**
-   * @description 生成错误提示 HTML
-   * @return default {string}
-   * @param errorMessage {string}
-   */
-  private getErrorHtml(errorMessage: string): string {
-    return `
-      <!DOCTYPE html>
-      <html lang="zh-CN">
-        <head>
-          <meta charset="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <title>Error</title>
-          <style>
-            body {
-              font-family: var(--vscode-font-family);
-              color: var(--vscode-foreground);
-              background-color: var(--vscode-editor-background);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              height: 100vh;
-              margin: 0;
-            }
-            .error-container {
-              text-align: center;
-              padding: 2rem;
-            }
-            .error-icon {
-              font-size: 3rem;
-              margin-bottom: 1rem;
-            }
-            .error-message {
-              color: var(--vscode-errorForeground);
-            }
-          </style>
-        </head>
-        <body>
-          <div class="error-container">
-            <div class="error-icon">⚠️</div>
-            <div class="error-message">${errorMessage}</div>
-          </div>
-        </body>
-      </html>
-    `;
   }
 }

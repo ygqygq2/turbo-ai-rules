@@ -131,14 +131,30 @@ export class CustomAdapter extends BaseAdapter {
       return rules;
     }
 
+    // 调试：输出规则文件路径
+    if (rules.length > 0) {
+      Logger.debug(`Filtering rules for adapter: ${this.config.id}`, {
+        totalRules: rules.length,
+        extensions: this.config.fileExtensions,
+        samplePaths: rules.slice(0, 3).map((r) => r.filePath),
+      });
+    }
+
     // 根据文件后缀过滤
-    return rules.filter((rule) => {
+    const filtered = rules.filter((rule) => {
       // 检查规则的源文件是否匹配任一后缀
       if (!rule.filePath) {
         return true; // 没有源文件信息，保留
       }
       return this.config.fileExtensions!.some((ext) => rule.filePath.endsWith(ext));
     });
+
+    Logger.debug(`Filter result for adapter: ${this.config.id}`, {
+      before: rules.length,
+      after: filtered.length,
+    });
+
+    return filtered;
   }
 
   /**
@@ -269,6 +285,30 @@ export class CustomAdapter extends BaseAdapter {
   }
 
   /**
+   * 替换路径模板中的占位符
+   */
+  private replacePathTemplate(template: string, rule: ParsedRule): string {
+    return template
+      .replace(/\{\{ruleId\}\}/g, rule.id)
+      .replace(/\{\{ruleName\}\}/g, rule.title || rule.id)
+      .replace(/\{\{sourceId\}\}/g, rule.sourceId);
+  }
+
+  /**
+   * 获取规则文件名
+   */
+  private getRuleFileName(rule: ParsedRule): string {
+    // 如果配置了 directoryStructure.pathTemplate，使用模板
+    if (this.config.directoryStructure?.pathTemplate) {
+      return this.replacePathTemplate(this.config.directoryStructure.pathTemplate, rule);
+    }
+
+    // 否则使用 useOriginalFilename 设置
+    const useOriginalFilename = this.config.useOriginalFilename ?? true;
+    return useOriginalFilename ? path.basename(rule.filePath) : `${rule.sourceId}-${rule.id}.md`;
+  }
+
+  /**
    * 按源 ID 组织文件
    */
   private async generateBySource(
@@ -285,10 +325,9 @@ export class CustomAdapter extends BaseAdapter {
     }
 
     // 为每个源生成文件
-    const useOriginalFilename = this.config.useOriginalFilename ?? true;
     for (const [sourceId, sourceRules] of rulesBySource) {
       for (const rule of sourceRules) {
-        const fileName = useOriginalFilename ? path.basename(rule.filePath) : `${rule.id}.md`;
+        const fileName = this.getRuleFileName(rule);
         const relativePath = path.join(this.config.outputPath, sourceId, fileName);
         const absolutePath = path.join(workspaceRoot, relativePath);
         // 使用原始内容（包含 frontmatter）
@@ -309,12 +348,9 @@ export class CustomAdapter extends BaseAdapter {
     workspaceRoot: string,
     files: Map<string, string>,
   ): Promise<void> {
-    const useOriginalFilename = this.config.useOriginalFilename ?? true;
     for (const rule of rules) {
-      // 使用原文件名或 sourceId-ruleId 格式
-      const fileName = useOriginalFilename
-        ? path.basename(rule.filePath)
-        : `${rule.sourceId}-${rule.id}.md`;
+      // 使用模板或原文件名
+      const fileName = this.getRuleFileName(rule);
       const relativePath = path.join(this.config.outputPath, fileName);
       const absolutePath = path.join(workspaceRoot, relativePath);
       // 使用原始内容（包含 frontmatter）

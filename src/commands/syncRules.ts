@@ -69,14 +69,6 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
 
   Logger.info('Executing syncRules command', { sourceId, targetAdapters });
 
-  // 检查多工作空间环境，如果用户取消则中断操作
-  const { checkMultiRootWorkspaceForOperation } = await import('../utils/workspace');
-  const shouldContinue = await checkMultiRootWorkspaceForOperation();
-  if (!shouldContinue) {
-    Logger.info('Sync operation cancelled by user due to multi-root workspace');
-    return;
-  }
-
   // 获取状态栏提供者实例
   const statusBarProvider = StatusBarProvider.getInstance();
 
@@ -321,6 +313,7 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
           config.sync.conflictStrategy || 'priority',
           targetAdapters, // ✅ 传递目标适配器列表
           allRulesForIndex, // ✅ 传递所有规则用于保护判断
+          workspaceFolder.uri, // 传递工作区 URI
         );
 
         pm.report(generateConfigProgress - 4, 'Saving metadata...');

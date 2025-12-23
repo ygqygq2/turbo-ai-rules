@@ -148,7 +148,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
           path: htmlPath,
           code: 'TAI-5016',
         });
-        return this.getErrorHtml('Rule sync page template not found');
+        return this.getErrorHtml('Rule sync page template not found', false);
       }
 
       // 读取 HTML 文件
@@ -191,45 +191,8 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       Logger.error('Failed to generate rule sync page HTML', error as Error, { code: 'TAI-5017' });
-      return this.getErrorHtml(`Failed to load rule sync page: ${errorMessage}`);
+      return this.getErrorHtml(`Failed to load rule sync page: ${errorMessage}`, false);
     }
-  }
-
-  /**
-   * @description 获取错误 HTML
-   * @return default {string}
-   * @param message {string}
-   */
-  private getErrorHtml(message: string): string {
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Error</title>
-  <style>
-    body {
-      font-family: var(--vscode-font-family);
-      padding: 20px;
-      color: var(--vscode-foreground);
-      background-color: var(--vscode-editor-background);
-    }
-    .error {
-      color: var(--vscode-errorForeground);
-      padding: 10px;
-      border: 1px solid var(--vscode-inputValidation-errorBorder);
-      background: var(--vscode-inputValidation-errorBackground);
-      border-radius: 4px;
-    }
-  </style>
-</head>
-<body>
-  <div class="error">
-    <h2>Error</h2>
-    <p>${message}</p>
-  </div>
-</body>
-</html>`;
   }
 
   /**

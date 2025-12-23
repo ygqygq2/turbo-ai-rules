@@ -240,11 +240,9 @@ export const AdapterManager: React.FC = () => {
    */
   const handleDeleteCustomAdapter = (adapterId: string) => {
     const adapter = customAdapters.find((a) => a.id === adapterId);
-    if (adapter && confirm(t('adapterManager.confirmDelete', { name: adapter.name }))) {
-      setCustomAdapters((prev) => prev.filter((a) => a.id !== adapterId));
-      setHasChanges(true);
-      // 通知 Provider 删除适配器
-      vscodeApi.postMessage('deleteAdapter', { id: adapterId });
+    if (adapter) {
+      // 发送删除请求到 Provider（Provider 会显示确认对话框）
+      vscodeApi.postMessage('deleteAdapter', { id: adapterId, name: adapter.name });
     }
   };
 

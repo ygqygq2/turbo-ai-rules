@@ -22,14 +22,6 @@ import { toRelativePath } from '../utils/rulePath';
 export async function generateConfigsCommand(): Promise<void> {
   Logger.info('Executing generateConfigs command');
 
-  // 检查多工作空间环境，如果用户取消则中断操作
-  const { checkMultiRootWorkspaceForOperation } = await import('../utils/workspace');
-  const shouldContinue = await checkMultiRootWorkspaceForOperation();
-  if (!shouldContinue) {
-    Logger.info('Generate configs operation cancelled by user due to multi-root workspace');
-    return;
-  }
-
   try {
     const configManager = ConfigManager.getInstance();
     const rulesManager = RulesManager.getInstance();
@@ -143,6 +135,7 @@ export async function generateConfigsCommand(): Promise<void> {
           config.sync.conflictStrategy || 'priority',
           undefined, // targetAdapters
           mergedRules, // 使用合并后的规则作为 allRules
+          workspaceFolder.uri, // 传递工作区 URI
         );
 
         pm.report(50, 'Finalizing...');

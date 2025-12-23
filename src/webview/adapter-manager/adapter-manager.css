@@ -708,6 +708,7 @@
 
 .checkbox-option {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
@@ -741,6 +742,13 @@
 
 .checkbox-label .codicon {
   font-size: 14px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.checkbox-description {
+  flex-basis: 100%;
+  margin-left: 22px;
+  font-size: 0.85rem;
   color: var(--vscode-descriptionForeground);
 }
 

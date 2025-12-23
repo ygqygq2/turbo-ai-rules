@@ -15,8 +15,8 @@ describe('Generate Config Files Tests', () => {
   beforeEach(async () => {
     const folders = vscode.workspace.workspaceFolders;
     assert.ok(folders && folders.length > 0, 'No workspace folder found');
-    // 使用第一个工作区（Cursor Adapter）
-    workspaceFolder = folders[0];
+    // 使用专门的 Generate Config Files 测试工作区
+    workspaceFolder = folders.find((f) => f.name.includes('Generate Config Files')) || folders[0];
 
     // 从扩展获取服务实例
     const ext = vscode.extensions.getExtension('ygqygq2.turbo-ai-rules');
@@ -61,6 +61,7 @@ describe('Generate Config Files Tests', () => {
   it('Should generate adapter config files after sync', async function () {
     this.timeout(180000); // 3分钟 - 需要 Git 克隆
 
+    // 配置已在 settings.json 中预设
     const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
     const doc = await vscode.workspace.openTextDocument(readmePath);
     await vscode.window.showTextDocument(doc);

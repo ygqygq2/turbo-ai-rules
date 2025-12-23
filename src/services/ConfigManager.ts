@@ -346,6 +346,173 @@ export class ConfigManager {
   }
 
   /**
+   * 添加自定义适配器（只写入 Workspace 配置）
+   */
+  public async addAdapter(adapter: CustomAdapterConfig): Promise<void> {
+    try {
+      // 检查当前生效的适配器
+      const allAdapters = this.getConfig().adapters.custom || [];
+      const existing = allAdapters.find((a) => a.id === adapter.id);
+
+      if (existing) {
+        throw new ConfigError(
+          `Adapter "${existing.name}" (ID: ${adapter.id}) already exists. ` +
+            `Please use a different ID or edit the existing adapter.`,
+          ErrorCodes.CONFIG_MISSING_FIELD,
+        );
+      }
+
+      // 只获取 Workspace 层级的适配器进行追加
+      const vscodeConfig = this.getVscodeConfig();
+      const inspection = vscodeConfig.inspect<CustomAdapterConfig[]>('adapters.custom');
+      const workspaceAdapters = inspection?.workspaceValue || [];
+
+      // 添加到 Workspace
+      const newAdapters = [...workspaceAdapters, adapter];
+      await vscodeConfig.update(
+        'adapters.custom',
+        newAdapters,
+        vscode.ConfigurationTarget.Workspace,
+      );
+
+      Logger.info('Adapter added to workspace', { adapterId: adapter.id });
+    } catch (error) {
+      if (error instanceof ConfigError) {
+        throw error;
+      }
+      Logger.error('Failed to add adapter', error as Error, {
+        adapterId: adapter.id,
+      });
+      throw new ConfigError(
+        'Failed to add adapter',
+        ErrorCodes.CONFIG_INVALID_FORMAT,
+        error as Error,
+      );
+    }
+  }
+
+  /**
+   * 更新自定义适配器（只更新 Workspace 配置中的适配器）
+   */
+  public async updateAdapter(id: string, updates: Partial<CustomAdapterConfig>): Promise<void> {
+    try {
+      // 1. 检查适配器是否存在
+      const allAdapters = this.getConfig().adapters.custom || [];
+      const existingAdapter = allAdapters.find((a) => a.id === id);
+
+      if (!existingAdapter) {
+        throw new ConfigError(`Adapter with ID '${id}' not found`, ErrorCodes.CONFIG_MISSING_FIELD);
+      }
+
+      // 2. 只获取 Workspace 层级的适配器进行更新
+      const vscodeConfig = this.getVscodeConfig();
+      const inspection = vscodeConfig.inspect<CustomAdapterConfig[]>('adapters.custom');
+      const workspaceAdapters = inspection?.workspaceValue || [];
+
+      const inWorkspace = workspaceAdapters.some((a) => a.id === id);
+
+      // 3. 如果适配器不在 Workspace 中，提示用户手动修改
+      if (!inWorkspace) {
+        throw new ConfigError(
+          `Adapter "${existingAdapter.name}" (ID: ${id}) is not in workspace settings. ` +
+            `This extension only modifies workspace settings. ` +
+            `Please edit the adapter manually via File > Preferences > Settings.`,
+          ErrorCodes.CONFIG_INVALID_FORMAT,
+        );
+      }
+
+      // 4. 更新 Workspace 中的适配器
+      const updatedWorkspaceAdapters = workspaceAdapters.map((a) =>
+        a.id === id ? { ...a, ...updates } : a,
+      );
+
+      await vscodeConfig.update(
+        'adapters.custom',
+        updatedWorkspaceAdapters,
+        vscode.ConfigurationTarget.Workspace,
+      );
+
+      Logger.info('Adapter updated in workspace', { adapterId: id });
+    } catch (error) {
+      if (error instanceof ConfigError) {
+        throw error;
+      }
+      Logger.error('Failed to update adapter', error as Error, { adapterId: id });
+      throw new ConfigError(
+        'Failed to update adapter',
+        ErrorCodes.CONFIG_INVALID_FORMAT,
+        error as Error,
+      );
+    }
+  }
+
+  /**
+   * 删除自定义适配器（从对应层级删除）
+   */
+  public async removeAdapter(id: string): Promise<void> {
+    try {
+      // 1. 检查适配器是否存在
+      const allAdapters = this.getConfig().adapters.custom || [];
+      const existingAdapter = allAdapters.find((a) => a.id === id);
+
+      if (!existingAdapter) {
+        throw new ConfigError(`Adapter with ID '${id}' not found`, ErrorCodes.CONFIG_MISSING_FIELD);
+      }
+
+      // 2. 检查适配器在哪个层级
+      const vscodeConfig = this.getVscodeConfig();
+      const inspection = vscodeConfig.inspect<CustomAdapterConfig[]>('adapters.custom');
+
+      let targetLevel: vscode.ConfigurationTarget | null = null;
+      let targetArray: CustomAdapterConfig[] | undefined;
+
+      // 优先级：WorkspaceFolder > Workspace > Global
+      if (inspection?.workspaceFolderValue?.some((a) => a.id === id)) {
+        targetLevel = vscode.ConfigurationTarget.WorkspaceFolder;
+        targetArray = inspection.workspaceFolderValue;
+      } else if (inspection?.workspaceValue?.some((a) => a.id === id)) {
+        targetLevel = vscode.ConfigurationTarget.Workspace;
+        targetArray = inspection.workspaceValue;
+      } else if (inspection?.globalValue?.some((a) => a.id === id)) {
+        targetLevel = vscode.ConfigurationTarget.Global;
+        targetArray = inspection.globalValue;
+      }
+
+      // 3. 如果找不到适配器，给出详细的错误提示
+      if (!targetLevel || !targetArray) {
+        throw new ConfigError(
+          `Cannot delete adapter "${existingAdapter.name}" (ID: ${id}). ` +
+            `The adapter configuration may be corrupted or defined in an unsupported way. ` +
+            `Please check your settings file manually.`,
+          ErrorCodes.CONFIG_INVALID_FORMAT,
+        );
+      }
+
+      // 4. 从目标层级删除适配器
+      const newAdapters = targetArray.filter((a) => a.id !== id);
+
+      // 5. 保存配置到对应层级
+      await vscodeConfig.update(
+        'adapters.custom',
+        newAdapters.length > 0 ? newAdapters : undefined,
+        targetLevel,
+      );
+
+      Logger.info('Adapter removed', { adapterId: id, level: targetLevel });
+    } catch (error) {
+      if (error instanceof ConfigError) {
+        throw error;
+      }
+      Logger.error('Failed to remove adapter', error as Error, { adapterId: id });
+      throw new ConfigError(
+        'Failed to remove adapter',
+        ErrorCodes.CONFIG_INVALID_FORMAT,
+        error as Error,
+      );
+    }
+  }
+
+  /**
    * 存储 Token 到 Secret Storage
    */
   public async storeToken(sourceId: string, token: string): Promise<void> {

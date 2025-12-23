@@ -1,0 +1,25 @@
+{
+  // Generate Config Files 测试专用工作区
+  "turbo-ai-rules.adapters": {
+    "cursor": { "enabled": true }
+  },
+  "turbo-ai-rules.sync.conflictStrategy": "priority",
+  "turbo-ai-rules.sync.auto": false,
+  "turbo-ai-rules.sync.onStartup": false,
+
+  // 预配置测试用规则源（公开仓库，无需认证）
+  "turbo-ai-rules.sources": [
+    {
+      "id": "ai-rules-7008d805",
+      "name": "Test Generate Config",
+      "gitUrl": "https://github.com/ygqygq2/ai-rules.git",
+      "branch": "main",
+      "subPath": "/",
+      "enabled": true,
+      "authentication": {
+        "type": "none"
+      }
+    }
+  ],
+  "turbo-ai-rules.adapters.custom": []
+}

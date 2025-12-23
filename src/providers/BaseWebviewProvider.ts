@@ -307,6 +307,88 @@ export abstract class BaseWebviewProvider {
   }
 
   /**
+   * 生成错误提示 HTML
+   * @param errorMessage 错误消息
+   * @param centered 是否居中显示（默认 true）
+   * @return {string} 错误页面 HTML
+   */
+  protected getErrorHtml(errorMessage: string, centered: boolean = true): string {
+    if (centered) {
+      // 居中显示样式（用于 Dashboard、AdapterManager 等）
+      return `
+      <!DOCTYPE html>
+      <html lang="zh-CN">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>Error</title>
+          <style>
+            body {
+              font-family: var(--vscode-font-family);
+              color: var(--vscode-foreground);
+              background-color: var(--vscode-editor-background);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+              margin: 0;
+            }
+            .error-container {
+              text-align: center;
+              padding: 2rem;
+            }
+            .error-icon {
+              font-size: 3rem;
+              margin-bottom: 1rem;
+            }
+            .error-message {
+              color: var(--vscode-errorForeground);
+            }
+          </style>
+        </head>
+        <body>
+          <div class="error-container">
+            <div class="error-icon">⚠️</div>
+            <div class="error-message">${errorMessage}</div>
+          </div>
+        </body>
+      </html>
+    `;
+    } else {
+      // 左对齐样式（用于 RuleSyncPage 等）
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Error</title>
+  <style>
+    body {
+      font-family: var(--vscode-font-family);
+      padding: 20px;
+      color: var(--vscode-foreground);
+      background-color: var(--vscode-editor-background);
+    }
+    .error {
+      color: var(--vscode-errorForeground);
+      padding: 10px;
+      border: 1px solid var(--vscode-inputValidation-errorBorder);
+      background: var(--vscode-inputValidation-errorBackground);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="error">
+    <h2>Error</h2>
+    <p>${errorMessage}</p>
+  </div>
+</body>
+</html>`;
+    }
+  }
+
+  /**
    * 获取 HTML 内容（由子类实现）
    */
   protected abstract getHtmlContent(webview: vscode.Webview): Promise<string> | string;

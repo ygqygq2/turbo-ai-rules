@@ -1,0 +1,10 @@
+# Generated files
+.cursorrules
+.github/
+.continue/
+rules/
+skills/
+.turbo-ai-rules/
+
+# Turbo AI Rules - Auto-generated files
+.cursorrules

@@ -14,44 +14,13 @@ describe('User Rules Protection Tests', () => {
     const folders = vscode.workspace.workspaceFolders;
     assert.ok(folders && folders.length > 0, 'No workspace folder found');
 
-    // 查找 user-rules 测试工作区
-    workspaceFolder = folders.find((f) => f.name.includes('User Rules')) || folders[0];
-    userRulePath = path.join(workspaceFolder.uri.fsPath, '.cursorrules', 'custom-user-rule.md');
+    // 查找 User Protection 测试工作区
+    workspaceFolder = folders.find((f) => f.name.includes('User Protection')) || folders[0];
 
-    // 确保初始状态正确：.cursorrules 是目录，包含用户规则
-    const cursorRulesPath = path.join(workspaceFolder.uri.fsPath, '.cursorrules');
-
-    // 如果存在但不是目录，删除它
-    if (await fs.pathExists(cursorRulesPath)) {
-      const stat = await fs.stat(cursorRulesPath);
-      if (!stat.isDirectory()) {
-        await fs.remove(cursorRulesPath);
-      }
-    }
-
-    // 确保目录存在并包含用户规则
-    await fs.ensureDir(cursorRulesPath);
-    if (!(await fs.pathExists(userRulePath))) {
-      await fs.writeFile(
-        userRulePath,
-        `---
-id: user-custom-rule
-title: User Custom Rule
-tags: [test, custom]
----
-
-This is a user-defined rule that should be protected during sync.
-`,
-      );
-    }
-  });
-
-  beforeEach(() => {
-    const folders = vscode.workspace.workspaceFolders;
-    assert.ok(folders && folders.length > 0, 'No workspace folder found');
-
-    // 查找 user-rules 测试工作区
-    workspaceFolder = folders.find((f) => f.name.includes('User Rules')) || folders[0];
+    // 注意：不同的测试用例使用不同的文件结构
+    // - 第1个测试：使用目录模式 (.cursorrules/custom-user-rule.md)
+    // - 第2-3个测试：使用单文件模式 (.cursorrules 文件)
+    // 因此不在 before 钩子中创建文件，由各测试用例自行创建
     userRulePath = path.join(workspaceFolder.uri.fsPath, '.cursorrules', 'custom-user-rule.md');
   });
 
@@ -130,6 +99,28 @@ This is a user-defined rule that should be protected during sync.
   });
 
   it('Should have user-defined rule file', async () => {
+    // 确保 .cursorrules 目录存在
+    const cursorRulesDir = path.join(workspaceFolder.uri.fsPath, '.cursorrules');
+    await fs.ensureDir(cursorRulesDir);
+
+    // 创建用户规则文件（如果不存在）
+    if (!(await fs.pathExists(userRulePath))) {
+      await fs.writeFile(
+        userRulePath,
+        `---
+id: user-custom-rule
+title: User Custom Rule
+priority: 90000
+---
+
+# User Custom Rule
+
+This is a user-defined rule that should be preserved.
+`,
+        'utf-8',
+      );
+    }
+
     const exists = await fs.pathExists(userRulePath);
     assert.ok(exists, 'User rule file should exist');
   });
@@ -249,30 +240,12 @@ This is my precious custom rule content that must not be lost!
     await fs.writeFile(existingRuleFile, userOriginalContent, 'utf-8');
     console.log('Created existing user rule file (first-time scenario)');
 
-    // 2. 确保 protectUserRules 已启用 和 Cursor adapter 已启用
+    // 配置已在 settings.json 中预设，无需动态修改
+    // 验证配置是否正确加载
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const protectionEnabled = config.get<boolean>(CONFIG_KEYS.PROTECT_USER_RULES, false);
-    const cursorEnabled = config.get<boolean>(CONFIG_KEYS.ADAPTERS_CURSOR_ENABLED, false);
-
-    if (!protectionEnabled) {
-      // 临时启用保护（测试期间）
-      await config.update(
-        CONFIG_KEYS.PROTECT_USER_RULES,
-        true,
-        vscode.ConfigurationTarget.WorkspaceFolder,
-      );
-      console.log('Enabled protectUserRules for testing');
-    }
-
-    // 临时启用 Cursor adapter（测试期间）
-    if (!cursorEnabled) {
-      await config.update(
-        CONFIG_KEYS.ADAPTERS_CURSOR_ENABLED,
-        true,
-        vscode.ConfigurationTarget.WorkspaceFolder,
-      );
-      console.log('Enabled Cursor adapter for testing');
-    }
+    const protectUserRules = config.get<boolean>('protectUserRules');
+    console.log('protectUserRules config:', protectUserRules);
+    console.log('workspace:', workspaceFolder.name);
 
     // 3. 打开当前 workspace folder 中的文件,确保 activeEditor 在正确的 folder
     const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
@@ -295,6 +268,8 @@ This is my precious custom rule content that must not be lost!
 
       // 6. 读取生成后的文件内容
       const generatedContent = await fs.readFile(existingRuleFile, 'utf-8');
+      console.log('Generated file length:', generatedContent.length);
+      console.log('First 500 chars:', generatedContent.substring(0, 500));
 
       // 7. 核心验证：原有内容必须被完整保留
       assert.ok(
@@ -354,21 +329,7 @@ This is my precious custom rule content that must not be lost!
       const errorMessage = error instanceof Error ? error.message : String(error);
       assert.fail(`❌ CRITICAL FAILURE in first-time UX: ${errorMessage}`);
     } finally {
-      // 清理：恢复配置
-      if (!protectionEnabled) {
-        await config.update(
-          CONFIG_KEYS.PROTECT_USER_RULES,
-          undefined,
-          vscode.ConfigurationTarget.WorkspaceFolder,
-        );
-      }
-      if (!cursorEnabled) {
-        await config.update(
-          CONFIG_KEYS.ADAPTERS_CURSOR_ENABLED,
-          undefined,
-          vscode.ConfigurationTarget.WorkspaceFolder,
-        );
-      }
+      // 无需清理配置，使用 settings.json 的预设
     }
   });
 
@@ -403,26 +364,7 @@ This user content should be preserved across syncs.
 
     await fs.writeFile(existingRuleFile, existingContent, 'utf-8');
 
-    // 确保 protectUserRules 和 Cursor adapter 已启用
-    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const protectionEnabled = config.get<boolean>(CONFIG_KEYS.PROTECT_USER_RULES, false);
-    const cursorEnabled = config.get<boolean>(CONFIG_KEYS.ADAPTERS_CURSOR_ENABLED, false);
-
-    if (!protectionEnabled) {
-      await config.update(
-        CONFIG_KEYS.PROTECT_USER_RULES,
-        true,
-        vscode.ConfigurationTarget.WorkspaceFolder,
-      );
-    }
-
-    if (!cursorEnabled) {
-      await config.update(
-        CONFIG_KEYS.ADAPTERS_CURSOR_ENABLED,
-        true,
-        vscode.ConfigurationTarget.WorkspaceFolder,
-      );
-    }
+    // 配置已在 settings.json 中预设
 
     const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
     const doc = await vscode.workspace.openTextDocument(readmePath);
@@ -464,21 +406,6 @@ This user content should be preserved across syncs.
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       assert.fail(`Failed in subsequent update scenario: ${errorMessage}`);
-    } finally {
-      if (!protectionEnabled) {
-        await config.update(
-          'protectUserRules',
-          undefined,
-          vscode.ConfigurationTarget.WorkspaceFolder,
-        );
-      }
-      if (!cursorEnabled) {
-        await config.update(
-          'adapters.cursor.enabled',
-          undefined,
-          vscode.ConfigurationTarget.WorkspaceFolder,
-        );
-      }
     }
   });
 });

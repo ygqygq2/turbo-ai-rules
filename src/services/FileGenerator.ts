@@ -53,9 +53,10 @@ export class FileGenerator {
 
   /**
    * 加载用户规则保护配置
+   * @param workspaceUri 工作区 URI（可选，用于多工作区环境）
    */
-  private loadProtectionConfig(): UserRulesProtectionConfig {
-    const config = vscode.workspace.getConfiguration(CONFIG_PREFIX);
+  private loadProtectionConfig(workspaceUri?: vscode.Uri): UserRulesProtectionConfig {
+    const config = vscode.workspace.getConfiguration(CONFIG_PREFIX, workspaceUri);
     return {
       enabled: config.get<boolean>(CONFIG_KEYS.PROTECT_USER_RULES, true),
       userPrefixRange: config.get(CONFIG_KEYS.USER_PREFIX_RANGE, { min: 80000, max: 99999 }),
@@ -148,6 +149,7 @@ export class FileGenerator {
    * @param strategy 冲突解决策略
    * @param targetAdapters 目标适配器列表（可选，如果提供则只为这些适配器生成配置）
    * @param allRules 所有可用规则（用于用户规则保护）
+   * @param workspaceUri 工作区 URI（用于多工作区环境）
    * @returns 生成结果
    */
   public async generateAll(
@@ -156,12 +158,22 @@ export class FileGenerator {
     strategy: ConflictStrategy = 'priority',
     targetAdapters?: string[],
     allRules?: ParsedRule[],
+    workspaceUri?: vscode.Uri,
   ): Promise<GenerateResult> {
+    // 重新加载当前工作区的保护配置
+    this.protectionConfig = this.loadProtectionConfig(workspaceUri);
+    console.log('=== FileGenerator.generateAll called ===');
+    console.log('Rules count:', rules.length);
+    console.log('Adapters count:', this.adapters.size);
+    console.log('Protection enabled:', this.protectionConfig.enabled);
+    console.log('Workspace root:', workspaceRoot);
     Logger.debug('Generating all config files', {
       ruleCount: rules.length,
       adapterCount: this.adapters.size,
       conflictStrategy: strategy,
       targetAdapters: targetAdapters || 'all',
+      protectionEnabled: this.protectionConfig.enabled,
+      workspaceUri: workspaceUri?.toString(),
     });
     const result: GenerateResult = {
       success: [],
@@ -298,12 +310,27 @@ export class FileGenerator {
       // 如果没有启用保护，直接写入
       if (!this.protectionConfig.enabled) {
         await safeWriteFile(filePath, content);
-        Logger.debug('Config file written (protection disabled)', { filePath });
+        Logger.debug('Config file written (protection disabled)', {
+          filePath,
+          protectionEnabled: this.protectionConfig.enabled,
+        });
         return;
       }
 
+      Logger.debug('Config file will be written with protection', {
+        filePath,
+        protectionEnabled: this.protectionConfig.enabled,
+        hasAdapter: !!adapter,
+      });
+
       // 判断是目录模式还是文件模式
       const isDirectoryMode = adapter && this.isDirectoryOutput(adapter);
+
+      Logger.debug('Output mode determined', {
+        filePath,
+        isDirectoryMode,
+        adapterName: adapter?.name,
+      });
 
       if (isDirectoryMode) {
         // 目录模式：检查文件前缀
@@ -356,6 +383,12 @@ export class FileGenerator {
   private async writeSingleFileMode(filePath: string, newContent: string): Promise<void> {
     let existingContent = '';
 
+    Logger.debug('writeSingleFileMode called', {
+      filePath,
+      newContentLength: newContent.length,
+      protectionEnabled: this.protectionConfig.enabled,
+    });
+
     // 读取现有文件
     try {
       if (fs.existsSync(filePath)) {
@@ -393,13 +426,20 @@ export class FileGenerator {
         });
       }
 
-      mergedContent = mergeContent(newContent, userContent, this.protectionConfig);
+      // 如果有用户内容，必须使用 mergeContent 添加块标记
+      // 即使 newContent 为空，也要添加块标记，表示文件已被扩展管理
+      mergedContent = mergeContent(
+        newContent || '<!-- No rules selected -->',
+        userContent,
+        this.protectionConfig,
+      );
       Logger.debug('Merged user content with generated content', {
         userContentLength: userContent.length,
+        newContentLength: newContent.length,
         filePath,
       });
     } else {
-      // 首次生成，添加用户区域模板
+      // 首次生成，添加块标记
       mergedContent = mergeContent(newContent, '', this.protectionConfig);
     }
 

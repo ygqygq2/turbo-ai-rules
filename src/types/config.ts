@@ -115,6 +115,13 @@ export interface CustomAdapterConfig extends AdapterConfig {
   generateIndex?: boolean;
   /** 索引文件名(默认 'index.md') */
   indexFileName?: string;
+  /** 目录结构配置(仅对 directory 类型有效) */
+  directoryStructure?: {
+    /** 文件模式(如 '*.md') */
+    filePattern: string;
+    /** 路径模板，支持占位符: {{ruleId}}, {{ruleName}}, {{sourceId}} */
+    pathTemplate: string;
+  };
   /** 单文件模板(仅对 file 类型有效), 使用 {{rules}} 作为规则内容占位符 */
   fileTemplate?: string;
   /** Skills 类型的规则源 ID（仅当 isRuleType=false 时有效） */

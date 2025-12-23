@@ -24,11 +24,15 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({ adapter, isNew, onSa
   );
   const [isRuleType, setIsRuleType] = useState(adapter.isRuleType ?? false);
   const [singleFileTemplate, setSingleFileTemplate] = useState(adapter.singleFileTemplate || '');
+  // 根据 useOriginalFilename 设置默认模板
+  const useOriginalFilename = adapter.useOriginalFilename ?? true;
+  const defaultPathTemplate = useOriginalFilename ? '{{ruleName}}.md' : '{{ruleId}}.md';
+
   const [directoryFilePattern, setDirectoryFilePattern] = useState(
-    adapter.directoryStructure?.filePattern || '',
+    adapter.directoryStructure?.filePattern || '*.md',
   );
   const [directoryPathTemplate, setDirectoryPathTemplate] = useState(
-    adapter.directoryStructure?.pathTemplate || '',
+    adapter.directoryStructure?.pathTemplate || defaultPathTemplate,
   );
   // 新增字段
   const [fileExtensions, setFileExtensions] = useState(adapter.fileExtensions?.join(', ') || '');
@@ -123,7 +127,7 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({ adapter, isNew, onSa
       format,
       isRuleType,
       enabled: adapter.enabled ?? true,
-      fileExtensions: parsedExtensions.length > 0 ? parsedExtensions : undefined,
+      fileExtensions: parsedExtensions.length > 0 ? parsedExtensions : [],
       organizeBySource: format === 'directory' ? organizeBySource : undefined,
       generateIndex: format === 'directory' ? generateIndex : undefined,
       sortBy: format === 'single-file' ? sortBy : undefined,
@@ -289,7 +293,7 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({ adapter, isNew, onSa
               id="file-extensions"
               value={fileExtensions}
               onChange={(e) => setFileExtensions(e.target.value)}
-              placeholder={t('adapterManager.fileFilterPlaceholder')}
+              placeholder=""
             />
             <span className="hint">{t('adapterManager.fileFilterHint')}</span>
           </div>
@@ -438,6 +442,9 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({ adapter, isNew, onSa
                       <i className="codicon codicon-folder-library"></i>
                       {t('adapterManager.organizeBySource')}
                     </span>
+                    <span className="checkbox-description">
+                      {t('adapterManager.organizeBySourceDesc')}
+                    </span>
                   </label>
                   <label className="checkbox-option">
                     <input
@@ -448,6 +455,9 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({ adapter, isNew, onSa
                     <span className="checkbox-label">
                       <i className="codicon codicon-list-tree"></i>
                       {t('adapterManager.generateIndex')}
+                    </span>
+                    <span className="checkbox-description">
+                      {t('adapterManager.generateIndexDesc')}
                     </span>
                   </label>
                 </div>
