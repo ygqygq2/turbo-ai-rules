@@ -38,6 +38,7 @@
   "turboAiRules.adapters.custom.items.properties.id.description": "Unique identifier (kebab-case, e.g., 'my-custom-adapter')",
   "turboAiRules.adapters.custom.items.properties.name.description": "Display name for the adapter",
   "turboAiRules.adapters.custom.items.properties.enabled.description": "Enable this custom adapter",
+  "turboAiRules.adapters.custom.items.properties.autoUpdate.description": "Automatically update config files when rules change",
   "turboAiRules.adapters.custom.items.properties.outputPath.description": "Output path relative to workspace root (e.g., 'rules' for directory, '.my-ai-tool.md' for file)",
   "turboAiRules.adapters.custom.items.properties.outputType.description": "Output as single file or directory structure",
   "turboAiRules.adapters.custom.items.properties.fileExtensions.description": "Filter rules by file extensions (e.g., ['.md', '.mdc']). Omit or leave empty to sync all files without filtering.",

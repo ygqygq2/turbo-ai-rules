@@ -17,7 +17,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm i -g @vscode/vsce pnpm ovsx
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - run: npm install -g @vscode/vsce ovsx --force
+        shell: bash
       - name: Cache dependencies
         uses: actions/cache@v4
         id: cache
