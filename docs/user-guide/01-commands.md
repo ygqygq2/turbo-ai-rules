@@ -305,6 +305,161 @@ Effect:      Rules from this source are no longer included in config files
 
 ---
 
+## 7. Advanced Commands
+
+### 7.1 UI & Visualization Commands
+
+#### 📊 Show Statistics
+
+**Command**: `Turbo AI Rules: Show Statistics`
+
+Display statistical dashboard with:
+
+- Total rules count by source
+- Rule distribution by priority
+- Tag cloud and category breakdown
+- Sync history and trends
+
+#### 🏠 Open Dashboard
+
+**Command**: `Turbo AI Rules: Open Dashboard`
+
+Open the main dashboard webview with quick access to all features.
+
+#### 🔍 Advanced Search
+
+**Command**: `Turbo AI Rules: Advanced Rule Search`
+
+Open advanced search interface with:
+
+- Multi-field search (title, tags, content)
+- Filter by source, priority, tags
+- Search result preview
+- Export search results
+
+#### 📋 Open Rule Sync Page
+
+**Command**: `Turbo AI Rules: Open Rule Sync Page`
+
+Open the rule selection interface with file tree view for selecting specific rules to sync.
+
+#### ℹ️ View Source Detail
+
+**Command**: `Turbo AI Rules: View Source Detail`
+
+View detailed information about a rule source including:
+
+- Git repository information
+- Sync status and history
+- Rule statistics
+- Configuration details
+
+### 7.2 Rule Management Commands
+
+#### ✅ Select All Rules
+
+**Command**: `Turbo AI Rules: Select All Rules`
+
+Select all rules from all sources for config generation.
+
+#### ❌ Deselect All Rules
+
+**Command**: `Turbo AI Rules: Deselect All Rules`
+
+Deselect all rules (useful for starting fresh selection).
+
+#### 📋 Select Rules
+
+**Command**: `Turbo AI Rules: Select Rules`
+
+Open rule selector for a specific source to choose which rules to include.
+
+#### 📄 Copy Rule Content
+
+**Command**: `Turbo AI Rules: Copy Rule Content`
+
+Copy the content of a selected rule to clipboard.
+
+#### 📤 Export Rule
+
+**Command**: `Turbo AI Rules: Export Rule`
+
+Export a rule to a standalone file.
+
+#### 👁️ Ignore Rule
+
+**Command**: `Turbo AI Rules: Ignore Rule`
+
+Mark a rule as ignored (won't be included in config generation).
+
+### 7.3 Source Management Commands
+
+#### ✏️ Edit Source
+
+**Command**: `Turbo AI Rules: Edit Source`
+
+Quick edit source properties (branch, subpath, name, token).
+
+#### 🔌 Test Connection
+
+**Command**: `Turbo AI Rules: Test Connection`
+
+Test Git connection and authentication for a source.
+
+#### 🔄 Toggle Source
+
+**Command**: `Turbo AI Rules: Toggle Source`
+
+Quickly enable/disable a rule source.
+
+#### ⚙️ Open Source Manager
+
+**Command**: `Turbo AI Rules: Open Source Manager`
+
+Open comprehensive source management interface.
+
+### 7.4 System Commands
+
+#### 🔄 Reload Settings
+
+**Command**: `Turbo AI Rules: Reload Settings`
+
+Reload extension settings from workspace/user configuration.
+
+#### 🔄 Refresh Git Cache
+
+**Command**: `Turbo AI Rules: Refresh Git Cache`
+
+Force refresh Git cache for all sources.
+
+#### 🔄 Refresh
+
+**Command**: `Turbo AI Rules: Refresh`
+
+Refresh the tree view display.
+
+#### ⚙️ Manage Adapters
+
+**Command**: `Turbo AI Rules: Manage Adapters`
+
+Configure AI tool adapters (Cursor, Copilot, Continue, Custom).
+
+#### 🗑️ Clear Workspace State (Debug)
+
+**Command**: `Turbo AI Rules: Clear Workspace State`
+
+Clear all workspace state data (for debugging purposes).
+
+### 7.5 Quick Access via Context Menu
+
+Most advanced commands are accessible via:
+
+- **Tree View**: Right-click on sources or rules
+- **Status Bar**: Click the 🤖 AI Rules icon
+- **Command Palette**: `Ctrl+Shift+P` → Type command name
+
+---
+
 ## 🎯 Recommended Workflow
 
 ### For First-Time Users

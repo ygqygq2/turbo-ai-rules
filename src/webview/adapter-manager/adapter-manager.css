@@ -448,26 +448,30 @@
 }
 
 /* 空状态 */
+.adapter-cards-grid .empty-state,
 .adapter-section .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 150px;
+  min-height: 200px;
   color: var(--vscode-descriptionForeground);
   text-align: center;
-  padding: var(--spacing-lg);
+  padding: var(--spacing-xl);
   background-color: var(--vscode-editor-background);
   border: 1px dashed var(--vscode-editorWidget-border);
   border-radius: var(--border-radius);
+  grid-column: 1 / -1;
 }
 
+.adapter-cards-grid .empty-state .icon,
 .adapter-section .empty-state .icon {
   font-size: 48px;
   margin-bottom: var(--spacing-md);
   opacity: 0.5;
 }
 
+.adapter-cards-grid .empty-state .message,
 .adapter-section .empty-state .message {
   margin-bottom: var(--spacing-md);
   font-size: 1rem;
@@ -830,6 +834,28 @@
   border-radius: var(--border-radius);
   margin: 0 var(--spacing-md) var(--spacing-xs) var(--spacing-md);
   font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+/* 模态框内错误横幅 - 显示在标题下方 */
+.modal-error-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background-color: var(--vscode-inputValidation-errorBackground);
+  color: var(--vscode-inputValidation-errorForeground);
+  border: 1px solid var(--vscode-inputValidation-errorBorder);
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin: 0;
+  font-size: 0.9rem;
+  animation: slideDown 0.2s ease-out;
+}
+
+.modal-error-banner .codicon {
+  font-size: 18px;
   flex-shrink: 0;
 }
 

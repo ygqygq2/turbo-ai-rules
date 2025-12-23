@@ -30,7 +30,7 @@
 系统采用分层架构，职责清晰、可扩展性强：
 
 - UI 层（Views）：TreeView、StatusBar、Webview（欢迎页、搜索、统计等）
-- Service 层：GitManager、RulesManager、FileGenerator、ConfigManager、SyncScheduler、RulesOrchestrator
+- Service 层：GitManager、RulesManager、FileGenerator、ConfigManager、AutoSyncService
 - Parser & Validator 层：MdcParser + 规则验证
 - Adapter 层：面向 Cursor/Copilot/Continue 及自定义适配器
 - Storage 层：全局缓存 + 工作区索引 + 项目根输出
@@ -55,7 +55,6 @@
 - RuleSource：规则源配置（Git URL、分支、子目录、认证、启用等）
 - ParsedRule：解析后的规则（元数据、Markdown 内容、来源追溯）
 - Adapter：将合并后的规则集转换为特定 AI 工具配置
-- RulesOrchestrator：编排端到端流程（同步/解析/合并/生成）
 
 参阅：docs/development/10-data-model.md（数据模型）
 
@@ -76,13 +75,11 @@
 ## 关键流程（摘要）
 
 - 添加规则源
-
   1. 用户输入 Git URL（可选分支/子目录/认证）
   2. 克隆至全局缓存并建立索引
   3. UI 刷新，提示可同步/生成
 
 - 同步规则
-
   1. 调度任务 → Git 增量更新
   2. 解析变更规则 + 校验
   3. 合并与冲突处理 → 更新索引与 UI
@@ -103,7 +100,8 @@
 - RulesManager：索引与搜索、冲突检测与合并
 - FileGenerator：目标文件生成、覆盖策略、gitignore 管理
 - Adapters：Cursor/Copilot/Continue/自定义
-- SyncScheduler：手动/定时/启动触发与并发控制
+- AutoSyncService：手动/定时/启动触发与并发控制
+- Commands：命令层直接编排各服务完成端到端流程
 
 参阅:docs/development/21-adapter-design.md(适配器设计)
 

@@ -324,7 +324,7 @@ TreeView 显示格式：
 
 ---
 
-## 2. 同步调度 (SyncScheduler)
+## 2. 同步调度 (AutoSyncService)
 
 ### 2.1 触发机制
 

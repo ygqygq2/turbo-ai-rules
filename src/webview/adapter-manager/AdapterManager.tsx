@@ -61,6 +61,8 @@ export interface CustomAdapter {
   sortBy?: 'id' | 'priority' | 'none';
   /** 排序顺序（仅单文件模式） */
   sortOrder?: 'asc' | 'desc';
+  /** 是否为新增（用于区分 add/update 操作） */
+  isNew?: boolean;
 }
 
 /**
@@ -89,6 +91,7 @@ export const AdapterManager: React.FC = () => {
   // 模态框状态
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAdapter, setEditingAdapter] = useState<EditingAdapter | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
 
   // 预设适配器设置弹出框状态
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -127,6 +130,19 @@ export const AdapterManager: React.FC = () => {
           } else {
             setError(message.payload.message || t('adapterManager.saveFailed'));
             setTimeout(() => setError(null), 5000);
+          }
+          break;
+
+        case 'saveAdapterResult':
+          if (message.payload.success) {
+            setSuccessMessage(t('adapterManager.adapterSaved', message.payload.name));
+            setModalOpen(false);
+            setEditingAdapter(null);
+            setModalError(null);
+            setTimeout(() => setSuccessMessage(null), 3000);
+          } else {
+            // 在模态框内显示错误信息
+            setModalError(message.payload.message || t('adapterManager.saveFailed'));
           }
           break;
 
@@ -222,6 +238,7 @@ export const AdapterManager: React.FC = () => {
         pathTemplate: '{{ruleName}}.md',
       },
     });
+    setModalError(null); // 清空之前的错误
     setModalOpen(true);
   };
 
@@ -231,6 +248,7 @@ export const AdapterManager: React.FC = () => {
    */
   const handleEditCustomAdapter = (adapter: CustomAdapter) => {
     setEditingAdapter({ ...adapter, isNew: false });
+    setModalError(null); // 清空之前的错误
     setModalOpen(true);
   };
 
@@ -251,18 +269,7 @@ export const AdapterManager: React.FC = () => {
    * @param adapter {CustomAdapter}
    */
   const handleSaveAdapter = (adapter: CustomAdapter) => {
-    if (editingAdapter?.isNew) {
-      // 新增适配器
-      setCustomAdapters((prev) => [...prev, adapter]);
-    } else {
-      // 更新适配器
-      setCustomAdapters((prev) => prev.map((a) => (a.id === adapter.id ? adapter : a)));
-    }
-    setModalOpen(false);
-    setEditingAdapter(null);
-    setHasChanges(true);
-
-    // 通知 Provider 保存适配器
+    // 通知 Provider 保存适配器（不在这里更新本地状态，等待 Provider 返回结果）
     vscodeApi.postMessage('saveAdapter', { adapter });
   };
 
@@ -344,7 +351,7 @@ export const AdapterManager: React.FC = () => {
                 className={`tab ${activeTab === 'custom' ? 'active' : ''}`}
                 onClick={() => setActiveTab('custom')}
               >
-                <i className="codicon codicon-symbol-property"></i>
+                <i className="codicon codicon-wrench"></i>
                 {t('adapterManager.customAdapters')}
                 <span className="tab-count">{filteredCustomAdapters.length}</span>
               </button>
@@ -394,7 +401,7 @@ export const AdapterManager: React.FC = () => {
                       </>
                     ) : (
                       <>
-                        <i className="codicon codicon-symbol-misc icon"></i>
+                        <i className="codicon codicon-wrench icon"></i>
                         <div className="message">{t('adapterManager.noCustomAdapters')}</div>
                         <Button type="primary" icon="add" onClick={handleAddCustomAdapter}>
                           {t('adapterManager.addCustomAdapter')}
@@ -434,10 +441,12 @@ export const AdapterManager: React.FC = () => {
         <AdapterModal
           adapter={editingAdapter}
           isNew={editingAdapter.isNew ?? true}
+          serverError={modalError}
           onSave={handleSaveAdapter}
           onClose={() => {
             setModalOpen(false);
             setEditingAdapter(null);
+            setModalError(null);
           }}
         />
       )}

@@ -45,6 +45,7 @@ interface CustomAdapterData {
   };
   fileExtensions?: string[];
   organizeBySource?: boolean;
+  isNew?: boolean; // 标识是新增还是编辑
 }
 
 /**
@@ -510,50 +511,82 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
    * @param data {unknown}
    */
   private async handleSaveAdapter(data: unknown): Promise<void> {
-    try {
-      // 验证数据
-      const payload = data as { adapter?: CustomAdapterData };
-      if (!payload.adapter || !payload.adapter.id || !payload.adapter.name) {
-        throw new Error('Invalid adapter data: missing required fields (id, name)');
-      }
+    // 验证数据
+    const payload = data as { adapter?: CustomAdapterData };
+    Logger.debug('handleSaveAdapter received data', { payload });
 
-      const adapterData = payload.adapter;
-      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-      const config = this.configManager.getConfig(workspaceFolder?.uri);
+    if (!payload.adapter || !payload.adapter.id || !payload.adapter.name) {
+      throw new Error('Invalid adapter data: missing required fields (id, name)');
+    }
+
+    const adapterData = payload.adapter;
+
+    try {
+      Logger.debug('Processing adapter data', {
+        id: adapterData.id,
+        name: adapterData.name,
+        format: adapterData.format,
+        isRuleType: adapterData.isRuleType,
+      });
 
       // 构建适配器配置
       const adapterConfig: CustomAdapterConfig = {
         id: adapterData.id,
         name: adapterData.name,
-        enabled: true,
+        enabled: adapterData.enabled ?? true,
         outputPath: adapterData.outputPath,
         outputType: adapterData.format === 'directory' ? 'directory' : 'file',
-        fileExtensions: adapterData.directoryStructure?.filePattern?.split(', ') || [],
-        organizeBySource: true,
+        fileExtensions: adapterData.fileExtensions || [],
+        organizeBySource: adapterData.organizeBySource ?? true,
         generateIndex: true,
         indexFileName: adapterData.directoryStructure?.pathTemplate || 'index.md',
         isRuleType: adapterData.isRuleType,
         fileTemplate: adapterData.singleFileTemplate,
       };
 
-      // 检查是新增还是更新
-      const existingAdapter = config.adapters.custom?.find((a) => a.id === adapterData.id);
-
-      if (existingAdapter) {
+      // 根据 isNew 标志决定是新增还是更新
+      if (adapterData.isNew) {
+        // 添加新适配器（会检测重复）
+        await this.configManager.addAdapter(adapterConfig);
+      } else {
         // 更新现有适配器
         await this.configManager.updateAdapter(adapterData.id, adapterConfig);
-      } else {
-        // 添加新适配器
-        await this.configManager.addAdapter(adapterConfig);
       }
 
       notify(t('adapterManager.adapterSaved', { name: adapterData.name }), 'info');
 
+      // 发送成功消息到 webview（包含 adapter name）
+      this.postMessage({
+        type: 'saveAdapterResult',
+        payload: { success: true, name: adapterData.name },
+      });
+
       // 刷新数据
       await this.sendInitialData();
     } catch (error) {
-      Logger.error('Failed to save adapter', error as Error, { code: 'TAI-5013' });
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save adapter';
+
+      // 对于预期的业务错误（如重复 ID），使用 warn 级别
+      if (errorMessage.includes('already exists')) {
+        Logger.warn('Adapter save failed: duplicate ID', {
+          adapterId: adapterData.id,
+          message: errorMessage,
+        });
+      } else {
+        // 其他非预期错误使用 error 级别
+        Logger.error('Failed to save adapter', error as Error, { code: 'TAI-5013' });
+      }
+
+      // 发送错误消息到 webview
+      this.postMessage({
+        type: 'saveAdapterResult',
+        payload: {
+          success: false,
+          message: errorMessage,
+        },
+      });
+
+      // 不要重新抛出错误，避免被外层 handleMessage 再次捕获
     }
   }
 
