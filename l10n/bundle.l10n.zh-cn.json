@@ -1,4 +1,5 @@
 {
+  "description": "从 Git 仓库管理 AI 编码规则，自动生成 Cursor、Windsurf、Copilot、Continue 等工具的配置文件",
   "Adapter Manager": "适配器管理",
   "adapterManager.adapterDeleted": "适配器 \"{0}\" 删除成功",
   "adapterManager.adapterId": "适配器 ID",

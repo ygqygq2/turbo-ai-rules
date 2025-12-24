@@ -1,4 +1,5 @@
 {
+  "description": "Manage AI coding rules from Git repositories and auto-generate configs for Cursor, Windsurf, Copilot, Continue, and more",
   "Adapter Manager": "Adapter Manager",
   "adapterManager.adapterDeleted": "Adapter \"{0}\" deleted successfully",
   "adapterManager.adapterId": "Adapter ID",

@@ -1,13 +1,6 @@
 {
   // Cursor 适配器测试场景
-  "turbo-ai-rules.adapters": {
-    "cursor": {
-      "enabled": true,
-      "autoUpdate": true,
-      "sortBy": "priority",
-      "sortOrder": "asc"
-    }
-  },
+  "turbo-ai-rules.adapters": {},
   "turbo-ai-rules.sync.conflictStrategy": "priority",
   "turbo-ai-rules.sync.auto": false,
   "turbo-ai-rules.sync.onStartup": false,
