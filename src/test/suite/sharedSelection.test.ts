@@ -15,7 +15,7 @@ let sharedSelectionManager: any;
 describe('Shared Selection Integration Tests', () => {
   let enabledWorkspace: vscode.WorkspaceFolder; // 启用共享选择的工作区
   let disabledWorkspace: vscode.WorkspaceFolder; // 禁用共享选择的工作区
-  const sharedFilePath = '.turbo-ai-rules/selections.json';
+  const sharedFilePath = path.join('.turbo-ai-rules', 'selections.json');
 
   before(async function () {
     this.timeout(30000);
