@@ -338,7 +338,7 @@
   "dashboard.adapters.lastGenerated": "最后生成: {time}",
   "dashboard.adapters.manageAdapters": "管理适配器",
   "dashboard.adapters.fineSync": "规则同步页",
-  "dashboard.adapters.regenerateAll": "适配器重新生成内容",
+  "dashboard.adapters.regenerateAll": "重新生成适配器配置",
   "dashboard.quickActions.title": "快速操作",
   "dashboard.quickActions.quickStart": "快速开始",
   "dashboard.quickActions.generateConfigs": "生成配置文件",
