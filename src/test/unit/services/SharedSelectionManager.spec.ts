@@ -2,6 +2,7 @@
  * SharedSelectionManager 单元测试
  */
 
+import * as path from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SharedSelectionManager } from '@/services/SharedSelectionManager';
@@ -95,7 +96,8 @@ describe('SharedSelectionManager 单元测试', () => {
   describe('文件路径', () => {
     it('应该返回正确的共享选择文件路径', () => {
       const filePath = sharedManager.getFilePath('/test/workspace');
-      expect(filePath).toBe('/test/workspace/.turbo-ai-rules/selections.json');
+      const expectedPath = path.join('/test/workspace', '.turbo-ai-rules', 'selections.json');
+      expect(filePath).toBe(expectedPath);
     });
 
     it('应该支持自定义文件路径', async () => {
@@ -110,7 +112,8 @@ describe('SharedSelectionManager 单元测试', () => {
       } as any);
 
       const filePath = sharedManager.getFilePath('/test/workspace');
-      expect(filePath).toBe('/test/workspace/custom/path/selections.json');
+      const expectedPath = path.join('/test/workspace', 'custom', 'path', 'selections.json');
+      expect(filePath).toBe(expectedPath);
     });
   });
 
@@ -162,9 +165,11 @@ describe('SharedSelectionManager 单元测试', () => {
 
       await sharedManager.save('/test/workspace', selections);
 
-      expect(mockFileSystem.ensureDir).toHaveBeenCalledWith('/test/workspace/.turbo-ai-rules');
+      const expectedDir = path.join('/test/workspace', '.turbo-ai-rules');
+      const expectedFile = path.join('/test/workspace', '.turbo-ai-rules', 'selections.json');
+      expect(mockFileSystem.ensureDir).toHaveBeenCalledWith(expectedDir);
       expect(mockFileSystem.safeWriteFile).toHaveBeenCalledWith(
-        '/test/workspace/.turbo-ai-rules/selections.json',
+        expectedFile,
         expect.stringContaining('"source-1"'),
       );
     });
