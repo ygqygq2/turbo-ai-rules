@@ -9,29 +9,32 @@ import { WorkspaceDataManager } from '@/services/WorkspaceDataManager';
 
 // Mock 模块
 vi.mock('@/services/WorkspaceDataManager');
+vi.mock('@/services/SharedSelectionManager');
 vi.mock('@/utils/logger');
 
 // Mock vscode
-vi.mock('vscode', () => ({
-  workspace: {
-    workspaceFolders: [
-      {
-        uri: { fsPath: '/test/workspace' },
-        name: 'test-workspace',
-        index: 0,
-      },
-    ],
-    getConfiguration: vi.fn().mockReturnValue({
-      get: vi.fn().mockReturnValue(false), // 默认禁用 shared selection
-    }),
-  },
-}));
+vi.mock('vscode', () => {
+  const mockGetConfiguration = vi.fn();
+  return {
+    workspace: {
+      workspaceFolders: [
+        {
+          uri: { fsPath: '/test/workspace' },
+          name: 'test-workspace',
+          index: 0,
+        },
+      ],
+      getConfiguration: mockGetConfiguration,
+    },
+  };
+});
 
 describe('SelectionStateManager 单元测试', () => {
   let selectionStateManager: SelectionStateManager;
   let mockWorkspaceStateManager: any;
+  let mockSharedManager: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
 
     // Mock WorkspaceDataManager
@@ -40,6 +43,22 @@ describe('SelectionStateManager 单元测试', () => {
       setRuleSelection: vi.fn().mockResolvedValue(undefined),
     };
     (WorkspaceDataManager.getInstance as any) = vi.fn().mockReturnValue(mockWorkspaceStateManager);
+
+    // Mock SharedSelectionManager
+    const { SharedSelectionManager } = await import('@/services/SharedSelectionManager');
+    mockSharedManager = {
+      isEnabled: vi.fn().mockReturnValue(false),
+      load: vi.fn().mockResolvedValue(null),
+      save: vi.fn().mockResolvedValue(undefined),
+      import: vi.fn().mockResolvedValue(new Map()),
+    };
+    (SharedSelectionManager.getInstance as any) = vi.fn().mockReturnValue(mockSharedManager);
+
+    // Mock vscode configuration (默认禁用共享选择)
+    const vscode = await import('vscode');
+    vi.mocked(vscode.workspace.getConfiguration).mockReturnValue({
+      get: vi.fn().mockReturnValue(false),
+    } as any);
 
     // 重置单例
     (SelectionStateManager as any).instance = undefined;
@@ -287,6 +306,114 @@ describe('SelectionStateManager 单元测试', () => {
       // 新设计：出错时默认全不选，等待用户主动勾选
       const selection = selectionStateManager.getSelection('source-1');
       expect(selection).toEqual([]);
+    });
+  });
+
+  describe('共享选择功能', () => {
+    it('应该在启用共享选择时优先从共享文件加载', async () => {
+      // 启用共享选择
+      mockSharedManager.isEnabled.mockReturnValue(true);
+      mockSharedManager.load.mockResolvedValue({
+        version: 1,
+        workspacePath: '/test/workspace',
+        lastUpdated: '2025-12-24T10:00:00.000Z',
+        selections: {
+          'source-1': {
+            paths: ['shared-rule1.md', 'shared-rule2.md'],
+          },
+        },
+      });
+
+      await selectionStateManager.initializeState('source-1', 10, []);
+
+      const selection = selectionStateManager.getSelection('source-1');
+      expect(selection).toEqual(['shared-rule1.md', 'shared-rule2.md']);
+
+      // 应该调用了共享管理器
+      expect(mockSharedManager.load).toHaveBeenCalledWith('/test/workspace');
+      // 不应该调用 WorkspaceDataManager
+      expect(mockWorkspaceStateManager.getRuleSelection).not.toHaveBeenCalled();
+    });
+
+    it('应该在共享文件不存在时降级到 WorkspaceDataManager', async () => {
+      // 启用共享选择，但文件不存在
+      mockSharedManager.isEnabled.mockReturnValue(true);
+      mockSharedManager.load.mockResolvedValue(null);
+      mockWorkspaceStateManager.getRuleSelection.mockResolvedValue({
+        paths: ['workspace-rule1.md'],
+      });
+
+      await selectionStateManager.initializeState('source-1', 10, []);
+
+      const selection = selectionStateManager.getSelection('source-1');
+      expect(selection).toEqual(['workspace-rule1.md']);
+
+      // 应该先尝试共享文件
+      expect(mockSharedManager.load).toHaveBeenCalled();
+      // 然后降级到 WorkspaceDataManager
+      expect(mockWorkspaceStateManager.getRuleSelection).toHaveBeenCalled();
+    });
+
+    it('应该在共享文件加载失败时降级到 WorkspaceDataManager', async () => {
+      // 启用共享选择，但加载失败
+      mockSharedManager.isEnabled.mockReturnValue(true);
+      mockSharedManager.load.mockRejectedValue(new Error('Load failed'));
+      mockWorkspaceStateManager.getRuleSelection.mockResolvedValue({
+        paths: ['workspace-rule1.md'],
+      });
+
+      const { Logger } = await import('@/utils/logger');
+
+      await selectionStateManager.initializeState('source-1', 10, []);
+
+      const selection = selectionStateManager.getSelection('source-1');
+      expect(selection).toEqual(['workspace-rule1.md']);
+
+      // 应该记录警告
+      expect(Logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('falling back'),
+        expect.any(Object),
+      );
+    });
+
+    it('应该在禁用共享选择时直接使用 WorkspaceDataManager', async () => {
+      // 禁用共享选择
+      mockSharedManager.isEnabled.mockReturnValue(false);
+      mockWorkspaceStateManager.getRuleSelection.mockResolvedValue({
+        paths: ['workspace-rule1.md'],
+      });
+
+      await selectionStateManager.initializeState('source-1', 10, []);
+
+      const selection = selectionStateManager.getSelection('source-1');
+      expect(selection).toEqual(['workspace-rule1.md']);
+
+      // 不应该调用共享管理器
+      expect(mockSharedManager.load).not.toHaveBeenCalled();
+      // 应该直接使用 WorkspaceDataManager
+      expect(mockWorkspaceStateManager.getRuleSelection).toHaveBeenCalled();
+    });
+
+    it('应该在更新选择时同时保存到共享文件', async () => {
+      // 启用共享选择
+      mockSharedManager.isEnabled.mockReturnValue(true);
+
+      await selectionStateManager.initializeState('source-1', 10, []);
+      selectionStateManager.updateSelection('source-1', ['rule1.md', 'rule2.md'], false);
+
+      // 手动触发持久化
+      await selectionStateManager.persistToDisk('source-1');
+
+      // 应该同时保存到共享文件
+      expect(mockSharedManager.save).toHaveBeenCalledWith('/test/workspace', expect.any(Map));
+    });
+
+    it('应该正确检查共享选择是否启用', () => {
+      mockSharedManager.isEnabled.mockReturnValue(true);
+
+      const enabled = selectionStateManager.isSharedSelectionEnabled();
+      expect(enabled).toBe(true);
+      expect(mockSharedManager.isEnabled).toHaveBeenCalled();
     });
   });
 });

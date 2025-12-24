@@ -93,7 +93,34 @@ export class SelectionStateManager {
       return Array.from(this.memoryState.get(sourceId)!);
     }
 
-    // 从磁盘加载
+    // 优先从共享选择文件加载（如果启用了共享选择）
+    const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+
+    if (workspacePath && this.sharedManager.isEnabled(workspaceFolder)) {
+      try {
+        const sharedData = await this.sharedManager.load(workspacePath);
+        if (sharedData?.selections[sourceId]) {
+          const paths = sharedData.selections[sourceId].paths || [];
+          this.memoryState.set(sourceId, new Set(paths));
+
+          Logger.info('Selection state initialized from shared file', {
+            sourceId,
+            selectedCount: paths.length,
+            totalCount,
+          });
+
+          return paths;
+        }
+      } catch (error) {
+        Logger.warn('Failed to load from shared selection file, falling back to workspace state', {
+          error: String(error),
+          sourceId,
+        });
+      }
+    }
+
+    // 从 WorkspaceDataManager 加载（兼容旧版本或未启用共享选择时）
     try {
       const selection = await this.workspaceDataManager.getRuleSelection(sourceId);
       let paths: string[] = [];
