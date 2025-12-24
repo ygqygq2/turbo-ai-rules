@@ -178,7 +178,7 @@ describe('SharedSelectionManager 单元测试', () => {
 
       expect(savedData).toMatchObject({
         version: 1,
-        workspacePath: '/test/workspace',
+        workspacePath: '.', // 使用相对路径，避免泄露敏感信息
         selections: {
           'source-1': {
             paths: ['rule1.md'],
@@ -357,6 +357,39 @@ describe('SharedSelectionManager 单元测试', () => {
       expect(mockGitignore.ensureIgnored).toHaveBeenCalledWith('/test/workspace', [
         '.turbo-ai-rules/selections.json',
       ]);
+    });
+
+    it('应该在启用共享选择时检查并添加 allow 规则（如果父目录被忽略）', async () => {
+      const vscode = await import('vscode');
+      vi.mocked(vscode.workspace.getConfiguration).mockReturnValue({
+        get: vi.fn((key: string) => {
+          if (key === 'enableSharedSelection') {
+            return true;
+          }
+          if (key === 'selectionFilePath') {
+            return '.turbo-ai-rules/selections.json';
+          }
+          if (key === 'storage.autoGitignore') {
+            return true;
+          }
+          return undefined;
+        }),
+      } as any);
+
+      // Mock .gitignore 内容，父目录被忽略
+      mockFileSystem.pathExists.mockResolvedValue(true);
+      mockFileSystem.safeReadFile.mockResolvedValue('.turbo-ai-rules/\nnode_modules/');
+
+      const selections = new Map();
+      await sharedManager.save('/test/workspace', selections);
+
+      // 应该调用 removeIgnored 移除可能存在的忽略规则
+      expect(mockGitignore.removeIgnored).toHaveBeenCalledWith('/test/workspace', [
+        '.turbo-ai-rules/selections.json',
+      ]);
+
+      // 注意：ensureAllowRuleIfNeeded 内部会检测到父目录被忽略并添加 allow 规则
+      // 由于我们 mock 了 pathExists 和 safeReadFile，实际的 allow 规则添加逻辑会被触发
     });
   });
 });

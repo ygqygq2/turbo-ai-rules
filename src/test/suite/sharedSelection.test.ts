@@ -64,7 +64,7 @@ describe('Shared Selection Integration Tests', () => {
     );
   });
 
-  test('应该在启用 enableSharedSelection 时创建共享选择文件', async function () {
+  it('应该在启用 enableSharedSelection 时创建共享选择文件', async function () {
     this.timeout(10000);
 
     // 1. 启用共享选择
@@ -123,7 +123,7 @@ describe('Shared Selection Integration Tests', () => {
     );
   });
 
-  test('应该从共享选择文件加载规则选择状态', async function () {
+  it('应该从共享选择文件加载规则选择状态', async function () {
     this.timeout(10000);
 
     // 1. 手动创建共享选择文件
@@ -132,7 +132,7 @@ describe('Shared Selection Integration Tests', () => {
 
     const sharedData = {
       version: 1,
-      workspacePath: workspaceFolder.uri.fsPath,
+      workspacePath: '.', // 使用相对路径，避免泄露敏感信息
       lastUpdated: new Date().toISOString(),
       selections: {
         [testSourceId]: {
@@ -156,7 +156,10 @@ describe('Shared Selection Integration Tests', () => {
     // 等待配置生效
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    // 3. 初始化选择状态（应该从共享文件加载）
+    // 3. 清空内存状态，强制从文件加载
+    selectionStateManager.clearState(testSourceId);
+
+    // 4. 初始化选择状态（应该从共享文件加载）
     await selectionStateManager.initializeState(testSourceId, testPaths.length, []);
 
     // 4. 验证加载的选择状态
@@ -164,7 +167,7 @@ describe('Shared Selection Integration Tests', () => {
     assert.deepStrictEqual(loadedPaths, testPaths, 'Should load paths from shared file');
   });
 
-  test('应该在禁用 enableSharedSelection 时使用 WorkspaceDataManager', async function () {
+  it('应该在禁用 enableSharedSelection 时使用 WorkspaceDataManager', async function () {
     this.timeout(10000);
 
     const testSourceId = 'test-source-3';
@@ -178,8 +181,8 @@ describe('Shared Selection Integration Tests', () => {
       vscode.ConfigurationTarget.Workspace,
     );
 
-    // 等待配置生效
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    // 等待配置生效（需要更长时间）
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // 2. 验证配置已禁用
     const enabled = sharedSelectionManager.isEnabled(workspaceFolder);
@@ -216,7 +219,7 @@ describe('Shared Selection Integration Tests', () => {
     assert.deepStrictEqual(loadedPaths, testPaths, 'Should still work with WorkspaceDataManager');
   });
 
-  test('应该在共享文件加载失败时降级到 WorkspaceDataManager', async function () {
+  it('应该在共享文件加载失败时降级到 WorkspaceDataManager', async function () {
     this.timeout(10000);
 
     const testSourceId = 'test-source-4';
@@ -263,7 +266,7 @@ describe('Shared Selection Integration Tests', () => {
     );
   });
 
-  test('应该支持多个规则源的共享选择', async function () {
+  it('应该支持多个规则源的共享选择', async function () {
     this.timeout(10000);
 
     // 1. 启用共享选择

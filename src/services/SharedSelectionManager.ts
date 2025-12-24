@@ -115,7 +115,7 @@ export class SharedSelectionManager {
 
     const data: RuleSelections = {
       version: 1,
-      workspacePath,
+      workspacePath: '.', // 使用相对路径，避免泄露敏感信息
       lastUpdated: new Date().toISOString(),
       selections: selectionsData,
     };
@@ -223,14 +223,77 @@ export class SharedSelectionManager {
       }
       // 如果 enabled=true：文件应该被提交，确保不在 .gitignore 中
       else if (enabled) {
+        // 移除可能存在的忽略规则
         await removeIgnored(workspacePath, [relativePath]);
-        Logger.debug('Ensured shared selection file not in .gitignore', { relativePath });
+
+        // 如果父目录被忽略，需要添加 allow 规则（以 ! 开头）
+        await this.ensureAllowRuleIfNeeded(workspacePath, relativePath);
+
+        Logger.debug('Ensured shared selection file can be committed', { relativePath });
       }
     } catch (error) {
       Logger.warn('Failed to manage .gitignore for shared selection', {
         error: String(error),
         relativePath,
       });
+    }
+  }
+
+  /**
+   * @description 如果父目录被忽略，添加 allow 规则以确保文件可提交
+   * @param workspacePath {string} 工作区路径
+   * @param relativePath {string} 文件相对路径
+   * @return {Promise<void>}
+   */
+  private async ensureAllowRuleIfNeeded(
+    workspacePath: string,
+    relativePath: string,
+  ): Promise<void> {
+    const gitignorePath = path.join(workspacePath, '.gitignore');
+
+    // 检查 .gitignore 是否存在
+    if (!(await pathExists(gitignorePath))) {
+      return;
+    }
+
+    const content = await safeReadFile(gitignorePath);
+    const lines = content.split('\n').map((l) => l.trim());
+
+    // 检查父目录是否被忽略
+    const dirPath = path.dirname(relativePath);
+    const parentIgnorePatterns = [dirPath + '/', dirPath, '/' + dirPath + '/', '/' + dirPath];
+
+    const isParentIgnored = parentIgnorePatterns.some((pattern) => lines.includes(pattern));
+
+    if (isParentIgnored) {
+      // 父目录被忽略，需要添加 allow 规则
+      const allowRule = `!${relativePath}`;
+
+      // 检查是否已存在 allow 规则
+      if (!lines.includes(allowRule)) {
+        // 在 turbo-ai-rules 标记块中添加 allow 规则
+        const { ensureIgnored } = await import('../utils/gitignore');
+        const { GITIGNORE_MARKER } = await import('../utils/constants');
+
+        // 读取现有模式
+        const markerIndex = lines.findIndex((line) => line.includes(GITIGNORE_MARKER));
+        const existingPatterns: string[] = [];
+
+        if (markerIndex !== -1) {
+          for (let i = markerIndex + 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line === '') break;
+            existingPatterns.push(line);
+          }
+        }
+
+        // 添加 allow 规则（如果不存在）
+        if (!existingPatterns.includes(allowRule)) {
+          existingPatterns.push(allowRule);
+          await ensureIgnored(workspacePath, existingPatterns);
+          Logger.info('Added allow rule for shared selection file', { allowRule, relativePath });
+        }
+      }
     }
   }
 

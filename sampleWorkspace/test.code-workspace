@@ -47,6 +47,7 @@
         "lastSync": "2025-11-06T09:11:35.378Z"
       }
     ],
-    "turbo-ai-rules.adapters": {}
+    "turbo-ai-rules.adapters": {},
+    "turbo-ai-rules.enableSharedSelection": false
   }
 }

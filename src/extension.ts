@@ -49,6 +49,7 @@ import { FileGenerator } from './services/FileGenerator';
 import { GitManager } from './services/GitManager';
 import { RulesManager } from './services/RulesManager';
 import { SelectionStateManager } from './services/SelectionStateManager';
+import { SharedSelectionManager } from './services/SharedSelectionManager';
 import { WorkspaceContextManager } from './services/WorkspaceContextManager';
 import { WorkspaceDataManager } from './services/WorkspaceDataManager';
 import { WorkspaceStateManager } from './services/WorkspaceStateManager';
@@ -123,6 +124,7 @@ async function loadRulesFromCache(
 export async function activate(context: vscode.ExtensionContext): Promise<{
   rulesManager: RulesManager;
   selectionStateManager: SelectionStateManager;
+  sharedSelectionManager: SharedSelectionManager;
   configManager: ConfigManager;
   workspaceContextManager: WorkspaceContextManager;
 }> {
@@ -144,6 +146,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{
     const workspaceContextManager = WorkspaceContextManager.getInstance(context);
     const workspaceDataManager = WorkspaceDataManager.getInstance();
     const selectionStateManager = SelectionStateManager.getInstance();
+    const sharedSelectionManager = SharedSelectionManager.getInstance();
     const rulesManager = RulesManager.getInstance();
     // gitManager 和 fileGenerator 在需要时通过单例获取，避免未使用警告
 
@@ -455,6 +458,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<{
       configManager,
       rulesManager,
       selectionStateManager,
+      sharedSelectionManager,
       workspaceContextManager,
     };
   } catch (error) {
