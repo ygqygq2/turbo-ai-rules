@@ -70,11 +70,16 @@ describe('Shared Selection Integration Tests', () => {
   it('应该在启用 enableSharedSelection 时创建共享选择文件', async function () {
     this.timeout(10000);
 
-    // 1. 验证配置已启用（使用预配置的 enabledWorkspace）
+    // 1. 打开 enabledWorkspace 中的文件，切换到该工作区上下文
+    const readmePath = path.join(enabledWorkspace.uri.fsPath, 'README.md');
+    const doc = await vscode.workspace.openTextDocument(readmePath);
+    await vscode.window.showTextDocument(doc);
+
+    // 2. 验证配置已启用（使用预配置的 enabledWorkspace）
     const enabled = sharedSelectionManager.isEnabled(enabledWorkspace);
     assert.strictEqual(enabled, true, 'Shared selection should be enabled');
 
-    // 2. 模拟选择规则
+    // 3. 模拟选择规则
     const testSourceId = 'test-source';
     const testPaths = ['rule1.md', 'rule2.md', 'rule3.md'];
 
@@ -90,7 +95,7 @@ describe('Shared Selection Integration Tests', () => {
     await selectionStateManager.persistToDisk(testSourceId, enabledWorkspace.uri.fsPath);
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // 3. 验证共享选择文件已创建
+    // 4. 验证共享选择文件已创建
     const fullPath = path.join(enabledWorkspace.uri.fsPath, sharedFilePath);
     const fileExists = await fs
       .access(fullPath)
@@ -99,7 +104,7 @@ describe('Shared Selection Integration Tests', () => {
 
     assert.strictEqual(fileExists, true, 'Shared selection file should be created');
 
-    // 4. 验证文件内容
+    // 5. 验证文件内容
     const content = await fs.readFile(fullPath, 'utf-8');
     const data = JSON.parse(content);
 
@@ -118,7 +123,12 @@ describe('Shared Selection Integration Tests', () => {
   it('应该从共享选择文件加载规则选择状态', async function () {
     this.timeout(10000);
 
-    // 1. 手动创建共享选择文件（使用预配置启用的工作区）
+    // 1. 打开 enabledWorkspace 中的文件，切换到该工作区上下文
+    const readmePath = path.join(enabledWorkspace.uri.fsPath, 'README.md');
+    const doc = await vscode.workspace.openTextDocument(readmePath);
+    await vscode.window.showTextDocument(doc);
+
+    // 2. 手动创建共享选择文件（使用预配置启用的工作区）
     const testSourceId = 'test-source-2';
     const testPaths = ['shared-rule1.md', 'shared-rule2.md'];
 
@@ -137,10 +147,10 @@ describe('Shared Selection Integration Tests', () => {
     await fs.mkdir(path.dirname(fullPath), { recursive: true });
     await fs.writeFile(fullPath, JSON.stringify(sharedData, null, 2));
 
-    // 2. 清空内存状态，强制从文件加载
+    // 3. 清空内存状态，强制从文件加载
     selectionStateManager.clearState(testSourceId);
 
-    // 3. 使用 importSharedSelection 从共享文件加载（这是正确的方式）
+    // 4. 使用 importSharedSelection 从共享文件加载（这是正确的方式）
     const importedCount = await selectionStateManager.importSharedSelection(
       enabledWorkspace.uri.fsPath,
       'replace',
@@ -148,7 +158,7 @@ describe('Shared Selection Integration Tests', () => {
 
     assert.strictEqual(importedCount, 1, 'Should import 1 source');
 
-    // 4. 验证加载的选择状态
+    // 5. 验证加载的选择状态
     const loadedPaths = selectionStateManager.getSelection(testSourceId);
     assert.deepStrictEqual(loadedPaths, testPaths, 'Should load paths from shared file');
   });
@@ -156,14 +166,19 @@ describe('Shared Selection Integration Tests', () => {
   it('应该在禁用 enableSharedSelection 时使用 WorkspaceDataManager', async function () {
     this.timeout(10000);
 
+    // 1. 打开 disabledWorkspace 中的文件，切换到该工作区上下文
+    const readmePath = path.join(disabledWorkspace.uri.fsPath, 'README.md');
+    const doc = await vscode.workspace.openTextDocument(readmePath);
+    await vscode.window.showTextDocument(doc);
+
     const testSourceId = 'test-source-3';
     const testPaths = ['workspace-rule1.md', 'workspace-rule2.md'];
 
-    // 1. 验证配置已禁用（使用预配置的 disabledWorkspace）
+    // 2. 验证配置已禁用（使用预配置的 disabledWorkspace）
     const enabled = sharedSelectionManager.isEnabled(disabledWorkspace);
     assert.strictEqual(enabled, false, 'Shared selection should be disabled');
 
-    // 2. 设置选择状态
+    // 3. 设置选择状态
     await selectionStateManager.initializeState(testSourceId, testPaths.length, []);
     selectionStateManager.updateSelection(
       testSourceId,
@@ -176,7 +191,7 @@ describe('Shared Selection Integration Tests', () => {
     await selectionStateManager.persistToDisk(testSourceId, disabledWorkspace.uri.fsPath);
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // 3. 验证共享选择文件未创建
+    // 4. 验证共享选择文件未创建
     const fullPath = path.join(disabledWorkspace.uri.fsPath, sharedFilePath);
     const fileExists = await fs
       .access(fullPath)
@@ -189,7 +204,7 @@ describe('Shared Selection Integration Tests', () => {
       'Shared selection file should not be created when disabled',
     );
 
-    // 4. 验证选择状态仍然可以正常工作（使用 WorkspaceDataManager）
+    // 5. 验证选择状态仍然可以正常工作（使用 WorkspaceDataManager）
     const loadedPaths = selectionStateManager.getSelection(testSourceId);
     assert.deepStrictEqual(loadedPaths, testPaths, 'Should still work with WorkspaceDataManager');
   });
@@ -197,15 +212,20 @@ describe('Shared Selection Integration Tests', () => {
   it('应该在共享文件加载失败时降级到 WorkspaceDataManager', async function () {
     this.timeout(10000);
 
+    // 1. 打开 enabledWorkspace 中的文件，切换到该工作区上下文
+    const readmePath = path.join(enabledWorkspace.uri.fsPath, 'README.md');
+    const doc = await vscode.workspace.openTextDocument(readmePath);
+    await vscode.window.showTextDocument(doc);
+
     const testSourceId = 'test-source-4';
     const testPaths = ['fallback-rule1.md'];
 
-    // 1. 创建一个损坏的共享选择文件（使用启用工作区）
+    // 2. 创建一个损坏的共享选择文件（使用启用工作区）
     const fullPath = path.join(enabledWorkspace.uri.fsPath, sharedFilePath);
     await fs.mkdir(path.dirname(fullPath), { recursive: true });
     await fs.writeFile(fullPath, 'invalid json content');
 
-    // 2. 先设置一些状态到 WorkspaceDataManager
+    // 3. 先设置一些状态到 WorkspaceDataManager
     await selectionStateManager.initializeState(testSourceId, testPaths.length, []);
     selectionStateManager.updateSelection(
       testSourceId,
@@ -215,13 +235,13 @@ describe('Shared Selection Integration Tests', () => {
     );
     await selectionStateManager.persistToDisk(testSourceId, enabledWorkspace.uri.fsPath);
 
-    // 3. 清空内存状态，强制重新加载
+    // 4. 清空内存状态，强制重新加载
     selectionStateManager.clearState(testSourceId);
 
-    // 4. 重新初始化（应该降级到 WorkspaceDataManager）
+    // 5. 重新初始化（应该降级到 WorkspaceDataManager）
     await selectionStateManager.initializeState(testSourceId, testPaths.length, []);
 
-    // 5. 验证仍然可以加载到数据（从 WorkspaceDataManager）
+    // 6. 验证仍然可以加载到数据（从 WorkspaceDataManager）
     const loadedPaths = selectionStateManager.getSelection(testSourceId);
     assert.deepStrictEqual(
       loadedPaths,
@@ -233,7 +253,12 @@ describe('Shared Selection Integration Tests', () => {
   it('应该支持多个规则源的共享选择', async function () {
     this.timeout(10000);
 
-    // 1. 设置多个规则源的选择状态（使用启用工作区）
+    // 1. 打开 enabledWorkspace 中的文件，切换到该工作区上下文
+    const readmePath = path.join(enabledWorkspace.uri.fsPath, 'README.md');
+    const doc = await vscode.workspace.openTextDocument(readmePath);
+    await vscode.window.showTextDocument(doc);
+
+    // 2. 设置多个规则源的选择状态（使用启用工作区）
     const sources = [
       { id: 'source-a', paths: ['a1.md', 'a2.md'] },
       { id: 'source-b', paths: ['b1.md', 'b2.md', 'b3.md'] },
@@ -254,7 +279,7 @@ describe('Shared Selection Integration Tests', () => {
     // 等待所有持久化完成
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // 2. 验证共享选择文件包含所有源
+    // 3. 验证共享选择文件包含所有源
     const fullPath = path.join(enabledWorkspace.uri.fsPath, sharedFilePath);
     const content = await fs.readFile(fullPath, 'utf-8');
     const data = JSON.parse(content);
@@ -268,12 +293,12 @@ describe('Shared Selection Integration Tests', () => {
       );
     }
 
-    // 3. 清空内存状态并重新加载
+    // 4. 清空内存状态并重新加载
     for (const source of sources) {
       selectionStateManager.clearState(source.id);
     }
 
-    // 4. 验证可以从共享文件重新加载所有源
+    // 5. 验证可以从共享文件重新加载所有源
     for (const source of sources) {
       await selectionStateManager.initializeState(source.id, source.paths.length, []);
       const loadedPaths = selectionStateManager.getSelection(source.id);
