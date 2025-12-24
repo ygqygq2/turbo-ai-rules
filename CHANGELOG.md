@@ -9,45 +9,25 @@ All notable changes to the "turbo-ai-rules" extension will be documented in this
 - **配置驱动的预设适配器** - 重构预设适配器架构，从 3 个扩展到 9 个主流 AI 工具
   - 新增支持：Windsurf, Cline, Roo-Cline, Aider, Bolt, Qodo Gen
   - 采用配置驱动，添加新工具无需修改代码
-- **适配器配置格式优化** - 采用嵌套对象格式，支持动态扩展
-  - 自动迁移旧配置格式（cursor, copilot, continue）
-  - 保持 3 个版本兼容性（计划 v2.0.5 移除旧格式）
+- **适配器管理器 UI** - 全新的可视化适配器管理界面
+  - 预设适配器和自定义适配器分标签管理
+  - 支持启用/禁用、编辑、删除操作
+  - 自定义适配器支持单文件和目录两种输出格式
 - **用户规则保护默认启用** - `protectUserRules` 默认改为 `true`，更好地保护用户已有规则
 - **统一块标记格式** - 使用固定的 `<!-- TURBO-AI-RULES:BEGIN -->` 标记，时间信息移至第二行
 - **Git 缓存刷新后自动重新解析规则** - 点击"刷新 Git 缓存"按钮后，会自动重新解析规则并更新规则树视图
 
-## ⚠️ 配置格式变更
-
-**旧格式**（仍然支持，会自动迁移）:
-
-```json
-{
-  "turbo-ai-rules.adapters.cursor.enabled": true,
-  "turbo-ai-rules.adapters.copilot.enabled": false
-}
-```
-
-**新格式**（推荐）:
-
-```json
-{
-  "turbo-ai-rules.adapters": {
-    "cursor": { "enabled": true },
-    "copilot": { "enabled": false }
-  }
-}
-```
-
-详见: [适配器配置迁移说明](docs/development/implementation/adapter-config-migration.md)
-
 ## 🎨 UI 优化
 
-- 适配器管理页面布局优化：预设适配器占 60%，自定义占 40%
-- 添加分页功能，每页显示 6 个适配器
-- 卡片设计更紧凑，提高信息密度
+- **适配器管理页面** - 布局优化，使用 tab 分割预设适配器和自定义适配器
+- **错误提示优化** - 保存适配器时，错误提示在标题下方显示，更醒目
+- **ID 字段保护** - 编辑模式下 ID 字段禁用，防止修改导致冲突
+- **翻译参数统一** - 使用 `{0}` 数字占位符格式，保持一致性
 
 ## 🐛 修复问题
 
+- 修复自定义适配器保存时重复 ID 检测被绕过的问题
+- 修复适配器保存成功消息中名称未正确替换的问题
 - 修复规则同步页面不选择任何规则时，之前的选择状态仍被保留的问题
 - 修复 Git 缓存刷新后规则列表未自动更新的问题
 - 修复未加引号的通配符（`*.md`、`**/*.js` 等）导致的 YAML 解析失败
@@ -56,9 +36,10 @@ All notable changes to the "turbo-ai-rules" extension will be documented in this
 
 ## 💡 改进优化
 
+- **日志级别优化** - 重复 ID 等预期业务错误使用 warn 级别，避免冗长堆栈信息
+- **数据映射改进** - 修正适配器保存时的字段映射逻辑
 - 添加智能 YAML 转义：自动为 frontmatter 中的通配符值添加引号
 - 统一扩展启动和 Git 缓存刷新的规则解析逻辑
-- 优化日志输出，移除冗余的调试日志
 - 即使没有规则也生成空配置，确保清空之前的内容
 
 ## 🔧 技术改进

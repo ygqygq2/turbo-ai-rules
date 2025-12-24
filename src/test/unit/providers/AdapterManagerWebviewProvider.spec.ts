@@ -178,6 +178,7 @@ describe('AdapterManagerWebviewProvider', () => {
         enabled: true,
         outputPath: 'new/path',
         format: 'file' as const,
+        isNew: true, // 标记为新增
       };
 
       await (provider as any).handleSaveAdapter({ adapter: newAdapter });

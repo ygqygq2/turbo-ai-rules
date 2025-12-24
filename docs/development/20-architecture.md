@@ -102,8 +102,9 @@ Git 规则仓库 ──→ [Turbo AI Rules] ──→ AI 工具配置文件
 │  │  • RulesManager (规则管理)                             │ │
 │  │  • FileGenerator (文件生成)                            │ │
 │  │  • ConfigManager (配置管理)                            │ │
-│  │  • SyncScheduler (同步调度)                            │ │
-│  │  • RulesOrchestrator (流程编排)                        │ │
+│  │  • AutoSyncService (同步调度)                          │ │
+│  │  • WorkspaceStateManager (工作区状态)                  │ │
+│  │  • SelectionStateManager (选择状态)                    │ │
 │  └────────────────────────────────────────────────────────┘ │
 │                              ↓                               │
 │  ┌────────────────────────────────────────────────────────┐ │
@@ -151,8 +152,10 @@ Git 规则仓库 ──→ [Turbo AI Rules] ──→ AI 工具配置文件
 - **RulesManager**: 规则索引、查询、搜索、冲突检测
 - **FileGenerator**: 配置文件生成和写入
 - **ConfigManager**: 扩展配置读写和验证
-- **SyncScheduler**: 定时同步调度和自动同步
-- **RulesOrchestrator**: 编排多个服务完成端到端流程
+- **AutoSyncService**: 定时同步调度和自动同步
+- **WorkspaceStateManager**: 工作区状态管理
+- **SelectionStateManager**: 规则选择状态管理
+- **Commands**: 命令层直接调用各服务编排端到端流程（如同步→解析→合并→生成）
 
 ### 3.3 Parser & Validator Layer (解析验证层)
 
@@ -201,9 +204,9 @@ Git 规则仓库 ──→ [Turbo AI Rules] ──→ AI 工具配置文件
 ### 4.1 规则同步流程
 
 ```
-1. 用户触发同步
+1. 用户触发同步命令
    ↓
-2. SyncScheduler 调度任务
+2. syncRules 命令编排流程
    ↓
 3. GitManager 拉取 Git 更新
    ↓
@@ -221,19 +224,21 @@ Git 规则仓库 ──→ [Turbo AI Rules] ──→ AI 工具配置文件
 ### 4.2 配置生成流程
 
 ```
-1. 用户触发生成
+1. 用户触发生成命令
    ↓
-2. RulesManager 读取合并规则
+2. generateConfigs 命令编排流程
    ↓
-3. 选择启用的适配器
+3. RulesManager 读取合并规则
    ↓
-4. 各适配器生成配置内容
+4. 选择启用的适配器
    ↓
-5. FileGenerator 写入文件
+5. 各适配器生成配置内容
    ↓
-6. 更新 .gitignore
+6. FileGenerator 写入文件
    ↓
-7. 通知用户完成
+7. 更新 .gitignore
+   ↓
+8. 通知用户完成
 ```
 
 ### 4.3 规则源添加流程
@@ -339,7 +344,7 @@ Git 规则仓库 ──→ [Turbo AI Rules] ──→ AI 工具配置文件
 支持自定义同步逻辑：
 
 - 实现 `SyncStrategy` 接口
-- 注册到 `SyncScheduler`
+- 注册到 `AutoSyncService`
 - 在配置中启用
 
 ---

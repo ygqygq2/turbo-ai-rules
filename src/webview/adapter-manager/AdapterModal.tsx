@@ -7,6 +7,7 @@ import type { CustomAdapter, EditingAdapter } from './AdapterManager';
 export interface AdapterModalProps {
   adapter: EditingAdapter;
   isNew: boolean;
+  serverError?: string | null;
   onSave: (adapter: CustomAdapter) => void;
   onClose: () => void;
 }
@@ -14,7 +15,13 @@ export interface AdapterModalProps {
 /**
  * 适配器添加/编辑模态框组件
  */
-export const AdapterModal: React.FC<AdapterModalProps> = ({ adapter, isNew, onSave, onClose }) => {
+export const AdapterModal: React.FC<AdapterModalProps> = ({
+  adapter,
+  isNew,
+  serverError,
+  onSave,
+  onClose,
+}) => {
   // 表单状态
   const [id, setId] = useState(adapter.id || '');
   const [name, setName] = useState(adapter.name || '');
@@ -24,15 +31,12 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({ adapter, isNew, onSa
   );
   const [isRuleType, setIsRuleType] = useState(adapter.isRuleType ?? false);
   const [singleFileTemplate, setSingleFileTemplate] = useState(adapter.singleFileTemplate || '');
-  // 根据 useOriginalFilename 设置默认模板
-  const useOriginalFilename = adapter.useOriginalFilename ?? true;
-  const defaultPathTemplate = useOriginalFilename ? '{{ruleName}}.md' : '{{ruleId}}.md';
 
   const [directoryFilePattern, setDirectoryFilePattern] = useState(
     adapter.directoryStructure?.filePattern || '*.md',
   );
   const [directoryPathTemplate, setDirectoryPathTemplate] = useState(
-    adapter.directoryStructure?.pathTemplate || defaultPathTemplate,
+    adapter.directoryStructure?.pathTemplate || '{{ruleName}}.md',
   );
   // 新增字段
   const [fileExtensions, setFileExtensions] = useState(adapter.fileExtensions?.join(', ') || '');
@@ -132,6 +136,7 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({ adapter, isNew, onSa
       generateIndex: format === 'directory' ? generateIndex : undefined,
       sortBy: format === 'single-file' ? sortBy : undefined,
       sortOrder: format === 'single-file' ? sortOrder : undefined,
+      isNew, // 传递 isNew 标志给 Provider
       ...(format === 'single-file'
         ? { singleFileTemplate }
         : {
@@ -158,26 +163,35 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({ adapter, isNew, onSa
           </button>
         </div>
 
+        {/* 服务器端错误提示 - 放在标题下方 */}
+        {serverError && (
+          <div className="modal-error-banner">
+            <i className="codicon codicon-error"></i>
+            <span>{serverError}</span>
+          </div>
+        )}
+
         <form className="modal-body" onSubmit={handleSubmit}>
-          {/* ID 字段（仅新增时显示） */}
-          {isNew && (
-            <div className="form-group">
-              <label htmlFor="adapter-id">
-                <i className="codicon codicon-symbol-key"></i>
-                {t('adapterManager.adapterId')}
-                <span className="required">*</span>
-              </label>
-              <Input
-                id="adapter-id"
-                value={id}
-                onChange={(e) => setId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
-                placeholder={t('adapterManager.adapterIdPlaceholder')}
-                className={errors.id ? 'error' : ''}
-              />
-              {errors.id && <span className="error-text">{errors.id}</span>}
-              <span className="hint">{t('adapterManager.adapterIdHint')}</span>
-            </div>
-          )}
+          {/* ID 字段 */}
+          <div className="form-group">
+            <label htmlFor="adapter-id">
+              <i className="codicon codicon-symbol-key"></i>
+              {t('adapterManager.adapterId')}
+              {isNew && <span className="required">*</span>}
+            </label>
+            <Input
+              id="adapter-id"
+              value={id}
+              onChange={(e) => setId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+              placeholder={t('adapterManager.adapterIdPlaceholder')}
+              className={errors.id ? 'error' : ''}
+              disabled={!isNew}
+            />
+            {errors.id && <span className="error-text">{errors.id}</span>}
+            <span className="hint">
+              {isNew ? t('adapterManager.adapterIdHint') : t('adapterManager.adapterIdReadonly')}
+            </span>
+          </div>
 
           {/* 名称字段 */}
           <div className="form-group">

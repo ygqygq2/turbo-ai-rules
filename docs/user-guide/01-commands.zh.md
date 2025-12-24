@@ -52,7 +52,7 @@
    - 公开仓库: `https://github.com/username/repo.git`
    - 私有仓库: 需要在后续步骤提供访问令牌
 3. 选择分支（可选，默认 `main`）
-4. 指定子路径（可选，必须以 `/` 开头，如 `/rules` 或 `/docs/rules`）
+4. 指定子路径（可选，如 `rules` 或 `docs/rules`）
 5. 设置显示名称（可选，方便在树视图中识别）
 6. 提供访问令牌（仅私有仓库需要）
 
@@ -69,7 +69,7 @@ Token:    ghp_xxxxxxxxxxxx (私有仓库)
 ### 提示
 
 - 🔐 访问令牌仅需 `repo`（完整仓库访问）权限
-- 📁 使用子路径可以只同步仓库中的特定目录（必须以 `/` 开头）
+- 📁 使用子路径可以只同步仓库中的特定目录
 - 🏷️ 设置清晰的名称便于管理多个规则源
 
 ---
@@ -302,6 +302,161 @@ Token:    ghp_xxxxxxxxxxxx (私有仓库)
 - 🔄 修改配置后会自动重新同步
 - 💾 配置持久化保存在工作区设置中
 - 🌲 树视图会实时反映启用/禁用状态
+
+---
+
+## 7. 高级命令
+
+### 7.1 UI 与可视化命令
+
+#### 📊 显示统计信息
+
+**命令**: `Turbo AI Rules: Show Statistics`
+
+显示统计仪表板，包含：
+
+- 按源分类的规则总数
+- 按优先级分布的规则
+- 标签云和分类细分
+- 同步历史和趋势
+
+#### 🏠 打开仪表板
+
+**命令**: `Turbo AI Rules: Open Dashboard`
+
+打开主仪表板 webview，快速访问所有功能。
+
+#### 🔍 高级搜索
+
+**命令**: `Turbo AI Rules: Advanced Rule Search`
+
+打开高级搜索界面，支持：
+
+- 多字段搜索（标题、标签、内容）
+- 按源、优先级、标签过滤
+- 搜索结果预览
+- 导出搜索结果
+
+#### 📋 打开规则同步页面
+
+**命令**: `Turbo AI Rules: Open Rule Sync Page`
+
+打开规则选择界面，以文件树视图选择要同步的特定规则。
+
+#### ℹ️ 查看源详情
+
+**命令**: `Turbo AI Rules: View Source Detail`
+
+查看规则源的详细信息，包括：
+
+- Git 仓库信息
+- 同步状态和历史
+- 规则统计
+- 配置详情
+
+### 7.2 规则管理命令
+
+#### ✅ 全选规则
+
+**命令**: `Turbo AI Rules: Select All Rules`
+
+选择所有源的所有规则用于配置生成。
+
+#### ❌ 取消全选规则
+
+**命令**: `Turbo AI Rules: Deselect All Rules`
+
+取消选择所有规则（用于重新开始选择）。
+
+#### 📋 选择规则
+
+**命令**: `Turbo AI Rules: Select Rules`
+
+打开特定源的规则选择器，选择要包含的规则。
+
+#### 📄 复制规则内容
+
+**命令**: `Turbo AI Rules: Copy Rule Content`
+
+将选定规则的内容复制到剪贴板。
+
+#### 📤 导出规则
+
+**命令**: `Turbo AI Rules: Export Rule`
+
+将规则导出为独立文件。
+
+#### 👁️ 忽略规则
+
+**命令**: `Turbo AI Rules: Ignore Rule`
+
+将规则标记为忽略（不会包含在配置生成中）。
+
+### 7.3 源管理命令
+
+#### ✏️ 编辑源
+
+**命令**: `Turbo AI Rules: Edit Source`
+
+快速编辑源属性（分支、子路径、名称、令牌）。
+
+#### 🔌 测试连接
+
+**命令**: `Turbo AI Rules: Test Connection`
+
+测试源的 Git 连接和身份验证。
+
+#### 🔄 切换源状态
+
+**命令**: `Turbo AI Rules: Toggle Source`
+
+快速启用/禁用规则源。
+
+#### ⚙️ 打开源管理器
+
+**命令**: `Turbo AI Rules: Open Source Manager`
+
+打开综合源管理界面。
+
+### 7.4 系统命令
+
+#### 🔄 重新加载设置
+
+**命令**: `Turbo AI Rules: Reload Settings`
+
+从工作区/用户配置重新加载扩展设置。
+
+#### 🔄 刷新 Git 缓存
+
+**命令**: `Turbo AI Rules: Refresh Git Cache`
+
+强制刷新所有源的 Git 缓存。
+
+#### 🔄 刷新
+
+**命令**: `Turbo AI Rules: Refresh`
+
+刷新树视图显示。
+
+#### ⚙️ 管理适配器
+
+**命令**: `Turbo AI Rules: Manage Adapters`
+
+配置 AI 工具适配器（Cursor、Copilot、Continue、自定义）。
+
+#### 🗑️ 清除工作区状态（调试）
+
+**命令**: `Turbo AI Rules: Clear Workspace State`
+
+清除所有工作区状态数据（用于调试）。
+
+### 7.5 通过上下文菜单快速访问
+
+大多数高级命令可通过以下方式访问：
+
+- **树视图**: 右键点击源或规则
+- **状态栏**: 点击 🤖 AI Rules 图标
+- **命令面板**: `Ctrl+Shift+P` → 输入命令名称
 
 ---
 

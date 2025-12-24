@@ -30,7 +30,6 @@
     }
   ],
   "turbo-ai-rules.adapters": {
-    "custom": [],
     "cursor": {
       "enabled": true
     },

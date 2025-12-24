@@ -392,6 +392,83 @@ export class ConfigManager {
   }
 
   /**
+   * 批量更新预设适配器状态（只更新 Workspace 配置）
+   * @param adapters 预设适配器配置映射 { adapterId: { enabled: boolean } }
+   */
+  public async updatePresetAdapters(
+    adapters: Record<string, { enabled?: boolean; autoUpdate?: boolean }>,
+  ): Promise<void> {
+    try {
+      const vscodeConfig = this.getVscodeConfig();
+
+      // 读取当前的 adapters 配置对象
+      const currentAdapters = vscodeConfig.get<
+        Record<string, { enabled?: boolean; autoUpdate?: boolean }>
+      >(CONFIG_KEYS.ADAPTERS, {});
+
+      // 更新预设适配器的状态
+      for (const [adapterId, config] of Object.entries(adapters)) {
+        if (!currentAdapters[adapterId]) {
+          currentAdapters[adapterId] = {};
+        }
+        if (config.enabled !== undefined) {
+          currentAdapters[adapterId].enabled = config.enabled;
+        }
+        if (config.autoUpdate !== undefined) {
+          currentAdapters[adapterId].autoUpdate = config.autoUpdate;
+        }
+        Logger.debug(`Updated preset adapter: ${adapterId}`, config);
+      }
+
+      // 移除 custom 字段，避免与独立的 adapters.custom 配置冲突
+      const { custom: _custom, ...adaptersWithoutCustom } = currentAdapters;
+
+      // 整体更新 adapters 配置（不包含 custom 字段）
+      await vscodeConfig.update(
+        CONFIG_KEYS.ADAPTERS,
+        adaptersWithoutCustom,
+        vscode.ConfigurationTarget.Workspace,
+      );
+
+      Logger.info('Preset adapters updated in workspace', {
+        count: Object.keys(adapters).length,
+      });
+    } catch (error) {
+      Logger.error('Failed to update preset adapters', error as Error);
+      throw new ConfigError(
+        'Failed to update preset adapters',
+        ErrorCodes.CONFIG_INVALID_FORMAT,
+        error as Error,
+      );
+    }
+  }
+
+  /**
+   * 批量更新自定义适配器（只更新 Workspace 配置）
+   * @param adapters 自定义适配器配置数组
+   */
+  public async updateCustomAdapters(adapters: CustomAdapterConfig[]): Promise<void> {
+    try {
+      const vscodeConfig = this.getVscodeConfig();
+
+      await vscodeConfig.update(
+        CONFIG_KEYS.ADAPTERS_CUSTOM,
+        adapters,
+        vscode.ConfigurationTarget.Workspace,
+      );
+
+      Logger.info('Custom adapters updated in workspace', { count: adapters.length });
+    } catch (error) {
+      Logger.error('Failed to update custom adapters', error as Error);
+      throw new ConfigError(
+        'Failed to update custom adapters',
+        ErrorCodes.CONFIG_INVALID_FORMAT,
+        error as Error,
+      );
+    }
+  }
+
+  /**
    * 更新自定义适配器（只更新 Workspace 配置中的适配器）
    */
   public async updateAdapter(id: string, updates: Partial<CustomAdapterConfig>): Promise<void> {
