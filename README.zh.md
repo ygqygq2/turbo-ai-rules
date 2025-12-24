@@ -81,10 +81,10 @@
 
 ```
 workspace/
-├── .github/copilot-instructions.md  # ✅ GitHub Copilot 配置 (默认生成)
+├── .cursorrules  # ✅ Cursor 配置 (默认生成)
 ```
 
-> **注意**: 默认只启用 GitHub Copilot 适配器。如需使用其他 AI 工具,请在设置中启用对应适配器。
+> **注意**: 默认只启用 Cursor 适配器。如需使用其他 AI 工具，请在设置中启用对应适配器（命令面板：`Turbo AI Rules: Manage Adapters`）。
 
 ---
 
@@ -110,12 +110,18 @@ workspace/
 
 ### 支持的 AI 工具
 
-| 工具           | 配置文件                          | 默认状态  |
-| -------------- | --------------------------------- | --------- |
-| GitHub Copilot | `.github/copilot-instructions.md` | ✅ 已启用 |
-| Cursor         | `.cursorrules`                    | ⚙️ 已禁用 |
-| Continue       | `.continuerules`                  | ⚙️ 已禁用 |
-| 自定义适配器   | 可配置                            | ⚙️ 按需   |
+| 工具           | 配置文件                          | 默认状态  | 说明                            |
+| -------------- | --------------------------------- | --------- | ------------------------------- |
+| Cursor         | `.cursorrules`                    | ✅ 已启用 | AI-first 代码编辑器             |
+| Windsurf       | `.windsurfrules`                  | ⚙️ 已禁用 | Codeium AI IDE                  |
+| GitHub Copilot | `.github/copilot-instructions.md` | ⚙️ 已禁用 | GitHub 官方 AI 编程助手         |
+| Continue       | `.continuerules`                  | ⚙️ 已禁用 | 开源 AI 编码助手（VSCode 扩展） |
+| Cline          | `.clinerules`                     | ⚙️ 已禁用 | 自主编码代理（原 Claude Dev）   |
+| Roo-Cline      | `.roorules`                       | ⚙️ 已禁用 | Cline 的增强版分支              |
+| Aider          | `.aider.conf.yml`                 | ⚙️ 已禁用 | 终端中的 AI 结对编程工具        |
+| Bolt.new       | `.bolt/prompt`                    | ⚙️ 已禁用 | StackBlitz AI 全栈开发平台      |
+| Qodo Gen       | `.qodo/rules.md`                  | ⚙️ 已禁用 | AI 测试生成和代码质量工具       |
+| 自定义适配器   | 可配置                            | ⚙️ 按需   | 支持任何 AI 工具的自定义配置    |
 
 ### 规则文件格式
 
@@ -196,16 +202,19 @@ tags: [typescript, naming] # 可选
 本扩展目前对**多工作空间（Multi-root Workspace）支持有限**（即 VS Code 中打开多个项目文件夹的场景）。
 
 **当前行为**:
+
 - ✅ 可以在多工作空间环境中激活扩展
 - ⚠️ 操作时仅使用**第一个工作空间文件夹**
 - ⚠️ 同步/生成配置前需要用户确认
 - ❌ 无法保证在所有工作空间文件夹中都能正常工作
 
 **推荐使用方式**:
+
 - 📁 在**单工作空间**环境下使用以获得最佳体验
 - 🔄 使用本扩展时，建议分别打开每个项目文件夹
 
 **为什么有此限制？**
+
 - 多工作空间场景下规则选择状态管理变得复杂
 - 在 Webview 和编辑器之间切换时可能丢失工作空间上下文
 - 为主要使用场景保持简单性和可靠性
