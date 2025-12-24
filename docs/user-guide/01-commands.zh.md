@@ -61,7 +61,7 @@
 ```
 URL:      https://github.com/company/coding-rules.git
 分支:     main
-子路径:   /best-practices
+子路径:   best-practices (不需要前导斜杠)
 名称:     Company Rules
 Token:    ghp_xxxxxxxxxxxx (私有仓库)
 ```

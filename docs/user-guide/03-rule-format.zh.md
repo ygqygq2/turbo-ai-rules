@@ -216,10 +216,8 @@ Turbo AI Rules 支持多层级配置，优先级从高到低：
   "turbo-ai-rules.sync.interval": 60,
   "turbo-ai-rules.sync.conflictStrategy": "priority",
 
-  // ========== 内置适配器 ==========
-  "turbo-ai-rules.adapters.cursor.enabled": false,
-  "turbo-ai-rules.adapters.copilot.enabled": true,
-  "turbo-ai-rules.adapters.continue.enabled": false,
+  // ========== 预设适配器 ==========
+  // 注意：预设适配器通过 "Manage Adapters" 命令管理，无需手动配置
 
   // ========== 自定义适配器 ==========
   "turbo-ai-rules.adapters.custom": [
@@ -280,23 +278,32 @@ Turbo AI Rules 支持多层级配置，优先级从高到低：
 
 ---
 
-#### 2. 内置适配器配置 (`adapters`)
+#### 2. 预设适配器配置 (`adapters`)
 
-| 适配器   | 配置项             | 默认值  | 输出文件                          |
-| -------- | ------------------ | ------- | --------------------------------- |
-| Cursor   | `cursor.enabled`   | `true`  | `.cursorrules`                    |
-| Copilot  | `copilot.enabled`  | `true`  | `.github/copilot-instructions.md` |
-| Continue | `continue.enabled` | `false` | `.continuerules`                  |
+扩展内置了 9 个主流 AI 工具的预设适配器：
 
-**示例**:
+| 适配器         | 配置项 (通过 Manage Adapters 管理) | 默认值  | 输出文件                          |
+| -------------- | ---------------------------------- | ------- | --------------------------------- |
+| Cursor         | 预设适配器                         | `true`  | `.cursorrules`                    |
+| Windsurf       | 预设适配器                         | `false` | `.windsurfrules`                  |
+| GitHub Copilot | 预设适配器                         | `false` | `.github/copilot-instructions.md` |
+| Continue       | 预设适配器                         | `false` | `.continuerules`                  |
+| Cline          | 预设适配器                         | `false` | `.clinerules`                     |
+| Roo-Cline      | 预设适配器                         | `false` | `.roorules`                       |
+| Aider          | 预设适配器                         | `false` | `.aider.conf.yml`                 |
+| Bolt.new       | 预设适配器                         | `false` | `.bolt/prompt`                    |
+| Qodo Gen       | 预设适配器                         | `false` | `.qodo/rules.md`                  |
 
-```json
-{
-  "turbo-ai-rules.adapters.cursor.enabled": false,
-  "turbo-ai-rules.adapters.copilot.enabled": true,
-  "turbo-ai-rules.adapters.continue.enabled": false
-}
-```
+**管理方式**：
+
+- 使用命令 `Turbo AI Rules: Manage Adapters` 打开适配器管理界面
+- 在界面中可视化地启用/禁用预设适配器
+- 配置会自动保存到工作区或用户设置
+
+**注意**：
+
+- 预设适配器的配置通过 **Manage Adapters** 界面管理，不需要手动编辑 JSON
+- 只有自定义适配器需要在 `settings.json` 中配置
 
 **何时禁用适配器**:
 
@@ -500,12 +507,12 @@ docs/ai-rules/
 
 ```json
 {
-  "turbo-ai-rules.adapters.cursor.enabled": false,
-  "turbo-ai-rules.adapters.copilot.enabled": true
+  // 预设适配器通过 "Manage Adapters" 命令管理
+  // 默认启用 Cursor，其他适配器按需启用
 }
 ```
 
-**适用**: 只使用 Cursor 和 Copilot 的用户。
+**适用**: 只使用单个 AI 工具的用户，通过界面启用对应适配器即可。
 
 ---
 
@@ -515,9 +522,7 @@ docs/ai-rules/
 {
   "turbo-ai-rules.sync.onStartup": true,
   "turbo-ai-rules.sync.interval": 120,
-  "turbo-ai-rules.adapters.cursor.enabled": false,
-  "turbo-ai-rules.adapters.copilot.enabled": true,
-  "turbo-ai-rules.adapters.continue.enabled": true,
+  // 预设适配器通过 "Manage Adapters" 命令管理
   "turbo-ai-rules.adapters.custom": [
     {
       "id": "default-rules",
@@ -549,9 +554,8 @@ docs/ai-rules/
 ```json
 {
   "turbo-ai-rules.sync.onStartup": false,
-  "turbo-ai-rules.sync.interval": 0,
-  "turbo-ai-rules.adapters.cursor.enabled": false,
-  "turbo-ai-rules.adapters.copilot.enabled": true
+  "turbo-ai-rules.sync.interval": 0
+  // 预设适配器通过 "Manage Adapters" 命令管理
 }
 ```
 
@@ -571,7 +575,6 @@ docs/ai-rules/
    - 合理设置 `sync.interval`，避免过于频繁
    - 禁用不需要的适配器减少文件生成
 4. **文件过滤**:
-
    - 大部分情况不需要设置 `fileExtensions` (默认同步所有)
    - 仅在需要特定文件类型时配置过滤
 

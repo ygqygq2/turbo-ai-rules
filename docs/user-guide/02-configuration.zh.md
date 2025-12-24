@@ -77,10 +77,8 @@ Turbo AI Rules **完全遵循 VS Code 原生配置系统**，配置优先级从�
   "turbo-ai-rules.parser.strictMode": false,
   "turbo-ai-rules.parser.requireFrontmatter": false,
 
-  // ========== 内置适配器 ==========
-  "turbo-ai-rules.adapters.cursor.enabled": false,
-  "turbo-ai-rules.adapters.copilot.enabled": true,
-  "turbo-ai-rules.adapters.continue.enabled": false,
+  // ========== 预设适配器 ==========
+  // 注意：预设适配器通过 "Manage Adapters" 命令管理，无需手动配置
 
   // ========== 自定义适配器 ==========
   "turbo-ai-rules.adapters.custom": []
@@ -165,32 +163,37 @@ Turbo AI Rules **完全遵循 VS Code 原生配置系统**，配置优先级从�
 
 ---
 
-#### 2. 内置适配器配置 (`adapters`)
+#### 2. 预设适配器配置 (`adapters`)
 
-| 适配器   | 配置项             | 默认值  | 输出文件                          |
-| -------- | ------------------ | ------- | --------------------------------- |
-| Copilot  | `copilot.enabled`  | `true`  | `.github/copilot-instructions.md` |
-| Cursor   | `cursor.enabled`   | `false` | `.cursorrules`                    |
-| Continue | `continue.enabled` | `false` | `.continuerules`                  |
+扩展内置了 9 个主流 AI 工具的预设适配器：
 
-**Continue 目录支持说明**:
+| 适配器         | 默认值  | 输出文件                          |
+| -------------- | ------- | --------------------------------- |
+| Cursor         | `true`  | `.cursorrules`                    |
+| Windsurf       | `false` | `.windsurfrules`                  |
+| GitHub Copilot | `false` | `.github/copilot-instructions.md` |
+| Continue       | `false` | `.continuerules`                  |
+| Cline          | `false` | `.clinerules`                     |
+| Roo-Cline      | `false` | `.roorules`                       |
+| Aider          | `false` | `.aider.conf.yml`                 |
+| Bolt.new       | `false` | `.bolt/prompt`                    |
+| Qodo Gen       | `false` | `.qodo/rules.md`                  |
 
-Continue 也支持从 `.continue/rules/` 目录加载规则，**完全支持递归子目录扫描**：
+**管理方式**：
 
-- ✅ 单文件：`.continuerules` (根目录)
-- ✅ 目录：`.continue/rules/*.md` (支持递归子目录扫描)
-- ✅ 示例：`.continue/rules/backend/api/rules.md` 完全支持
+- 使用命令 `Turbo AI Rules: Manage Adapters` 打开适配器管理界面
+- 在界面中可视化地启用/禁用预设适配器
+- 配置会自动保存到工作区或用户设置
 
-**💡 推荐做法**：对于多文件或目录结构的规则，**推荐使用自定义适配器**而非内置 Continue 适配器：
+**注意**：
 
-- 自定义适配器支持 `directory` 输出类型和按源组织
-- 更好地控制文件结构和索引生成
-- 可以过滤特定文件类型并生成索引文件
-- 配置示例：
+- 预设适配器的配置通过 **Manage Adapters** 界面管理，不需要手动编辑 JSON
+- 只有自定义适配器需要在 `settings.json` 中配置
+
+**对于需要目录结构的场景**，推荐使用自定义适配器：
 
 ```json
 {
-  "turbo-ai-rules.adapters.continue.enabled": false,
   "turbo-ai-rules.adapters.custom": [
     {
       "id": "continue-rules",
@@ -198,20 +201,11 @@ Continue 也支持从 `.continue/rules/` 目录加载规则，**完全支持递�
       "enabled": true,
       "outputPath": ".continue/rules",
       "outputType": "directory",
-      "fileExtensions": [".md"]
-      // organizeBySource: false (默认), useOriginalFilename: true (默认)
+      "fileExtensions": [".md"],
+      "organizeBySource": true,
+      "generateIndex": true
     }
   ]
-}
-```
-
-**示例**:
-
-```json
-{
-  "turbo-ai-rules.adapters.cursor.enabled": false,
-  "turbo-ai-rules.adapters.copilot.enabled": true,
-  "turbo-ai-rules.adapters.continue.enabled": false
 }
 ```
 
@@ -318,8 +312,8 @@ rules/
   "outputPath": ".windsurfrules",
   "outputType": "file",
   "fileExtensions": [".md"],
-  "sortBy": "priority",    // 按优先级排序（默认）
-  "sortOrder": "asc"       // 升序: low → medium → high（默认）
+  "sortBy": "priority", // 按优先级排序（默认）
+  "sortOrder": "asc" // 升序: low → medium → high（默认）
 }
 ```
 
@@ -330,6 +324,7 @@ rules/
 - 自动添加分隔符和元数据
 
 **排序选项**（仅单文件模式）:
+
 - `sortBy`: `"id"` (字母序 A→Z)、`"priority"` (优先级，默认 low→high，desc 时 high→low)、`"none"` (保持源顺序)
 - `sortOrder`: `"asc"` (升序)、`"desc"` (降序)
 
@@ -552,7 +547,6 @@ docs/ai-rules/
    - 合理设置 `sync.interval`，避免过于频繁
    - 禁用不需要的适配器减少文件生成
 4. **文件过滤**:
-
    - 大部分情况不需要设置 `fileExtensions` (默认同步所有)
    - 仅在需要特定文件类型时配置过滤
 
