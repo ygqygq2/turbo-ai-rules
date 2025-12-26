@@ -26,6 +26,8 @@ interface PresetAdapterData {
   enabled: boolean;
   outputPath: string;
   isRuleType: boolean;
+  sortBy?: 'id' | 'priority' | 'none';
+  sortOrder?: 'asc' | 'desc';
 }
 
 /**
@@ -257,17 +259,28 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
     const config = this.configManager.getConfig(workspaceFolder?.uri);
 
     // 从 PRESET_ADAPTERS 配置动态构建预设适配器列表
-    const presetAdapters: PresetAdapterData[] = PRESET_ADAPTERS.map((presetConfig) => ({
-      id: presetConfig.id,
-      name: presetConfig.name,
-      description: presetConfig.description || `${presetConfig.name} AI coding assistant`,
-      enabled:
-        (config.adapters as Record<string, { enabled?: boolean }>)[presetConfig.id]?.enabled ??
-        presetConfig.defaultEnabled ??
-        false,
-      outputPath: presetConfig.filePath,
-      isRuleType: true, // 所有预设适配器都是规则类型
-    }));
+    const presetAdapters: PresetAdapterData[] = PRESET_ADAPTERS.map((presetConfig) => {
+      const adapterConfig = (
+        config.adapters as Record<
+          string,
+          {
+            enabled?: boolean;
+            sortBy?: 'id' | 'priority' | 'none';
+            sortOrder?: 'asc' | 'desc';
+          }
+        >
+      )[presetConfig.id];
+      return {
+        id: presetConfig.id,
+        name: presetConfig.name,
+        description: presetConfig.description || `${presetConfig.name} AI coding assistant`,
+        enabled: adapterConfig?.enabled ?? presetConfig.defaultEnabled ?? false,
+        outputPath: presetConfig.filePath,
+        isRuleType: true, // 所有预设适配器都是规则类型
+        sortBy: adapterConfig?.sortBy ?? 'priority',
+        sortOrder: adapterConfig?.sortOrder ?? 'asc',
+      };
+    });
 
     // 自定义适配器列表
     const customAdapters: CustomAdapterData[] = (config.adapters.custom || []).map((adapter) => ({

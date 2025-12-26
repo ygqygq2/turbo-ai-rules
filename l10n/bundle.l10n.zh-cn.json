@@ -9,7 +9,7 @@
   "adapterManager.adapterName": "显示名称",
   "adapterManager.adapterNamePlaceholder": "我的自定义适配器",
   "adapterManager.adapterSaved": "适配器 \"{0}\" 保存成功",
-  "adapterManager.adapterSettings": "{name} 设置",
+  "adapterManager.adapterSettings": "{0} 设置",
   "adapterManager.adapterType": "适配器类型",
   "adapterManager.addCustomAdapter": "添加自定义适配器",
   "adapterManager.confirmDelete": "确定要删除此适配器吗？",

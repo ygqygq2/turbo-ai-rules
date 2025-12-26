@@ -65,6 +65,14 @@ export interface StorageConfig {
 }
 
 /**
+ * 用户规则配置（顶层配置）
+ */
+export interface UserRulesConfig {
+  /** 用户规则目录（相对于工作区根目录） */
+  directory: string;
+}
+
+/**
  * 规则排序方式（仅单文件适配器有效）
  */
 export type RuleSortBy = 'id' | 'priority' | 'none';
@@ -80,11 +88,13 @@ export type SortOrder = 'asc' | 'desc';
 export interface AdapterConfig {
   /** 是否启用 */
   enabled: boolean;
+  /** 是否启用用户规则（从顶层 userRules.directory 读取） */
+  enableUserRules?: boolean;
   /** 是否是规则类型（默认 true，skills 类设为 false 不参与规则同步页） */
   isRuleType?: boolean;
-  /** 排序方式（仅单文件适配器有效，默认 'priority'） */
+  /** 排序方式（默认 'priority'） */
   sortBy?: RuleSortBy;
-  /** 排序顺序（仅单文件适配器有效，默认 'asc'） */
+  /** 排序顺序（默认 'asc'，高优先级在文件末尾以利用 LLM 近因效应） */
   sortOrder?: SortOrder;
 }
 
@@ -199,8 +209,8 @@ export interface ExtensionConfig {
   /** 规则源列表 */
   sources: RuleSource[];
   /** 存储策略 */
-  storage: StorageConfig;
-  /** AI 工具适配器配置 */
+  storage: StorageConfig; /** 用户规则配置 */ /** 用户规则配置 */
+  userRules: UserRulesConfig; /** AI 工具适配器配置 */
   adapters: AdaptersConfig;
   /** 同步策略 */
   sync: SyncConfig;
@@ -216,15 +226,27 @@ export const DEFAULT_CONFIG: ExtensionConfig = {
   storage: {
     autoGitignore: true,
   },
+  userRules: {
+    directory: 'ai-rules',
+  },
   adapters: {
     cursor: {
       enabled: true,
+      enableUserRules: true,
+      sortBy: 'priority',
+      sortOrder: 'asc',
     },
     copilot: {
       enabled: true,
+      enableUserRules: true,
+      sortBy: 'priority',
+      sortOrder: 'asc',
     },
     continue: {
       enabled: false,
+      enableUserRules: true,
+      sortBy: 'priority',
+      sortOrder: 'asc',
     },
     custom: [
       {

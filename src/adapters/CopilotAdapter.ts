@@ -33,7 +33,17 @@ export class CopilotAdapter extends BaseAdapter {
   async generate(rules: ParsedRule[], _allRules?: ParsedRule[]): Promise<GeneratedConfig> {
     Logger.info('Generating GitHub Copilot configuration', { ruleCount: rules.length });
 
-    if (rules.length === 0) {
+    // 加载用户规则
+    const userRules = await this.loadUserRules();
+    if (userRules.length > 0) {
+      Logger.info('Loaded user rules for Copilot', { userRuleCount: userRules.length });
+    }
+
+    // 合并远程规则和用户规则
+    const allRules = this.mergeWithUserRules(rules, userRules);
+    const totalCount = allRules.length;
+
+    if (totalCount === 0) {
       Logger.warn('No rules to generate for GitHub Copilot');
       return {
         filePath: this.getFilePath(),
@@ -43,8 +53,8 @@ export class CopilotAdapter extends BaseAdapter {
       };
     }
 
-    // 按优先级排序
-    const sortedRules = this.sortByPriority(rules);
+    // 排序已在 mergeWithUserRules 中完成
+    const sortedRules = allRules;
 
     // 生成头部内容（不含元数据，元数据由 generateMarkedFileContent 生成）
     const headerContent = this.generateCopilotHeader(sortedRules);
@@ -53,7 +63,9 @@ export class CopilotAdapter extends BaseAdapter {
     const content = generateMarkedFileContent(sortedRules, headerContent);
 
     Logger.info('GitHub Copilot configuration generated with markers', {
-      ruleCount: rules.length,
+      remoteRuleCount: rules.length,
+      userRuleCount: userRules.length,
+      totalRuleCount: totalCount,
       sourceCount: groupRulesBySource(sortedRules).size,
       contentLength: content.length,
     });
@@ -62,7 +74,7 @@ export class CopilotAdapter extends BaseAdapter {
       filePath: this.getFilePath(),
       content,
       generatedAt: new Date(),
-      ruleCount: rules.length,
+      ruleCount: totalCount,
     };
   }
 

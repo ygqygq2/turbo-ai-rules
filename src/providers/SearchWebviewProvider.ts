@@ -80,7 +80,7 @@ export class SearchWebviewProvider extends BaseWebviewProvider {
 
     await this.show({
       viewType: 'turboAiRules.search',
-      title: 'Search Rules',
+      title: t('search.title'),
       viewColumn: vscode.ViewColumn.Active,
       iconPath: EXTENSION_ICON_PATH,
     });

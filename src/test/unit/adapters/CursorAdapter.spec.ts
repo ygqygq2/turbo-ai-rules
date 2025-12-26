@@ -1,8 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock vscode and logger before importing the adapter so module initialization
-// doesn't call the real logger which depends on vscode.window
-vi.mock('vscode');
+// Mock vscode and logger before importing the adapter
+vi.mock('vscode', () => ({
+  workspace: {
+    workspaceFolders: [{ uri: { fsPath: '/test/workspace' } }],
+    getConfiguration: vi.fn(() => ({
+      get: vi.fn((key: string) => {
+        if (key === 'directory') return 'ai-rules';
+        return undefined;
+      }),
+    })),
+  },
+  Uri: {
+    file: (p: string) => ({ fsPath: p }),
+  },
+}));
+
 vi.mock('../../../utils/logger', () => ({
   Logger: {
     debug: vi.fn(),
@@ -19,10 +32,15 @@ vi.mock('../../../utils/logger', () => ({
   })),
 }));
 
+// Mock userRules to avoid loading actual files
+vi.mock('../../../utils/userRules', () => ({
+  getUserRulesDirectory: vi.fn(() => '/test/workspace/ai-rules'),
+  loadUserRules: vi.fn(async () => []),
+  isUserRule: vi.fn(() => false),
+}));
+
 import { CursorAdapter } from '../../../adapters/CursorAdapter';
 import type { ParsedRule } from '../../../types/rules';
-
-vi.mock('vscode');
 
 describe('CursorAdapter', () => {
   let adapter: CursorAdapter;
@@ -97,13 +115,13 @@ describe('CursorAdapter', () => {
 
       const result = await adapter.generate(rules);
 
-      // High priority should come first
-      const highIndex = result.content.indexOf('High Priority');
-      const mediumIndex = result.content.indexOf('Medium Priority');
+      // 默认 sortOrder: 'asc' → low -> medium -> high（高优先级在后，利用 LLM 近因效应）
       const lowIndex = result.content.indexOf('Low Priority');
+      const mediumIndex = result.content.indexOf('Medium Priority');
+      const highIndex = result.content.indexOf('High Priority');
 
-      expect(highIndex).toBeLessThan(mediumIndex);
-      expect(mediumIndex).toBeLessThan(lowIndex);
+      expect(lowIndex).toBeLessThan(mediumIndex);
+      expect(mediumIndex).toBeLessThan(highIndex);
     });
   });
 

@@ -139,8 +139,8 @@ export class PresetAdapter extends BaseAdapter {
   readonly name: string;
   readonly enabled: boolean;
   private config: PresetAdapterConfig;
-  private sortBy: 'id' | 'priority' | 'none';
-  private sortOrder: 'asc' | 'desc';
+  protected sortBy: 'id' | 'priority' | 'none';
+  protected sortOrder: 'asc' | 'desc';
 
   /**
    * 创建预设适配器实例

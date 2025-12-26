@@ -599,7 +599,7 @@ jobs:
 - ❌ 搜索界面交互（SearchWebviewProvider）
 - ❌ 规则详情界面（RuleDetailsWebviewProvider）
 - ❌ 源详情界面（SourceDetailWebviewProvider）
-- ❌ 统计仪表盘（StatisticsWebviewProvider）
+- ❌ 统计仪表板（StatisticsWebviewProvider）
 
 > **说明**：Webview UI 测试已从单元测试中移除，原因：
 >

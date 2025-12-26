@@ -565,3 +565,138 @@ docs/ai-rules/
 ---
 
 [⬅️ 返回用户指南](./README.zh.md)
+
+---
+
+## 7. 用户规则配置
+
+用户规则允许你在本地添加项目特定的规则，这些规则会在生成配置时自动合并。
+
+### 7.1 顶层配置 (`userRules`)
+
+用户规则目录在顶层配置，所有适配器共享：
+
+```json
+{
+  "turbo-ai-rules.userRules": {
+    "directory": "ai-rules"
+  }
+}
+```
+
+| 配置项      | 类型   | 默认值       | 说明                               |
+| ----------- | ------ | ------------ | ---------------------------------- |
+| `directory` | string | `"ai-rules"` | 用户规则目录（相对于工作区根目录） |
+
+### 7.2 适配器配置 (`adapters.<id>`)
+
+每个适配器可以独立启用用户规则和配置排序：
+
+```json
+{
+  "turbo-ai-rules.adapters.cursor": {
+    "enabled": true,
+    "enableUserRules": true,
+    "sortBy": "priority",
+    "sortOrder": "desc"
+  }
+}
+```
+
+| 配置项            | 类型    | 默认值       | 说明                                    |
+| ----------------- | ------- | ------------ | --------------------------------------- |
+| `enableUserRules` | boolean | `true`       | 是否启用用户规则                        |
+| `sortBy`          | string  | `"priority"` | 排序方式：`id`、`priority`、`none`      |
+| `sortOrder`       | string  | `"desc"`     | 排序顺序：`asc`（升序）、`desc`（降序） |
+
+### 7.3 使用示例
+
+**1. 创建用户规则目录**：
+
+```bash
+mkdir ai-rules
+```
+
+**2. 添加规则文件**：
+
+创建 `ai-rules/my-project-rule.md`：
+
+```markdown
+---
+id: my-project-rule
+title: 项目特定规则
+priority: high
+tags: [project, custom]
+---
+
+# 项目特定规则
+
+## 命名约定
+
+- 使用 camelCase 命名变量
+- 使用 PascalCase 命名类
+```
+
+**3. 生成配置**：
+
+运行 `Turbo AI Rules: Generate Config Files` 命令。
+
+**4. 验证结果**：
+
+生成的 `.cursorrules` 文件会包含：
+
+- 远程仓库的规则
+- 你的用户规则（`my-project-rule`）
+
+### 7.4 排序和冲突处理
+
+**排序方式**：
+
+- `priority`（默认）：按优先级排序（critical > high > medium > low）
+- `id`：按规则 ID 字母顺序排序
+- `none`：不排序，保持原始顺序
+
+**排序顺序**：
+
+- `desc`（默认）：降序（优先级高的在前）
+- `asc`：升序（优先级低的在前）
+
+**ID 冲突处理**：
+如果用户规则的 ID 与远程规则冲突：
+
+- 先按配置的排序规则排序所有规则（远程 + 用户）
+- 排序后，保留第一次出现的规则
+- 这意味着：如果用户规则优先级更高，就会保留用户规则
+
+**示例**：
+
+```json
+{
+  "turbo-ai-rules.adapters.cursor": {
+    "sortBy": "priority",
+    "sortOrder": "asc"
+  }
+}
+```
+
+假设：
+
+- 远程规则：`id: "naming"`, `priority: "medium"`
+- 用户规则：`id: "naming"`, `priority: "high"`
+
+排序后（`sortOrder: "asc"`）：`[medium, high]` → 用户规则（high）在文件末尾 → 利用 LLM 近因效应，实际生效的是用户规则
+
+### 7.5 版本控制
+
+**推荐做法**：
+
+```gitignore
+# 提交用户规则到 Git
+ai-rules/
+
+# 忽略自动生成的规则缓存
+rules/*
+!ai-rules/
+```
+
+这样团队成员可以共享项目特定的规则。

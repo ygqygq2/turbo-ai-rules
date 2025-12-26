@@ -14,5 +14,6 @@ export * from './notifications';
 export * from './path';
 export * from './progressManager';
 export * from './rulePath';
+export * from './userRules';
 export * from './userRulesProtection';
 export * from './validator';

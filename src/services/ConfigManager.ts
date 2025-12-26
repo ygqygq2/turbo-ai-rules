@@ -12,11 +12,12 @@ import type {
   RuleSource,
   StorageConfig,
   SyncConfig,
+  UserRulesConfig,
 } from '../types/config';
 import { DEFAULT_CONFIG } from '../types/config';
 import { ConfigError, ErrorCodes } from '../types/errors';
 import { mergeById } from '../utils/configMerge';
-import { CONFIG_KEYS, CONFIG_PREFIX } from '../utils/constants';
+import { CONFIG_KEYS, CONFIG_PREFIX, SECRET_KEY_PREFIX } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { validateConfig } from '../utils/validator';
 
@@ -88,6 +89,10 @@ export class ConfigManager {
         adapters,
         sync: vscodeConfig.get<SyncConfig>(CONFIG_KEYS.SYNC, DEFAULT_CONFIG.sync),
         parser: vscodeConfig.get<ParserConfig>(CONFIG_KEYS.PARSER, DEFAULT_CONFIG.parser),
+        userRules: vscodeConfig.get<UserRulesConfig>(
+          CONFIG_KEYS.USER_RULES,
+          DEFAULT_CONFIG.userRules,
+        ),
       };
 
       // 验证配置
@@ -594,7 +599,7 @@ export class ConfigManager {
    */
   public async storeToken(sourceId: string, token: string): Promise<void> {
     try {
-      const key = `${CONFIG_PREFIX}.token.${sourceId}`;
+      const key = `${SECRET_KEY_PREFIX}.token.${sourceId}`;
       await this.context.secrets.store(key, token);
       Logger.info('Token stored', { sourceId });
     } catch (error) {
@@ -612,7 +617,7 @@ export class ConfigManager {
    */
   public async getToken(sourceId: string): Promise<string | undefined> {
     try {
-      const key = `${CONFIG_PREFIX}.token.${sourceId}`;
+      const key = `${SECRET_KEY_PREFIX}.token.${sourceId}`;
       return await this.context.secrets.get(key);
     } catch (error) {
       Logger.error('Failed to get token', error as Error, { sourceId });
@@ -625,7 +630,7 @@ export class ConfigManager {
    */
   public async deleteToken(sourceId: string): Promise<void> {
     try {
-      const key = `${CONFIG_PREFIX}.token.${sourceId}`;
+      const key = `${SECRET_KEY_PREFIX}.token.${sourceId}`;
       await this.context.secrets.delete(key);
       Logger.info('Token deleted', { sourceId });
     } catch (error) {

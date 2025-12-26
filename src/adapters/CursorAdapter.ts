@@ -12,7 +12,7 @@ import { BaseAdapter } from './AIToolAdapter';
  * Cursor AI 适配器
  *
  * Cursor 使用 .cursorrules 文件，格式为纯 Markdown
- * 规则按优先级排序，高优先级规则放在前面
+ * 规则按优先级排序，高优先级规则放在后面（利用 LLM 近因效应）
  */
 export class CursorAdapter extends BaseAdapter {
   readonly name = 'Cursor';
@@ -29,7 +29,17 @@ export class CursorAdapter extends BaseAdapter {
   async generate(rules: ParsedRule[], _allRules?: ParsedRule[]): Promise<GeneratedConfig> {
     Logger.info('Generating Cursor configuration', { ruleCount: rules.length });
 
-    if (rules.length === 0) {
+    // 加载用户规则
+    const userRules = await this.loadUserRules();
+    if (userRules.length > 0) {
+      Logger.info('Loaded user rules for Cursor', { userRuleCount: userRules.length });
+    }
+
+    // 合并远程规则和用户规则
+    const allRules = this.mergeWithUserRules(rules, userRules);
+    const totalCount = allRules.length;
+
+    if (totalCount === 0) {
       Logger.warn('No rules to generate for Cursor');
       return {
         filePath: this.getFilePath(),
@@ -39,14 +49,14 @@ export class CursorAdapter extends BaseAdapter {
       };
     }
 
-    // 按优先级排序
-    const sortedRules = this.sortByPriority(rules);
+    // 排序已在 mergeWithUserRules 中完成
+    const sortedRules = allRules;
 
     // 生成内容
     let content = '';
 
     // 添加统一的文件头部
-    content += this.generateFileHeader('Cursor', rules.length);
+    content += this.generateFileHeader('Cursor', totalCount);
 
     // 添加目录（Table of Contents）以便快速导航
     content += this.generateTableOfContents(sortedRules);
@@ -55,7 +65,9 @@ export class CursorAdapter extends BaseAdapter {
     content += this.formatRulesForCursor(sortedRules);
 
     Logger.info('Cursor configuration generated', {
-      ruleCount: rules.length,
+      remoteRuleCount: rules.length,
+      userRuleCount: userRules.length,
+      totalRuleCount: totalCount,
       contentLength: content.length,
     });
 
@@ -63,7 +75,7 @@ export class CursorAdapter extends BaseAdapter {
       filePath: this.getFilePath(),
       content,
       generatedAt: new Date(),
-      ruleCount: rules.length,
+      ruleCount: totalCount,
     };
   }
 

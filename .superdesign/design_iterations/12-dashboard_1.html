@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
@@ -16,8 +16,8 @@
     <style>
       :root {
         /* VS Code 主题变量 - 暗色主题默认值（用于浏览器预览）*/
-        --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
-          Arial, sans-serif;
+        --vscode-font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         --vscode-font-weight: 400;
         --vscode-font-size: 13px;
         --vscode-foreground: #cccccc;
@@ -548,7 +548,7 @@
           </button>
           <button class="btn btn-secondary">
             <i class="codicon codicon-export"></i>
-            适配器重新生成内容
+            重新生成适配器配置
           </button>
         </div>
       </div>
@@ -642,7 +642,7 @@
             vscode.postMessage({ type: 'searchRules' });
           } else if (buttonText.includes('管理适配器')) {
             vscode.postMessage({ type: 'manageAdapters' });
-          } else if (buttonText.includes('适配器重新生成内容')) {
+          } else if (buttonText.includes('重新生成适配器配置')) {
             vscode.postMessage({ type: 'regenerateAll' });
           }
         });

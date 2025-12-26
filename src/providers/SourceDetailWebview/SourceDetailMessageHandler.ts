@@ -14,6 +14,7 @@ import { GitManager } from '../../services/GitManager';
 import { RulesManager } from '../../services/RulesManager';
 import { WorkspaceStateManager } from '../../services/WorkspaceStateManager';
 import type { GitAuthentication, RuleSource } from '../../types';
+import { SECRET_KEY_PREFIX } from '../../utils/constants';
 import { Logger } from '../../utils/logger';
 import { validateBranchName, validateGitUrl } from '../../utils/validator';
 
@@ -168,7 +169,7 @@ export class SourceDetailMessageHandler {
 
       if (authentication) {
         await this.context.secrets.store(
-          `turboAiRules.auth.${sourceId}`,
+          `${SECRET_KEY_PREFIX}.auth.${sourceId}`,
           JSON.stringify(authentication),
         );
       }
@@ -250,7 +251,7 @@ export class SourceDetailMessageHandler {
 
       let authentication: GitAuthentication | undefined;
       try {
-        const authData = await this.context.secrets.get(`turboAiRules.auth.${sourceId}`);
+        const authData = await this.context.secrets.get(`${SECRET_KEY_PREFIX}.auth.${sourceId}`);
         if (authData) {
           authentication = JSON.parse(authData);
         }
@@ -310,12 +311,12 @@ export class SourceDetailMessageHandler {
       // 更新认证信息
       if (data.authType === 'token' && data.token) {
         await this.context.secrets.store(
-          `turboAiRules.auth.${sourceId}`,
+          `${SECRET_KEY_PREFIX}.auth.${sourceId}`,
           JSON.stringify({ type: 'token', token: data.token }),
         );
       } else if (data.authType === 'ssh' && data.sshKeyPath) {
         await this.context.secrets.store(
-          `turboAiRules.auth.${sourceId}`,
+          `${SECRET_KEY_PREFIX}.auth.${sourceId}`,
           JSON.stringify({
             type: 'ssh',
             sshKeyPath: data.sshKeyPath,

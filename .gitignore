@@ -9,6 +9,7 @@ coverage/
 
 # 测试工作区生成的文件
 sampleWorkspace/*/rules/
+!sampleWorkspace/*/ai-rules/
 sampleWorkspace/*/.cursorrules
 sampleWorkspace/*/.github/
 sampleWorkspace/*/.continue/

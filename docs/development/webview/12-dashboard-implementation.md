@@ -344,7 +344,7 @@ const handleMessage = (event: MessageEvent) => {
 | `manageSources`             | 管理规则源         | `turbo-ai-rules.manageSources`    |
 | `searchRules`               | 浏览/搜索规则      | `turbo-ai-rules.searchRules`      |
 | `openRuleSyncPage`          | 打开规则同步页     | `turbo-ai-rules.openRuleSyncPage` |
-| `regenerateAll`             | 适配器重新生成内容 | `turbo-ai-rules.generateConfigs`  |
+| `regenerateAll`             | 重新生成适配器配置 | `turbo-ai-rules.generateConfigs`  |
 | `manageAdapters`            | 管理适配器         | `turbo-ai-rules.manageAdapters`   |
 | `openStatistics`            | 打开统计面板       | `turbo-ai-rules.showStatistics`   |
 | `openAdvancedSearch`        | 打开高级搜索       | `turbo-ai-rules.advancedSearch`   |

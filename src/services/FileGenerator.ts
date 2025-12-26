@@ -86,11 +86,20 @@ export class FileGenerator {
     // 注册预设适配器（配置驱动）
     for (const presetConfig of PRESET_ADAPTERS) {
       const adapterConfig = (
-        config as Record<string, { enabled?: boolean; sortBy?: string; sortOrder?: string }>
+        config as Record<
+          string,
+          {
+            enabled?: boolean;
+            enableUserRules?: boolean;
+            sortBy?: string;
+            sortOrder?: string;
+          }
+        >
       )[presetConfig.id];
       const enabled = adapterConfig?.enabled ?? false;
       Logger.debug(`Preset adapter ${presetConfig.id} config:`, {
         enabled,
+        enableUserRules: adapterConfig?.enableUserRules,
         sortBy: adapterConfig?.sortBy,
         sortOrder: adapterConfig?.sortOrder,
         rawConfig: adapterConfig,
@@ -98,10 +107,14 @@ export class FileGenerator {
       if (enabled) {
         const sortBy = (adapterConfig?.sortBy as 'id' | 'priority' | 'none') || 'priority';
         const sortOrder = (adapterConfig?.sortOrder as 'asc' | 'desc') || 'asc';
+        const enableUserRules = adapterConfig?.enableUserRules ?? true;
+
         Logger.debug(
-          `Creating PresetAdapter ${presetConfig.id} with sortBy=${sortBy}, sortOrder=${sortOrder}`,
+          `Creating PresetAdapter ${presetConfig.id} with sortBy=${sortBy}, sortOrder=${sortOrder}, enableUserRules=${enableUserRules}`,
         );
         const adapter = new PresetAdapter(presetConfig, true, sortBy, sortOrder);
+        adapter.setEnableUserRules(enableUserRules);
+
         this.adapters.set(presetConfig.id, adapter);
         Logger.debug(`Registered preset adapter: ${presetConfig.id} (${presetConfig.name})`);
       }
@@ -110,15 +123,33 @@ export class FileGenerator {
     // 兼容旧的独立适配器类（保留 3 个版本后移除）
     // @deprecated 计划在 v2.0.5 移除，再迁移到 PresetAdapter
     if (config.cursor?.enabled && !this.adapters.has('cursor')) {
-      this.adapters.set('cursor', new CursorAdapter(true));
+      const adapter = new CursorAdapter(true);
+      const enableUserRules = config.cursor.enableUserRules ?? true;
+      const sortBy = (config.cursor.sortBy as 'id' | 'priority' | 'none') || 'priority';
+      const sortOrder = (config.cursor.sortOrder as 'asc' | 'desc') || 'desc';
+      adapter.setEnableUserRules(enableUserRules);
+      adapter.setSortConfig(sortBy, sortOrder);
+      this.adapters.set('cursor', adapter);
       Logger.warn('Using legacy CursorAdapter, please update to PresetAdapter');
     }
     if (config.copilot?.enabled && !this.adapters.has('copilot')) {
-      this.adapters.set('copilot', new CopilotAdapter(true));
+      const adapter = new CopilotAdapter(true);
+      const enableUserRules = config.copilot.enableUserRules ?? true;
+      const sortBy = (config.copilot.sortBy as 'id' | 'priority' | 'none') || 'priority';
+      const sortOrder = (config.copilot.sortOrder as 'asc' | 'desc') || 'desc';
+      adapter.setEnableUserRules(enableUserRules);
+      adapter.setSortConfig(sortBy, sortOrder);
+      this.adapters.set('copilot', adapter);
       Logger.warn('Using legacy CopilotAdapter, please update to PresetAdapter');
     }
     if (config.continue?.enabled && !this.adapters.has('continue')) {
-      this.adapters.set('continue', new ContinueAdapter(true));
+      const adapter = new ContinueAdapter(true);
+      const enableUserRules = config.continue.enableUserRules ?? true;
+      const sortBy = (config.continue.sortBy as 'id' | 'priority' | 'none') || 'priority';
+      const sortOrder = (config.continue.sortOrder as 'asc' | 'desc') || 'desc';
+      adapter.setEnableUserRules(enableUserRules);
+      adapter.setSortConfig(sortBy, sortOrder);
+      this.adapters.set('continue', adapter);
       Logger.warn('Using legacy ContinueAdapter, please update to PresetAdapter');
     }
 

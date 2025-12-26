@@ -171,7 +171,7 @@ Turbo AI Rules 包含以下主要 UI 组件：
 
 ---
 
-### 4. Dashboard 仪表盘（Webview）
+### 4. Dashboard 仪表板（Webview）
 
 **文件**: `src/providers/DashboardWebviewProvider.ts`  
 **核心功能**:

@@ -25,7 +25,7 @@
 | 04   | 高级搜索     | `SearchWebviewProvider`         | [04-advanced-search-implementation.md](./04-advanced-search-implementation.md)         |
 | 05   | 规则同步页   | `RuleSyncPageWebviewProvider`   | [05-rule-sync-page-implementation.md](./05-rule-sync-page-implementation.md)           |
 | 07   | 源详情       | `SourceDetailWebviewProvider`   | [07-source-details-implementation.md](./07-source-details-implementation.md)           |
-| 12   | 仪表盘       | `DashboardWebviewProvider`      | [12-dashboard-implementation.md](./12-dashboard-implementation.md)                     |
+| 12   | 仪表板       | `DashboardWebviewProvider`      | [12-dashboard-implementation.md](./12-dashboard-implementation.md)                     |
 | 13   | 适配器管理   | `AdapterManagerWebviewProvider` | [13-adapter-manager-implementation.md](./13-adapter-manager-implementation.md)         |
 | 14   | 规则源管理器 | `SourceManagerWebviewProvider`  | [14-source-manager-page-implementation.md](./14-source-manager-page-implementation.md) |
 

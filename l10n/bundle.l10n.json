@@ -9,7 +9,7 @@
   "adapterManager.adapterName": "Display Name",
   "adapterManager.adapterNamePlaceholder": "My Custom Adapter",
   "adapterManager.adapterSaved": "Adapter \"{0}\" saved successfully",
-  "adapterManager.adapterSettings": "{name} Settings",
+  "adapterManager.adapterSettings": "{0} Settings",
   "adapterManager.adapterType": "Adapter Type",
   "adapterManager.addCustomAdapter": "Add Custom Adapter",
   "adapterManager.confirmDelete": "Are you sure you want to delete this adapter?",

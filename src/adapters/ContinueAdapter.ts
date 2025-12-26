@@ -29,7 +29,17 @@ export class ContinueAdapter extends BaseAdapter {
   async generate(rules: ParsedRule[], _allRules?: ParsedRule[]): Promise<GeneratedConfig> {
     Logger.info('Generating Continue configuration', { ruleCount: rules.length });
 
-    if (rules.length === 0) {
+    // 加载用户规则
+    const userRules = await this.loadUserRules();
+    if (userRules.length > 0) {
+      Logger.info('Loaded user rules for Continue', { userRuleCount: userRules.length });
+    }
+
+    // 合并远程规则和用户规则
+    const allRules = this.mergeWithUserRules(rules, userRules);
+    const totalCount = allRules.length;
+
+    if (totalCount === 0) {
       Logger.warn('No rules to generate for Continue');
       return {
         filePath: this.getFilePath(),
@@ -39,8 +49,8 @@ export class ContinueAdapter extends BaseAdapter {
       };
     }
 
-    // 按优先级排序
-    const sortedRules = this.sortByPriority(rules);
+    // 排序已在 mergeWithUserRules 中完成
+    const sortedRules = allRules;
 
     // 生成内容
     let content = '';
@@ -55,7 +65,9 @@ export class ContinueAdapter extends BaseAdapter {
     content += this.formatRulesForContinue(sortedRules);
 
     Logger.info('Continue configuration generated', {
-      ruleCount: rules.length,
+      remoteRuleCount: rules.length,
+      userRuleCount: userRules.length,
+      totalRuleCount: totalCount,
       contentLength: content.length,
     });
 
@@ -63,7 +75,7 @@ export class ContinueAdapter extends BaseAdapter {
       filePath: this.getFilePath(),
       content,
       generatedAt: new Date(),
-      ruleCount: rules.length,
+      ruleCount: totalCount,
     };
   }
 

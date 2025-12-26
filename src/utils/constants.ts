@@ -21,6 +21,13 @@ export const EXTENSION_NAME = 'Turbo AI Rules';
 export const CONFIG_PREFIX = 'turbo-ai-rules';
 
 /**
+ * Secret Storage 键前缀
+ * 用于存储敏感信息（Token、密码等）
+ * 使用示例: `${SECRET_KEY_PREFIX}.token.${sourceId}`
+ */
+export const SECRET_KEY_PREFIX = 'turboAiRules';
+
+/**
  * 配置键定义
  * 使用示例:
  * ```typescript
@@ -38,6 +45,7 @@ export const CONFIG_KEYS = {
   PARSER: 'parser',
   ADAPTERS: 'adapters',
   IGNORE_PATTERNS: 'ignorePatterns',
+  USER_RULES: 'userRules',
 
   /** 存储配置 */
   STORAGE_AUTO_GITIGNORE: 'storage.autoGitignore',

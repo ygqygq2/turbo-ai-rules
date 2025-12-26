@@ -41,7 +41,7 @@ export const PresetSettingsModal: React.FC<PresetSettingsModalProps> = ({
         <div className="modal-header">
           <h2>
             <i className="codicon codicon-gear"></i>
-            {t('adapterManager.adapterSettings', { name: adapter.name })}
+            {t('adapterManager.adapterSettings', adapter.name)}
           </h2>
           <button className="close-button" onClick={onClose}>
             <i className="codicon codicon-close"></i>
