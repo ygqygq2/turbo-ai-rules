@@ -290,20 +290,16 @@ export function generateMarkedFileContent(
 ): string {
   // 按规则源分组
   const rulesBySource = groupRulesBySource(rules);
-  const sourceIds = Array.from(rulesBySource.keys());
 
   const parts: string[] = [];
 
-  // 文件元数据
-  parts.push(generateFileHeader(rules.length, sourceIds));
-
-  // 添加全局顶层 blockMarkers 开始标记（包裹所有自动生成的内容）
+  // 添加全局顶层 blockMarkers 开始标记（必须在文件最开始，包裹所有内容）
   if (options.blockMarkers) {
     parts.push(options.blockMarkers.begin);
     parts.push('');
   }
 
-  // 头部内容（标题、说明等）
+  // 头部内容（包含元数据、标题、说明等）
   if (headerContent) {
     parts.push(headerContent.trim());
     parts.push('');
@@ -325,7 +321,7 @@ export function generateMarkedFileContent(
     parts.push('');
   }
 
-  // 添加全局顶层 blockMarkers 结束标记
+  // 添加全局顶层 blockMarkers 结束标记（必须在文件最后）
   if (options.blockMarkers) {
     parts.push(options.blockMarkers.end);
   }

@@ -297,19 +297,8 @@ export class FileGenerator {
       const dir = path.dirname(filePath);
       await ensureDir(dir);
 
-      Logger.debug('Config file will be written', {
-        filePath,
-        hasAdapter: !!adapter,
-      });
-
       // 判断是目录模式还是文件模式
       const isDirectoryMode = adapter && this.isDirectoryOutput(adapter);
-
-      Logger.debug('Output mode determined', {
-        filePath,
-        isDirectoryMode,
-        adapterName: adapter?.name,
-      });
 
       if (isDirectoryMode) {
         // 目录模式：清理旧文件，然后写入新文件
@@ -319,8 +308,6 @@ export class FileGenerator {
         // 单文件模式：使用规则源标记
         await this.writeSingleFileMode(filePath, content);
       }
-
-      Logger.debug('Config file written', { filePath, isDirectoryMode });
     } catch (error) {
       throw new SystemError(
         `Failed to write config file: ${filePath}`,
@@ -357,14 +344,12 @@ export class FileGenerator {
   ): Promise<void> {
     // 检查目录是否存在
     if (!fs.existsSync(dir)) {
-      Logger.debug('Directory does not exist, skip cleaning', { dir });
       return;
     }
 
     // 获取期望的文件名列表（规则源文件 + 用户规则文件）
     const expectedFileNames = await this.getExpectedFileNames(adapter, rules);
     Logger.debug('Expected files in directory', {
-      dir,
       expectedCount: expectedFileNames.size,
       expectedFiles: Array.from(expectedFileNames),
     });
@@ -386,10 +371,7 @@ export class FileGenerator {
         try {
           fs.unlinkSync(fullPath);
           deletedCount++;
-          Logger.debug('Deleted obsolete rule file', {
-            file: entry.name,
-            path: fullPath,
-          });
+          Logger.debug('Deleted obsolete rule file', { file: entry.name });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           Logger.warn('Failed to delete file during cleanup', {
@@ -401,7 +383,7 @@ export class FileGenerator {
     }
 
     if (deletedCount > 0) {
-      Logger.info(`Cleaned ${deletedCount} obsolete rule file(s) from directory`, { dir });
+      Logger.info(`Cleaned ${deletedCount} obsolete rule file(s)`);
     }
   }
 
@@ -449,18 +431,12 @@ export class FileGenerator {
    * 单文件模式写入（使用规则源标记）
    */
   private async writeSingleFileMode(filePath: string, newContent: string): Promise<void> {
-    Logger.debug('writeSingleFileMode called', {
-      filePath,
-      newContentLength: newContent.length,
-    });
-
     // 检查文件是否存在
     const fileExists = fs.existsSync(filePath);
 
     if (!fileExists) {
       // 文件不存在，直接写入
       await safeWriteFile(filePath, newContent);
-      Logger.debug('File does not exist, created new file', { filePath });
       return;
     }
 
@@ -501,7 +477,6 @@ export class FileGenerator {
 
     // 文件已被管理，正常覆盖
     await safeWriteFile(filePath, newContent);
-    Logger.debug('File already managed by extension, overwriting completely', { filePath });
   }
 
   /**
@@ -638,7 +613,11 @@ export class FileGenerator {
         existingContent = fs.readFileSync(filePath, 'utf-8');
       }
     } catch (_error) {
-      Logger.warn('Failed to read existing file for partial update', { filePath });
+      const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
+      const relativeFilePath = workspaceRoot ? path.relative(workspaceRoot, filePath) : filePath;
+      Logger.warn('Failed to read existing file for partial update', {
+        filePath: relativeFilePath,
+      });
     }
 
     // 只获取目标规则源的规则
