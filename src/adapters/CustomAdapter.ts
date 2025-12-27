@@ -217,18 +217,14 @@ export class CustomAdapter extends BaseAdapter {
       rulesBySource.set(rule.sourceId, sourceRules);
     }
 
-    // 获取扩展标记
-    const { getBlockMarkers } = await import('../utils/userRules');
-    const blockMarkers = getBlockMarkers();
-
     // 为每个源生成文件
     for (const [sourceId, sourceRules] of rulesBySource) {
       for (const rule of sourceRules) {
         const fileName = this.getRuleFileName(rule);
         const relativePath = path.join(this.config.outputPath, sourceId, fileName);
         const absolutePath = path.join(workspaceRoot, relativePath);
-        // 使用原始内容并包裹扩展标记
-        const content = `${blockMarkers.begin}\n${rule.rawContent}\n${blockMarkers.end}`;
+        // 使用原始内容（包含 frontmatter），保持规则文件原样
+        const content = rule.rawContent;
 
         await safeWriteFile(absolutePath, content);
         files.set(relativePath, content);
@@ -245,17 +241,13 @@ export class CustomAdapter extends BaseAdapter {
     workspaceRoot: string,
     files: Map<string, string>,
   ): Promise<void> {
-    // 获取扩展标记
-    const { getBlockMarkers } = await import('../utils/userRules');
-    const blockMarkers = getBlockMarkers();
-
     for (const rule of rules) {
       // 使用模板或原文件名
       const fileName = this.getRuleFileName(rule);
       const relativePath = path.join(this.config.outputPath, fileName);
       const absolutePath = path.join(workspaceRoot, relativePath);
-      // 使用原始内容并包裹扩展标记
-      const content = `${blockMarkers.begin}\n${rule.rawContent}\n${blockMarkers.end}`;
+      // 使用原始内容（包含 frontmatter），保持规则文件原样
+      const content = rule.rawContent;
 
       await safeWriteFile(absolutePath, content);
       files.set(relativePath, content);

@@ -361,17 +361,13 @@ export class FileGenerator {
       return;
     }
 
-    // 获取期望的文件名列表
+    // 获取期望的文件名列表（规则源文件 + 用户规则文件）
     const expectedFileNames = await this.getExpectedFileNames(adapter, rules);
     Logger.debug('Expected files in directory', {
       dir,
       expectedCount: expectedFileNames.size,
       expectedFiles: Array.from(expectedFileNames),
     });
-
-    // 获取扩展标记
-    const { getBlockMarkers } = await import('../utils/userRules');
-    const blockMarkers = getBlockMarkers();
 
     // 扫描目录中的所有文件
     const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -383,32 +379,20 @@ export class FileGenerator {
         continue;
       }
 
-      // 如果文件不在期望列表中
+      // 如果文件不在期望列表中，直接删除
       if (!expectedFileNames.has(entry.name)) {
         const fullPath = path.join(dir, entry.name);
 
         try {
-          // 读取文件内容检查是否包含扩展标记
-          const fileContent = fs.readFileSync(fullPath, 'utf-8');
-          const hasManagedMarkers =
-            fileContent.includes(blockMarkers.begin) && fileContent.includes(blockMarkers.end);
-
-          if (hasManagedMarkers) {
-            // 删除由扩展管理的旧文件
-            fs.unlinkSync(fullPath);
-            deletedCount++;
-            Logger.debug('Deleted obsolete rule file', {
-              file: entry.name,
-              path: fullPath,
-            });
-          } else {
-            Logger.debug('Skipped user file (no extension markers)', {
-              file: entry.name,
-            });
-          }
+          fs.unlinkSync(fullPath);
+          deletedCount++;
+          Logger.debug('Deleted obsolete rule file', {
+            file: entry.name,
+            path: fullPath,
+          });
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
-          Logger.warn('Failed to process file during cleanup', {
+          Logger.warn('Failed to delete file during cleanup', {
             file: entry.name,
             error: errorMessage,
           });
@@ -422,9 +406,9 @@ export class FileGenerator {
   }
 
   /**
-   * 获取适配器期望生成的文件名列表
+   * 获取适配器期望生成的文件名列表（规则源文件 + 用户规则文件）
    * @param adapter 适配器实例
-   * @param rules 规则列表
+   * @param rules 规则列表（包含规则源规则和用户规则）
    * @returns 文件名集合
    */
   private async getExpectedFileNames(
@@ -437,8 +421,8 @@ export class FileGenerator {
     if ('config' in adapter && adapter.config) {
       const { CustomAdapter } = await import('../adapters');
       if (adapter instanceof CustomAdapter) {
+        // 遍历所有规则（包括规则源和用户规则），生成期望的文件名
         for (const rule of rules) {
-          // 调用 getRuleFileName 获取文件名
           const fileName = adapter.getRuleFileName(rule);
           fileNames.add(fileName);
         }
