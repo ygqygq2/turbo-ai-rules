@@ -10,7 +10,7 @@
       "id": "default-rules",
       "name": "Default Rules",
       "enabled": true,
-      "enableUserRules": false,
+      "enableUserRules": true,
       "outputType": "directory",
       "outputPath": "rules/",
       "fileExtension": ".md"

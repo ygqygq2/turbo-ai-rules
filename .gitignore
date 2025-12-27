@@ -14,3 +14,7 @@ sampleWorkspace/*/.cursorrules
 sampleWorkspace/*/.github/
 sampleWorkspace/*/.continue/
 sampleWorkspace/*/.cursor/
+
+# Turbo AI Rules - Auto-generated files
+.cursorrules
+.github/copilot-instructions.md

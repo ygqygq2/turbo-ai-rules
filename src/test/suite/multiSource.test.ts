@@ -79,8 +79,6 @@ describe('Multi-Source Integration Tests', () => {
     // 测试多源同步功能
     this.timeout(180000); // 3分钟 - Git 克隆两个仓库需要更多时间
 
-    console.log(`Testing multi-source sync in workspace: ${workspaceFolder.name}`);
-
     try {
       // 打开当前 workspace folder 中的 README 文件，确保 activeEditor 在正确的 folder
       const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
@@ -113,14 +111,10 @@ describe('Multi-Source Integration Tests', () => {
 
       // 如果没有规则被加载，可能是网络问题或空仓库，但不应失败
       if (allRules.length === 0) {
-        console.warn('No rules loaded - possible network issue or empty sources');
-        console.warn('Skipping rule selection verification, but sync command succeeded');
         // 验证同步命令至少执行成功了
         assert.ok(true, 'Sync command executed without throwing error');
         return;
       }
-
-      console.log(`Loaded ${allRules.length} rules from ${sources!.length} sources`);
 
       // 模拟用户选择规则：获取所有源并选中所有规则
       for (const source of sources!.filter((s: any) => s.enabled)) {
@@ -156,18 +150,9 @@ describe('Multi-Source Integration Tests', () => {
       const cursorExists = await fs.pathExists(cursorRulesPath);
       const copilotExists = await fs.pathExists(copilotConfigPath);
 
-      console.log(`Cursor output exists: ${cursorExists}`);
-      console.log(`Copilot output exists: ${copilotExists}`);
-
       // 多源测试的重点：验证两个源都能正常同步和生成配置
       // 不测试冲突，因为这两个仓库的规则 ID 不重复，不会产生冲突
       const hasOutput = cursorExists || copilotExists;
-
-      if (!hasOutput) {
-        // 列出工作区内容帮助调试
-        const rootFiles = await fs.readdir(workspaceFolder.uri.fsPath);
-        console.log('Workspace root contents:', rootFiles);
-      }
 
       assert.ok(hasOutput, 'At least one adapter output should exist after multi-source sync');
     } catch (error) {
@@ -181,10 +166,6 @@ describe('Multi-Source Integration Tests', () => {
     const config = vscode.workspace.getConfiguration(CONFIG_PREFIX, workspaceFolder.uri);
     const cursorEnabled = config.get<boolean>(CONFIG_KEYS.ADAPTERS_CURSOR_ENABLED);
     const copilotEnabled = config.get<boolean>(CONFIG_KEYS.ADAPTERS_COPILOT_ENABLED);
-
-    console.log(`Cursor adapter enabled: ${cursorEnabled}`);
-    console.log(`Copilot adapter enabled: ${copilotEnabled}`);
-    console.log(`Testing in workspace: ${workspaceFolder.name}`);
 
     assert.strictEqual(cursorEnabled, true, 'Cursor adapter should be enabled');
     assert.strictEqual(copilotEnabled, true, 'Copilot adapter should be enabled');

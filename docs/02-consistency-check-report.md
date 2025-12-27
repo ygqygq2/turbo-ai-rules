@@ -1,6 +1,6 @@
 # 项目一致性检查报告
 
-> **检查日期**: 2025-12-23  
+> **检查日期**: 2025-12-27  
 > **检查范围**: 设计文档、UI实现、代码、用户指南  
 > **检查原则**: 设计-UI-代码-文档一致
 
@@ -8,7 +8,7 @@
 
 ## 📊 总体评估
 
-> **更新时间**: 2024-12-23 (优化后重新检测)
+> **更新时间**: 2025-12-27 (用户规则 Bug 修复后)
 
 | 类别         | 状态    | 说明                                 |
 | ------------ | ------- | ------------------------------------ |
@@ -251,8 +251,51 @@
 ---
 
 **检查人**: Cascade AI  
-**报告生成时间**: 2024-12-23  
+**报告生成时间**: 2025-12-27  
 **下次检查建议**: 每个大版本发布前
+
+---
+
+## 📦 最近修复 (2025-12-27)
+
+### 用户规则保护机制修复
+
+**问题描述**:
+- 目录模式下用户规则文件被清理删除
+- mocha 集成测试失败
+
+**根本原因**:
+1. `CustomAdapter.generateDirectory` 使用 `workspaceFolders[0]` 获取工作区，在多工作区环境下写入到错误的目录
+2. `FileGenerator.cleanObsoleteDirectoryFiles` 未加载用户规则到期望文件列表
+
+**修复内容**:
+
+1. **CustomAdapter.ts**:
+   - 使用 `WorkspaceContextManager.getInstance().getCurrentWorkspaceFolder()` 获取正确的工作区
+   - 确保在多工作区环境下写入到当前工作区
+
+2. **FileGenerator.ts**:
+   - `cleanObsoleteDirectoryFiles` 现在会加载用户规则并加入期望文件列表
+   - 用户规则文件不会被误删
+
+3. **设计文档更新**:
+   - `docs/development/23-custom-adapters-design.md`: 更新用户规则保护机制说明
+   - `docs/user-guide/04-faq.zh.md`: 更新用户规则使用指南
+
+**测试验证**:
+- ✅ 47 个 mocha 集成测试通过
+- ✅ 410 个 vitest 单元测试通过
+- ✅ 手动测试用户规则保留成功
+
+### 单文件适配器 blockMarkers 位置修复
+
+**问题描述**:
+- 单文件适配器生成的内容中 blockMarkers 位置不在文件首尾
+
+**修复内容**:
+- 修复 `ruleMarkerGenerator.ts` 中的标记生成逻辑
+- 确保 `<!-- TURBO-AI-RULES:BEGIN -->` 在文件开头
+- 确保 `<!-- TURBO-AI-RULES:END -->` 在文件结尾
 
 ---
 

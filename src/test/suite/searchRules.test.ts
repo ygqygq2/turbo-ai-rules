@@ -32,8 +32,6 @@ describe('Search Rules Tests', () => {
     // 搜索规则（假设规则库中有关于 TypeScript 的规则）
     const searchResults = rulesManager.search('typescript');
 
-    console.log(`Search found ${searchResults.length} results for "typescript"`);
-
     // 验证搜索结果
     if (searchResults.length > 0) {
       assert.ok(
@@ -62,8 +60,6 @@ describe('Search Rules Tests', () => {
     // 搜索一个不存在的关键词
     const searchResults = rulesManager.search('xyzabc123notfound');
 
-    console.log(`Search for non-existent keyword returned ${searchResults.length} results`);
-
     assert.strictEqual(searchResults.length, 0, 'Should return empty array for no matches');
   });
 
@@ -82,10 +78,6 @@ describe('Search Rules Tests', () => {
     // 搜索大写和小写关键词，结果应该相同
     const upperResults = rulesManager.search('TYPESCRIPT');
     const lowerResults = rulesManager.search('typescript');
-
-    console.log(
-      `Uppercase search: ${upperResults.length}, Lowercase search: ${lowerResults.length}`,
-    );
 
     // 至少其中一个应该有结果，且结果数量应该相同
     if (upperResults.length > 0 || lowerResults.length > 0) {

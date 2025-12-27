@@ -17,10 +17,6 @@ describe('Pre-configured Sources Tests', () => {
       );
 
       if (configSources.length > 0) {
-        console.log(
-          `✓ Folder "${folder.name}" has ${configSources.length} pre-configured source(s)`,
-        );
-
         // 验证每个源都有必需的字段
         for (const source of configSources) {
           assert.ok(source.id, `Source should have an id in ${folder.name}`);
@@ -42,7 +38,6 @@ describe('Pre-configured Sources Tests', () => {
       totalSources += sources.length;
     }
 
-    console.log(`Found ${totalSources} pre-configured source(s) across all folders`);
     assert.ok(totalSources > 0, 'Should have at least one pre-configured source');
   });
 
@@ -53,8 +48,6 @@ describe('Pre-configured Sources Tests', () => {
     // 检查全局工作区配置
     const config = vscode.workspace.getConfiguration(CONFIG_PREFIX);
     const onStartup = config.get<boolean>(CONFIG_KEYS.SYNC_ON_STARTUP);
-
-    console.log(`sync.onStartup is set to: ${onStartup}`);
 
     // 测试工作区应该禁用启动时同步
     assert.strictEqual(onStartup, false, 'sync.onStartup should be false in test workspace');

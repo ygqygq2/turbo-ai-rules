@@ -75,8 +75,18 @@ export abstract class BaseAdapter implements AIToolAdapter {
     // 1. 加载用户规则（作为 sourceId = 'user-rules' 的规则源）
     const userRules = await this.loadUserRules();
 
+    if (process.env.TEST_DEBUG === 'true') {
+      console.log(
+        `[${this.name}] generate called with ${rules.length} rules, loaded ${userRules.length} user rules`,
+      );
+    }
+
     // 2. 合并规则（去重、排序）
     const allRules = this.mergeWithUserRules(rules, userRules);
+
+    if (process.env.TEST_DEBUG === 'true') {
+      console.log(`[${this.name}] After merge: ${allRules.length} total rules`);
+    }
 
     // 3. 根据输出类型生成
     const outputType = this.getOutputType();

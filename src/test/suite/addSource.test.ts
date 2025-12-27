@@ -47,8 +47,6 @@ describe('Add Source Tests', () => {
     const sourcesAfter = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);
     const added = sourcesAfter.find((s: RuleSource) => s.gitUrl === sourceUrl);
 
-    console.log(`Sources before: ${countBefore}, after: ${sourcesAfter.length}`);
-
     if (added) {
       assert.ok(added, 'Source should be added to configuration');
       assert.strictEqual(added.enabled, true, 'Source should be enabled by default');
@@ -77,7 +75,6 @@ describe('Add Source Tests', () => {
 
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
     const sourcesBefore = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);
-    const countBefore = sourcesBefore.length;
 
     // 尝试添加相同的源
     await vscode.commands.executeCommand('turbo-ai-rules.addSource');
@@ -86,10 +83,6 @@ describe('Add Source Tests', () => {
     const sourcesAfter = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);
     const countAfter = sourcesAfter.filter((s: RuleSource) => s.gitUrl === sourceUrl).length;
     const countBeforeUrl = sourcesBefore.filter((s: RuleSource) => s.gitUrl === sourceUrl).length;
-
-    console.log(
-      `URL ${sourceUrl} count - before: ${countBeforeUrl}, after: ${countAfter}, total before: ${countBefore}, total after: ${sourcesAfter.length}`,
-    );
 
     // 应该不增加重复的源
     assert.strictEqual(countAfter, countBeforeUrl, 'Should not add duplicate source');
@@ -123,9 +116,8 @@ describe('Add Source Tests', () => {
         sourcesBefore.length,
         'Should not add source with invalid URL',
       );
-    } catch (error) {
+    } catch (_error) {
       // 如果抛出错误也是可以接受的
-      console.log('Invalid URL rejected (expected):', error);
       assert.ok(true, 'Should reject invalid URL');
     }
   });

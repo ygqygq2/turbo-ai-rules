@@ -145,19 +145,9 @@ export class FileGenerator {
     allRules?: ParsedRule[],
     workspaceUri?: vscode.Uri,
   ): Promise<GenerateResult> {
-    // 计算用户规则数量（用于调试）
-    const userRulesCount = (allRules || []).filter((r) => r.sourceId === 'user-rules').length;
-
-    if (process.env.TEST_DEBUG === 'true') {
-      console.log('=== FileGenerator.generateAll called ===');
-      console.log('Rules count:', rules.length);
-      console.log('User Rules count:', userRulesCount);
-      console.log('Adapters count:', this.adapters.size);
-      console.log('Workspace root:', workspaceRoot);
-    }
     Logger.debug('Generating all config files', {
       ruleCount: rules.length,
-      userRulesCount,
+      userRulesCount: (allRules || []).filter((r) => r.sourceId === 'user-rules').length,
       adapterCount: this.adapters.size,
       conflictStrategy: strategy,
       targetAdapters: targetAdapters || 'all',
@@ -335,7 +325,7 @@ export class FileGenerator {
    * 清理目录中不在当前规则列表中的旧文件
    * @param dir 目录路径
    * @param adapter 适配器实例
-   * @param rules 当前规则列表
+   * @param rules 当前规则列表（选中的规则）
    */
   private async cleanObsoleteDirectoryFiles(
     dir: string,
@@ -347,11 +337,27 @@ export class FileGenerator {
       return;
     }
 
+    // 如果适配器启用了用户规则，需要加载用户规则并加入期望列表
+    let allRules = [...rules];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ('enableUserRules' in adapter && (adapter as any).enableUserRules) {
+      try {
+        const { loadUserRules } = await import('../utils/userRules');
+        const userRules = await loadUserRules();
+        allRules = [...allRules, ...userRules];
+        Logger.debug('Added user rules to expected list for cleanup', { count: userRules.length });
+      } catch (error) {
+        Logger.warn('Failed to load user rules for cleanup', { error: (error as Error).message });
+      }
+    }
+
     // 获取期望的文件名列表（规则源文件 + 用户规则文件）
-    const expectedFileNames = await this.getExpectedFileNames(adapter, rules);
+    const expectedFileNames = await this.getExpectedFileNames(adapter, allRules);
+    const expectedFilesArray = Array.from(expectedFileNames);
+
     Logger.debug('Expected files in directory', {
       expectedCount: expectedFileNames.size,
-      expectedFiles: Array.from(expectedFileNames),
+      expectedFiles: expectedFilesArray,
     });
 
     // 扫描目录中的所有文件

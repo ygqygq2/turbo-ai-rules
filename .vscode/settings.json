@@ -9,7 +9,50 @@
   // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
   "typescript.tsc.autoDetect": "off",
   // 配置终端从登录 shell 继承环境变量
-  "terminal.integrated.inheritEnv": true
+  "terminal.integrated.inheritEnv": true,
+  "turbo-ai-rules.sources": [
+    {
+      "id": "ai-rules",
+      "name": "ygqygq2's AI Rules",
+      "gitUrl": "https://github.com/ygqygq2/ai-rules.git",
+      "branch": "main",
+      "enabled": true,
+      "authentication": {
+        "type": "none"
+      }
+    }
+  ],
+  "turbo-ai-rules.adapters": {
+    "custom": [],
+    "cursor": {
+      "enabled": true
+    },
+    "windsurf": {
+      "enabled": false
+    },
+    "copilot": {
+      "enabled": true
+    },
+    "continue": {
+      "enabled": false
+    },
+    "cline": {
+      "enabled": false
+    },
+    "roo-cline": {
+      "enabled": false
+    },
+    "aider": {
+      "enabled": false
+    },
+    "bolt": {
+      "enabled": false
+    },
+    "qodo-gen": {
+      "enabled": false
+    }
+  },
+  "turbo-ai-rules.adapters.custom": []
   // 预配置测试用规则源
   // "turbo-ai-rules.sources": [
   //   {

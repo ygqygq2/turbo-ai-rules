@@ -6,6 +6,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { WorkspaceContextManager } from '../services/WorkspaceContextManager';
 import type { CustomAdapterConfig } from '../types/config';
 import type { ParsedRule } from '../types/rules';
 import { safeWriteFile } from '../utils/fileSystem';
@@ -137,7 +138,10 @@ export class CustomAdapter extends BaseAdapter {
     rules: ParsedRule[],
     _allRules?: ParsedRule[],
   ): Promise<GeneratedConfig> {
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    // 使用 WorkspaceContextManager 获取当前工作区，而不是默认第一个
+    const currentWorkspace = WorkspaceContextManager.getInstance().getCurrentWorkspaceFolder();
+    const workspaceRoot =
+      currentWorkspace?.uri.fsPath || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (!workspaceRoot) {
       throw new Error('No workspace folder found');
     }

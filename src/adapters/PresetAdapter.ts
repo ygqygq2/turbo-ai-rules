@@ -37,7 +37,9 @@ export interface PresetAdapterConfig {
  *
  * 配置说明：
  * - file: 单文件配置（如 .cursorrules）
- * - directory: 目录配置（如 .continue/rules/）
+ * - directory: 目录配置（暂未使用，预留扩展）
+ *
+ * 路径已通过 GitHub 实际使用验证
  */
 export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
   // === IDE 集成类工具 ===
@@ -47,8 +49,8 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     filePath: '.cursorrules',
     type: 'file',
     defaultEnabled: true,
-    description: 'AI-first code editor with intelligent completions',
-    website: 'https://cursor.sh',
+    description: 'AI-first code editor',
+    website: 'https://cursor.com',
   },
   {
     id: 'windsurf',
@@ -56,7 +58,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     filePath: '.windsurfrules',
     type: 'file',
     defaultEnabled: false,
-    description: 'Codeium AI IDE with advanced context understanding',
+    description: 'Codeium AI IDE',
     website: 'https://codeium.com/windsurf',
   },
   {
@@ -65,7 +67,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     filePath: '.github/copilot-instructions.md',
     type: 'file',
     defaultEnabled: false,
-    description: 'GitHub official AI pair programmer',
+    description: 'GitHub AI pair programmer',
     website: 'https://github.com/features/copilot',
   },
 
@@ -76,7 +78,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     filePath: '.continuerules',
     type: 'file',
     defaultEnabled: false,
-    description: 'Open-source AI coding assistant in VSCode',
+    description: 'Open-source AI assistant',
     website: 'https://continue.dev',
   },
   {
@@ -85,8 +87,8 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     filePath: '.clinerules',
     type: 'file',
     defaultEnabled: false,
-    description: 'Autonomous coding agent formerly known as Claude Dev',
-    website: 'https://github.com/clinebot/cline',
+    description: 'Autonomous coding agent',
+    website: 'https://github.com/cline/cline',
   },
   {
     id: 'roo-cline',
@@ -94,7 +96,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     filePath: '.roorules',
     type: 'file',
     defaultEnabled: false,
-    description: 'Fork of Cline with enhanced features',
+    description: 'Enhanced Cline fork',
     website: 'https://github.com/RooVetGit/Roo-Cline',
   },
 
