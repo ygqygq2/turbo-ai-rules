@@ -2,6 +2,21 @@
 
 All notable changes to the "turbo-ai-rules" extension will be documented in this file.
 
+# [2.0.3]
+
+## 🐛 Bug 修复
+
+- **修复多工作区环境下用户规则被清理的问题**
+  - CustomAdapter 使用 WorkspaceContextManager 获取当前工作区
+  - FileGenerator 清理时加载用户规则到期望文件列表
+  - 确保 `ai-rules/` 目录中的用户规则不会被误删除
+
+## 📚 文档更新
+
+- 更新用户规则保护机制文档说明
+- 完善多工作区支持的说明（保持保守态度，说明已知改进和限制）
+- 更新 FAQ 中关于多工作区的说明
+
 # [2.0.2]
 
 ## 🚀 功能增强
