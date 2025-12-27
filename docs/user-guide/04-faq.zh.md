@@ -734,9 +734,56 @@ Output → Turbo AI Rules
 
 ---
 
+#### Q15: 为什么生成的配置文件在 `.gitignore` 中但仍被提交到 Git？
+
+**A**: `.gitignore` 只能忽略**未被跟踪**的文件。如果文件之前已被提交到仓库，添加到 `.gitignore` 后仍会继续被跟踪。
+
+**检查文件是否被跟踪**：
+
+```bash
+git ls-files | grep -E '(\.cursorrules|\.github/copilot-instructions\.md)'
+```
+
+**解决方法**：
+
+从 Git 中移除跟踪但保留本地文件：
+
+```bash
+# 移除跟踪但保留本地文件
+git rm --cached .github/copilot-instructions.md
+
+# 如果 .cursorrules 也被跟踪了
+git rm --cached .cursorrules 2>/dev/null || true
+
+# 提交更改
+git commit -m "chore: 移除自动生成文件的 Git 跟踪"
+git push
+```
+
+**说明**：
+
+- `git rm --cached` 只从 Git 索引中移除，不删除本地文件
+- 之后 `.gitignore` 规则就会生效
+- 团队其他成员拉取后，他们的文件也会被忽略（但本地文件保留）
+
+**预防措施**：
+
+在项目初期就将自动生成文件加入 `.gitignore`，避免误提交：
+
+```gitignore
+# Turbo AI Rules - Auto-generated files
+.cursorrules
+.github/copilot-instructions.md
+.continue/
+.cursor/rules/
+rules/rules-for-*/
+```
+
+---
+
 ### 工作空间和环境
 
-#### Q15: 本扩展支持多工作空间吗？
+#### Q17: 本扩展支持多工作空间吗？
 
 **A**: **有限支持，建议谨慎使用**。扩展可以在多工作空间环境中工作，但仍有一些限制和潜在问题。
 
@@ -795,7 +842,7 @@ workspace.code-workspace
 
 ### 高级问题
 
-#### Q16: 如何在 CI/CD 中使用？
+#### Q18: 如何在 CI/CD 中使用？
 
 **A**: 可以在 CI/CD 流程中自动生成配置文件。
 
@@ -832,7 +879,7 @@ jobs:
 
 ---
 
-#### Q17: 如何贡献规则到社区？
+#### Q19: 如何贡献规则到社区？
 
 **A**: 创建一个公开的 Git 仓库分享你的规则。
 

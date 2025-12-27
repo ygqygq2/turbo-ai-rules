@@ -668,9 +668,56 @@ Output → Turbo AI Rules
 
 ---
 
+#### Q15: Why are generated config files still committed to Git even though they're in `.gitignore`?
+
+**A**: `.gitignore` only ignores **untracked files**. If files were previously committed to the repository, adding them to `.gitignore` won't stop Git from tracking them.
+
+**Check if files are tracked**:
+
+```bash
+git ls-files | grep -E '(\.cursorrules|\.github/copilot-instructions\.md)'
+```
+
+**Solution**:
+
+Remove from Git tracking but keep local files:
+
+```bash
+# Remove from tracking but keep local files
+git rm --cached .github/copilot-instructions.md
+
+# If .cursorrules is also tracked
+git rm --cached .cursorrules 2>/dev/null || true
+
+# Commit changes
+git commit -m "chore: remove auto-generated files from Git tracking"
+git push
+```
+
+**Explanation**:
+
+- `git rm --cached` only removes from Git index, doesn't delete local files
+- After this, `.gitignore` rules will take effect
+- When team members pull, their files will also be ignored (but local files remain)
+
+**Prevention**:
+
+Add auto-generated files to `.gitignore` early in the project to avoid accidental commits:
+
+```gitignore
+# Turbo AI Rules - Auto-generated files
+.cursorrules
+.github/copilot-instructions.md
+.continue/
+.cursor/rules/
+rules/rules-for-*/
+```
+
+---
+
 ### Workspace and Environment
 
-#### Q15: Does this extension support multi-root workspaces?
+#### Q17: Does this extension support multi-root workspaces?
 
 **A**: Currently has **limited support**. The extension can work in multi-root workspace environments, but with the following limitations:
 
@@ -718,7 +765,7 @@ workspace.code-workspace
 
 ### Advanced Questions
 
-#### Q16: How to use in CI/CD?
+#### Q18: How to use in CI/CD?
 
 **A**: You can automatically generate config files in CI/CD pipelines.
 
@@ -755,7 +802,7 @@ jobs:
 
 ---
 
-#### Q17: How to contribute rules to the community?
+#### Q19: How to contribute rules to the community?
 
 **A**: Create a public Git repository to share your rules.
 
