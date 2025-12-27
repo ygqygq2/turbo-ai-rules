@@ -22,8 +22,14 @@
       }
     }
   ],
+  "turbo-ai-rules.userRules": {
+    "directory": ".project-rules",
+    "markers": {
+      "begin": "<!-- USER-RULES:BEGIN -->",
+      "end": "<!-- USER-RULES:END -->"
+    }
+  },
   "turbo-ai-rules.adapters": {
-    "custom": [],
     "cursor": {
       "enabled": true
     },
@@ -53,18 +59,4 @@
     }
   },
   "turbo-ai-rules.adapters.custom": []
-  // 预配置测试用规则源
-  // "turbo-ai-rules.sources": [
-  //   {
-  //     "id": "ygqygq2-ai-rules",
-  //     "name": "Test Copilot Rules",
-  //     "gitUrl": "https://github.com/ygqygq2/ai-rules.git",
-  //     "branch": "main",
-  //     "subPath": "/",
-  //     "enabled": true,
-  //     "authentication": {
-  //       "type": "none"
-  //     }
-  //   }
-  // ]
 }
