@@ -53,7 +53,7 @@ import { SharedSelectionManager } from './services/SharedSelectionManager';
 import { WorkspaceContextManager } from './services/WorkspaceContextManager';
 import { WorkspaceDataManager } from './services/WorkspaceDataManager';
 import { WorkspaceStateManager } from './services/WorkspaceStateManager';
-import type { RuleSource } from './types/config';
+import type { AdapterConfig, RuleSource } from './types/config';
 import { EXTENSION_NAME } from './utils/constants';
 import { ensureIgnored } from './utils/gitignore';
 import { initI18n } from './utils/i18n';
@@ -504,20 +504,20 @@ async function updateGitignoreForAdapters(): Promise<void> {
 
   for (const adapterName of enabledAdapters) {
     try {
-      // 通过适配器名称获取文件路径
-      const { ContinueAdapter, CopilotAdapter, CursorAdapter, CustomAdapter } =
-        await import('./adapters');
-
+      // 从配置中查找适配器配置
       let filePath: string | undefined;
 
-      if (adapterName === 'cursor') {
-        filePath = new CursorAdapter(true).getFilePath();
-      } else if (adapterName === 'copilot') {
-        filePath = new CopilotAdapter(true).getFilePath();
-      } else if (adapterName === 'continue') {
-        filePath = new ContinueAdapter(true).getFilePath();
-      } else if (adapterName.startsWith('custom-')) {
-        // 自定义适配器需要从配置中获取
+      // 检查预设适配器（从 PRESET_ADAPTERS 获取配置）
+      const { PRESET_ADAPTERS, PresetAdapter, CustomAdapter } = await import('./adapters');
+      const presetAdapterDef = PRESET_ADAPTERS.find((p) => p.id === adapterName);
+      if (presetAdapterDef) {
+        // 获取启用状态
+        const adapterConfig = (config.adapters as Record<string, AdapterConfig>)[adapterName];
+        const enabled = adapterConfig?.enabled ?? true;
+        filePath = new PresetAdapter(presetAdapterDef, enabled).getFilePath();
+      }
+      // 检查自定义适配器
+      else if (adapterName.startsWith('custom-')) {
         const customId = adapterName.replace('custom-', '');
         const customConfig = config.adapters.custom?.find((c) => c.id === customId);
         if (customConfig) {

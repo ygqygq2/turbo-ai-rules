@@ -154,8 +154,10 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
 
         case 'syncAndGenerate':
           Logger.debug('Webview message received: syncAndGenerate');
-          // 同步并生成配置（一步完成）
-          await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+          // 同步并生成配置（一步完成）- 只同步到规则类型适配器
+          await vscode.commands.executeCommand('turbo-ai-rules.syncRules', {
+            targetAdapters: await this.getRuleTypeAdapters(),
+          });
           break;
 
         case 'openAdvancedOptions':
@@ -168,8 +170,10 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
           break;
 
         case 'syncRules':
-          // 页面上的同步按钮：同步所有规则
-          await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+          // 页面上的同步按钮：只同步到规则类型适配器
+          await vscode.commands.executeCommand('turbo-ai-rules.syncRules', {
+            targetAdapters: await this.getRuleTypeAdapters(),
+          });
           break;
 
         case 'generateRules':
@@ -406,5 +410,45 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
       });
     }
     this.dispose();
+  }
+
+  /**
+   * 获取所有启用的规则类型适配器列表
+   */
+  private async getRuleTypeAdapters(): Promise<string[]> {
+    const configManager = (await import('../services/ConfigManager')).ConfigManager.getInstance();
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    if (!workspaceFolder) {
+      return [];
+    }
+
+    const config = await configManager.getConfig(workspaceFolder.uri);
+    const ruleAdapters: string[] = [];
+
+    // 遍历所有预置适配器
+    const { PRESET_ADAPTERS } = await import('../adapters/PresetAdapter');
+    for (const presetConfig of PRESET_ADAPTERS) {
+      const adapterConfig = (
+        config.adapters as Record<string, { enabled?: boolean; isRuleType?: boolean } | undefined>
+      )[presetConfig.id];
+      const enabled = adapterConfig?.enabled ?? presetConfig.defaultEnabled ?? false;
+      const isRuleType = adapterConfig?.isRuleType ?? true;
+
+      if (enabled && isRuleType) {
+        ruleAdapters.push(presetConfig.id);
+      }
+    }
+
+    // 自定义适配器（只包含 isRuleType !== false 的）
+    if (config.adapters?.custom) {
+      for (const adapter of config.adapters.custom) {
+        const isRuleType = adapter.isRuleType ?? true;
+        if (adapter.enabled && isRuleType) {
+          ruleAdapters.push(adapter.id);
+        }
+      }
+    }
+
+    return ruleAdapters;
   }
 }

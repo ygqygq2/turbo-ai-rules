@@ -24,15 +24,20 @@ export interface CustomAdapterConfig extends AdapterConfig {
   generateIndex?: boolean;
   indexFileName?: string;
 
-  // Skills 适配器配置（isRuleType=false 时使用）
+  // 适配器类型配置
+  isRuleType?: boolean; // 默认 true：规则适配器；false：技能适配器
+  enableUserRules?: boolean; // 默认取决于 isRuleType
+
+  // 技能适配器配置（isRuleType=false 时使用）
   sourceId?: string; // 复用已有规则源的 ID
   subPath?: string; // 技能文件在源仓库中的子目录
 }
 ```
 
-### Skills 配置说明
+### 技能适配器配置说明
 
-- **skills**: 布尔值，设为 `true` 表示这是一个技能适配器
+- **isRuleType**: 布尔值，设为 `false` 表示这是一个技能适配器（默认 `true` 为规则适配器）
+- **enableUserRules**: 默认取决于 `isRuleType`：规则适配器默认 `true`，技能适配器默认 `false`
 - **sourceId**: 引用已配置的规则源 ID，复用其 Git 仓库、分支、认证等配置
 - **subPath**: 可选，指定技能文件在源仓库中的子目录（相对于仓库根目录，如 `/skills`）
 
@@ -54,7 +59,7 @@ export interface CustomAdapterConfig extends AdapterConfig {
   "autoUpdate": true,
   "outputPath": ".claude/skills",
   "outputType": "directory",
-  "skills": true,
+  "isRuleType": false,
   "sourceId": "my-ai-repo",
   "subPath": "/skills"
 }
@@ -84,9 +89,10 @@ export interface CustomAdapterConfig extends AdapterConfig {
 - `turbo-ai-rules.adapters.custom[]`：数组；`id/name/outputPath/outputType` 必填。
 - `fileExtensions`：可选；不填=同步所有文件。
 - `organizeBySource/generateIndex/indexFileName`：仅目录模式生效。
-- **Skills 字段**：
-  - `skills`：可选布尔值，默认 `false`
-  - `sourceId`：当 `skills: true` 时建议配置，指定要复用的规则源 ID
+- **适配器类型字段**：
+  - `isRuleType`：可选布尔值，默认 `true`（规则适配器）
+  - `enableUserRules`：可选布尔值，默认取决于 `isRuleType`（规则为 `true`，技能为 `false`）
+  - `sourceId`：当 `isRuleType=false` 时建议配置，指定要复用的规则源 ID
   - `subPath`：可选，指定技能文件在源中的子目录路径
 
 ## 测试建议

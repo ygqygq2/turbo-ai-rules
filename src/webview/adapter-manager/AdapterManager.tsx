@@ -231,7 +231,7 @@ export const AdapterManager: React.FC = () => {
       name: '',
       outputPath: '',
       format: 'directory', // 默认为目录格式
-      isRuleType: false, // 默认为技能类型
+      isRuleType: true, // 默认为规则类型
       enabled: true, // 默认启用
       directoryStructure: {
         filePattern: '*.md',

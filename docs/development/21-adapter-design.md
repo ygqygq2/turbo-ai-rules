@@ -327,22 +327,27 @@ Always use try-catch for async operations...
 
 <!-- END_SOURCE source="personal-rules" -->
 
-<!-- BEGIN_USER_CONTENT -->
+<!-- USER-RULES:BEGIN -->
+<!-- BEGIN_SOURCE source="user-rules" count="1" -->
+<!-- BEGIN_RULE source="user-rules" id="custom-rule" -->
 
-## My Custom Notes
+## My Custom Rule
 
-This content was manually added and will be preserved.
+This rule is from ai-rules/ directory.
 
-<!-- END_USER_CONTENT -->
+<!-- END_RULE -->
+<!-- END_SOURCE source="user-rules" -->
+<!-- USER-RULES:END -->
 ```
 
 ### 6.3 标记说明
 
-| 标记                                      | 说明                                           |
-| ----------------------------------------- | ---------------------------------------------- |
-| `BEGIN_SOURCE` / `END_SOURCE`             | 规则源区块边界，包含该源的所有规则             |
-| `BEGIN_RULE` / `END_RULE`                 | 单条规则边界，包含 sourceId、ruleId、priority  |
-| `BEGIN_USER_CONTENT` / `END_USER_CONTENT` | 用户手动添加的内容区域（可选，被保护不会覆盖） |
+| 标记                                      | 说明                                           | 是否可配置 |
+| ----------------------------------------- | ---------------------------------------------- | ---------- |
+| `BEGIN_SOURCE` / `END_SOURCE`             | 规则源区块边界，包含该源的所有规则             | ❌ 硬编码  |
+| `BEGIN_RULE` / `END_RULE`                 | 单条规则边界，包含 sourceId、ruleId、priority  | ❌ 硬编码  |
+| `USER-RULES:BEGIN` / `USER-RULES:END`     | 用户规则源外层包裹标记（包裹 sourceId='user-rules' 区域） | ✅ 可配置（`userRules.markers`） |
+| `BEGIN_USER_CONTENT` / `END_USER_CONTENT` | 保留未来扩展，当前未使用 | ❌ 硬编码  |
 
 ### 6.4 标记属性
 

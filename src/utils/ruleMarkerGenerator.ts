@@ -297,6 +297,12 @@ export function generateMarkedFileContent(
   // 文件元数据
   parts.push(generateFileHeader(rules.length, sourceIds));
 
+  // 添加全局顶层 blockMarkers 开始标记（包裹所有自动生成的内容）
+  if (options.blockMarkers) {
+    parts.push(options.blockMarkers.begin);
+    parts.push('');
+  }
+
   // 头部内容（标题、说明等）
   if (headerContent) {
     parts.push(headerContent.trim());
@@ -305,8 +311,23 @@ export function generateMarkedFileContent(
 
   // 按规则源生成区块
   for (const [sourceId, sourceRules] of rulesBySource) {
+    // 如果是用户规则源且有 userRulesMarkers 配置，添加用户规则专用包裹
+    if (sourceId === 'user-rules' && options.userRulesMarkers) {
+      parts.push(options.userRulesMarkers.begin);
+    }
+
     parts.push(generateSourceBlock(sourceId, sourceRules, options));
+
+    if (sourceId === 'user-rules' && options.userRulesMarkers) {
+      parts.push(options.userRulesMarkers.end);
+    }
+
     parts.push('');
+  }
+
+  // 添加全局顶层 blockMarkers 结束标记
+  if (options.blockMarkers) {
+    parts.push(options.blockMarkers.end);
   }
 
   return parts.join('\n');

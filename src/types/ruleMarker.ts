@@ -111,4 +111,14 @@ export interface MarkerGeneratorOptions {
   includeRuleMarkers?: boolean;
   /** 是否包含优先级信息 */
   includePriority?: boolean;
+  /** 顶层块标记（包裹所有自动生成的内容） */
+  blockMarkers?: {
+    begin: string;
+    end: string;
+  };
+  /** 用户规则源包裹标记（可选，用于 sourceId='user-rules'） */
+  userRulesMarkers?: {
+    begin: string;
+    end: string;
+  };
 }

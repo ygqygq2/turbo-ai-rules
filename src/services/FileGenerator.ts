@@ -8,25 +8,15 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import type { AIToolAdapter, GeneratedConfig } from '../adapters';
-import {
-  ContinueAdapter,
-  CopilotAdapter,
-  CursorAdapter,
-  CustomAdapter,
-  PRESET_ADAPTERS,
-  PresetAdapter,
-} from '../adapters';
+import { CustomAdapter, PRESET_ADAPTERS, PresetAdapter } from '../adapters';
 import type { AdaptersConfig } from '../types/config';
 import { GenerateError, SystemError } from '../types/errors';
 import type { PartialUpdateOptions } from '../types/ruleMarker';
 import type { ConflictStrategy, ParsedRule } from '../types/rules';
-import { CONFIG_KEYS, CONFIG_PREFIX } from '../utils/constants';
 import { ensureDir, safeWriteFile } from '../utils/fileSystem';
 import { ensureIgnored } from '../utils/gitignore';
 import { Logger } from '../utils/logger';
 import { partialUpdate } from '../utils/ruleMarkerMerger';
-import type { UserRulesProtectionConfig } from '../utils/userRulesProtection';
-import { extractUserContent, mergeContent } from '../utils/userRulesProtection';
 
 /**
  * 生成结果
@@ -44,32 +34,9 @@ export interface GenerateResult {
 export class FileGenerator {
   private static instance: FileGenerator;
   private adapters: Map<string, AIToolAdapter>;
-  private protectionConfig: UserRulesProtectionConfig;
 
   private constructor() {
     this.adapters = new Map();
-    this.protectionConfig = this.loadProtectionConfig();
-  }
-
-  /**
-   * 加载用户规则保护配置
-   * @param workspaceUri 工作区 URI（可选，用于多工作区环境）
-   */
-  private loadProtectionConfig(workspaceUri?: vscode.Uri): UserRulesProtectionConfig {
-    const config = vscode.workspace.getConfiguration(CONFIG_PREFIX, workspaceUri);
-    const userRulesConfig = config.get<{ markers?: { begin: string; end: string } }>(
-      CONFIG_KEYS.USER_RULES,
-      {},
-    );
-    return {
-      enabled: true, // 始终启用保护，由适配器的 enableUserRules 控制
-      userPrefixRange: config.get(CONFIG_KEYS.USER_PREFIX_RANGE, { min: 80000, max: 99999 }),
-      blockMarkers: userRulesConfig.markers ||
-        config.get('userRules.markers') || {
-          begin: '<!-- TURBO-AI-RULES:BEGIN -->',
-          end: '<!-- TURBO-AI-RULES:END -->',
-        },
-    };
   }
 
   /**
@@ -128,47 +95,26 @@ export class FileGenerator {
       }
     }
 
-    // 兼容旧的独立适配器类（保留 3 个版本后移除）
-    // @deprecated 计划在 v2.0.5 移除，再迁移到 PresetAdapter
-    if (config.cursor?.enabled && !this.adapters.has('cursor')) {
-      const adapter = new CursorAdapter(true);
-      const enableUserRules = config.cursor.enableUserRules ?? true;
-      const sortBy = (config.cursor.sortBy as 'id' | 'priority' | 'none') || 'priority';
-      const sortOrder = (config.cursor.sortOrder as 'asc' | 'desc') || 'desc';
-      adapter.setEnableUserRules(enableUserRules);
-      adapter.setSortConfig(sortBy, sortOrder);
-      this.adapters.set('cursor', adapter);
-      Logger.warn('Using legacy CursorAdapter, please update to PresetAdapter');
-    }
-    if (config.copilot?.enabled && !this.adapters.has('copilot')) {
-      const adapter = new CopilotAdapter(true);
-      const enableUserRules = config.copilot.enableUserRules ?? true;
-      const sortBy = (config.copilot.sortBy as 'id' | 'priority' | 'none') || 'priority';
-      const sortOrder = (config.copilot.sortOrder as 'asc' | 'desc') || 'desc';
-      adapter.setEnableUserRules(enableUserRules);
-      adapter.setSortConfig(sortBy, sortOrder);
-      this.adapters.set('copilot', adapter);
-      Logger.warn('Using legacy CopilotAdapter, please update to PresetAdapter');
-    }
-    if (config.continue?.enabled && !this.adapters.has('continue')) {
-      const adapter = new ContinueAdapter(true);
-      const enableUserRules = config.continue.enableUserRules ?? true;
-      const sortBy = (config.continue.sortBy as 'id' | 'priority' | 'none') || 'priority';
-      const sortOrder = (config.continue.sortOrder as 'asc' | 'desc') || 'desc';
-      adapter.setEnableUserRules(enableUserRules);
-      adapter.setSortConfig(sortBy, sortOrder);
-      this.adapters.set('continue', adapter);
-      Logger.warn('Using legacy ContinueAdapter, please update to PresetAdapter');
-    }
-
     // 注册自定义适配器
     if (config.custom && Array.isArray(config.custom)) {
       for (const customConfig of config.custom) {
         if (customConfig.enabled) {
           const adapter = new CustomAdapter(customConfig);
+
+          // 设置用户规则启用状态（已在构造函数中根据isRuleType设置默认值）
+          // 如果配置中明确指定enableUserRules，以配置为准
+          if (customConfig.enableUserRules !== undefined) {
+            adapter.setEnableUserRules(customConfig.enableUserRules);
+          }
+
+          // 设置排序配置
+          const sortBy = (customConfig.sortBy as 'id' | 'priority' | 'none') || 'priority';
+          const sortOrder = (customConfig.sortOrder as 'asc' | 'desc') || 'asc';
+          adapter.setSortConfig(sortBy, sortOrder);
+
           this.adapters.set(`custom-${customConfig.id}`, adapter);
           Logger.debug(
-            `Registered custom adapter: ${customConfig.id}`,
+            `Registered custom adapter: ${customConfig.id}, isRuleType=${customConfig.isRuleType ?? true}, enableUserRules=${customConfig.enableUserRules ?? customConfig.isRuleType ?? true}`,
             customConfig as unknown as Record<string, unknown>,
           );
         }
@@ -199,25 +145,22 @@ export class FileGenerator {
     allRules?: ParsedRule[],
     workspaceUri?: vscode.Uri,
   ): Promise<GenerateResult> {
-    // 重新加载当前工作区的保护配置
-    this.protectionConfig = this.loadProtectionConfig(workspaceUri);
-
     // 计算用户规则数量（用于调试）
     const userRulesCount = (allRules || []).filter((r) => r.sourceId === 'user-rules').length;
 
-    console.log('=== FileGenerator.generateAll called ===');
-    console.log('Rules count:', rules.length);
-    console.log('User Rules count:', userRulesCount);
-    console.log('Adapters count:', this.adapters.size);
-    console.log('Protection enabled:', this.protectionConfig.enabled);
-    console.log('Workspace root:', workspaceRoot);
+    if (process.env.TEST_DEBUG === 'true') {
+      console.log('=== FileGenerator.generateAll called ===');
+      console.log('Rules count:', rules.length);
+      console.log('User Rules count:', userRulesCount);
+      console.log('Adapters count:', this.adapters.size);
+      console.log('Workspace root:', workspaceRoot);
+    }
     Logger.debug('Generating all config files', {
       ruleCount: rules.length,
       userRulesCount,
       adapterCount: this.adapters.size,
       conflictStrategy: strategy,
       targetAdapters: targetAdapters || 'all',
-      protectionEnabled: this.protectionConfig.enabled,
       workspaceUri: workspaceUri?.toString(),
     });
     const result: GenerateResult = {
@@ -329,9 +272,9 @@ export class FileGenerator {
       throw new GenerateError(`Generated content for ${adapter.name} is invalid`, 'TAI-4002');
     }
 
-    // 写入文件（传递 adapter 用于判断输出类型）
+    // 写入文件（传递 adapter 和 rules 用于判断输出类型和清理旧文件）
     const fullPath = path.join(workspaceRoot, config.filePath);
-    await this.writeConfigFile(fullPath, config.content, adapter);
+    await this.writeConfigFile(fullPath, config.content, adapter, rules);
 
     return config;
   }
@@ -341,30 +284,21 @@ export class FileGenerator {
    * @param filePath 文件路径
    * @param content 文件内容
    * @param adapter 适配器实例（用于判断输出类型）
+   * @param rules 当前规则列表（用于目录模式下的清理）
    */
   private async writeConfigFile(
     filePath: string,
     content: string,
     adapter?: AIToolAdapter,
+    rules?: ParsedRule[],
   ): Promise<void> {
     try {
       // 确保目录存在
       const dir = path.dirname(filePath);
       await ensureDir(dir);
 
-      // 如果没有启用保护，直接写入
-      if (!this.protectionConfig.enabled) {
-        await safeWriteFile(filePath, content);
-        Logger.debug('Config file written (protection disabled)', {
-          filePath,
-          protectionEnabled: this.protectionConfig.enabled,
-        });
-        return;
-      }
-
-      Logger.debug('Config file will be written with protection', {
+      Logger.debug('Config file will be written', {
         filePath,
-        protectionEnabled: this.protectionConfig.enabled,
         hasAdapter: !!adapter,
       });
 
@@ -378,14 +312,15 @@ export class FileGenerator {
       });
 
       if (isDirectoryMode) {
-        // 目录模式：检查文件前缀
+        // 目录模式：清理旧文件，然后写入新文件
+        await this.cleanObsoleteDirectoryFiles(dir, adapter, rules || []);
         await this.writeDirectoryModeFile(dir, filePath, content);
       } else {
-        // 单文件模式：合并块内容
+        // 单文件模式：使用规则源标记
         await this.writeSingleFileMode(filePath, content);
       }
 
-      Logger.debug('Config file written (with protection)', { filePath, isDirectoryMode });
+      Logger.debug('Config file written', { filePath, isDirectoryMode });
     } catch (error) {
       throw new SystemError(
         `Failed to write config file: ${filePath}`,
@@ -410,6 +345,110 @@ export class FileGenerator {
   }
 
   /**
+   * 清理目录中不在当前规则列表中的旧文件
+   * @param dir 目录路径
+   * @param adapter 适配器实例
+   * @param rules 当前规则列表
+   */
+  private async cleanObsoleteDirectoryFiles(
+    dir: string,
+    adapter: AIToolAdapter,
+    rules: ParsedRule[],
+  ): Promise<void> {
+    // 检查目录是否存在
+    if (!fs.existsSync(dir)) {
+      Logger.debug('Directory does not exist, skip cleaning', { dir });
+      return;
+    }
+
+    // 获取期望的文件名列表
+    const expectedFileNames = await this.getExpectedFileNames(adapter, rules);
+    Logger.debug('Expected files in directory', {
+      dir,
+      expectedCount: expectedFileNames.size,
+      expectedFiles: Array.from(expectedFileNames),
+    });
+
+    // 获取扩展标记
+    const { getBlockMarkers } = await import('../utils/userRules');
+    const blockMarkers = getBlockMarkers();
+
+    // 扫描目录中的所有文件
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    let deletedCount = 0;
+
+    for (const entry of entries) {
+      // 跳过目录和索引文件
+      if (entry.isDirectory() || entry.name === 'index.md') {
+        continue;
+      }
+
+      // 如果文件不在期望列表中
+      if (!expectedFileNames.has(entry.name)) {
+        const fullPath = path.join(dir, entry.name);
+
+        try {
+          // 读取文件内容检查是否包含扩展标记
+          const fileContent = fs.readFileSync(fullPath, 'utf-8');
+          const hasManagedMarkers =
+            fileContent.includes(blockMarkers.begin) && fileContent.includes(blockMarkers.end);
+
+          if (hasManagedMarkers) {
+            // 删除由扩展管理的旧文件
+            fs.unlinkSync(fullPath);
+            deletedCount++;
+            Logger.debug('Deleted obsolete rule file', {
+              file: entry.name,
+              path: fullPath,
+            });
+          } else {
+            Logger.debug('Skipped user file (no extension markers)', {
+              file: entry.name,
+            });
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          Logger.warn('Failed to process file during cleanup', {
+            file: entry.name,
+            error: errorMessage,
+          });
+        }
+      }
+    }
+
+    if (deletedCount > 0) {
+      Logger.info(`Cleaned ${deletedCount} obsolete rule file(s) from directory`, { dir });
+    }
+  }
+
+  /**
+   * 获取适配器期望生成的文件名列表
+   * @param adapter 适配器实例
+   * @param rules 规则列表
+   * @returns 文件名集合
+   */
+  private async getExpectedFileNames(
+    adapter: AIToolAdapter,
+    rules: ParsedRule[],
+  ): Promise<Set<string>> {
+    const fileNames = new Set<string>();
+
+    // 如果是 CustomAdapter，使用其 getRuleFileName 方法
+    if ('config' in adapter && adapter.config) {
+      const { CustomAdapter } = await import('../adapters');
+      if (adapter instanceof CustomAdapter) {
+        for (const rule of rules) {
+          // 调用 getRuleFileName 获取文件名
+          const fileName = adapter.getRuleFileName(rule);
+          fileNames.add(fileName);
+        }
+      }
+    }
+
+    return fileNames;
+  }
+
+  /**
    * 目录模式写入（前缀保护）
    */
   private async writeDirectoryModeFile(
@@ -417,78 +456,68 @@ export class FileGenerator {
     filePath: string,
     content: string,
   ): Promise<void> {
-    // 目录模式下，我们不再检查单个文件，而是通过 cleanDirectoryByRules 统一处理
+    // 目录模式下，旧文件已通过 cleanObsoleteDirectoryFiles 统一清理
     // 这里直接写入文件
     await safeWriteFile(filePath, content);
   }
 
   /**
-   * 单文件模式写入（块标记保护）
+   * 单文件模式写入（使用规则源标记）
    */
   private async writeSingleFileMode(filePath: string, newContent: string): Promise<void> {
-    let existingContent = '';
-
     Logger.debug('writeSingleFileMode called', {
       filePath,
       newContentLength: newContent.length,
-      protectionEnabled: this.protectionConfig.enabled,
     });
 
-    // 读取现有文件
-    try {
-      if (fs.existsSync(filePath)) {
-        existingContent = fs.readFileSync(filePath, 'utf-8');
-      }
-    } catch (error) {
-      Logger.warn('Failed to read existing file', { filePath, error });
+    // 检查文件是否存在
+    const fileExists = fs.existsSync(filePath);
+
+    if (!fileExists) {
+      // 文件不存在，直接写入
+      await safeWriteFile(filePath, newContent);
+      Logger.debug('File does not exist, created new file', { filePath });
+      return;
     }
 
-    // 如果文件存在，提取用户内容
-    let mergedContent = newContent;
-    if (existingContent) {
-      // 检查是否已经有块标记（说明之前已被此扩展管理）
-      const markers = this.protectionConfig.blockMarkers || {
-        begin: '<!-- TURBO-AI-RULES:BEGIN -->',
-        end: '<!-- TURBO-AI-RULES:END -->',
-      };
-      const hasBlockMarkers = existingContent.includes(markers.begin);
+    // 文件存在，读取现有内容
+    const existingContent = fs.readFileSync(filePath, 'utf-8');
 
-      let userContent = '';
-      if (hasBlockMarkers) {
-        // 已有块标记：提取块外内容作为用户规则
-        const extracted = extractUserContent(existingContent, this.protectionConfig);
-        userContent = extracted.userContent;
-        Logger.debug('Extracted user content from existing file (with markers)', {
-          userContentLength: userContent.length,
-          filePath,
-        });
-      } else {
-        // 第一次使用扩展且文件已存在：将整个现有内容视为用户规则
-        userContent = existingContent;
-        Logger.info('First-time protection: treating entire existing file as user rules', {
-          existingContentLength: existingContent.length,
-          filePath,
-        });
-      }
+    // 获取顶层标记配置（blockMarkers 是全局标记，用于识别文件是否被扩展管理）
+    const { getBlockMarkers } = await import('../utils/userRules');
+    const blockMarkers = getBlockMarkers();
 
-      // 如果有用户内容，必须使用 mergeContent 添加块标记
-      // 即使 newContent 为空，也要添加块标记，表示文件已被扩展管理
-      mergedContent = mergeContent(
-        newContent || '<!-- No rules selected -->',
-        userContent,
-        this.protectionConfig,
-      );
-      Logger.debug('Merged user content with generated content', {
-        userContentLength: userContent.length,
-        newContentLength: newContent.length,
+    // 检查文件是否已包含顶层标记（说明已被扩展管理）
+    const hasManagedMarkers =
+      existingContent.includes(blockMarkers.begin) && existingContent.includes(blockMarkers.end);
+
+    if (!hasManagedMarkers) {
+      // 文件存在但没有管理标记 - 这是用户自己的文件，不能覆盖
+      const fileName = filePath.split(/[/\\]/).pop() || filePath;
+      const errorMessage = `Cannot generate: File "${fileName}" already exists and is not managed by Turbo AI Rules.\n\nPlease:\n1. Back up and remove the existing file, OR\n2. Rename it to a different name\n\nThen try generating again.`;
+
+      Logger.warn('File exists but not managed by extension', {
         filePath,
+        hasBeginMarker: existingContent.includes(blockMarkers.begin),
+        hasEndMarker: existingContent.includes(blockMarkers.end),
       });
-    } else {
-      // 首次生成，添加块标记
-      mergedContent = mergeContent(newContent, '', this.protectionConfig);
+
+      // 显示错误提示给用户
+      const vscode = await import('vscode');
+      await vscode.window
+        .showErrorMessage(errorMessage, { modal: true }, 'Open File Location')
+        .then((selection) => {
+          if (selection === 'Open File Location') {
+            vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(filePath));
+          }
+        });
+
+      throw new GenerateError(`File already exists and is not managed: ${fileName}`, 'TAI-4004');
     }
 
-    await safeWriteFile(filePath, mergedContent);
+    // 文件已被管理，正常覆盖
+    await safeWriteFile(filePath, newContent);
+    Logger.debug('File already managed by extension, overwriting completely', { filePath });
   }
 
   /**

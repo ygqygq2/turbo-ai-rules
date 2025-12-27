@@ -308,13 +308,10 @@ code 85000-my-team-rules.mdc
 
 **Naming Recommendations**:
 
-| Prefix Range  | Purpose                                             | Priority   | Example                      |
-| ------------- | --------------------------------------------------- | ---------- | ---------------------------- |
-| `00000-79999` | 🤖 Auto-generated (**will be overwritten/deleted**) | Auto rules | `00200-typescript.mdc`       |
-| `80000-84999` | ✍️ High-priority custom (can override auto rules)   | Highest    | `82000-team-overrides.mdc`   |
-| `85000-89999` | ✍️ Regular custom rules                             | High       | `85000-project-specific.mdc` |
-| `90000-94999` | ✍️ Supplementary rules                              | Medium     | `90000-code-review.mdc`      |
-| `95000-99999` | ✍️ FAQ, references                                  | Low        | `99000-faq.mdc`              |
+| Prefix Range  | Purpose                                        | Example                      |
+| ------------- | ---------------------------------------------- | ---------------------------- |
+| `00000-79999` | 🤖 Auto-generated (**will be overwritten/deleted**) | `00200-typescript.mdc`       |
+| `80000-99999` | ✍️ User-defined (safe, won't be overwritten)        | `85000-my-team-rules.mdc`    |
 
 **Example File Structure**:
 
@@ -323,8 +320,8 @@ code 85000-my-team-rules.mdc
 ├── 00001-project-overview.mdc        ← 🤖 Auto-generated
 ├── 00200-typescript.mdc              ← 🤖 Auto-generated
 ├── 00300-react.mdc                   ← 🤖 Auto-generated
-├── 82000-team-overrides.mdc          ← ✍️ You created (safe)
-├── 85000-api-conventions.mdc         ← ✍️ You created (safe)
+├── 85000-team-conventions.mdc        ← ✍️ You created (safe)
+├── 86000-api-guidelines.mdc          ← ✍️ You created (safe)
 └── 90000-code-review-checklist.mdc   ← ✍️ You created (safe)
 ```
 

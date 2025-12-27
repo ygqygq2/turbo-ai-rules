@@ -13,10 +13,19 @@ import { BaseAdapter, GeneratedConfig } from './AIToolAdapter';
 
 /**
  * 通用规则适配器
+ * @deprecated 使用 CustomAdapter 或 PresetAdapter 替代
  */
 export class RulesAdapter extends BaseAdapter {
   public readonly name: string = 'Generic Rules';
   public readonly enabled: boolean = true;
+
+  protected getOutputType(): 'file' | 'directory' {
+    return 'directory';
+  }
+
+  protected generateHeaderContent(_rules: ParsedRule[]): string {
+    return '';
+  }
 
   /**
    * 获取配置文件路径

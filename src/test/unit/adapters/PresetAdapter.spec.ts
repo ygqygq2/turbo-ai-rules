@@ -97,7 +97,8 @@ describe('PresetAdapter', () => {
       const result = await adapter.generate([]);
 
       expect(result.ruleCount).toBe(0);
-      expect(result.content).toContain('empty');
+      expect(result.content).toContain('AI Coding Rules');
+      expect(result.content).toContain('Total rules: 0');
     });
   });
 

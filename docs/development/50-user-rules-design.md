@@ -41,23 +41,52 @@
 ```json
 {
   "turbo-ai-rules.userRules": {
-    "directory": "ai-rules",
-    "markers": {
-      "begin": "<!-- TURBO-AI-RULES:BEGIN -->",
-      "end": "<!-- TURBO-AI-RULES:END -->"
-    }
+    "directory": "ai-rules"
+  },
+  "turbo-ai-rules.blockMarkers": {
+    "begin": "<!-- TURBO-AI-RULES:BEGIN -->",
+    "end": "<!-- TURBO-AI-RULES:END -->"
+  },
+  "turbo-ai-rules.userRules.markers": {
+    "begin": "<!-- USER-RULES:BEGIN -->",
+    "end": "<!-- USER-RULES:END -->"
   }
 }
 ```
 
 **字段说明**：
 - `directory`: 用户规则目录（相对于工作区根目录）
-- `markers`: 单文件模式下的内容标记
+- `blockMarkers`: 全局内容标记（外层）
   - `begin`: 扩展生成内容的开始标记
   - `end`: 扩展生成内容的结束标记
-  - 用于标识扩展自动生成的区域，便于后续更新识别
-  - **注意**：单文件（`.cursorrules` 等）完全由扩展自动生成，不鼓励手动编辑
-  - 用户自定义规则应放在 `directory` 目录中（默认 `ai-rules/`）
+  - 作用：标识扩展自动生成的全部内容区域，用于文件管理检测
+  - **如果文件存在但不包含这些标记，扩展会停止生成并警告用户手动清理**
+- `userRules.markers`: 用户规则标记（内层，嵌套在 blockMarkers 内部）
+  - `begin`: 用户规则内容的开始标记
+  - `end`: 用户规则内容的结束标记
+  - 作用：仅标识 sourceId='user-rules' 的规则内容，使用户规则易于识别
+
+**两层标记系统**：
+1. **blockMarkers**（外层）：包裹所有扩展生成的内容，用于文件管理检测
+2. **userRulesMarkers**（内层）：嵌套在 blockMarkers 内部，仅标识用户规则区域
+
+**示例结构**：
+```markdown
+<!-- TURBO-AI-RULES:BEGIN -->
+
+<!-- 远程规则 1 -->
+...
+
+<!-- USER-RULES:BEGIN -->
+<!-- 用户规则 -->
+...
+<!-- USER-RULES:END -->
+
+<!-- 远程规则 2 -->
+...
+
+<!-- TURBO-AI-RULES:END -->
+```
 
 **适配器配置**：
 

@@ -38,9 +38,10 @@ export function getUserRulesDirectory(
   if (!workspaceFolder) {
     // 尝试从 WorkspaceContextManager 获取当前工作区
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { WorkspaceContextManager } = require('../services/WorkspaceContextManager');
       workspaceFolder = WorkspaceContextManager.getInstance().getCurrentWorkspaceFolder();
-    } catch (error) {
+    } catch (_error) {
       // Fallback: 使用第一个工作区
       workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     }
@@ -51,7 +52,9 @@ export function getUserRulesDirectory(
     return null;
   }
 
-  console.log(`[getUserRulesDirectory] Using workspace:`, workspaceFolder.name);
+  if (process.env.TEST_DEBUG === 'true') {
+    console.log(`[getUserRulesDirectory] Using workspace:`, workspaceFolder.name);
+  }
 
   // 从 userRules 配置读取目录
   const config = vscode.workspace.getConfiguration('turbo-ai-rules');
@@ -85,9 +88,27 @@ export function getUserRulesDirectory(
  */
 export function getMarkers(): BlockMarkers {
   const config = vscode.workspace.getConfiguration('turbo-ai-rules');
-  const userRulesConfig = config.get<{ markers?: BlockMarkers }>('userRules', {});
+  const userRulesConfig = config.get<{ markers?: BlockMarkers }>('userRules');
+  const markers = userRulesConfig?.markers;
+
   return (
-    userRulesConfig.markers || {
+    markers || {
+      begin: '<!-- USER-RULES:BEGIN -->',
+      end: '<!-- USER-RULES:END -->',
+    }
+  );
+}
+
+/**
+ * @description 获取全局块标记配置
+ * @return default {BlockMarkers}
+ */
+export function getBlockMarkers(): BlockMarkers {
+  const config = vscode.workspace.getConfiguration('turbo-ai-rules');
+  const blockMarkers = config.get<BlockMarkers>('blockMarkers');
+
+  return (
+    blockMarkers || {
       begin: '<!-- TURBO-AI-RULES:BEGIN -->',
       end: '<!-- TURBO-AI-RULES:END -->',
     }
@@ -137,18 +158,31 @@ async function scanUserRulesDirectory(directory: string): Promise<string[]> {
  */
 export async function loadUserRules(): Promise<ParsedRule[]> {
   const directory = getUserRulesDirectory();
-  console.log(`[userRules] loadUserRules: directory =`, directory);
+  if (process.env.TEST_DEBUG === 'true') {
+    console.log(`[userRules] loadUserRules: directory =`, directory);
+  }
   if (!directory) {
-    console.log(`[userRules] No user rules directory configured`);
+    if (process.env.TEST_DEBUG === 'true') {
+      console.log(`[userRules] No user rules directory configured`);
+    }
     return [];
   }
 
-  Logger.info('Loading user rules', { directory });
+  // 获取相对路径用于日志显示
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  const relativeDir =
+    workspaceFolders && workspaceFolders[0]
+      ? path.relative(workspaceFolders[0].uri.fsPath, directory)
+      : directory;
+
+  Logger.debug('Loading user rules', { directory: relativeDir });
 
   try {
     // 扫描目录
     const filePaths = await scanUserRulesDirectory(directory);
-    console.log(`[userRules] Found`, filePaths.length, 'user rule files');
+    if (process.env.TEST_DEBUG === 'true') {
+      console.log(`[userRules] Found`, filePaths.length, 'user rule files');
+    }
     Logger.debug('Found user rule files', { count: filePaths.length });
 
     if (filePaths.length === 0) {
@@ -173,7 +207,7 @@ export async function loadUserRules(): Promise<ParsedRule[]> {
       }
     }
 
-    Logger.info('User rules loaded', { totalFiles: filePaths.length, validRules: rules.length });
+    Logger.debug('User rules loaded', { totalFiles: filePaths.length, validRules: rules.length });
 
     return rules;
   } catch (error) {

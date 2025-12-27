@@ -38,6 +38,7 @@ async function main(): Promise<void> {
       extensionTestsEnv: {
         NODE_ENV: 'test',
         VSCODE_TEST_MODE: 'true',
+        TEST_DEBUG: process.env.TEST_DEBUG || 'false',
       },
     });
   } catch (error) {

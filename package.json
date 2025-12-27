@@ -393,13 +393,32 @@
           "default": true,
           "description": "%turboAiRules.storage.autoGitignore.description%"
         },
+        "turbo-ai-rules.blockMarkers": {
+          "type": "object",
+          "default": {
+            "begin": "<!-- TURBO-AI-RULES:BEGIN -->",
+            "end": "<!-- TURBO-AI-RULES:END -->"
+          },
+          "properties": {
+            "begin": {
+              "type": "string",
+              "description": "Block marker for the beginning of auto-generated content"
+            },
+            "end": {
+              "type": "string",
+              "description": "Block marker for the end of auto-generated content"
+            }
+          },
+          "description": "Block markers to wrap all auto-generated content in config files",
+          "scope": "resource"
+        },
         "turbo-ai-rules.userRules": {
           "type": "object",
           "default": {
             "directory": "ai-rules",
             "markers": {
-              "begin": "<!-- TURBO-AI-RULES:BEGIN -->",
-              "end": "<!-- TURBO-AI-RULES:END -->"
+              "begin": "<!-- USER-RULES:BEGIN -->",
+              "end": "<!-- USER-RULES:END -->"
             }
           },
           "properties": {
@@ -411,8 +430,8 @@
             "markers": {
               "type": "object",
               "default": {
-                "begin": "<!-- TURBO-AI-RULES:BEGIN -->",
-                "end": "<!-- TURBO-AI-RULES:END -->"
+                "begin": "<!-- USER-RULES:BEGIN -->",
+                "end": "<!-- USER-RULES:END -->"
               },
               "properties": {
                 "begin": {
@@ -664,7 +683,8 @@
     "test-compile": "npm run clean && tsc -p ./ && npm run compile",
     "test": "npm run test-compile && vscode-test",
     "test-grep": "vscode-test -f",
-    "test:suite:mocha": "npm run test-compile && node out/test/runTests.js",
+    "test:suite:mocha": "cross-env TEST_DEBUG=false npm run test-compile && node out/test/runTests.js",
+    "test:suite:mocha:debug": "cross-env TEST_DEBUG=true npm run test-compile && node out/test/runTests.js",
     "test:suite:clean": "npm run clean:cache && npm run test:suite:mocha",
     "test:suite": "node out/test/runTests.js",
     "test:unit": "vitest unit --watch=false",

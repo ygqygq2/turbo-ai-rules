@@ -288,7 +288,7 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
       name: adapter.name,
       outputPath: adapter.outputPath,
       format: adapter.outputType === 'directory' ? 'directory' : 'single-file',
-      isRuleType: adapter.isRuleType ?? false, // 默认为技能类型
+      isRuleType: adapter.isRuleType ?? true, // 默认为规则类型
       enabled: adapter.enabled ?? true, // 默认启用
       fileExtensions: adapter.fileExtensions,
       organizeBySource: adapter.organizeBySource,

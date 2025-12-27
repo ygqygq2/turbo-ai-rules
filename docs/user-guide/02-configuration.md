@@ -268,9 +268,10 @@ Custom adapters are one of the core features of Turbo AI Rules,
 | `useOriginalFilename` | boolean  | ❌       | `true`     | (`directory` mode only) Use original filename. When `false`, uses `{sourceId-}ruleId.md` format |
 | `generateIndex`       | boolean  | ❌       | `true`     | (`directory` mode only) Whether to generate index file                                          |
 | `indexFileName`       | string   | ❌       | `index.md` | (`directory` mode only) Index filename                                                          |
-| `skills`              | boolean  | ❌       | `false`    | (Skills mode) Whether this is a skills adapter, files are copied directly without parsing       |
-| `sourceId`            | string   | ❌       | -          | (Skills mode) Source ID to reuse its Git repo, branch, and auth config                          |
-| `subPath`             | string   | ❌       | `/`        | (Skills mode) Skills subdirectory in repo (relative to repo root, e.g., `/skills`)              |
+| `isRuleType`          | boolean  | ❌       | `true`     | Whether this is a rule-type adapter. `true`=rule adapter (participates in rule sync), `false`=skills adapter (independent sync, user rules disabled by default) |
+| `enableUserRules`     | boolean  | ❌       | See desc   | Whether to enable user rules. Default depends on `isRuleType`: rule adapters default to `true`, skills adapters default to `false` |
+| `sourceId`            | string   | ❌       | -          | (Skills adapter, when `isRuleType=false`) Source ID to reuse its Git repo, branch, and auth config |
+| `subPath`             | string   | ❌       | `/`        | (Skills adapter, when `isRuleType=false`) Skills subdirectory in repo (relative to repo root, e.g., `/skills`) |
 
 ---
 
@@ -403,7 +404,7 @@ docs/ai-rules/
   "organizeBySource": false,
   "generateIndex": false,
   // Skills-specific configuration
-  "skills": true,
+  "isRuleType": false,
   "sourceId": "my-ai-repo",
   "subPath": "/skills"
 }

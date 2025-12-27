@@ -5,9 +5,6 @@
  */
 
 import type { ParsedRule } from '../types/rules';
-import { Logger } from '../utils/logger';
-import { generateMarkedFileContent } from '../utils/ruleMarkerGenerator';
-import type { GeneratedConfig } from './AIToolAdapter';
 import { BaseAdapter } from './AIToolAdapter';
 
 /**
@@ -166,70 +163,31 @@ export class PresetAdapter extends BaseAdapter {
   }
 
   /**
-   * 生成配置文件内容
-   * @description 生成文件内容
-   * @return default {Promise<GeneratedConfig>}
-   * @param rules {ParsedRule[]}
-   * @param _allRules {ParsedRule[]} - 所有可用规则（未使用，保持接口一致性）
+   * 获取输出类型（PresetAdapter 都是单文件模式）
    */
-  async generate(rules: ParsedRule[], _allRules?: ParsedRule[]): Promise<GeneratedConfig> {
-    Logger.info(`Generating ${this.name} configuration`, { ruleCount: rules.length });
-    console.log(`[PresetAdapter] Generating ${this.name}, enableUserRules:`, this.enableUserRules);
+  protected getOutputType(): 'file' | 'directory' {
+    return this.config.type;
+  }
 
-    // 加载用户规则
-    const userRules = await this.loadUserRules();
-    console.log(`[PresetAdapter] Loaded user rules count:`, userRules.length);
-    if (userRules.length > 0) {
-      Logger.info(`Loaded user rules for ${this.name}`, { userRuleCount: userRules.length });
-    }
+  /**
+   * 生成头部内容（文件元数据、工具信息、目录）
+   */
+  protected generateHeaderContent(rules: ParsedRule[]): string {
+    const totalCount = rules.length;
+    let header = '';
 
-    // 合并远程规则和用户规则
-    const allRules = this.mergeWithUserRules(rules, userRules);
-    const totalCount = allRules.length;
-
-    if (totalCount === 0) {
-      Logger.warn(`No rules to generate for ${this.name}`);
-      return {
-        filePath: this.getFilePath(),
-        content: this.generateEmptyConfig(),
-        generatedAt: new Date(),
-        ruleCount: 0,
-      };
-    }
-
-    // 排序已在 mergeWithUserRules 中完成
-    const sortedRules = allRules;
-
-    // 生成内容
-    let content = '';
-
-    // 添加文件头部
-    content += this.generateFileHeader(this.name, totalCount);
+    // 文件头部
+    header += this.generateFileHeader(this.name, totalCount);
 
     // 添加工具特定描述
     if (this.config.description || this.config.website) {
-      content += this.generateToolInfo();
+      header += this.generateToolInfo();
     }
 
     // 添加目录
-    content += this.generateTableOfContents(sortedRules);
+    header += this.generateTableOfContents(rules);
 
-    // 添加规则内容
-    content += this.formatRulesContent(sortedRules);
-
-    Logger.info(`${this.name} configuration generated`, {
-      remoteRuleCount: rules.length,
-      userRuleCount: userRules.length,
-      totalRuleCount: totalCount,
-      contentLength: content.length,
-    });
-
-    return {
-      filePath: this.getFilePath(),
-      content,
-      generatedAt: new Date(),
-      ruleCount: totalCount,
-    };
+    return header;
   }
 
   /**
@@ -256,22 +214,6 @@ export class PresetAdapter extends BaseAdapter {
     }
     info += '\n';
     return info;
-  }
-
-  /**
-   * 格式化规则内容
-   * @description 生成文件内容
-   * @return default {string}
-   * @param rules {ParsedRule[]}
-   */
-  private formatRulesContent(rules: ParsedRule[]): string {
-    return rules
-      .map((rule) => {
-        // 使用不含 frontmatter 的 content，避免 YAML 元数据显示为文本
-        const content = (rule.content || rule.rawContent)?.trim() || '';
-        return content;
-      })
-      .join('\n\n---\n\n');
   }
 
   /**

@@ -25,7 +25,7 @@ describe('CustomAdapter', () => {
     } as any);
   });
 
-  it('should throw if not implemented', async () => {
+  it('should generate empty config for empty rules', async () => {
     const config = {
       id: 'custom-test',
       name: 'test',
@@ -36,6 +36,10 @@ describe('CustomAdapter', () => {
       autoUpdate: false,
     };
     const adapter = new CustomAdapter(config);
-    await expect(adapter.generate([])).rejects.toThrow();
+    const result = await adapter.generate([]);
+
+    expect(result.ruleCount).toBe(0);
+    expect(result.content).toContain('test');
+    expect(result.filePath).toBe('out.txt');
   });
 });

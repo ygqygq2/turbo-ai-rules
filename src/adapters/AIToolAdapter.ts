@@ -4,6 +4,8 @@
  */
 
 import type { ParsedRule } from '../types/rules';
+import { generateMarkedFileContent } from '../utils/ruleMarkerGenerator';
+import { getBlockMarkers, getMarkers } from '../utils/userRules';
 
 /**
  * 生成的配置信息
@@ -65,7 +67,73 @@ export abstract class BaseAdapter implements AIToolAdapter {
   protected sortBy: 'id' | 'priority' | 'none' = 'priority';
   protected sortOrder: 'asc' | 'desc' = 'asc';
 
-  abstract generate(rules: ParsedRule[], allRules?: ParsedRule[]): Promise<GeneratedConfig>;
+  /**
+   * 统一的生成方法（模板方法模式）
+   * 子类一般不需要重写，除非有特殊逻辑
+   */
+  async generate(rules: ParsedRule[], _allRules?: ParsedRule[]): Promise<GeneratedConfig> {
+    // 1. 加载用户规则（作为 sourceId = 'user-rules' 的规则源）
+    const userRules = await this.loadUserRules();
+
+    // 2. 合并规则（去重、排序）
+    const allRules = this.mergeWithUserRules(rules, userRules);
+
+    // 3. 根据输出类型生成
+    const outputType = this.getOutputType();
+    if (outputType === 'file') {
+      return this.generateSingleFile(allRules);
+    } else {
+      return this.generateDirectory(allRules);
+    }
+  }
+
+  /**
+   * 单文件模式生成（使用规则源标记）
+   * 子类一般不需要重写
+   */
+  protected generateSingleFile(rules: ParsedRule[]): GeneratedConfig {
+    const headerContent = this.generateHeaderContent(rules);
+
+    // 读取配置
+    const userRulesMarkers = getMarkers();
+    const blockMarkers = getBlockMarkers();
+
+    const content = generateMarkedFileContent(rules, headerContent, {
+      includeSourceMarkers: true,
+      includeRuleMarkers: true,
+      includePriority: true,
+      blockMarkers,
+      userRulesMarkers,
+    });
+
+    return {
+      filePath: this.getFilePath(),
+      content,
+      generatedAt: new Date(),
+      ruleCount: rules.length,
+    };
+  }
+
+  /**
+   * 目录模式生成
+   * 子类需要实现（如 CustomAdapter）
+   */
+  protected generateDirectory(_rules: ParsedRule[]): Promise<GeneratedConfig> {
+    throw new Error('Directory mode not implemented. Subclass should override this method.');
+  }
+
+  /**
+   * 获取输出类型
+   * 子类需要实现
+   */
+  protected abstract getOutputType(): 'file' | 'directory';
+
+  /**
+   * 生成头部内容（文件元数据、标题、说明、目录等）
+   * 子类需要实现
+   */
+  protected abstract generateHeaderContent(rules: ParsedRule[]): string;
+
   abstract getFilePath(): string;
 
   /**
@@ -88,15 +156,21 @@ export abstract class BaseAdapter implements AIToolAdapter {
    * @return default {Promise<ParsedRule[]>}
    */
   protected async loadUserRules(): Promise<ParsedRule[]> {
-    console.log(`[BaseAdapter] loadUserRules called, enableUserRules:`, this.enableUserRules);
+    if (process.env.TEST_DEBUG === 'true') {
+      console.log(`[BaseAdapter] loadUserRules called, enableUserRules:`, this.enableUserRules);
+    }
     if (!this.enableUserRules) {
-      console.log(`[BaseAdapter] User rules disabled, returning empty array`);
+      if (process.env.TEST_DEBUG === 'true') {
+        console.log(`[BaseAdapter] User rules disabled, returning empty array`);
+      }
       return [];
     }
 
     const { loadUserRules } = await import('../utils/userRules');
     const rules = await loadUserRules();
-    console.log(`[BaseAdapter] loadUserRules returned`, rules.length, 'rules');
+    if (process.env.TEST_DEBUG === 'true') {
+      console.log(`[BaseAdapter] loadUserRules returned`, rules.length, 'rules');
+    }
     return rules;
   }
 
