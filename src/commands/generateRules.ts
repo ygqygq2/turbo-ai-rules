@@ -1,5 +1,5 @@
 /**
- * 生成配置文件命令
+ * 生成规则文件命令
  */
 
 import * as vscode from 'vscode';
@@ -17,10 +17,10 @@ import { ProgressManager } from '../utils/progressManager';
 import { toRelativePath } from '../utils/rulePath';
 
 /**
- * 生成配置文件命令处理器
+ * 生成规则文件命令处理器
  */
-export async function generateConfigsCommand(): Promise<void> {
-  Logger.info('Executing generateConfigs command');
+export async function generateRulesCommand(): Promise<void> {
+  Logger.info('Executing generateRules command');
 
   try {
     const configManager = ConfigManager.getInstance();
@@ -66,7 +66,7 @@ export async function generateConfigsCommand(): Promise<void> {
       const relativeFilePath = toRelativePath(rule.filePath, rule.sourceId);
       const isSelected = selectedPaths.length > 0 && selectedPaths.includes(relativeFilePath);
 
-      Logger.debug('[generateConfigs] Rule selection check', {
+      Logger.debug('[generateRules] Rule selection check', {
         ruleId: rule.id,
         sourceId: rule.sourceId,
         ruleFilePath: rule.filePath,

@@ -65,11 +65,23 @@ export interface StorageConfig {
 }
 
 /**
+ * 块标记配置
+ */
+export interface BlockMarkers {
+  /** 开始标记 */
+  begin: string;
+  /** 结束标记 */
+  end: string;
+}
+
+/**
  * 用户规则配置（顶层配置）
  */
 export interface UserRulesConfig {
   /** 用户规则目录（相对于工作区根目录） */
   directory: string;
+  /** 单文件模式的内容标记（用于保护用户内容） */
+  markers: BlockMarkers;
 }
 
 /**
@@ -228,6 +240,10 @@ export const DEFAULT_CONFIG: ExtensionConfig = {
   },
   userRules: {
     directory: 'ai-rules',
+    markers: {
+      begin: '<!-- TURBO-AI-RULES:BEGIN -->',
+      end: '<!-- TURBO-AI-RULES:END -->',
+    },
   },
   adapters: {
     cursor: {

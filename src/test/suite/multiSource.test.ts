@@ -140,7 +140,7 @@ describe('Multi-Source Integration Tests', () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // 重新生成配置文件
-      await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+      await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
 
       // 等待文件系统写入
       await new Promise((resolve) => setTimeout(resolve, 2000));

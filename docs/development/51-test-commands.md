@@ -122,7 +122,7 @@ src/test/
 │   └── validator.test.ts
 ├── suite/             # 集成测试（Mocha）
 │   ├── syncRules.test.ts
-│   ├── generateConfigs.test.ts
+│   ├── generateRules.test.ts
 │   └── multiSource.test.ts
 ├── runTests.ts        # 测试入口
 └── ready.ts           # 测试环境准备

@@ -291,7 +291,7 @@ Detailed configuration → [Configuration Guide - Custom Adapters](#4-custom-ada
 - 🔒 **Automatic Protection**: Sync automatically skips files with `80000-99999` prefix, no additional configuration needed
 
 > 💡 **Note**: The `80000-99999` prefix is **not mandatory**, it's just a **recommended naming convention** to avoid conflicts with auto-generated files.
-> If `protectUserRules` configuration is enabled (disabled by default), the extension will more intelligently detect user files.
+> If adapter's `enableUserRules` configuration is enabled (default: true), the extension will more intelligently detect user files.
 
 **Steps**:
 
@@ -370,13 +370,18 @@ Our team uses snake_case for database field-related variables...
 
 Single file configuration uses **block markers** to separate auto-generated and user-defined areas.
 
-> ⚠️ **Important**: Block markers are only generated when `protectUserRules` is enabled!
+> ⚠️ **Important**: Block markers are only generated when adapter's `enableUserRules` is enabled (default: true)!
 
-**Enable Block Marker Protection**:
+**Configure Block Markers**:
 
 ```json
 {
-  "turbo-ai-rules.protectUserRules": true
+  "turbo-ai-rules.userRules": {
+    "markers": {
+      "begin": "<!-- TURBO-AI-RULES:BEGIN -->",
+      "end": "<!-- TURBO-AI-RULES:END -->"
+    }
+  }
 }
 ```
 
@@ -467,12 +472,12 @@ const userId = getUserId(); // ❌ Incorrect
 4. ✅ Is rule content clear and specific?
 
 **Single File Mode**:
-1. ✅ Is `protectUserRules` enabled? (If no block markers, need to enable it first)
+1. ✅ Is adapter's `enableUserRules` enabled? (Default: true. If no block markers, check this setting)
 2. ✅ Is custom content **outside** the block markers?
 3. ✅ Did you use clear titles and priority declarations?
 4. ✅ Have you synced rules recently? (ensure file is up-to-date)
 
-> 💡 **Tip**: If generated single file has no `<!-- TURBO-AI-RULES:BEGIN -->` markers, `protectUserRules` is not enabled.
+> 💡 **Tip**: If generated single file has no `<!-- TURBO-AI-RULES:BEGIN -->` markers, adapter's `enableUserRules` may be disabled (check configuration).
 > Enable it and re-sync to generate markers, then you can safely add custom rules outside the markers.
 
 **General Checks**:
@@ -508,23 +513,40 @@ Then ask the AI: "Did you read the test marker？"to verify if the rules are loa
 
 ---
 
-#### Q12: What is the `protectUserRules` configuration?
+#### Q12: How does user rules protection work?
 
-**A**: This is an **advanced protection feature** (disabled by default) for intelligently detecting and protecting user-defined rule files.
+**A**: User rules protection is controlled by the `userRules` configuration and adapter-level `enableUserRules` setting.
 
-**Default Behavior (`protectUserRules: false`)**:
+**Configuration**:
 
-- ✅ Simple and direct: Only judges by filename prefix (`80000-99999` = user files)
-- ✅ Better performance: Doesn't need to read file content
-- ✅ Sufficient: Suitable for most use cases
+```json
+{
+  "turbo-ai-rules.userRules": {
+    "directory": "ai-rules",
+    "markers": {
+      "begin": "<!-- TURBO-AI-RULES:BEGIN -->",
+      "end": "<!-- TURBO-AI-RULES:END -->"
+    }
+  },
+  "turbo-ai-rules.adapters.cursor": {
+    "enabled": true,
+    "enableUserRules": true  // Enable user rules for this adapter (default: true)
+  }
+}
+```
 
-**When Enabled (`protectUserRules: true`)**:
+**When `enableUserRules: true` (default)**:
 
-- 🔍 **Smart Detection**: Reads file content to check for user-defined markers
-- 🛡️ **Double Protection**: Checks both prefix + content markers
-- 📦 **Block Marker Generation**: Single file mode (`.cursorrules`, `copilot-instructions.md`, etc.) automatically adds block markers to separate auto-generated and user-defined areas
-- ⚠️ **Conflict Alerts**: Shows warnings when potential conflicts detected
-- 🎯 **First-Time Protection**: If file exists without block markers (first time using extension), **entire existing file content is treated as user rules and preserved**
+- ✅ **Directory Rules**: Reads and merges rules from `userRules.directory` (default: `ai-rules/`)
+- 🛡️ **Content Protection**: Single file mode uses `userRules.markers` to separate auto-generated and user-defined areas
+- 🎯 **First-Time Protection**: If file exists without markers, **entire existing file content is treated as user rules and preserved**
+- 📦 **Auto Markers**: Automatically adds block markers to single files
+
+**When `enableUserRules: false`**:
+
+- ❌ Doesn't read user rules from directory
+- ❌ Doesn't protect user content
+- ⚙️ Complete overwrite mode (use with caution)
 
 **Block Marker Example** (Single File Mode):
 
@@ -551,7 +573,7 @@ When enabled, generated files will include block markers:
 
 **First-Time Usage Scenario**:
 
-If you already have a `.cursorrules` or `copilot-instructions.md` file and enable `protectUserRules: true`:
+If you already have a `.cursorrules` or `copilot-instructions.md` file and adapter's `enableUserRules` is enabled (default):
 
 1. ✅ **First generation**: Extension detects file has no block markers
 2. ✅ **Preserve existing content**: Entire existing file content is treated as user-defined rules
@@ -560,12 +582,21 @@ If you already have a `.cursorrules` or `copilot-instructions.md` file and enabl
 
 This allows you to safely add custom content outside the markers without being overwritten during sync.
 
-**How to Enable**:
+**Configuration**:
 
 ```json
 {
-  "turbo-ai-rules.sync.protectUserRules": true,
-  "turbo-ai-rules.sync.userPrefixRange": [800, 999] // Customizable range
+  "turbo-ai-rules.userRules": {
+    "directory": "ai-rules",
+    "markers": {
+      "begin": "<!-- TURBO-AI-RULES:BEGIN -->",
+      "end": "<!-- TURBO-AI-RULES:END -->"
+    }
+  },
+  "turbo-ai-rules.userPrefixRange": {
+    "min": 80000,
+    "max": 99999  // Customizable range
+  }
 }
 ```
 

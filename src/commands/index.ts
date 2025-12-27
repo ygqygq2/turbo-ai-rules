@@ -4,7 +4,7 @@
 
 export { addSourceCommand } from './addSource';
 export { debugRulesCommand } from './debugRules';
-export { generateConfigsCommand } from './generateConfigs';
+export { generateRulesCommand } from './generateRules';
 export { manageSourceCommand } from './manageSource';
 export { refreshGitCacheCommand } from './refreshGitCache';
 export { removeSourceCommand } from './removeSource';

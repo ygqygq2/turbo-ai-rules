@@ -101,7 +101,7 @@ describe('Generate Config Files Tests', () => {
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // 生成配置文件
-    await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+    await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // 验证文件存在
@@ -113,7 +113,7 @@ describe('Generate Config Files Tests', () => {
       console.log('Workspace contents:', rootFiles);
     }
 
-    assert.ok(exists, 'Adapter config file should exist after generateConfigs');
+    assert.ok(exists, 'Adapter config file should exist after generateRules');
 
     // 验证内容
     if (exists) {

@@ -12,7 +12,7 @@ export type WelcomeMessage =
   | { type: 'syncAndGenerate' }
   | { type: 'openAdvancedOptions' }
   | { type: 'syncRules' }
-  | { type: 'generateConfigs' }
+  | { type: 'generateRules' }
   | { type: 'useTemplate'; payload: { template?: string } }
   | { type: 'viewDocs' | 'openDocs' }
   | { type: 'getHelp' }
@@ -77,7 +77,7 @@ export type DashboardMessage =
   | { type: 'refresh' }
   | { type: 'addSource' }
   | { type: 'syncAll' }
-  | { type: 'generateConfigs' }
+  | { type: 'generateRules' }
   | { type: 'viewSource'; payload: { sourceId: string } }
   | { type: 'viewAdapter'; payload: { adapterId: string } }
   | { type: 'openSettings' };

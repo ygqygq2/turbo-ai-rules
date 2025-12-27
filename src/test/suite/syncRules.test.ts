@@ -173,7 +173,7 @@ describe('Sync Rules Tests', () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // 初始化选择状态后，重新生成配置文件
-    await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+    await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
 
     // 等待文件生成完成
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -267,7 +267,7 @@ describe('Sync Rules Tests', () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // 重新生成配置文件
-    await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+    await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
 
     // 等待文件生成
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -335,7 +335,7 @@ describe('Sync Rules Tests', () => {
 
     // 4. 生成配置，应该允许 0 条规则（清空规则）
     try {
-      await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+      await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
       // 等待生成完成
       await new Promise((resolve) => setTimeout(resolve, 2000));
       assert.ok(true, 'Should allow generating config with 0 rules selected');
@@ -424,7 +424,7 @@ describe('Sync Rules Tests', () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // 3. 生成配置（应该生成所有规则文件）
-    await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+    await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // 4. 验证配置目录存在并记录初始文件
@@ -470,7 +470,7 @@ describe('Sync Rules Tests', () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // 7. 再次生成配置（应该清理未选中的规则文件）
-    await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+    await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // 8. 验证：未选中的规则文件应该被删除

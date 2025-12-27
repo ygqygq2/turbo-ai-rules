@@ -21,8 +21,8 @@ document.getElementById('syncRulesBtn')?.addEventListener('click', () => {
   sendMessage('syncRules');
 });
 
-document.getElementById('generateConfigsBtn')?.addEventListener('click', () => {
-  sendMessage('generateConfigs');
+document.getElementById('generateRulesBtn')?.addEventListener('click', () => {
+  sendMessage('generateRules');
 });
 
 document.querySelectorAll('.template-card').forEach((card) => {

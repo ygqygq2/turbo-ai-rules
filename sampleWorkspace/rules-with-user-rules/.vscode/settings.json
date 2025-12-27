@@ -1,33 +1,39 @@
 {
   // 多适配器同时启用 + 用户规则保护测试场景
   "turbo-ai-rules.adapters": {
-    "cursor": { "enabled": true },
-    "copilot": { "enabled": true },
-    "continue": { "enabled": true },
-    "custom": [
-      {
-        "id": "default-rules",
-        "name": "Default Rules",
-        "enabled": true,
-        "outputType": "directory",
-        "outputPath": "rules/",
-        "fileExtension": ".md"
-      },
-      {
-        "id": "skills",
-        "name": "skills",
-        "enabled": true,
-        "isRuleType": false,
-        "sourceId": "ai-rules-7008d805",
-        "subPath": "1300-skills/",
-        "outputType": "directory",
-        "organizeBySource": false,
-        "outputPath": "skills/",
-        "fileExtension": ".md"
-      }
-    ]
+    "cursor": { "enabled": true, "enableUserRules": true },
+    "copilot": { "enabled": true, "enableUserRules": true },
+    "continue": { "enabled": true, "enableUserRules": true }
   },
-  "turbo-ai-rules.protectUserRules": true, // 关键配置：保护用户规则
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "default-rules",
+      "name": "Default Rules",
+      "enabled": true,
+      "outputType": "directory",
+      "outputPath": "rules/",
+      "fileExtension": ".md"
+    },
+    {
+      "id": "skills",
+      "name": "skills",
+      "enabled": true,
+      "isRuleType": false,
+      "sourceId": "ai-rules-7008d805",
+      "subPath": "1300-skills/",
+      "outputType": "directory",
+      "organizeBySource": false,
+      "outputPath": "skills/",
+      "fileExtension": ".md"
+    }
+  ],
+  "turbo-ai-rules.userRules": {
+    "directory": "ai-rules",
+    "markers": {
+      "begin": "<!-- TURBO-AI-RULES:BEGIN -->",
+      "end": "<!-- TURBO-AI-RULES:END -->"
+    }
+  },
   "turbo-ai-rules.sync.auto": false,
   "turbo-ai-rules.sync.onStartup": false,
 

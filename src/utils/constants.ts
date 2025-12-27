@@ -45,15 +45,13 @@ export const CONFIG_KEYS = {
   PARSER: 'parser',
   ADAPTERS: 'adapters',
   IGNORE_PATTERNS: 'ignorePatterns',
-  USER_RULES: 'userRules',
 
   /** 存储配置 */
   STORAGE_AUTO_GITIGNORE: 'storage.autoGitignore',
 
-  /** 用户规则保护 */
-  PROTECT_USER_RULES: 'protectUserRules',
+  /** 用户规则配置 */
+  USER_RULES: 'userRules',
   USER_PREFIX_RANGE: 'userPrefixRange',
-  BLOCK_MARKERS: 'blockMarkers',
 
   /** 解析器配置 */
   PARSER_STRICT_MODE: 'parser.strictMode',

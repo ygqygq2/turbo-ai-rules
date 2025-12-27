@@ -248,7 +248,7 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
           break;
 
         case 'regenerateAll':
-          await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+          await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
           break;
 
         case 'openRuleSyncPage':
@@ -273,9 +273,9 @@ export class DashboardWebviewProvider extends BaseWebviewProvider {
           await vscode.commands.executeCommand('turbo-ai-rules.showWelcome');
           break;
 
-        case 'generateConfigs':
+        case 'generateRules':
           // 生成配置文件
-          await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+          await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
           break;
 
         case 'openWelcome':

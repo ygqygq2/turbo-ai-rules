@@ -1,10 +1,12 @@
 /**
  * 预设适配器配置驱动实现
  * 通过配置定义预设适配器，避免为每个工具创建独立类
+ * 支持规则源标记，实现部分更新
  */
 
 import type { ParsedRule } from '../types/rules';
 import { Logger } from '../utils/logger';
+import { generateMarkedFileContent } from '../utils/ruleMarkerGenerator';
 import type { GeneratedConfig } from './AIToolAdapter';
 import { BaseAdapter } from './AIToolAdapter';
 
@@ -172,8 +174,20 @@ export class PresetAdapter extends BaseAdapter {
    */
   async generate(rules: ParsedRule[], _allRules?: ParsedRule[]): Promise<GeneratedConfig> {
     Logger.info(`Generating ${this.name} configuration`, { ruleCount: rules.length });
+    console.log(`[PresetAdapter] Generating ${this.name}, enableUserRules:`, this.enableUserRules);
 
-    if (rules.length === 0) {
+    // 加载用户规则
+    const userRules = await this.loadUserRules();
+    console.log(`[PresetAdapter] Loaded user rules count:`, userRules.length);
+    if (userRules.length > 0) {
+      Logger.info(`Loaded user rules for ${this.name}`, { userRuleCount: userRules.length });
+    }
+
+    // 合并远程规则和用户规则
+    const allRules = this.mergeWithUserRules(rules, userRules);
+    const totalCount = allRules.length;
+
+    if (totalCount === 0) {
       Logger.warn(`No rules to generate for ${this.name}`);
       return {
         filePath: this.getFilePath(),
@@ -183,14 +197,14 @@ export class PresetAdapter extends BaseAdapter {
       };
     }
 
-    // 使用配置的排序方式
-    const sortedRules = this.sortRules(rules, this.sortBy, this.sortOrder);
+    // 排序已在 mergeWithUserRules 中完成
+    const sortedRules = allRules;
 
     // 生成内容
     let content = '';
 
     // 添加文件头部
-    content += this.generateFileHeader(this.name, rules.length);
+    content += this.generateFileHeader(this.name, totalCount);
 
     // 添加工具特定描述
     if (this.config.description || this.config.website) {
@@ -204,7 +218,9 @@ export class PresetAdapter extends BaseAdapter {
     content += this.formatRulesContent(sortedRules);
 
     Logger.info(`${this.name} configuration generated`, {
-      ruleCount: rules.length,
+      remoteRuleCount: rules.length,
+      userRuleCount: userRules.length,
+      totalRuleCount: totalCount,
       contentLength: content.length,
     });
 
@@ -212,7 +228,7 @@ export class PresetAdapter extends BaseAdapter {
       filePath: this.getFilePath(),
       content,
       generatedAt: new Date(),
-      ruleCount: rules.length,
+      ruleCount: totalCount,
     };
   }
 

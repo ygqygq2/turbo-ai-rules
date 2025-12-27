@@ -344,7 +344,7 @@ const handleMessage = (event: MessageEvent) => {
 | `manageSources`             | 管理规则源         | `turbo-ai-rules.manageSources`    |
 | `searchRules`               | 浏览/搜索规则      | `turbo-ai-rules.searchRules`      |
 | `openRuleSyncPage`          | 打开规则同步页     | `turbo-ai-rules.openRuleSyncPage` |
-| `regenerateAll`             | 重新生成适配器配置 | `turbo-ai-rules.generateConfigs`  |
+| `regenerateAll`             | 重新生成适配器配置 | `turbo-ai-rules.generateRules`  |
 | `manageAdapters`            | 管理适配器         | `turbo-ai-rules.manageAdapters`   |
 | `openStatistics`            | 打开统计面板       | `turbo-ai-rules.showStatistics`   |
 | `openAdvancedSearch`        | 打开高级搜索       | `turbo-ai-rules.advancedSearch`   |
@@ -396,7 +396,7 @@ const handleMessage = (event: MessageEvent) => {
   "dashboard.adapters.regenerateAll": "Regenerate Adapter Configs",
   "dashboard.quickActions.title": "Quick Actions",
   "dashboard.quickActions.quickStart": "Quick Start",
-  "dashboard.quickActions.generateConfigs": "Generate Config Files",
+  "dashboard.quickActions.generateRules": "Generate Config Files",
   "dashboard.quickActions.statistics": "Statistics Panel",
   "dashboard.quickActions.advancedSearch": "Advanced Search",
   "dashboard.quickActions.ruleSyncPage": "Rule Sync Page",

@@ -19,7 +19,7 @@
    AssertionError: At least one adapter output should exist
 
 4) Generate Config Files Tests - Should generate adapter config files:
-   AssertionError: Adapter config file should exist after generateConfigs
+   AssertionError: Adapter config file should exist after generateRules
 ```
 
 ### 根本原因

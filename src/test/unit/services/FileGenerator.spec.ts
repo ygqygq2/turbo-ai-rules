@@ -12,7 +12,15 @@ vi.mock('vscode', () => ({
   workspace: {
     getConfiguration: vi.fn().mockReturnValue({
       get: vi.fn((key: string, defaultValue?: any) => {
-        if (key === 'protectUserRules') return false;
+        if (key === 'userRules') {
+          return {
+            directory: 'ai-rules',
+            markers: {
+              begin: '<!-- TURBO-AI-RULES:BEGIN -->',
+              end: '<!-- TURBO-AI-RULES:END -->',
+            },
+          };
+        }
         return defaultValue;
       }),
     }),
@@ -112,12 +120,20 @@ describe('FileGenerator', () => {
   });
 
   describe('User Rules Protection', () => {
-    it('should preserve existing content when protectUserRules is enabled and file has no markers', async () => {
-      // 模拟启用 protectUserRules
+    it('should preserve existing content when enableUserRules is true and file has no markers', async () => {
+      // 模拟 userRules 配置
       const vscode = await import('vscode');
       vi.mocked(vscode.workspace.getConfiguration).mockReturnValue({
         get: vi.fn((key: string, defaultValue?: any) => {
-          if (key === 'protectUserRules') return true;
+          if (key === 'userRules') {
+            return {
+              directory: 'ai-rules',
+              markers: {
+                begin: '<!-- TURBO-AI-RULES:BEGIN -->',
+                end: '<!-- TURBO-AI-RULES:END -->',
+              },
+            };
+          }
           if (key === 'userPrefixRange') return { min: 80000, max: 99999 };
           return defaultValue;
         }),
@@ -164,11 +180,19 @@ describe('FileGenerator', () => {
     });
 
     it('should merge user content when file already has block markers', async () => {
-      // 模拟启用 protectUserRules
+      // 模拟 userRules 配置
       const vscode = await import('vscode');
       vi.mocked(vscode.workspace.getConfiguration).mockReturnValue({
         get: vi.fn((key: string, defaultValue?: any) => {
-          if (key === 'protectUserRules') return true;
+          if (key === 'userRules') {
+            return {
+              directory: 'ai-rules',
+              markers: {
+                begin: '<!-- TURBO-AI-RULES:BEGIN -->',
+                end: '<!-- TURBO-AI-RULES:END -->',
+              },
+            };
+          }
           if (key === 'userPrefixRange') return { min: 80000, max: 99999 };
           return defaultValue;
         }),

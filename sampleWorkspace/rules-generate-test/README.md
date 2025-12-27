@@ -2,7 +2,7 @@
 
 This workspace is used for testing:
 
-1. `generateConfigs` command
+1. `generateRules` command
 2. `enableSharedSelection` feature
 
 ## Configuration

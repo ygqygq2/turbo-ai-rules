@@ -226,7 +226,7 @@ Git 规则仓库 ──→ [Turbo AI Rules] ──→ AI 工具配置文件
 ```
 1. 用户触发生成命令
    ↓
-2. generateConfigs 命令编排流程
+2. generateRules 命令编排流程
    ↓
 3. RulesManager 读取合并规则
    ↓

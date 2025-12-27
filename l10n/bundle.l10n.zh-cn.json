@@ -145,7 +145,7 @@
   "dashboard.gettingStarted.viewWelcome": "查看欢迎页和快速入门指南",
   "dashboard.noData": "暂无数据",
   "dashboard.quickActions.advancedSearch": "高级搜索",
-  "dashboard.quickActions.generateConfigs": "生成配置文件",
+  "dashboard.quickActions.generateRules": "生成配置文件",
   "dashboard.quickActions.quickStart": "快速开始",
   "dashboard.quickActions.ruleSyncPage": "规则同步页",
   "dashboard.quickActions.statistics": "统计面板",

@@ -68,7 +68,7 @@ describe('Skills Adapter Tests', () => {
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // 生成配置（包括 skills）
-    await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+    await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
 
     // 等待生成完成
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -136,7 +136,7 @@ describe('Skills Adapter Tests', () => {
 
     // 尝试生成配置
     try {
-      await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+      await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // 应该能够处理错误而不崩溃

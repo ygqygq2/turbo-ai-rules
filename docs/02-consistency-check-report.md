@@ -158,7 +158,7 @@
 | addSource       | ✅           | ✅           | ✅                    | ✅ 完整 |
 | removeSource    | ✅           | ✅           | ✅                    | ✅ 完整 |
 | syncRules       | ✅           | ✅           | ✅                    | ✅ 完整 |
-| generateConfigs | ✅           | ✅           | ✅                    | ✅ 完整 |
+| generateRules | ✅           | ✅           | ✅                    | ✅ 完整 |
 | manageSource    | ✅           | ✅           | ✅                    | ✅ 完整 |
 | advancedSearch  | ✅           | ✅           | ✅ (作为Search Rules) | ✅ 完整 |
 

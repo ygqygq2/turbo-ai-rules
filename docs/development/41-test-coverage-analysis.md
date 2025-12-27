@@ -96,7 +96,7 @@
 - ✅ 移除规则源 (removeSource)
 - ✅ 同步规则 (syncRules)
 - ✅ 搜索规则 (searchRules)
-- ✅ 生成配置文件 (generateConfigs)
+- ✅ 生成配置文件 (generateRules)
 - ✅ 批量操作 (batchOperations)
 - ✅ 上下文菜单命令 (contextMenuCommands)
 - ✅ 多源集成 (multiSource)
@@ -130,7 +130,7 @@
 
 - ❌ `addSource` - 添加规则源 (已有集成测试,缺单元测试)
 - ❌ `removeSource` - 移除规则源 (已有集成测试,缺单元测试)
-- ❌ `generateConfigs` - 生成配置 (已有集成测试,缺单元测试)
+- ❌ `generateRules` - 生成配置 (已有集成测试,缺单元测试)
 - ❌ `batchOperations` - 批量操作 (已有集成测试,缺单元测试)
 - ❌ `contextMenuCommands` - 上下文菜单 (已有集成测试,缺单元测试)
 - ❌ `manageSource` - 管理规则源
@@ -244,7 +244,7 @@
 
    - `addSource` - 输入验证、错误处理
    - `removeSource` - 源查找、删除逻辑
-   - `generateConfigs` - 适配器选择、文件生成
+   - `generateRules` - 适配器选择、文件生成
    - `batchOperations` - 批量逻辑、错误聚合
 
 2. ✅ 补充缺失命令的单元测试

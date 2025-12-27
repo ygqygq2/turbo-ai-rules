@@ -57,10 +57,18 @@ export class FileGenerator {
    */
   private loadProtectionConfig(workspaceUri?: vscode.Uri): UserRulesProtectionConfig {
     const config = vscode.workspace.getConfiguration(CONFIG_PREFIX, workspaceUri);
+    const userRulesConfig = config.get<{ markers?: { begin: string; end: string } }>(
+      CONFIG_KEYS.USER_RULES,
+      {},
+    );
     return {
-      enabled: config.get<boolean>(CONFIG_KEYS.PROTECT_USER_RULES, true),
+      enabled: true, // 始终启用保护，由适配器的 enableUserRules 控制
       userPrefixRange: config.get(CONFIG_KEYS.USER_PREFIX_RANGE, { min: 80000, max: 99999 }),
-      blockMarkers: config.get(CONFIG_KEYS.BLOCK_MARKERS),
+      blockMarkers: userRulesConfig.markers ||
+        config.get('userRules.markers') || {
+          begin: '<!-- TURBO-AI-RULES:BEGIN -->',
+          end: '<!-- TURBO-AI-RULES:END -->',
+        },
     };
   }
 
@@ -193,13 +201,19 @@ export class FileGenerator {
   ): Promise<GenerateResult> {
     // 重新加载当前工作区的保护配置
     this.protectionConfig = this.loadProtectionConfig(workspaceUri);
+
+    // 计算用户规则数量（用于调试）
+    const userRulesCount = (allRules || []).filter((r) => r.sourceId === 'user-rules').length;
+
     console.log('=== FileGenerator.generateAll called ===');
     console.log('Rules count:', rules.length);
+    console.log('User Rules count:', userRulesCount);
     console.log('Adapters count:', this.adapters.size);
     console.log('Protection enabled:', this.protectionConfig.enabled);
     console.log('Workspace root:', workspaceRoot);
     Logger.debug('Generating all config files', {
       ruleCount: rules.length,
+      userRulesCount,
       adapterCount: this.adapters.size,
       conflictStrategy: strategy,
       targetAdapters: targetAdapters || 'all',

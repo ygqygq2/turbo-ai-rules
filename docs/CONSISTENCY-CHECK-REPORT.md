@@ -74,7 +74,7 @@
 
 **package.json 注册的命令**: 23个
 
-- 包括: addSource, removeSource, syncRules, generateConfigs, manageSource, refresh, refreshGitCache, editSource, testConnection, toggleSource, selectAllRules, deselectAllRules, copyRuleContent, exportRule, ignoreRule, showWelcome, openDashboard, manageAdapters, openRuleSyncPage, showStatistics, advancedSearch, openSourceManager, selectRules, viewSourceDetail, clearWorkspaceState (debug), reloadSettings, showRuleDetail, getAllRules, debugRules
+- 包括: addSource, removeSource, syncRules, generateRules, manageSource, refresh, refreshGitCache, editSource, testConnection, toggleSource, selectAllRules, deselectAllRules, copyRuleContent, exportRule, ignoreRule, showWelcome, openDashboard, manageAdapters, openRuleSyncPage, showStatistics, advancedSearch, openSourceManager, selectRules, viewSourceDetail, clearWorkspaceState (debug), reloadSettings, showRuleDetail, getAllRules, debugRules
 
 **用户文档 (01-commands.md) 列出的核心命令**: 6个
 
@@ -201,7 +201,7 @@
 | addSource       | ✅           | ✅           | ✅                    | ✅ 完整 |
 | removeSource    | ✅           | ✅           | ✅                    | ✅ 完整 |
 | syncRules       | ✅           | ✅           | ✅                    | ✅ 完整 |
-| generateConfigs | ✅           | ✅           | ✅                    | ✅ 完整 |
+| generateRules | ✅           | ✅           | ✅                    | ✅ 完整 |
 | manageSource    | ✅           | ✅           | ✅                    | ✅ 完整 |
 | advancedSearch  | ✅           | ✅           | ✅ (作为Search Rules) | ✅ 完整 |
 

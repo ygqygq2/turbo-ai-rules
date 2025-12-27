@@ -8,6 +8,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { MdcParser } from '../parsers/MdcParser';
+import type { BlockMarkers } from '../types/config';
 import type { ParsedRule } from '../types/rules';
 import { RULE_FILE_EXTENSIONS } from './constants';
 import { Logger } from './logger';
@@ -21,20 +22,41 @@ export const USER_RULES_SOURCE_ID = 'user-rules';
  * @description 获取用户规则目录的绝对路径
  * @return default {string | null}
  * @param directory {string} 用户规则目录（相对路径，可选，默认从配置读取）
+ * @param workspaceUri {vscode.Uri} 工作区 URI（可选，默认使用 WorkspaceContextManager 的当前工作区）
  */
-export function getUserRulesDirectory(directory?: string): string | null {
-  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+export function getUserRulesDirectory(
+  directory?: string,
+  workspaceUri?: vscode.Uri,
+): string | null {
+  // 优先使用传入的 workspaceUri，否则尝试获取当前工作区
+  let workspaceFolder: vscode.WorkspaceFolder | undefined;
+
+  if (workspaceUri) {
+    workspaceFolder = vscode.workspace.getWorkspaceFolder(workspaceUri);
+  }
+
+  if (!workspaceFolder) {
+    // 尝试从 WorkspaceContextManager 获取当前工作区
+    try {
+      const { WorkspaceContextManager } = require('../services/WorkspaceContextManager');
+      workspaceFolder = WorkspaceContextManager.getInstance().getCurrentWorkspaceFolder();
+    } catch (error) {
+      // Fallback: 使用第一个工作区
+      workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    }
+  }
+
   if (!workspaceFolder) {
     Logger.warn('No workspace folder found');
     return null;
   }
 
-  // 如果没有传入目录，从配置读取（向后兼容）
-  const dir =
-    directory ||
-    vscode.workspace
-      .getConfiguration('turbo-ai-rules.userRules')
-      .get<string>('directory', 'ai-rules');
+  console.log(`[getUserRulesDirectory] Using workspace:`, workspaceFolder.name);
+
+  // 从 userRules 配置读取目录
+  const config = vscode.workspace.getConfiguration('turbo-ai-rules');
+  const userRulesConfig = config.get<{ directory?: string }>('userRules', {});
+  const dir = directory || userRulesConfig.directory || 'ai-rules';
 
   const absolutePath = path.join(workspaceFolder.uri.fsPath, dir);
 
@@ -58,12 +80,18 @@ export function getUserRulesDirectory(directory?: string): string | null {
 }
 
 /**
- * @description 检查用户规则功能是否启用
- * @return default {boolean}
+ * @description 获取用户规则的 markers 配置
+ * @return default {BlockMarkers}
  */
-export function isUserRulesEnabled(): boolean {
-  const config = vscode.workspace.getConfiguration('turbo-ai-rules.userRules');
-  return config.get<boolean>('enabled', true);
+export function getMarkers(): BlockMarkers {
+  const config = vscode.workspace.getConfiguration('turbo-ai-rules');
+  const userRulesConfig = config.get<{ markers?: BlockMarkers }>('userRules', {});
+  return (
+    userRulesConfig.markers || {
+      begin: '<!-- TURBO-AI-RULES:BEGIN -->',
+      end: '<!-- TURBO-AI-RULES:END -->',
+    }
+  );
 }
 
 /**
@@ -109,7 +137,9 @@ async function scanUserRulesDirectory(directory: string): Promise<string[]> {
  */
 export async function loadUserRules(): Promise<ParsedRule[]> {
   const directory = getUserRulesDirectory();
+  console.log(`[userRules] loadUserRules: directory =`, directory);
   if (!directory) {
+    console.log(`[userRules] No user rules directory configured`);
     return [];
   }
 
@@ -118,6 +148,7 @@ export async function loadUserRules(): Promise<ParsedRule[]> {
   try {
     // 扫描目录
     const filePaths = await scanUserRulesDirectory(directory);
+    console.log(`[userRules] Found`, filePaths.length, 'user rule files');
     Logger.debug('Found user rule files', { count: filePaths.length });
 
     if (filePaths.length === 0) {

@@ -15,7 +15,7 @@ import {
   deselectAllRulesCommand,
   editSourceCommand,
   exportRuleCommand,
-  generateConfigsCommand,
+  generateRulesCommand,
   ignoreRuleCommand,
   manageSourceCommand,
   refreshGitCacheCommand,
@@ -241,8 +241,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<{
         }
       }),
 
-      vscode.commands.registerCommand('turbo-ai-rules.generateConfigs', async () => {
-        await generateConfigsCommand();
+      vscode.commands.registerCommand('turbo-ai-rules.generateRules', async () => {
+        await generateRulesCommand();
       }),
 
       vscode.commands.registerCommand('turbo-ai-rules.manageSource', async () => {

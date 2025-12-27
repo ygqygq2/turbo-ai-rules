@@ -172,9 +172,9 @@ export class WelcomeWebviewProvider extends BaseWebviewProvider {
           await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
           break;
 
-        case 'generateConfigs':
+        case 'generateRules':
           // 直接调用命令（这是例外，因为需要访问服务层）
-          await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+          await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
           break;
 
         case 'useTemplate':

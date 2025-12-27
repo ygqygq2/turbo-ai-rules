@@ -92,7 +92,7 @@ turbo-ai-rules/
 │   │   ├── removeSource.ts       # 删除规则源
 │   │   ├── syncRules.ts          # 同步规则
 │   │   ├── searchRules.ts        # 搜索规则
-│   │   ├── generateConfigs.ts    # 生成配置文件
+│   │   ├── generateRules.ts    # 生成配置文件
 │   │   └── manageSource.ts       # 管理规则源
 │   ├── parsers/                  # 解析器
 │   │   ├── MdcParser.ts          # MDC 格式解析器

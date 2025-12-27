@@ -41,10 +41,23 @@
 ```json
 {
   "turbo-ai-rules.userRules": {
-    "directory": "ai-rules"
+    "directory": "ai-rules",
+    "markers": {
+      "begin": "<!-- TURBO-AI-RULES:BEGIN -->",
+      "end": "<!-- TURBO-AI-RULES:END -->"
+    }
   }
 }
 ```
+
+**字段说明**：
+- `directory`: 用户规则目录（相对于工作区根目录）
+- `markers`: 单文件模式下的内容标记
+  - `begin`: 扩展生成内容的开始标记
+  - `end`: 扩展生成内容的结束标记
+  - 用于标识扩展自动生成的区域，便于后续更新识别
+  - **注意**：单文件（`.cursorrules` 等）完全由扩展自动生成，不鼓励手动编辑
+  - 用户自定义规则应放在 `directory` 目录中（默认 `ai-rules/`）
 
 **适配器配置**：
 
@@ -58,6 +71,11 @@
   }
 }
 ```
+
+**字段说明**：
+- `enableUserRules`: 是否启用用户规则（默认 `true`）
+  - `true`: 合并 `userRules.directory` 中的规则，并使用 `markers` 保护用户内容
+  - `false`: 不读取用户规则，不保护用户内容
 
 ---
 
@@ -106,7 +124,8 @@
 
 **工具函数**：
 
-- `getUserRulesDirectory()` - 从顶层配置获取目录
+- `getUserRulesDirectory()` - 从顶层配置 `userRules.directory` 获取目录
+- `getMarkers()` - 从顶层配置 `userRules.markers` 获取标记
 - `loadUserRules()` - 扫描并解析规则
 - `isUserRule(rule)` - 判断是否为用户规则
 
@@ -119,7 +138,11 @@
 ```json
 {
   "turbo-ai-rules.userRules": {
-    "directory": "ai-rules"
+    "directory": "ai-rules",
+    "markers": {
+      "begin": "<!-- TURBO-AI-RULES:BEGIN -->",
+      "end": "<!-- TURBO-AI-RULES:END -->"
+    }
   },
   "turbo-ai-rules.adapters.cursor": {
     "enabled": true,

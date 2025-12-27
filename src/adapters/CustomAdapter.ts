@@ -42,10 +42,18 @@ export class CustomAdapter extends BaseAdapter {
    */
   private loadProtectionConfig(): UserRulesProtectionConfig {
     const config = vscode.workspace.getConfiguration(CONFIG_PREFIX);
+    const userRulesConfig = config.get<{ markers?: { begin: string; end: string } }>(
+      CONFIG_KEYS.USER_RULES,
+      {},
+    );
     return {
-      enabled: config.get<boolean>(CONFIG_KEYS.PROTECT_USER_RULES, true),
+      enabled: true, // 始终启用保护，由适配器的 enableUserRules 控制
       userPrefixRange: config.get(CONFIG_KEYS.USER_PREFIX_RANGE, { min: 80000, max: 99999 }),
-      blockMarkers: config.get(CONFIG_KEYS.BLOCK_MARKERS),
+      blockMarkers: userRulesConfig.markers ||
+        config.get('userRules.markers') || {
+          begin: '<!-- TURBO-AI-RULES:BEGIN -->',
+          end: '<!-- TURBO-AI-RULES:END -->',
+        },
     };
   }
 

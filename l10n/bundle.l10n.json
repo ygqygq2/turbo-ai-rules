@@ -145,7 +145,7 @@
   "dashboard.gettingStarted.viewWelcome": "View Welcome Page and Quick Start Guide",
   "dashboard.noData": "No data available",
   "dashboard.quickActions.advancedSearch": "Advanced Search",
-  "dashboard.quickActions.generateConfigs": "Generate Config Files",
+  "dashboard.quickActions.generateRules": "Generate Config Files",
   "dashboard.quickActions.quickStart": "Quick Start",
   "dashboard.quickActions.ruleSyncPage": "Rule Sync Page",
   "dashboard.quickActions.statistics": "Statistics Panel",

@@ -1,15 +1,15 @@
 /**
- * generateConfigs 命令单元测试（最小化）
- * 注意：generateConfigs 的完整功能在集成测试中验证
+ * generateRules 命令单元测试（最小化）
+ * 注意：generateRules 的完整功能在集成测试中验证
  */
 
 import { describe, expect, it } from 'vitest';
 
-import { generateConfigsCommand } from '@/commands/generateConfigs';
+import { generateRulesCommand } from '@/commands/generateRules';
 
-describe('generateConfigs 命令单元测试（最小化）', () => {
-  it('generateConfigsCommand 函数应该存在', () => {
-    expect(generateConfigsCommand).toBeDefined();
-    expect(typeof generateConfigsCommand).toBe('function');
+describe('generateRules 命令单元测试（最小化）', () => {
+  it('generateRulesCommand 函数应该存在', () => {
+    expect(generateRulesCommand).toBeDefined();
+    expect(typeof generateRulesCommand).toBe('function');
   });
 });

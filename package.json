@@ -80,8 +80,8 @@
         "icon": "$(refresh)"
       },
       {
-        "command": "turbo-ai-rules.generateConfigs",
-        "title": "%turboAiRules.generateConfigs.title%",
+        "command": "turbo-ai-rules.generateRules",
+        "title": "%turboAiRules.generateRules.title%",
         "category": "Turbo AI Rules",
         "icon": "$(file-code)"
       },
@@ -393,10 +393,42 @@
           "default": true,
           "description": "%turboAiRules.storage.autoGitignore.description%"
         },
-        "turbo-ai-rules.protectUserRules": {
-          "type": "boolean",
-          "default": true,
-          "description": "%turboAiRules.protectUserRules.description%"
+        "turbo-ai-rules.userRules": {
+          "type": "object",
+          "default": {
+            "directory": "ai-rules",
+            "markers": {
+              "begin": "<!-- TURBO-AI-RULES:BEGIN -->",
+              "end": "<!-- TURBO-AI-RULES:END -->"
+            }
+          },
+          "properties": {
+            "directory": {
+              "type": "string",
+              "default": "ai-rules",
+              "description": "%turboAiRules.userRules.directory.description%"
+            },
+            "markers": {
+              "type": "object",
+              "default": {
+                "begin": "<!-- TURBO-AI-RULES:BEGIN -->",
+                "end": "<!-- TURBO-AI-RULES:END -->"
+              },
+              "properties": {
+                "begin": {
+                  "type": "string",
+                  "description": "%turboAiRules.userRules.markers.begin.description%"
+                },
+                "end": {
+                  "type": "string",
+                  "description": "%turboAiRules.userRules.markers.end.description%"
+                }
+              },
+              "description": "%turboAiRules.userRules.markers.description%"
+            }
+          },
+          "description": "%turboAiRules.userRules.description%",
+          "scope": "resource"
         },
         "turbo-ai-rules.userPrefixRange": {
           "type": "object",
@@ -419,24 +451,6 @@
             }
           },
           "description": "%turboAiRules.userPrefixRange.description%"
-        },
-        "turbo-ai-rules.blockMarkers": {
-          "type": "object",
-          "default": {
-            "begin": "<!-- TURBO-AI-RULES:BEGIN -->",
-            "end": "<!-- TURBO-AI-RULES:END -->"
-          },
-          "properties": {
-            "begin": {
-              "type": "string",
-              "description": "%turboAiRules.blockMarkers.begin.description%"
-            },
-            "end": {
-              "type": "string",
-              "description": "%turboAiRules.blockMarkers.end.description%"
-            }
-          },
-          "description": "%turboAiRules.blockMarkers.description%"
         },
         "turbo-ai-rules.parser.strictMode": {
           "type": "boolean",
@@ -472,6 +486,11 @@
                 "type": "boolean",
                 "default": false,
                 "description": "Enable or disable this adapter"
+              },
+              "enableUserRules": {
+                "type": "boolean",
+                "default": true,
+                "description": "Enable user rules for this adapter"
               },
               "autoUpdate": {
                 "type": "boolean",
@@ -526,6 +545,11 @@
                 "type": "boolean",
                 "default": true,
                 "description": "%turboAiRules.adapters.custom.items.properties.enabled.description%"
+              },
+              "enableUserRules": {
+                "type": "boolean",
+                "default": true,
+                "description": "%turboAiRules.adapters.custom.items.properties.enableUserRules.description%"
               },
               "autoUpdate": {
                 "type": "boolean",

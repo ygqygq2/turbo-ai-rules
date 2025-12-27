@@ -92,7 +92,7 @@ export async function removeSourceCommand(sourceId?: string): Promise<void> {
     );
 
     if (shouldRegenerate) {
-      await vscode.commands.executeCommand('turbo-ai-rules.generateConfigs');
+      await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
     }
   } catch (error) {
     Logger.error('Failed to remove source', error instanceof Error ? error : undefined);
