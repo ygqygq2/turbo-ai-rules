@@ -153,42 +153,42 @@
       },
       {
         "command": "turbo-ai-rules.showWelcome",
-        "title": "Show Welcome",
+        "title": "%turboAiRules.showWelcome.title%",
         "category": "Turbo AI Rules"
       },
       {
         "command": "turbo-ai-rules.openDashboard",
-        "title": "Open Dashboard",
+        "title": "%turboAiRules.openDashboard.title%",
         "category": "Turbo AI Rules",
         "icon": "$(home)"
       },
       {
         "command": "turbo-ai-rules.manageAdapters",
-        "title": "Manage Adapters",
+        "title": "%turboAiRules.manageAdapters.title%",
         "category": "Turbo AI Rules",
         "icon": "$(settings-gear)"
       },
       {
         "command": "turbo-ai-rules.openRuleSyncPage",
-        "title": "Open Rule Sync Page",
+        "title": "%turboAiRules.openRuleSyncPage.title%",
         "category": "Turbo AI Rules",
         "icon": "$(sync)"
       },
       {
         "command": "turbo-ai-rules.showStatistics",
-        "title": "Show Statistics",
+        "title": "%turboAiRules.showStatistics.title%",
         "category": "Turbo AI Rules",
         "icon": "$(graph)"
       },
       {
         "command": "turbo-ai-rules.advancedSearch",
-        "title": "Advanced Rule Search",
+        "title": "%turboAiRules.advancedSearch.title%",
         "category": "Turbo AI Rules",
         "icon": "$(search)"
       },
       {
         "command": "turbo-ai-rules.openSourceManager",
-        "title": "Open Source Manager",
+        "title": "%turboAiRules.openSourceManager.title%",
         "category": "Turbo AI Rules",
         "icon": "$(settings-gear)"
       },
