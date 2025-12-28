@@ -26,6 +26,19 @@
       "organizeBySource": false,
       "outputPath": "skills/",
       "fileExtension": ".md"
+    },
+    {
+      "id": "single-self-adapter",
+      "name": "Single Self Adapter",
+      "enabled": true,
+      "outputPath": ".testrules",
+      "outputType": "file",
+      "fileExtensions": [],
+      "organizeBySource": true,
+      "generateIndex": true,
+      "indexFileName": "index.md",
+      "isRuleType": true,
+      "fileTemplate": "{{rules}}"
     }
   ],
   "turbo-ai-rules.userRules": {

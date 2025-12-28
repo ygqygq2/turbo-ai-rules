@@ -2,6 +2,12 @@
 
 All notable changes to the "turbo-ai-rules" extension will be documented in this file.
 
+# [2.0.4]
+
+## 🐛 修复问题
+- 自定义适配器不同步用户规则
+- 单规则文件模板未支持
+
 # [2.0.3]
 
 ## ♻️ 重构

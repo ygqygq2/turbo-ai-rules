@@ -58,5 +58,19 @@
       "enabled": false
     }
   },
-  "turbo-ai-rules.adapters.custom": []
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "trae",
+      "name": "Trae",
+      "enabled": true,
+      "outputPath": ".trae/rules/project_rules.md",
+      "outputType": "file",
+      "fileExtensions": [],
+      "organizeBySource": true,
+      "generateIndex": true,
+      "indexFileName": "index.md",
+      "isRuleType": true,
+      "fileTemplate": "{{rules}}"
+    }
+  ]
 }

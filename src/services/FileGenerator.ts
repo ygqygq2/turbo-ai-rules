@@ -203,15 +203,8 @@ export class FileGenerator {
       }
       try {
         // ✅ 所有适配器都使用传入的规则列表（用户选择的规则）
-        // 不再为 skills 适配器做特殊处理，统一使用用户选择的规则
-        const adapterRules = rules;
-
-        const config = await this.generateForAdapter(
-          adapter,
-          adapterRules,
-          workspaceRoot,
-          allRules,
-        );
+        // 自定义适配器的特殊过滤逻辑在其 generate() 方法内部处理
+        const config = await this.generateForAdapter(adapter, rules, workspaceRoot, allRules);
         result.success.push(config);
 
         Logger.debug(`Generated config for ${name}`, {
