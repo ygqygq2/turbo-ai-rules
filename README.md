@@ -33,7 +33,7 @@
 - **Statistics Dashboard** - Visual analytics with charts, metrics, and export capabilities
 - **Rule Details Panel** - Comprehensive rule inspector with metadata and content preview
 - **Advanced Search** - Multi-criteria search with history, filters, and export (JSON/CSV)
-- **Batch Operations** - Bulk enable/disable/export/delete rules
+- **Rule Selection** - Batch select rules via UI and sync to multiple adapters
 - **Tree View** - Priority icons, tooltips, context menus (edit/test/toggle/copy/export)
 - **Status Bar** - Multi-state indicator with progress feedback and quick actions
 
