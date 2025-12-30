@@ -1,12 +1,52 @@
+# IDE 和测试相关
 .vscode/**
 .vscode-test/**
+.vscode-test.mjs
+
+# 源代码（编译后使用 out/ 目录）
 src/**
+__mocks__/**
+
+# 配置文件
 .gitignore
+.npmrc
 .yarnrc
+.editorconfig
+.prettierignore
+.prettierrc.json
+.lintstagedrc
+.simple-git-hooks.json
+tsconfig.json
+vite.config.ts
+eslint.config.mjs
 vsc-extension-quickstart.md
-**/tsconfig.json
-**/.eslintrc.json
+
+# 开发文档和设计
+docs/**
+.superdesign/**
+.project-rules/**
+.trae/**
+.cursorrules
+test-cursor-priority.md
+CONTRIBUTING.md
+
+# 测试和示例
+sampleWorkspace/**
+scripts/**
+
+# 构建产物映射文件
 **/*.map
-**/*.ts
-**/.vscode-test.*
+**/.eslintrc.json
+
+# Git 和 GitHub
+.git/**
+.github/**
+
+# 依赖
 node_modules
+pnpm-lock.yaml
+pnpm-workspace.yaml
+
+# TypeScript 源文件（保留编译后的 .js）
+**/*.ts
+!out/**/*.ts
