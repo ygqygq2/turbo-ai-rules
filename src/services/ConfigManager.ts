@@ -398,18 +398,42 @@ export class ConfigManager {
 
   /**
    * 批量更新预设适配器状态（只更新 Workspace 配置）
-   * @param adapters 预设适配器配置映射 { adapterId: { enabled: boolean } }
+   * @param adapters 预设适配器配置映射 { adapterId: { enabled, autoUpdate, sortBy, sortOrder } }
    */
   public async updatePresetAdapters(
-    adapters: Record<string, { enabled?: boolean; autoUpdate?: boolean }>,
+    adapters: Record<
+      string,
+      {
+        enabled?: boolean;
+        autoUpdate?: boolean;
+        sortBy?: 'id' | 'priority' | 'none';
+        sortOrder?: 'asc' | 'desc';
+      }
+    >,
   ): Promise<void> {
     try {
       const vscodeConfig = this.getVscodeConfig();
 
-      // 读取当前的 adapters 配置对象
-      const currentAdapters = vscodeConfig.get<
-        Record<string, { enabled?: boolean; autoUpdate?: boolean }>
+      // 读取当前的 adapters 配置对象（只读，需要克隆）
+      const currentAdaptersReadonly = vscodeConfig.get<
+        Record<
+          string,
+          {
+            enabled?: boolean;
+            autoUpdate?: boolean;
+            sortBy?: 'id' | 'priority' | 'none';
+            sortOrder?: 'asc' | 'desc';
+          }
+        >
       >(CONFIG_KEYS.ADAPTERS, {});
+
+      // 深拷贝当前配置，避免直接修改只读对象
+      // 注意：不能使用 structuredClone()，因为 VS Code 配置对象包含不可克隆的特殊对象
+      const currentAdapters: Record<string, any> = {};
+      for (const [key, value] of Object.entries(currentAdaptersReadonly)) {
+        // 对每个适配器配置进行浅拷贝（配置项都是简单类型，浅拷贝足够）
+        currentAdapters[key] = { ...value };
+      }
 
       // 更新预设适配器的状态
       for (const [adapterId, config] of Object.entries(adapters)) {
@@ -422,11 +446,21 @@ export class ConfigManager {
         if (config.autoUpdate !== undefined) {
           currentAdapters[adapterId].autoUpdate = config.autoUpdate;
         }
-        Logger.debug(`Updated preset adapter: ${adapterId}`, config);
+        if (config.sortBy !== undefined) {
+          currentAdapters[adapterId].sortBy = config.sortBy;
+        }
+        if (config.sortOrder !== undefined) {
+          currentAdapters[adapterId].sortOrder = config.sortOrder;
+        }
       }
 
-      // 移除 custom 字段，避免与独立的 adapters.custom 配置冲突
-      const { custom: _custom, ...adaptersWithoutCustom } = currentAdapters;
+      // 移除 custom 字段，并过滤掉未启用的适配器（只保存启用的）
+      const adaptersWithoutCustom: Record<string, any> = {};
+      for (const [key, value] of Object.entries(currentAdapters)) {
+        if (key !== 'custom' && value.enabled === true) {
+          adaptersWithoutCustom[key] = value;
+        }
+      }
 
       // 整体更新 adapters 配置（不包含 custom 字段）
       await vscodeConfig.update(
@@ -437,6 +471,7 @@ export class ConfigManager {
 
       Logger.info('Preset adapters updated in workspace', {
         count: Object.keys(adapters).length,
+        saved: adaptersWithoutCustom,
       });
     } catch (error) {
       Logger.error('Failed to update preset adapters', error as Error);

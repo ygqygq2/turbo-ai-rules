@@ -322,9 +322,21 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
 
       // 更新预设适配器状态
       if (data.presetAdapters) {
-        const presetAdaptersConfig: Record<string, { enabled: boolean }> = {};
+        const presetAdaptersConfig: Record<
+          string,
+          {
+            enabled?: boolean;
+            autoUpdate?: boolean;
+            sortBy?: 'id' | 'priority' | 'none';
+            sortOrder?: 'asc' | 'desc';
+          }
+        > = {};
         for (const preset of data.presetAdapters) {
-          presetAdaptersConfig[preset.id] = { enabled: preset.enabled };
+          presetAdaptersConfig[preset.id] = {
+            enabled: preset.enabled,
+            sortBy: preset.sortBy,
+            sortOrder: preset.sortOrder,
+          };
         }
         await this.configManager.updatePresetAdapters(presetAdaptersConfig);
       }

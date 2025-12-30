@@ -2,6 +2,13 @@
 
 All notable changes to the "turbo-ai-rules" extension will be documented in this file.
 
+# [2.0.5]
+
+## 🐛 修复问题
+
+- **[严重] 修复适配器配置无法保存的问题** - VS Code 配置对象为只读 Proxy，直接修改会失败，改为手动克隆
+- 优化配置保存逻辑，只保存启用的适配器，避免配置文件冗余
+
 # [2.0.4]
 
 ## 🐛 修复问题
