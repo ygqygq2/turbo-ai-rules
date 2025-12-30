@@ -176,7 +176,33 @@ export async function activate(context: vscode.ExtensionContext): Promise<{
     const enabledSources = sources.filter((s) => s.enabled);
     await loadRulesFromCache(enabledSources, rulesManager);
 
-    // 3. 注册 UI 提供者
+    // 3. 监听工作区变化（切换项目时重新初始化）
+    context.subscriptions.push(
+      vscode.workspace.onDidChangeWorkspaceFolders(async (event) => {
+        Logger.info('Workspace folders changed', {
+          added: event.added.length,
+          removed: event.removed.length,
+        });
+
+        // 重新初始化工作区数据管理器
+        const newWorkspaceFolders = vscode.workspace.workspaceFolders;
+        if (newWorkspaceFolders && newWorkspaceFolders.length > 0) {
+          const newWorkspaceRoot = newWorkspaceFolders[0].uri.fsPath;
+          await workspaceDataManager.initWorkspace(newWorkspaceRoot);
+          Logger.info('WorkspaceDataManager reinitialized for new workspace', {
+            workspaceHash: workspaceDataManager.getWorkspaceHash(),
+          });
+
+          // 重新加载规则和刷新 UI
+          const sources = configManager.getSources();
+          const enabledSources = sources.filter((s) => s.enabled);
+          await loadRulesFromCache(enabledSources, rulesManager);
+          treeProvider.refresh();
+        }
+      }),
+    );
+
+    // 4. 注册 UI 提供者
     const treeProvider = new RulesTreeProvider(configManager, rulesManager, selectionStateManager);
     const treeView = vscode.window.createTreeView('turboAiRulesExplorer', {
       treeDataProvider: treeProvider,

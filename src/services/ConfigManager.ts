@@ -16,7 +16,7 @@ import type {
 } from '../types/config';
 import { DEFAULT_CONFIG } from '../types/config';
 import { ConfigError, ErrorCodes } from '../types/errors';
-import { mergeById } from '../utils/configMerge';
+import { deepClone, mergeById } from '../utils/configMerge';
 import { CONFIG_KEYS, CONFIG_PREFIX, SECRET_KEY_PREFIX } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { validateConfig } from '../utils/validator';
@@ -429,11 +429,16 @@ export class ConfigManager {
 
       // 深拷贝当前配置，避免直接修改只读对象
       // 注意：不能使用 structuredClone()，因为 VS Code 配置对象包含不可克隆的特殊对象
-      const currentAdapters: Record<string, any> = {};
-      for (const [key, value] of Object.entries(currentAdaptersReadonly)) {
-        // 对每个适配器配置进行浅拷贝（配置项都是简单类型，浅拷贝足够）
-        currentAdapters[key] = { ...value };
-      }
+      // 使用自定义的 deepClone 函数确保完整拷贝所有配置字段
+      const currentAdapters: Record<
+        string,
+        {
+          enabled?: boolean;
+          autoUpdate?: boolean;
+          sortBy?: 'id' | 'priority' | 'none';
+          sortOrder?: 'asc' | 'desc';
+        }
+      > = deepClone(currentAdaptersReadonly);
 
       // 更新预设适配器的状态
       for (const [adapterId, config] of Object.entries(adapters)) {
@@ -454,10 +459,19 @@ export class ConfigManager {
         }
       }
 
-      // 移除 custom 字段，并过滤掉未启用的适配器（只保存启用的）
-      const adaptersWithoutCustom: Record<string, any> = {};
+      // 移除 custom 字段，并过滤掉完全默认的适配器（只保存用户修改过的配置）
+      // 保留所有有配置的适配器（无论启用/禁用），避免配置文件过长同时保留用户意图
+      const adaptersWithoutCustom: Record<
+        string,
+        {
+          enabled?: boolean;
+          autoUpdate?: boolean;
+          sortBy?: 'id' | 'priority' | 'none';
+          sortOrder?: 'asc' | 'desc';
+        }
+      > = {};
       for (const [key, value] of Object.entries(currentAdapters)) {
-        if (key !== 'custom' && value.enabled === true) {
+        if (key !== 'custom' && value && Object.keys(value).length > 0) {
           adaptersWithoutCustom[key] = value;
         }
       }
@@ -471,8 +485,8 @@ export class ConfigManager {
 
       Logger.info('Preset adapters updated in workspace', {
         count: Object.keys(adapters).length,
-        saved: adaptersWithoutCustom,
       });
+      Logger.debug('Saved adapters config', { saved: adaptersWithoutCustom });
     } catch (error) {
       Logger.error('Failed to update preset adapters', error as Error);
       throw new ConfigError(

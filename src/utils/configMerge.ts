@@ -4,6 +4,29 @@
  */
 
 /**
+ * 深度克隆对象（用于克隆 VS Code 配置对象，避免修改只读 Proxy）
+ * @param obj 要克隆的对象
+ * @return {auto} 克隆后的对象
+ */
+export function deepClone<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => deepClone(item)) as T;
+  }
+
+  const cloned = {} as T;
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      cloned[key] = deepClone(obj[key]);
+    }
+  }
+  return cloned;
+}
+
+/**
  * 将多个数组按给定 key 去重合并，保持优先顺序（前面的优先级更高）
  * @param arrays 多个数组，按优先级从高到低传入
  * @param getKey 获取去重键的方法

@@ -245,4 +245,208 @@ describe('Preset Adapters Integration Tests', () => {
       await config.update('adapters', {}, vscode.ConfigurationTarget.Workspace);
     });
   });
+
+  describe('Adapter Configuration Persistence', () => {
+    afterEach(async () => {
+      // 每个测试后清理配置
+      const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+      await config.update('adapters', {}, vscode.ConfigurationTarget.Workspace);
+    });
+
+    it('Should save adapter configurations correctly (not as empty objects)', async function () {
+      this.timeout(5000);
+      const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+
+      // 设置适配器配置
+      const adapters = {
+        cursor: {
+          enabled: true,
+          autoUpdate: false,
+          sortBy: 'priority',
+          sortOrder: 'desc',
+        },
+        copilot: {
+          enabled: false,
+          autoUpdate: true,
+        },
+      };
+      await config.update('adapters', adapters, vscode.ConfigurationTarget.Workspace);
+
+      // 等待配置写入
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // 重新读取配置，验证保存正确
+      const readConfig = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+      const readAdapters = readConfig.get<Record<string, any>>('adapters', {});
+
+      // 验证配置不是空对象
+      assert.ok(
+        Object.keys(readAdapters).length > 0,
+        'Saved adapters configuration should not be empty',
+      );
+
+      // 验证每个适配器配置完整性
+      assert.strictEqual(readAdapters.cursor?.enabled, true, 'cursor.enabled should be true');
+      assert.strictEqual(
+        readAdapters.cursor?.autoUpdate,
+        false,
+        'cursor.autoUpdate should be false',
+      );
+      assert.strictEqual(
+        readAdapters.cursor?.sortBy,
+        'priority',
+        'cursor.sortBy should be priority',
+      );
+      assert.strictEqual(readAdapters.cursor?.sortOrder, 'desc', 'cursor.sortOrder should be desc');
+
+      assert.strictEqual(readAdapters.copilot?.enabled, false, 'copilot.enabled should be false');
+      assert.strictEqual(
+        readAdapters.copilot?.autoUpdate,
+        true,
+        'copilot.autoUpdate should be true',
+      );
+    });
+
+    it('Should only save user-modified adapters to reduce config file size', async function () {
+      this.timeout(5000);
+      const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+
+      // 设置多个适配器：启用的、禁用但有配置的、完全默认的
+      const adapters = {
+        cursor: { enabled: true, autoUpdate: false },
+        copilot: { enabled: true, sortBy: 'id' },
+        windsurf: { enabled: false, autoUpdate: true }, // 禁用的但有其他配置
+        cline: { enabled: false, autoUpdate: true }, // 禁用的但有其他配置
+      };
+      await config.update('adapters', adapters, vscode.ConfigurationTarget.Workspace);
+
+      // 等待配置写入
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // 重新读取配置
+      const readConfig = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+      const readAdapters = readConfig.get<Record<string, any>>('adapters', {});
+
+      // 验证所有有配置的适配器都被保存（无论启用/禁用）
+      assert.ok(readAdapters.cursor, 'cursor (enabled) should be saved');
+      assert.ok(readAdapters.copilot, 'copilot (enabled) should be saved');
+      assert.ok(readAdapters.windsurf, 'windsurf (disabled but configured) should be saved');
+      assert.ok(readAdapters.cline, 'cline (disabled but configured) should be saved');
+
+      // 验证配置完整性
+      assert.strictEqual(readAdapters.cursor?.enabled, true);
+      assert.strictEqual(readAdapters.cursor?.autoUpdate, false);
+      assert.strictEqual(readAdapters.copilot?.enabled, true);
+      assert.strictEqual(readAdapters.copilot?.sortBy, 'id');
+      assert.strictEqual(readAdapters.windsurf?.enabled, false);
+      assert.strictEqual(readAdapters.windsurf?.autoUpdate, true);
+    });
+
+    it('Should deep clone configurations to avoid corrupting shared settings.json', async function () {
+      this.timeout(5000);
+      const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+
+      // 设置嵌套配置对象
+      const adapters = {
+        cursor: {
+          enabled: true,
+          autoUpdate: false,
+          sortBy: 'priority',
+          sortOrder: 'desc',
+          // 添加嵌套对象测试深度克隆
+          nested: {
+            level1: {
+              level2: {
+                value: 'test-deep-clone',
+              },
+            },
+          },
+        },
+      };
+      await config.update('adapters', adapters, vscode.ConfigurationTarget.Workspace);
+
+      // 等待配置写入
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // 重新读取配置
+      const readConfig = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+      const readAdapters = readConfig.get<Record<string, any>>('adapters', {});
+
+      // 验证嵌套对象完整保存（深度克隆成功）
+      assert.ok(readAdapters.cursor?.nested, 'nested object should exist');
+      assert.ok(readAdapters.cursor?.nested?.level1, 'nested.level1 should exist');
+      assert.ok(readAdapters.cursor?.nested?.level1?.level2, 'nested.level1.level2 should exist');
+      assert.strictEqual(
+        readAdapters.cursor?.nested?.level1?.level2?.value,
+        'test-deep-clone',
+        'deeply nested value should be preserved',
+      );
+
+      // 验证顶层配置也完整
+      assert.strictEqual(readAdapters.cursor?.enabled, true);
+      assert.strictEqual(readAdapters.cursor?.autoUpdate, false);
+      assert.strictEqual(readAdapters.cursor?.sortBy, 'priority');
+      assert.strictEqual(readAdapters.cursor?.sortOrder, 'desc');
+    });
+
+    it('Should handle mixed enabled/disabled adapters with complex configurations', async function () {
+      this.timeout(5000);
+      const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+
+      // 复杂混合配置场景
+      const adapters = {
+        cursor: {
+          enabled: true,
+          autoUpdate: true,
+          sortBy: 'id',
+          sortOrder: 'asc',
+          metadata: { version: '1.0', tags: ['test'] },
+        },
+        copilot: {
+          enabled: true,
+          autoUpdate: false,
+        },
+        windsurf: {
+          enabled: false,
+          autoUpdate: true,
+          sortBy: 'priority',
+        },
+        cline: {
+          enabled: true,
+          sortBy: 'none',
+        },
+        'roo-cline': {
+          enabled: false, // 禁用且有配置
+        },
+      };
+      await config.update('adapters', adapters, vscode.ConfigurationTarget.Workspace);
+
+      // 等待配置写入
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // 重新读取配置
+      const readConfig = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+      const readAdapters = readConfig.get<Record<string, any>>('adapters', {});
+
+      // 验证所有有配置的适配器都被保存（无论启用/禁用）
+      const configuredAdapters = ['cursor', 'copilot', 'windsurf', 'cline', 'roo-cline'];
+      for (const adapterId of configuredAdapters) {
+        assert.ok(readAdapters[adapterId], `${adapterId} (configured) should be saved`);
+      }
+
+      // 验证启用状态正确
+      assert.strictEqual(readAdapters.cursor?.enabled, true);
+      assert.strictEqual(readAdapters.copilot?.enabled, true);
+      assert.strictEqual(readAdapters.windsurf?.enabled, false);
+      assert.strictEqual(readAdapters.cline?.enabled, true);
+      assert.strictEqual(readAdapters['roo-cline']?.enabled, false);
+
+      // 验证复杂对象（数组、嵌套对象）完整保存
+      assert.deepStrictEqual(
+        readAdapters.cursor?.metadata,
+        { version: '1.0', tags: ['test'] },
+        'Complex nested objects and arrays should be fully preserved',
+      );
+    });
+  });
 });
