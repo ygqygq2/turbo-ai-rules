@@ -111,10 +111,17 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         iconPath: EXTENSION_ICON_PATH,
       });
 
-      // ✅ 初始化消息层（仅首次创建 panel 时）
-      if (this.panel && !this.messenger) {
+      // ✅ 每次打开都重新初始化消息层（修复panel刷新后连接丢失的问题）
+      if (this.panel) {
+        // 清理旧的 messenger
+        if (this.messenger) {
+          // messenger 没有显式的清理方法，但重新创建会覆盖旧实例
+          this.messenger = undefined;
+        }
+        // 创建新的 messenger 并注册处理器
         this.messenger = createExtensionMessenger(this.panel.webview);
         this.registerMessageHandlers();
+        Logger.debug('Rule sync page messenger initialized');
       }
 
       Logger.info('Rule sync page webview opened');
@@ -338,15 +345,6 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         // 获取该源的已选规则路径（已经是相对路径）
         const selectedPaths = this.selectionStateManager.getSelection(source.id);
 
-        Logger.debug(
-          `[getRuleSyncData] Source ${source.id}: ${selectedPaths.length} selected paths`,
-          {
-            sourceId: source.id,
-            sourcePath,
-            samplePaths: selectedPaths.slice(0, 3),
-          },
-        );
-
         // ✅ 从规则构建文件树（使用源根目录路径，与左侧树和规则选择器一致）
         const fileTree = buildFileTreeFromRules(rules, sourcePath);
 
@@ -361,10 +359,6 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
             selected: selectedPaths.length,
           },
         });
-
-        Logger.debug(
-          `[getRuleSyncData] Source ${source.id}: ${selectedPaths.length}/${totalRules} selected`,
-        );
       } catch (error) {
         Logger.warn('Failed to load source for rule tree', {
           sourceId: source.id,

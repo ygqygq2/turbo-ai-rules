@@ -104,10 +104,16 @@ export class RuleSelectorWebviewProvider extends BaseWebviewProvider {
       iconPath: EXTENSION_ICON_PATH,
     });
 
-    // 初始化消息层（仅首次创建 panel 时）
-    if (this.panel && !this.messenger) {
+    // ✅ 每次打开都重新初始化消息层（修复panel刷新后连接丢失的问题）
+    if (this.panel) {
+      // 清理旧的 messenger
+      if (this.messenger) {
+        this.messenger = undefined;
+      }
+      // 创建新的 messenger 并注册处理器
       this.messenger = createExtensionMessenger(this.panel.webview);
       this.registerMessageHandlers();
+      Logger.debug('Rule selector messenger initialized');
     }
 
     // 打开后尽快发送初始数据（同时也等前端 ready 再发一遍，防止 race）
