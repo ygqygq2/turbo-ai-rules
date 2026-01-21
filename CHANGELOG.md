@@ -6,7 +6,7 @@ All notable changes to the "turbo-ai-rules" extension will be documented in this
 
 ## 🐛 修复问题
 
-- 修复规则选择器第二次打开时数据丢失的问题
+- 修复规则同步页第二次打开时数据丢失的问题
 
 # [2.0.6]
 
