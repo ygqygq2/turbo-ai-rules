@@ -68,6 +68,7 @@ export class FileGenerator {
             enableUserRules?: boolean;
             sortBy?: string;
             sortOrder?: string;
+            preserveDirectoryStructure?: boolean;
           }
         >
       )[presetConfig.id];
@@ -77,17 +78,25 @@ export class FileGenerator {
         enableUserRules: adapterConfig?.enableUserRules,
         sortBy: adapterConfig?.sortBy,
         sortOrder: adapterConfig?.sortOrder,
+        preserveDirectoryStructure: adapterConfig?.preserveDirectoryStructure,
         rawConfig: adapterConfig,
       });
       if (enabled) {
         const sortBy = (adapterConfig?.sortBy as 'id' | 'priority' | 'none') || 'priority';
         const sortOrder = (adapterConfig?.sortOrder as 'asc' | 'desc') || 'asc';
         const enableUserRules = adapterConfig?.enableUserRules ?? true;
+        const preserveDirectoryStructure = adapterConfig?.preserveDirectoryStructure ?? true;
 
         Logger.debug(
-          `Creating PresetAdapter ${presetConfig.id} with sortBy=${sortBy}, sortOrder=${sortOrder}, enableUserRules=${enableUserRules}`,
+          `Creating PresetAdapter ${presetConfig.id} with sortBy=${sortBy}, sortOrder=${sortOrder}, enableUserRules=${enableUserRules}, preserveDirectoryStructure=${preserveDirectoryStructure}`,
         );
-        const adapter = new PresetAdapter(presetConfig, true, sortBy, sortOrder);
+        const adapter = new PresetAdapter(
+          presetConfig,
+          true,
+          sortBy,
+          sortOrder,
+          preserveDirectoryStructure,
+        );
         adapter.setEnableUserRules(enableUserRules);
 
         this.adapters.set(presetConfig.id, adapter);
@@ -111,6 +120,14 @@ export class FileGenerator {
           const sortBy = (customConfig.sortBy as 'id' | 'priority' | 'none') || 'priority';
           const sortOrder = (customConfig.sortOrder as 'asc' | 'desc') || 'asc';
           adapter.setSortConfig(sortBy, sortOrder);
+
+          // 设置目录结构保持（仅目录类型，已在构造函数中设置默认值）
+          if (
+            customConfig.outputType === 'directory' &&
+            customConfig.preserveDirectoryStructure !== undefined
+          ) {
+            adapter.setPreserveDirectoryStructure(customConfig.preserveDirectoryStructure);
+          }
 
           this.adapters.set(`custom-${customConfig.id}`, adapter);
           Logger.debug(
@@ -344,73 +361,114 @@ export class FileGenerator {
       }
     }
 
-    // 获取期望的文件名列表（规则源文件 + 用户规则文件）
-    const expectedFileNames = await this.getExpectedFileNames(adapter, allRules);
-    const expectedFilesArray = Array.from(expectedFileNames);
+    // 获取期望的项目列表（文件和目录）
+    const expectedItems = await this.getExpectedItems(adapter, allRules);
+    const expectedFilesArray = Array.from(expectedItems.files);
+    const expectedDirsArray = Array.from(expectedItems.directories);
 
-    Logger.debug('Expected files in directory', {
-      expectedCount: expectedFileNames.size,
-      expectedFiles: expectedFilesArray,
+    Logger.debug('Expected items in directory', {
+      fileCount: expectedItems.files.size,
+      dirCount: expectedItems.directories.size,
+      files: expectedFilesArray,
+      directories: expectedDirsArray,
     });
 
-    // 扫描目录中的所有文件
+    // 扫描目录中的所有项目
     const entries = fs.readdirSync(dir, { withFileTypes: true });
-    let deletedCount = 0;
+    let deletedFileCount = 0;
+    let deletedDirCount = 0;
 
     for (const entry of entries) {
-      // 跳过目录和索引文件
-      if (entry.isDirectory() || entry.name === 'index.md') {
+      // 跳过索引文件
+      if (entry.name === 'index.md') {
         continue;
       }
 
-      // 如果文件不在期望列表中，直接删除
-      if (!expectedFileNames.has(entry.name)) {
-        const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        // 检查目录是否在期望列表中
+        if (!expectedItems.directories.has(entry.name)) {
+          const fullPath = path.join(dir, entry.name);
+          const { safeRemove } = await import('../utils/fileSystem');
 
-        try {
-          fs.unlinkSync(fullPath);
-          deletedCount++;
-          Logger.debug('Deleted obsolete rule file', { file: entry.name });
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          Logger.warn('Failed to delete file during cleanup', {
-            file: entry.name,
-            error: errorMessage,
-          });
+          try {
+            await safeRemove(fullPath);
+            deletedDirCount++;
+            Logger.debug('Deleted obsolete skill directory', { directory: entry.name });
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            Logger.warn('Failed to delete directory during cleanup', {
+              directory: entry.name,
+              error: errorMessage,
+            });
+          }
+        }
+      } else {
+        // 检查文件是否在期望列表中
+        if (!expectedItems.files.has(entry.name)) {
+          const fullPath = path.join(dir, entry.name);
+
+          try {
+            fs.unlinkSync(fullPath);
+            deletedFileCount++;
+            Logger.debug('Deleted obsolete rule file', { file: entry.name });
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            Logger.warn('Failed to delete file during cleanup', {
+              file: entry.name,
+              error: errorMessage,
+            });
+          }
         }
       }
     }
 
-    if (deletedCount > 0) {
-      Logger.info(`Cleaned ${deletedCount} obsolete rule file(s)`);
+    if (deletedFileCount > 0 || deletedDirCount > 0) {
+      Logger.info('Cleaned obsolete items', {
+        files: deletedFileCount,
+        directories: deletedDirCount,
+      });
     }
   }
 
   /**
-   * 获取适配器期望生成的文件名列表（规则源文件 + 用户规则文件）
+   * 获取适配器期望生成的项目列表（文件名和目录名）
    * @param adapter 适配器实例
-   * @param rules 规则列表（包含规则源规则和用户规则）
-   * @returns 文件名集合
+   * @param rules 规则列表（包括规则源规则和用户规则）
+   * @returns 包含文件名和目录名的对象
    */
-  private async getExpectedFileNames(
+  private async getExpectedItems(
     adapter: AIToolAdapter,
     rules: ParsedRule[],
-  ): Promise<Set<string>> {
-    const fileNames = new Set<string>();
+  ): Promise<{ files: Set<string>; directories: Set<string> }> {
+    const files = new Set<string>();
+    const directories = new Set<string>();
 
     // 如果是 CustomAdapter，使用其 getRuleFileName 方法
     if ('config' in adapter && adapter.config) {
       const { CustomAdapter } = await import('../adapters');
       if (adapter instanceof CustomAdapter) {
-        // 遍历所有规则（包括规则源和用户规则），生成期望的文件名
+        // 检查是否为 Skills 适配器（通过 config.isRuleType 判断）
+        const customConfig = adapter.config as { isRuleType?: boolean };
+        const isSkillsAdapter = customConfig.isRuleType === false;
+
+        // 遍历所有规则（包括规则源和用户规则），生成期望的文件名或目录名
         for (const rule of rules) {
-          const fileName = adapter.getRuleFileName(rule);
-          fileNames.add(fileName);
+          const isSkillFile = path.basename(rule.filePath).toLowerCase() === 'skill.md';
+
+          if (isSkillFile && isSkillsAdapter) {
+            // SKILL.md 文件会复制整个父目录
+            const dirName = path.basename(path.dirname(rule.filePath));
+            directories.add(dirName);
+          } else {
+            // 普通文件
+            const fileName = adapter.getRuleFileName(rule);
+            files.add(fileName);
+          }
         }
       }
     }
 
-    return fileNames;
+    return { files, directories };
   }
 
   /**

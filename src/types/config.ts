@@ -108,6 +108,11 @@ export interface AdapterConfig {
   sortBy?: RuleSortBy;
   /** 排序顺序（默认 'asc'，高优先级在文件末尾以利用 LLM 近因效应） */
   sortOrder?: SortOrder;
+  /** 是否保持规则源的目录层级结构（仅对 directory 类型有效，默认 false 为平铺）
+   * true: 保持相对于规则源 subPath 的完整目录结构
+   * false: 所有文件平铺到输出目录根
+   */
+  preserveDirectoryStructure?: boolean;
 }
 
 /**
@@ -146,6 +151,8 @@ export interface CustomAdapterConfig extends AdapterConfig {
   };
   /** 单文件模板(仅对 file 类型有效), 使用 {{rules}} 作为规则内容占位符 */
   fileTemplate?: string;
+  /** 是否为规则类型适配器，false 表示 Skills 类型适配器，默认 true */
+  isRuleType?: boolean;
   /** Skills 类型的规则源 ID（仅当 isRuleType=false 时有效） */
   sourceId?: string;
   /** Skills 类型的子目录路径（仅当 isRuleType=false 时有效） */
@@ -173,6 +180,9 @@ export interface AdaptersConfig {
   continue?: AdapterConfig;
   /** Cline (formerly Claude Dev) */
   cline?: AdapterConfig;
+
+  // 索引签名支持动态访问
+  [key: string]: AdapterConfig | CustomAdapterConfig[] | undefined;
   /** Roo-Cline (Cline fork) */
   'roo-cline'?: AdapterConfig;
 

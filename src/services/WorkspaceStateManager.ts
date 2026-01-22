@@ -48,6 +48,9 @@ interface WorkspaceState {
     sourceCount: number; // 规则源总数
     enabledSourceCount: number; // 已启用的规则源数量
     syncedSourceCount: number; // 至少同步过一次的源数量
+    syncedRulesAdapterCount: number; // 已同步的规则适配器数量
+    totalSyncedSkills: number; // 已同步的 Skills 规则总数
+    syncedSkillsAdapterCount: number; // 已同步的 Skills 适配器数量
   };
 
   /** UI 状态（< 2KB） */
@@ -62,6 +65,11 @@ interface WorkspaceState {
   cacheMetadata: {
     lruQueue: string[]; // 最近访问的规则 ID
     lastCleanup: string; // 最后清理时间
+  };
+
+  /** 适配器映射关系（< 1KB） */
+  adapterMappings: {
+    [adapterId: string]: string[]; // 适配器ID -> 目标适配器列表
   };
 
   /** 版本信息（< 1KB） */
@@ -83,6 +91,9 @@ const DEFAULT_WORKSPACE_STATE: WorkspaceState = {
     sourceCount: 0,
     enabledSourceCount: 0,
     syncedSourceCount: 0,
+    syncedRulesAdapterCount: 0,
+    totalSyncedSkills: 0,
+    syncedSkillsAdapterCount: 0,
   },
   uiState: {
     expandedNodes: [],
@@ -94,6 +105,7 @@ const DEFAULT_WORKSPACE_STATE: WorkspaceState = {
     lruQueue: [],
     lastCleanup: new Date().toISOString(),
   },
+  adapterMappings: {},
   schemaVersion: 1,
 };
 
@@ -345,6 +357,9 @@ export class WorkspaceStateManager {
     sourceCount: number;
     enabledSourceCount: number;
     syncedSourceCount: number;
+    syncedRulesAdapterCount?: number;
+    totalSyncedSkills?: number;
+    syncedSkillsAdapterCount?: number;
   }> {
     const state = await this.readState();
     return state.rulesStats;
@@ -359,6 +374,9 @@ export class WorkspaceStateManager {
     sourceCount: number;
     enabledSourceCount: number;
     syncedSourceCount: number;
+    syncedRulesAdapterCount: number;
+    totalSyncedSkills: number;
+    syncedSkillsAdapterCount: number;
   }): Promise<void> {
     const state = await this.readState();
     state.rulesStats = stats;
@@ -544,6 +562,9 @@ export class WorkspaceStateManager {
         sourceCount: 0,
         enabledSourceCount: 0,
         syncedSourceCount: 0,
+        syncedRulesAdapterCount: 0,
+        totalSyncedSkills: 0,
+        syncedSkillsAdapterCount: 0,
       },
       uiState: {
         expandedNodes: [],
@@ -555,6 +576,7 @@ export class WorkspaceStateManager {
         lruQueue: [],
         lastCleanup: new Date().toISOString(),
       },
+      adapterMappings: {},
       schemaVersion: 1,
     };
 
@@ -568,5 +590,40 @@ export class WorkspaceStateManager {
   public async getStateSize(): Promise<number> {
     const state = await this.readState();
     return this.calculateSize(state);
+  }
+
+  /**
+   * @description 获取适配器映射关系
+   * @return {Promise<{ [adapterId: string]: string[] }>}
+   */
+  public async getAdapterMappings(): Promise<{ [adapterId: string]: string[] }> {
+    const state = await this.readState();
+    return state.adapterMappings || {};
+  }
+
+  /**
+   * @description 设置适配器映射关系
+   * @return {Promise<void>}
+   * @param adapterId {适配器ID}
+   * @param targetAdapters {目标适配器列表}
+   */
+  public async setAdapterMapping(adapterId: string, targetAdapters: string[]): Promise<void> {
+    const state = await this.readState();
+    if (!state.adapterMappings) {
+      state.adapterMappings = {};
+    }
+    state.adapterMappings[adapterId] = targetAdapters;
+    await this.writeState(state);
+    Logger.debug('Adapter mapping saved', { adapterId, targetAdapters });
+  }
+
+  /**
+   * @description 获取指定适配器的映射关系
+   * @return {Promise<string[] | undefined>}
+   * @param adapterId {适配器ID}
+   */
+  public async getAdapterMapping(adapterId: string): Promise<string[] | undefined> {
+    const state = await this.readState();
+    return state.adapterMappings?.[adapterId];
   }
 }

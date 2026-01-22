@@ -235,4 +235,246 @@ describe('BaseAdapter sorting and deduplication', () => {
       expect(fileContent.endsWith('Content critical-security')).toBe(true);
     });
   });
+
+  describe('Directory generation methods', () => {
+    // 创建支持目录模式的测试适配器
+    class DirectoryTestAdapter extends BaseAdapter {
+      readonly name = 'DirectoryTest';
+      readonly enabled = true;
+      private _organizeBySource = false;
+      private _generateIndex = true;
+      private _indexFileName = 'index.md';
+      private _outputPath = '.ai/rules';
+
+      setOrganizeBySource(value: boolean): void {
+        this._organizeBySource = value;
+      }
+
+      setGenerateIndex(value: boolean): void {
+        this._generateIndex = value;
+      }
+
+      setIndexFileName(name: string): void {
+        this._indexFileName = name;
+      }
+
+      setOutputPath(path: string): void {
+        this._outputPath = path;
+      }
+
+      protected shouldOrganizeBySource(): boolean {
+        return this._organizeBySource;
+      }
+
+      protected shouldGenerateIndex(): boolean {
+        return this._generateIndex;
+      }
+
+      protected getIndexFileName(): string {
+        return this._indexFileName;
+      }
+
+      protected getDirectoryOutputPath(): string {
+        return this._outputPath;
+      }
+
+      protected getRuleFileName(rule: ParsedRule): string {
+        return `${rule.id}.md`;
+      }
+
+      protected getOutputType(): 'file' | 'directory' {
+        return 'directory';
+      }
+
+      protected getHeaderContent(_rules: ParsedRule[]): string {
+        return '';
+      }
+
+      async generate(rules: ParsedRule[]): Promise<any> {
+        return {
+          filePath: this._outputPath,
+          content: '',
+          generatedAt: new Date(),
+          ruleCount: rules.length,
+        };
+      }
+
+      getFilePath(): string {
+        return this._outputPath;
+      }
+    }
+
+    const createRule = (
+      id: string,
+      sourceId: string,
+      content: string = `Content of ${id}`,
+    ): ParsedRule => ({
+      id,
+      title: `Rule ${id}`,
+      content,
+      rawContent: `---\nid: ${id}\n---\n${content}`,
+      sourceId,
+      metadata: { priority: 'medium' as const },
+      filePath: `/source/${sourceId}/${id}.md`,
+    });
+
+    it('should generate directory index with correct metadata', async () => {
+      const adapter = new DirectoryTestAdapter();
+      const rules = [
+        createRule('rule1', 'source-a'),
+        createRule('rule2', 'source-b'),
+        createRule('rule3', 'source-a'),
+      ];
+
+      const index = await adapter['generateDirectoryIndex'](rules, false);
+
+      expect(index).toContain('# DirectoryTest');
+      expect(index).toContain('Total rules: 3');
+      expect(index).toContain('All Rules');
+      expect(index).toContain('[Rule rule1]');
+      expect(index).toContain('[Rule rule2]');
+      expect(index).toContain('[Rule rule3]');
+    });
+
+    it('should generate index organized by source when organizeBySource=true', async () => {
+      const adapter = new DirectoryTestAdapter();
+      const rules = [
+        createRule('rule1', 'source-a'),
+        createRule('rule2', 'source-b'),
+        createRule('rule3', 'source-a'),
+      ];
+
+      const index = await adapter['generateDirectoryIndex'](rules, true);
+
+      expect(index).toContain('## Source: source-a');
+      expect(index).toContain('## Source: source-b');
+      expect(index).toContain('[Rule rule1](./source-a/rule1.md)');
+      expect(index).toContain('[Rule rule2](./source-b/rule2.md)');
+      expect(index).toContain('[Rule rule3](./source-a/rule3.md)');
+    });
+
+    it('should generate flat index when organizeBySource=false', async () => {
+      const adapter = new DirectoryTestAdapter();
+      const rules = [createRule('rule1', 'source-a'), createRule('rule2', 'source-b')];
+
+      const index = await adapter['generateDirectoryIndex'](rules, false);
+
+      expect(index).toContain('## All Rules');
+      expect(index).toContain('Total rules: 2');
+      expect(index).toContain('[Rule rule1](./source-a-rule1.md)');
+      expect(index).toContain('[Rule rule2](./source-b-rule2.md)');
+      expect(index).not.toContain('Source:');
+    });
+
+    it('should use actual file paths from filesMap when generating index', async () => {
+      const adapter = new DirectoryTestAdapter();
+      const rules = [
+        createRule('1301-python-dev', 'turbo-skills'),
+        createRule('1302-typescript-dev', 'turbo-skills'),
+      ];
+
+      // 模拟实际生成的文件路径（带目录结构）
+      const filesMap = new Map<string, string>([
+        ['.skills/turbo-skills/a/b/1301-python-dev.md', 'Content of 1301-python-dev'],
+        ['.skills/turbo-skills/c/d/1302-typescript-dev.md', 'Content of 1302-typescript-dev'],
+      ]);
+
+      const index = await adapter['generateDirectoryIndex'](rules, true, filesMap);
+
+      // 应该使用 filesMap 中的实际路径
+      expect(index).toContain('[Rule 1301-python-dev](./turbo-skills/a/b/1301-python-dev.md)');
+      expect(index).toContain(
+        '[Rule 1302-typescript-dev](./turbo-skills/c/d/1302-typescript-dev.md)',
+      );
+    });
+
+    it('should fallback to default pattern when filesMap not provided', async () => {
+      const adapter = new DirectoryTestAdapter();
+      const rules = [createRule('rule1', 'source-a')];
+
+      const index = await adapter['generateDirectoryIndex'](rules, true);
+
+      // 没有 filesMap，应使用默认模式
+      expect(index).toContain('[Rule rule1](./source-a/rule1.md)');
+    });
+
+    it('should skip directory entries in filesMap', async () => {
+      const adapter = new DirectoryTestAdapter();
+      const rules = [createRule('1301-skill', 'turbo-skills')];
+
+      const filesMap = new Map<string, string>([
+        ['.skills/turbo-skills/git-workflow-expert', '[Directory: git-workflow-expert]'],
+        ['.skills/turbo-skills/git-workflow-expert/1301-skill.md', 'Content'],
+      ]);
+
+      const index = await adapter['generateDirectoryIndex'](rules, true, filesMap);
+
+      // 应该使用文件路径，不是目录路径
+      expect(index).toContain(
+        '[Rule 1301-skill](./turbo-skills/git-workflow-expert/1301-skill.md)',
+      );
+    });
+  });
+
+  describe('preserveDirectoryStructure configuration', () => {
+    class DirectoryTestAdapter extends BaseAdapter {
+      readonly name = 'DirectoryTest';
+      readonly enabled = true;
+
+      protected getOutputType(): 'file' | 'directory' {
+        return 'directory';
+      }
+
+      protected generateHeaderContent(_rules: ParsedRule[]): string {
+        return '';
+      }
+
+      protected shouldOrganizeBySource(): boolean {
+        return false;
+      }
+
+      protected shouldGenerateIndex(): boolean {
+        return false;
+      }
+
+      protected getIndexFileName(): string {
+        return 'index.md';
+      }
+
+      protected getDirectoryOutputPath(): string {
+        return '.ai/rules';
+      }
+
+      protected getRuleFileName(rule: ParsedRule): string {
+        return `${rule.id}.md`;
+      }
+
+      async generate(rules: ParsedRule[]): Promise<any> {
+        return {
+          filePath: '.ai/rules',
+          content: '',
+          generatedAt: new Date(),
+          ruleCount: rules.length,
+        };
+      }
+
+      getFilePath(): string {
+        return '.ai/rules';
+      }
+    }
+
+    it('should have default preserveDirectoryStructure=true', () => {
+      const adapter = new DirectoryTestAdapter();
+      expect(adapter['preserveDirectoryStructure']).toBe(true);
+    });
+
+    it('should allow setting preserveDirectoryStructure', () => {
+      const adapter = new DirectoryTestAdapter();
+      adapter.setPreserveDirectoryStructure(false);
+      expect(adapter['preserveDirectoryStructure']).toBe(false);
+
+      adapter.setPreserveDirectoryStructure(true);
+      expect(adapter['preserveDirectoryStructure']).toBe(true);
+    });
+  });
 });

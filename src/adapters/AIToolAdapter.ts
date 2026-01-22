@@ -3,6 +3,8 @@
  * 定义不同 AI 工具的配置生成规范
  */
 
+import * as path from 'path';
+
 import type { ParsedRule } from '../types/rules';
 import { generateMarkedFileContent } from '../utils/ruleMarkerGenerator';
 import { getBlockMarkers, getMarkers } from '../utils/userRules';
@@ -67,6 +69,9 @@ export abstract class BaseAdapter implements AIToolAdapter {
   protected sortBy: 'id' | 'priority' | 'none' = 'priority';
   protected sortOrder: 'asc' | 'desc' = 'asc';
 
+  /** 是否保持目录层级结构（仅目录模式有效，默认 true 保持目录结构） */
+  protected preserveDirectoryStructure: boolean = true;
+
   /**
    * 统一的生成方法（模板方法模式）
    * 子类一般不需要重写，除非有特殊逻辑
@@ -125,11 +130,365 @@ export abstract class BaseAdapter implements AIToolAdapter {
   }
 
   /**
-   * 目录模式生成
-   * 子类需要实现（如 CustomAdapter）
+   * 目录模式生成（基础实现）
+   * 子类可以重写以自定义行为，或直接使用此默认实现
    */
-  protected generateDirectory(_rules: ParsedRule[]): Promise<GeneratedConfig> {
-    throw new Error('Directory mode not implemented. Subclass should override this method.');
+  protected async generateDirectory(
+    rules: ParsedRule[],
+    _allRules?: ParsedRule[],
+  ): Promise<GeneratedConfig> {
+    const vscode = await import('vscode');
+    const path = await import('path');
+    const { WorkspaceContextManager } = await import('../services/WorkspaceContextManager');
+    const { safeWriteFile } = await import('../utils/fileSystem');
+
+    // 获取当前工作区
+    const currentWorkspace = WorkspaceContextManager.getInstance().getCurrentWorkspaceFolder();
+    const workspaceRoot =
+      currentWorkspace?.uri.fsPath || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!workspaceRoot) {
+      throw new Error('No workspace folder found');
+    }
+
+    const files: Map<string, string> = new Map();
+    const organizeBySource = this.shouldOrganizeBySource();
+    const outputPath = this.getDirectoryOutputPath();
+
+    if (organizeBySource) {
+      // 按源 ID 组织
+      await this.generateBySource(rules, workspaceRoot, outputPath, files);
+    } else {
+      // 平铺结构
+      await this.generateFlat(rules, workspaceRoot, outputPath, files);
+    }
+
+    // 生成索引文件
+    let indexContent = '';
+    let indexPath = '';
+    if (this.shouldGenerateIndex()) {
+      indexContent = await this.generateDirectoryIndex(rules, organizeBySource, files);
+      const indexFileName = this.getIndexFileName();
+      indexPath = path.join(outputPath, indexFileName);
+      const indexAbsolutePath = path.join(workspaceRoot, indexPath);
+      await safeWriteFile(indexAbsolutePath, indexContent);
+    }
+
+    const Logger = (await import('../utils/logger')).Logger;
+    Logger.info(`Generated directory: ${outputPath}`, {
+      fileCount: files.size,
+      ruleCount: rules.length,
+    });
+
+    return {
+      filePath: indexPath || outputPath,
+      content: indexContent,
+      generatedAt: new Date(),
+      ruleCount: rules.length,
+    };
+  }
+
+  /**
+   * 判断是否按源组织（子类可重写）
+   */
+  protected shouldOrganizeBySource(): boolean {
+    return false;
+  }
+
+  /**
+   * 判断是否生成索引文件（子类可重写）
+   */
+  protected shouldGenerateIndex(): boolean {
+    return true;
+  }
+
+  /**
+   * 获取索引文件名（子类可重写）
+   */
+  protected getIndexFileName(): string {
+    return 'index.md';
+  }
+
+  /**
+   * 获取目录输出路径（子类必须实现）
+   */
+  protected getDirectoryOutputPath(): string {
+    throw new Error('getDirectoryOutputPath must be implemented by subclass');
+  }
+
+  /**
+   * 获取规则文件名（子类可重写以自定义命名规则）
+   */
+  protected getRuleFileName(rule: ParsedRule): string {
+    return path.basename(rule.filePath);
+  }
+
+  /**
+   * 按源 ID 组织文件
+   */
+  protected async generateBySource(
+    rules: ParsedRule[],
+    workspaceRoot: string,
+    outputPath: string,
+    files: Map<string, string>,
+  ): Promise<void> {
+    // 按源 ID 分组
+    const rulesBySource = new Map<string, ParsedRule[]>();
+    for (const rule of rules) {
+      const sourceRules = rulesBySource.get(rule.sourceId) || [];
+      sourceRules.push(rule);
+      rulesBySource.set(rule.sourceId, sourceRules);
+    }
+
+    // 为每个源生成文件
+    for (const [sourceId, sourceRules] of rulesBySource) {
+      for (const rule of sourceRules) {
+        await this.writeRuleFile(rule, workspaceRoot, outputPath, sourceId, files);
+      }
+    }
+  }
+
+  /**
+   * 平铺结构(不按源组织)
+   */
+  protected async generateFlat(
+    rules: ParsedRule[],
+    workspaceRoot: string,
+    outputPath: string,
+    files: Map<string, string>,
+  ): Promise<void> {
+    for (const rule of rules) {
+      await this.writeRuleFile(rule, workspaceRoot, outputPath, undefined, files);
+    }
+  }
+
+  /**
+   * 计算规则文件相对于规则源 subPath 的相对路径
+   * 例如：filePath = /cache/source/1300-skills/a/b/c/file.md, subPath = 1300-skills/
+   * 返回：a/b/c/file.md
+   */
+  private async getRelativePathFromSubPath(
+    filePath: string,
+    sourceId: string,
+  ): Promise<string | null> {
+    try {
+      const path = await import('path');
+      const { ConfigManager } = await import('../services/ConfigManager');
+      const { GitManager } = await import('../services/GitManager');
+
+      const configManager = ConfigManager.getInstance();
+      const gitManager = GitManager.getInstance();
+
+      // 获取规则源配置
+      const config = await configManager.getConfig();
+      const source = config.sources.find((s) => s.id === sourceId);
+
+      if (!source) {
+        return null;
+      }
+
+      // 获取规则源本地路径
+      const sourcePath = gitManager.getSourcePath(sourceId);
+      const rulesBasePath = path.join(sourcePath, source.subPath || '');
+
+      // 计算相对路径
+      const relativePath = path.relative(rulesBasePath, filePath);
+
+      // 如果相对路径以 .. 开头，说明文件不在 subPath 下，返回 null
+      if (relativePath.startsWith('..')) {
+        return null;
+      }
+
+      return relativePath;
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  /**
+   * 写入规则文件
+   * 对于 SKILL.md 文件（Skills 适配器），会复制整个父目录
+   * 保持相对于规则源 subPath 的目录结构
+   */
+  protected async writeRuleFile(
+    rule: ParsedRule,
+    workspaceRoot: string,
+    outputPath: string,
+    sourceId: string | undefined,
+    files: Map<string, string>,
+  ): Promise<void> {
+    const path = await import('path');
+    const { safeWriteFile, safeCopyDir } = await import('../utils/fileSystem');
+    const Logger = (await import('../utils/logger')).Logger;
+    const { toRelativePath } = await import('../utils/pathHelper');
+
+    // 计算相对于 subPath 的路径
+    let relativeToSubPath: string | null = null;
+    if (rule.sourceId) {
+      relativeToSubPath = await this.getRelativePathFromSubPath(rule.filePath, rule.sourceId);
+    }
+
+    // 检查是否是 SKILL.md 文件（不区分大小写）
+    const isSkillFile = path.basename(rule.filePath).toLowerCase() === 'skill.md';
+    const shouldCopy = this.shouldCopySkillDirectory();
+
+    if (isSkillFile && shouldCopy && relativeToSubPath) {
+      // 复制整个父目录，保持完整的相对路径层级
+      const sourceDir = path.dirname(rule.filePath);
+      // 获取目录的相对路径（去掉文件名）
+      const dirRelativePath = path.dirname(relativeToSubPath);
+
+      const targetDir = sourceId
+        ? path.join(workspaceRoot, outputPath, sourceId, dirRelativePath)
+        : path.join(workspaceRoot, outputPath, dirRelativePath);
+
+      Logger.debug('Copying skill directory', {
+        sourceDir: toRelativePath(sourceDir),
+        targetDir: toRelativePath(targetDir),
+        relativeToSubPath: dirRelativePath,
+      });
+      await safeCopyDir(sourceDir, targetDir);
+
+      const relativePath = sourceId
+        ? path.join(outputPath, sourceId, dirRelativePath)
+        : path.join(outputPath, dirRelativePath);
+
+      files.set(relativePath, `[Directory: ${path.basename(sourceDir)}]`);
+      Logger.info(`✅ Copied skill directory: ${relativePath}`);
+    } else {
+      // 普通文件处理
+      let targetPath: string;
+
+      if (this.preserveDirectoryStructure && relativeToSubPath) {
+        // 保持相对于 subPath 的目录结构
+        targetPath = sourceId
+          ? path.join(outputPath, sourceId, relativeToSubPath)
+          : path.join(outputPath, relativeToSubPath);
+      } else {
+        // 平铺模式：使用文件名
+        const fileName = this.getRuleFileName(rule);
+        targetPath = sourceId
+          ? path.join(outputPath, sourceId, fileName)
+          : path.join(outputPath, fileName);
+      }
+
+      const absolutePath = path.join(workspaceRoot, targetPath);
+      // 使用原始内容（包含 frontmatter），保持规则文件原样
+      const content = rule.rawContent;
+
+      await safeWriteFile(absolutePath, content);
+      files.set(targetPath, content);
+      Logger.debug(`Written rule file: ${targetPath}`);
+    }
+  }
+
+  /**
+   * 是否应该复制 SKILL.md 的整个目录（子类可重写）
+   * 默认返回 false，Skills 适配器应该重写为 true
+   */
+  protected shouldCopySkillDirectory(): boolean {
+    return false;
+  }
+
+  /**
+   * 生成目录索引
+   * @param rules 规则列表
+   * @param organizeBySource 是否按源组织
+   * @param filesMap 已生成的文件路径映射（key为相对路径）
+   */
+  protected async generateDirectoryIndex(
+    rules: ParsedRule[],
+    organizeBySource: boolean,
+    filesMap?: Map<string, string>,
+  ): Promise<string> {
+    const lines: string[] = [];
+
+    lines.push(`# ${this.name}\n`);
+    lines.push(this.generateMetadata(rules.length));
+
+    if (organizeBySource) {
+      // 按源分组显示
+      const rulesBySource = new Map<string, ParsedRule[]>();
+      for (const rule of rules) {
+        const sourceRules = rulesBySource.get(rule.sourceId) || [];
+        sourceRules.push(rule);
+        rulesBySource.set(rule.sourceId, sourceRules);
+      }
+
+      for (const [sourceId, sourceRules] of rulesBySource) {
+        lines.push(`## Source: ${sourceId}\n`);
+        lines.push(`Total rules: ${sourceRules.length}\n`);
+
+        for (const rule of sourceRules) {
+          // 尝试从 filesMap 中找到实际路径
+          const actualPath = await this.findRulePathInFilesMap(rule, filesMap);
+          const linkPath = actualPath || `./${sourceId}/${rule.id}.md`;
+          lines.push(`- [${rule.title}](${linkPath})`);
+        }
+
+        lines.push('');
+      }
+    } else {
+      // 平铺列表
+      lines.push(`## All Rules\n`);
+      lines.push(`Total rules: ${rules.length}\n`);
+
+      for (const rule of rules) {
+        // 尝试从 filesMap 中找到实际路径
+        const actualPath = await this.findRulePathInFilesMap(rule, filesMap);
+        const linkPath = actualPath || `./${rule.sourceId}-${rule.id}.md`;
+        lines.push(`- [${rule.title}](${linkPath}) *(from ${rule.sourceId})*`);
+      }
+    }
+
+    return lines.join('\n');
+  }
+
+  /**
+   * 从 filesMap 中查找规则的实际路径
+   * @param rule 规则对象
+   * @param filesMap 已生成的文件映射
+   * @returns 相对于索引文件的路径，例如 ./sourceId/a/b/c/file.md
+   */
+  private async findRulePathInFilesMap(
+    rule: ParsedRule,
+    filesMap?: Map<string, string>,
+  ): Promise<string | null> {
+    if (!filesMap) {
+      return null;
+    }
+
+    const path = await import('path');
+
+    // 遍历 filesMap，找到匹配的文件
+    for (const [relativePath, content] of filesMap) {
+      // 跳过目录条目（值为 [Directory: ...]）
+      if (content.startsWith('[Directory:')) {
+        continue;
+      }
+
+      const basename = path.basename(relativePath);
+      const ruleFileName = this.getRuleFileName(rule);
+
+      // 检查文件名是否匹配
+      if (basename === ruleFileName || basename === `${rule.id}.md`) {
+        // relativePath 格式: outputPath/sourceId/a/b/c/file.md
+        // 索引文件在: outputPath/index.md
+        // 需要提取 sourceId/a/b/c/file.md 部分
+
+        // 分割路径，去掉第一个部分（outputPath）
+        const parts = relativePath.split(path.sep);
+        if (parts.length > 1) {
+          // 重新组合，去掉第一个部分
+          const relativeToIndex = parts.slice(1).join('/');
+          return `./${relativeToIndex}`;
+        } else {
+          // 如果路径只有一层（不太可能），直接返回
+          return `./${basename}`;
+        }
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -159,6 +518,13 @@ export abstract class BaseAdapter implements AIToolAdapter {
   setSortConfig(sortBy: 'id' | 'priority' | 'none', sortOrder: 'asc' | 'desc'): void {
     this.sortBy = sortBy;
     this.sortOrder = sortOrder;
+  }
+
+  /**
+   * 设置是否保持目录层级结构
+   */
+  setPreserveDirectoryStructure(preserve: boolean): void {
+    this.preserveDirectoryStructure = preserve;
   }
 
   /**

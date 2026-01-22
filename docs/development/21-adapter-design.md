@@ -342,12 +342,12 @@ This rule is from ai-rules/ directory.
 
 ### 6.3 标记说明
 
-| 标记                                      | 说明                                           | 是否可配置 |
-| ----------------------------------------- | ---------------------------------------------- | ---------- |
-| `BEGIN_SOURCE` / `END_SOURCE`             | 规则源区块边界，包含该源的所有规则             | ❌ 硬编码  |
-| `BEGIN_RULE` / `END_RULE`                 | 单条规则边界，包含 sourceId、ruleId、priority  | ❌ 硬编码  |
+| 标记                                      | 说明                                                      | 是否可配置                       |
+| ----------------------------------------- | --------------------------------------------------------- | -------------------------------- |
+| `BEGIN_SOURCE` / `END_SOURCE`             | 规则源区块边界，包含该源的所有规则                        | ❌ 硬编码                        |
+| `BEGIN_RULE` / `END_RULE`                 | 单条规则边界，包含 sourceId、ruleId、priority             | ❌ 硬编码                        |
 | `USER-RULES:BEGIN` / `USER-RULES:END`     | 用户规则源外层包裹标记（包裹 sourceId='user-rules' 区域） | ✅ 可配置（`userRules.markers`） |
-| `BEGIN_USER_CONTENT` / `END_USER_CONTENT` | 保留未来扩展，当前未使用 | ❌ 硬编码  |
+| `BEGIN_USER_CONTENT` / `END_USER_CONTENT` | 保留未来扩展，当前未使用                                  | ❌ 硬编码                        |
 
 ### 6.4 标记属性
 
@@ -423,6 +423,12 @@ function mergeSourceBlocks(
 - 文件名可包含规则源前缀：`{sourceId}--{ruleId}.mdc`
 - 或在 frontmatter 中标记 `sourceId`
 - 删除/更新时按 sourceId 过滤文件
+- **目录结构保持** (`preserveDirectoryStructure`)：
+  - true（默认）: 保持相对于规则源 `subPath` 的完整目录层级
+    - 示例：`subPath=1300-skills/`，文件 `1300-skills/a/b/c/file.md` → `.skills/a/b/c/file.md`
+  - false: 平铺所有文件到输出目录（或按源组织时的源子目录）
+    - 示例：`1300-skills/a/b/c/file.md` → `.skills/file.md` 或 `.skills/sourceId/file.md`
+- **索引文件路径引用**: 自动使用实际生成的文件路径，确保链接正确
 
 ### 6.8 兼容性考虑
 

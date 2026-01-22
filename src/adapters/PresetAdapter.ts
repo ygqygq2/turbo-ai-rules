@@ -149,12 +149,14 @@ export class PresetAdapter extends BaseAdapter {
    * @param enabled 是否启用
    * @param sortBy 排序方式（默认 priority）
    * @param sortOrder 排序顺序（默认 asc）
+   * @param preserveDirectoryStructure 是否保持目录结构（默认 true）
    */
   constructor(
     config: PresetAdapterConfig,
     enabled: boolean = false,
     sortBy: 'id' | 'priority' | 'none' = 'priority',
     sortOrder: 'asc' | 'desc' = 'asc',
+    preserveDirectoryStructure: boolean = true,
   ) {
     super();
     this.config = config;
@@ -162,6 +164,7 @@ export class PresetAdapter extends BaseAdapter {
     this.enabled = enabled;
     this.sortBy = sortBy;
     this.sortOrder = sortOrder;
+    this.preserveDirectoryStructure = preserveDirectoryStructure;
   }
 
   /**

@@ -4,12 +4,9 @@
  */
 
 import * as path from 'path';
-import * as vscode from 'vscode';
 
-import { WorkspaceContextManager } from '../services/WorkspaceContextManager';
 import type { CustomAdapterConfig } from '../types/config';
 import type { ParsedRule } from '../types/rules';
-import { safeWriteFile } from '../utils/fileSystem';
 import { Logger } from '../utils/logger';
 import { getBlockMarkers } from '../utils/userRules';
 import { BaseAdapter, GeneratedConfig } from './AIToolAdapter';
@@ -34,6 +31,11 @@ export class CustomAdapter extends BaseAdapter {
     // - 否则：skills类型(isRuleType=false)默认为false，规则类型默认为true
     const isRuleType = config.isRuleType ?? true;
     this.enableUserRules = config.enableUserRules ?? isRuleType;
+
+    // 设置preserveDirectoryStructure：仅目录类型有效
+    if (config.outputType === 'directory') {
+      this.preserveDirectoryStructure = config.preserveDirectoryStructure ?? true;
+    }
   }
 
   /**
@@ -49,6 +51,42 @@ export class CustomAdapter extends BaseAdapter {
   public setSortConfig(sortBy: 'id' | 'priority' | 'none', sortOrder: 'asc' | 'desc'): void {
     this.sortBy = sortBy;
     this.sortOrder = sortOrder;
+  }
+
+  /**
+   * 判断是否按源组织（重写基类方法）
+   */
+  protected shouldOrganizeBySource(): boolean {
+    return this.config.organizeBySource ?? false;
+  }
+
+  /**
+   * 判断是否生成索引文件（重写基类方法）
+   */
+  protected shouldGenerateIndex(): boolean {
+    return this.config.generateIndex ?? true;
+  }
+
+  /**
+   * 获取索引文件名（重写基类方法）
+   */
+  protected getIndexFileName(): string {
+    return this.config.indexFileName || 'index.md';
+  }
+
+  /**
+   * 获取目录输出路径（重写基类方法）
+   */
+  protected getDirectoryOutputPath(): string {
+    return this.config.outputPath;
+  }
+
+  /**
+   * 是否应该复制 SKILL.md 的整个目录（重写基类方法）
+   * Skills 适配器（isRuleType: false）应该复制整个目录
+   */
+  protected shouldCopySkillDirectory(): boolean {
+    return this.config.isRuleType === false;
   }
 
   /**
@@ -230,56 +268,6 @@ export class CustomAdapter extends BaseAdapter {
   }
 
   /**
-   * 生成目录结构输出
-   */
-  protected async generateDirectory(
-    rules: ParsedRule[],
-    _allRules?: ParsedRule[],
-  ): Promise<GeneratedConfig> {
-    // 使用 WorkspaceContextManager 获取当前工作区，而不是默认第一个
-    const currentWorkspace = WorkspaceContextManager.getInstance().getCurrentWorkspaceFolder();
-    const workspaceRoot =
-      currentWorkspace?.uri.fsPath || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (!workspaceRoot) {
-      throw new Error('No workspace folder found');
-    }
-
-    const files: Map<string, string> = new Map();
-    const organizeBySource = this.config.organizeBySource ?? false;
-
-    if (organizeBySource) {
-      // 按源 ID 组织
-      await this.generateBySource(rules, workspaceRoot, files);
-    } else {
-      // 平铺结构
-      await this.generateFlat(rules, workspaceRoot, files);
-    }
-
-    // 生成索引文件
-    let indexContent = '';
-    let indexPath = '';
-    if (this.config.generateIndex ?? true) {
-      indexContent = this.generateDirectoryIndex(rules, organizeBySource);
-      const indexFileName = this.config.indexFileName || 'index.md';
-      indexPath = path.join(this.config.outputPath, indexFileName);
-      const indexAbsolutePath = path.join(workspaceRoot, indexPath);
-      await safeWriteFile(indexAbsolutePath, indexContent);
-    }
-
-    Logger.info(`Generated directory: ${this.config.outputPath}`, {
-      fileCount: files.size,
-      ruleCount: rules.length,
-    });
-
-    return {
-      filePath: indexPath || this.config.outputPath,
-      content: indexContent,
-      generatedAt: new Date(),
-      ruleCount: rules.length,
-    };
-  }
-
-  /**
    * 替换路径模板中的占位符
    */
   private replacePathTemplate(template: string, rule: ParsedRule): string {
@@ -290,7 +278,7 @@ export class CustomAdapter extends BaseAdapter {
   }
 
   /**
-   * 获取规则文件名（公开方法，供FileGenerator清理时使用）
+   * 获取规则文件名（覆盖基类以支持路径模板）
    */
   public getRuleFileName(rule: ParsedRule): string {
     // 如果配置了 directoryStructure.pathTemplate，使用模板
@@ -301,101 +289,5 @@ export class CustomAdapter extends BaseAdapter {
     // 否则使用 useOriginalFilename 设置
     const useOriginalFilename = this.config.useOriginalFilename ?? true;
     return useOriginalFilename ? path.basename(rule.filePath) : `${rule.sourceId}-${rule.id}.md`;
-  }
-
-  /**
-   * 按源 ID 组织文件
-   */
-  private async generateBySource(
-    rules: ParsedRule[],
-    workspaceRoot: string,
-    files: Map<string, string>,
-  ): Promise<void> {
-    // 按源 ID 分组
-    const rulesBySource = new Map<string, ParsedRule[]>();
-    for (const rule of rules) {
-      const sourceRules = rulesBySource.get(rule.sourceId) || [];
-      sourceRules.push(rule);
-      rulesBySource.set(rule.sourceId, sourceRules);
-    }
-
-    // 为每个源生成文件
-    for (const [sourceId, sourceRules] of rulesBySource) {
-      for (const rule of sourceRules) {
-        const fileName = this.getRuleFileName(rule);
-        const relativePath = path.join(this.config.outputPath, sourceId, fileName);
-        const absolutePath = path.join(workspaceRoot, relativePath);
-        // 使用原始内容（包含 frontmatter），保持规则文件原样
-        const content = rule.rawContent;
-
-        await safeWriteFile(absolutePath, content);
-        files.set(relativePath, content);
-        Logger.debug(`Written rule file: ${relativePath}`);
-      }
-    }
-  }
-
-  /**
-   * 平铺结构(不按源组织)
-   */
-  private async generateFlat(
-    rules: ParsedRule[],
-    workspaceRoot: string,
-    files: Map<string, string>,
-  ): Promise<void> {
-    for (const rule of rules) {
-      // 使用模板或原文件名
-      const fileName = this.getRuleFileName(rule);
-      const relativePath = path.join(this.config.outputPath, fileName);
-      const absolutePath = path.join(workspaceRoot, relativePath);
-      // 使用原始内容（包含 frontmatter），保持规则文件原样
-      const content = rule.rawContent;
-
-      await safeWriteFile(absolutePath, content);
-      files.set(relativePath, content);
-      Logger.debug(`Written rule file: ${relativePath}`);
-    }
-  }
-
-  /**
-   * 生成目录索引
-   */
-  private generateDirectoryIndex(rules: ParsedRule[], organizeBySource: boolean): string {
-    const lines: string[] = [];
-
-    lines.push(`# ${this.config.name}\n`);
-    lines.push(this.generateMetadata(rules.length));
-
-    if (organizeBySource) {
-      // 按源分组显示
-      const rulesBySource = new Map<string, ParsedRule[]>();
-      for (const rule of rules) {
-        const sourceRules = rulesBySource.get(rule.sourceId) || [];
-        sourceRules.push(rule);
-        rulesBySource.set(rule.sourceId, sourceRules);
-      }
-
-      for (const [sourceId, sourceRules] of rulesBySource) {
-        lines.push(`## Source: ${sourceId}\n`);
-        lines.push(`Total rules: ${sourceRules.length}\n`);
-
-        for (const rule of sourceRules) {
-          lines.push(`- [${rule.title}](./${sourceId}/${rule.id}.md)`);
-        }
-
-        lines.push('');
-      }
-    } else {
-      // 平铺列表
-      lines.push(`## All Rules\n`);
-      lines.push(`Total rules: ${rules.length}\n`);
-
-      for (const rule of rules) {
-        const fileName = `${rule.sourceId}-${rule.id}.md`;
-        lines.push(`- [${rule.title}](./${fileName}) *(from ${rule.sourceId})*`);
-      }
-    }
-
-    return lines.join('\n');
   }
 }

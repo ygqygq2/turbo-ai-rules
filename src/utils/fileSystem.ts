@@ -7,6 +7,7 @@ import * as path from 'path';
 
 import { ErrorCodes, SystemError } from '../types/errors';
 import { Logger } from './logger';
+import { toRelativePath } from './pathHelper';
 import { validatePath } from './validator';
 
 /**
@@ -201,6 +202,64 @@ export async function copyPath(src: string, dest: string): Promise<void> {
     Logger.error('Failed to copy path', error as Error, { src, dest });
     throw new SystemError(
       `Failed to copy from ${src} to ${dest}`,
+      ErrorCodes.SYSTEM_IO_ERROR,
+      error as Error,
+    );
+  }
+}
+
+/**
+ * 安全地复制目录
+ * @param srcDir 源目录路径
+ * @param destDir 目标目录路径
+ * @param basePath 基础路径（用于安全验证）
+ */
+export async function safeCopyDir(
+  srcDir: string,
+  destDir: string,
+  basePath?: string,
+): Promise<void> {
+  try {
+    // 如果提供了 basePath，验证目标路径安全性
+    if (basePath && !validatePath(destDir, basePath)) {
+      throw new SystemError(
+        `Path traversal attempt detected: ${destDir}`,
+        ErrorCodes.SYSTEM_PATH_TRAVERSAL,
+      );
+    }
+
+    // 确保源目录存在
+    const srcExists = await fs.pathExists(srcDir);
+    if (!srcExists) {
+      throw new SystemError(
+        `Source directory does not exist: ${srcDir}`,
+        ErrorCodes.SYSTEM_IO_ERROR,
+      );
+    }
+
+    // 确保源是目录
+    const srcStat = await fs.stat(srcDir);
+    if (!srcStat.isDirectory()) {
+      throw new SystemError(
+        `Source path is not a directory: ${srcDir}`,
+        ErrorCodes.SYSTEM_IO_ERROR,
+      );
+    }
+
+    // 复制目录
+    await fs.copy(srcDir, destDir, { overwrite: true });
+    Logger.debug('Directory copied successfully', {
+      srcDir: toRelativePath(srcDir),
+      destDir: toRelativePath(destDir),
+    });
+  } catch (error) {
+    if (error instanceof SystemError) {
+      throw error;
+    }
+
+    Logger.error('Failed to copy directory', error as Error, { srcDir, destDir });
+    throw new SystemError(
+      `Failed to copy directory from ${srcDir} to ${destDir}`,
       ErrorCodes.SYSTEM_IO_ERROR,
       error as Error,
     );

@@ -144,6 +144,9 @@
 - `fileExtensions`: 文件过滤规则（可选，如 `['.md', '.mdc']`）
   - 为空或不设置时同步所有文件
 - `organizeBySource`: 是否按源 ID 组织子目录（仅 directory 类型，默认 false）
+- `preserveDirectoryStructure`: 是否保持源仓库的目录层级结构（仅 directory 类型，默认 true）
+  - true: 保持相对于 subPath 的完整目录层级（如 `a/b/c/file.md`）
+  - false: 平铺所有文件到输出目录或源子目录下
 - `useOriginalFilename`: 是否使用原文件名（仅 directory 类型，默认 true）
   - true: 使用原文件名（如 `1303.md`）
   - false: 使用 `{sourceId-}ruleId.md` 格式
@@ -160,6 +163,7 @@
   - 文件直接复制，不经过规则解析
 - `autoUpdate` 控制是否随同步自动生成配置
 - `organizeBySource` 默认 false，保持原目录结构平铺
+- `preserveDirectoryStructure` 默认 true，保持源仓库目录层级，适合需要维护原始组织结构的场景
 - `useOriginalFilename` 默认 true，使用原文件名便于查看
 
 ---

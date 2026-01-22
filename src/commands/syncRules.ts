@@ -106,6 +106,32 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
     // 复用 config 中已获取的 sources，避免再次调用 getSources
     const sources = sourceId ? config.sources.filter((s) => s.id === sourceId) : config.sources;
 
+    // 2.1 处理适配器映射：如果没有指定 targetAdapters，尝试从持久化存储读取
+    const workspaceStateManager = WorkspaceStateManager.getInstance();
+    let effectiveTargetAdapters = targetAdapters;
+
+    if (!effectiveTargetAdapters || effectiveTargetAdapters.length === 0) {
+      // 自动同步或未指定适配器时，读取所有保存的适配器映射
+      const savedMappings = await workspaceStateManager.getAdapterMappings();
+      const allSavedAdapters: string[] = [];
+
+      // 收集所有已保存映射的适配器
+      for (const adapters of Object.values(savedMappings)) {
+        for (const adapter of adapters) {
+          if (!allSavedAdapters.includes(adapter)) {
+            allSavedAdapters.push(adapter);
+          }
+        }
+      }
+
+      if (allSavedAdapters.length > 0) {
+        effectiveTargetAdapters = allSavedAdapters;
+        Logger.debug('Loaded saved adapter mappings for auto-sync', {
+          adapters: effectiveTargetAdapters,
+        });
+      }
+    }
+
     // 过滤启用的源
     const enabledSources = sources.filter((s) => s.enabled);
 
@@ -311,7 +337,7 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
           mergedRules,
           workspaceRoot,
           config.sync.conflictStrategy || 'priority',
-          targetAdapters, // ✅ 传递目标适配器列表
+          effectiveTargetAdapters, // ✅ 使用有效的目标适配器列表（可能来自持久化存储）
           allRulesForIndex, // ✅ 传递所有规则用于保护判断
           workspaceFolder.uri, // 传递工作区 URI
         );
@@ -319,8 +345,18 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
         pm.report(generateConfigProgress - 4, 'Saving metadata...');
 
         // 8. 持久化同步时间和统计信息到 workspaceState（在进度条完成前）
-        const workspaceStateManager = WorkspaceStateManager.getInstance();
         const syncTime = new Date().toISOString();
+
+        // 8.1 如果手动指定了 targetAdapters，保存适配器映射（用于后续自动同步）
+        if (targetAdapters && targetAdapters.length > 0) {
+          // 为每个指定的适配器保存映射关系
+          for (const adapter of targetAdapters) {
+            await workspaceStateManager.setAdapterMapping(adapter, targetAdapters);
+          }
+          Logger.debug('Saved adapter mappings for future auto-sync', {
+            adapters: targetAdapters,
+          });
+        }
 
         // 为每个成功同步的源保存同步快照
         for (const source of enabledSources) {
@@ -353,6 +389,62 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
           }
         }
 
+        // 计算适配器统计
+        let syncedRulesAdapterCount = 0;
+        let totalSyncedSkills = 0;
+        let syncedSkillsAdapterCount = 0;
+
+        // 统计本次生成的适配器
+        if (effectiveTargetAdapters && effectiveTargetAdapters.length > 0) {
+          // 获取所有自定义适配器配置
+          const customAdapters = config.adapters.custom || [];
+          // 获取所有预设适配器配置
+          const presetAdapters = ['copilot', 'cursor', 'continue', 'windsurf'];
+
+          for (const targetAdapter of effectiveTargetAdapters) {
+            // 查找对应的自定义适配器配置
+            const adapterConfig = customAdapters.find((a) => a.id === targetAdapter);
+
+            if (adapterConfig) {
+              // 自定义适配器
+              if (adapterConfig.isRuleType === false) {
+                // Skills 适配器
+                syncedSkillsAdapterCount++;
+                totalSyncedSkills += mergedRules.length;
+              } else {
+                // 规则适配器
+                syncedRulesAdapterCount++;
+              }
+            } else if (presetAdapters.includes(targetAdapter)) {
+              // 预设适配器都是规则类型
+              syncedRulesAdapterCount++;
+            }
+          }
+
+          Logger.debug('Adapters stats calculated', {
+            syncedRulesAdapterCount,
+            totalSyncedSkills,
+            syncedSkillsAdapterCount,
+          });
+        } else {
+          // 没有指定适配器，统计所有启用的规则适配器
+          // 预设适配器
+          const presetAdapters = ['copilot', 'cursor', 'continue', 'windsurf'];
+          for (const preset of presetAdapters) {
+            const adapter = config.adapters[preset];
+            if (adapter && !Array.isArray(adapter) && adapter.enabled) {
+              syncedRulesAdapterCount++;
+            }
+          }
+          // 自定义规则适配器
+          const customAdapters = config.adapters.custom || [];
+          for (const adapter of customAdapters) {
+            if (adapter.enabled && adapter.isRuleType !== false) {
+              syncedRulesAdapterCount++;
+            }
+          }
+        }
+
         // 持久化聚合统计信息到 workspaceState（用于状态栏显示）
         await workspaceStateManager.setRulesStats({
           totalRules: allRulesForIndex.length,
@@ -360,6 +452,9 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
           sourceCount: sources.length,
           enabledSourceCount: enabledSources.length,
           syncedSourceCount,
+          syncedRulesAdapterCount,
+          totalSyncedSkills,
+          syncedSkillsAdapterCount,
         });
 
         Logger.debug('Sync metadata persisted to workspace state', {

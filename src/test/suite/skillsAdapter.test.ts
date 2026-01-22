@@ -150,4 +150,74 @@ describe('Skills Adapter Tests', () => {
       );
     }
   });
+
+  it('Should clean obsolete skill directories when rules change', async function () {
+    this.timeout(180000); // 3 minutes
+
+    // Get configuration
+    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    const customAdapters = config.get<any[]>(CONFIG_KEYS.ADAPTERS_CUSTOM, []);
+
+    // Check if skills adapter is configured
+    const skillsAdapter = customAdapters.find((adapter) => adapter.skills === true);
+
+    if (!skillsAdapter) {
+      console.log('No skills adapter configured, skipping directory cleanup test');
+      this.skip();
+      return;
+    }
+
+    const skillsOutputPath = path.join(workspaceFolder.uri.fsPath, skillsAdapter.outputPath);
+
+    // 步骤 1: 首次同步，创建一些 skill 目录
+    await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    // 记录第一次同步后的目录
+    let firstSyncDirs: string[] = [];
+    if (await fs.pathExists(skillsOutputPath)) {
+      const entries = await fs.readdir(skillsOutputPath, { withFileTypes: true });
+      firstSyncDirs = entries.filter((e) => e.isDirectory()).map((e) => e.name);
+      console.log('First sync directories:', firstSyncDirs);
+    }
+
+    // 步骤 2: 手动创建一个假的旧目录（模拟之前同步的 skill）
+    const fakeOldSkillDir = path.join(skillsOutputPath, 'obsolete-skill-directory');
+    if (!(await fs.pathExists(fakeOldSkillDir))) {
+      await fs.ensureDir(fakeOldSkillDir);
+      await fs.writeFile(
+        path.join(fakeOldSkillDir, 'SKILL.md'),
+        '# Obsolete Skill\nThis should be deleted',
+      );
+      console.log('Created fake obsolete skill directory:', fakeOldSkillDir);
+    }
+
+    // 验证假目录存在
+    const fakeExists = await fs.pathExists(fakeOldSkillDir);
+    assert.ok(fakeExists, 'Fake obsolete directory should exist before cleanup');
+
+    // 步骤 3: 再次同步（会触发清理）
+    await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    // 步骤 4: 验证假目录被删除
+    const stillExists = await fs.pathExists(fakeOldSkillDir);
+    assert.ok(!stillExists, 'Obsolete skill directory should be deleted after sync');
+
+    // 步骤 5: 验证真实的 skill 目录仍然存在
+    if (firstSyncDirs.length > 0) {
+      const entries = await fs.readdir(skillsOutputPath, { withFileTypes: true });
+      const currentDirs = entries.filter((e) => e.isDirectory()).map((e) => e.name);
+      console.log('After cleanup directories:', currentDirs);
+
+      // 至少应该有一些真实的目录被保留
+      for (const realDir of firstSyncDirs) {
+        const realDirExists = currentDirs.includes(realDir);
+        assert.ok(
+          realDirExists,
+          `Real skill directory '${realDir}' should still exist after cleanup`,
+        );
+      }
+    }
+  });
 });

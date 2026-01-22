@@ -287,13 +287,35 @@ export class StatusBarProvider {
     syncedSourceCount: number,
     sourceCount: number,
   ): Promise<string> {
-    const lines = [
-      t('statusBar.tooltip.syncSuccess'),
-      '',
-      t('statusBar.tooltip.statsTitle'),
-      t('statusBar.tooltip.syncedRules', totalSyncedRules),
-      t('statusBar.tooltip.sources', syncedSourceCount, sourceCount),
-    ];
+    const lines = [t('statusBar.tooltip.syncSuccess'), '', t('statusBar.tooltip.statsTitle')];
+
+    // 添加规则和 Skills 统计
+    try {
+      const stateManager = WorkspaceStateManager.getInstance();
+      const cachedStats = await stateManager.getRulesStats();
+
+      // 规则统计（带适配器数量）
+      lines.push(
+        t('statusBar.tooltip.syncedRules', totalSyncedRules, cachedStats.syncedRulesAdapterCount),
+      );
+
+      // Skills 统计
+      if (cachedStats.totalSyncedSkills !== undefined && cachedStats.totalSyncedSkills > 0) {
+        lines.push(
+          t(
+            'statusBar.tooltip.syncedSkills',
+            cachedStats.totalSyncedSkills,
+            cachedStats.syncedSkillsAdapterCount || 0,
+          ),
+        );
+      }
+    } catch (_error) {
+      // 降级到不带适配器数量的显示
+      lines.push(t('statusBar.tooltip.syncedRules', totalSyncedRules, 0));
+    }
+
+    // 规则源统计
+    lines.push(t('statusBar.tooltip.sources', syncedSourceCount, sourceCount));
 
     // 添加各规则源详情
     const sourceDetails = await this.getSourceDetails();
@@ -326,13 +348,35 @@ export class StatusBarProvider {
     syncedSourceCount: number,
     sourceCount: number,
   ): Promise<string> {
-    const lines = [
-      'Turbo AI Rules',
-      '',
-      t('statusBar.tooltip.statsTitle'),
-      t('statusBar.tooltip.syncedRules', totalSyncedRules),
-      t('statusBar.tooltip.sources', syncedSourceCount, sourceCount),
-    ];
+    const lines = ['Turbo AI Rules', '', t('statusBar.tooltip.statsTitle')];
+
+    // 添加规则和 Skills 统计
+    try {
+      const stateManager = WorkspaceStateManager.getInstance();
+      const cachedStats = await stateManager.getRulesStats();
+
+      // 规则统计（带适配器数量）
+      lines.push(
+        t('statusBar.tooltip.syncedRules', totalSyncedRules, cachedStats.syncedRulesAdapterCount),
+      );
+
+      // Skills 统计
+      if (cachedStats.totalSyncedSkills !== undefined && cachedStats.totalSyncedSkills > 0) {
+        lines.push(
+          t(
+            'statusBar.tooltip.syncedSkills',
+            cachedStats.totalSyncedSkills,
+            cachedStats.syncedSkillsAdapterCount || 0,
+          ),
+        );
+      }
+    } catch (_error) {
+      // 降级到不带适配器数量的显示
+      lines.push(t('statusBar.tooltip.syncedRules', totalSyncedRules, 0));
+    }
+
+    // 规则源统计
+    lines.push(t('statusBar.tooltip.sources', syncedSourceCount, sourceCount));
 
     // 添加各规则源详情
     const sourceDetails = await this.getSourceDetails();
