@@ -157,6 +157,8 @@ export interface CustomAdapterConfig extends AdapterConfig {
   sourceId?: string;
   /** Skills 类型的子目录路径（仅当 isRuleType=false 时有效） */
   subPath?: string;
+  /** 限定只处理指定规则源的规则（规则类型适配器可选配置） */
+  sourceIds?: string[];
 }
 
 /**

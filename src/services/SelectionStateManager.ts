@@ -224,7 +224,7 @@ export class SelectionStateManager {
   /**
    * @description 更新选择状态
    * @param sourceId {string} 规则源 ID
-   * @param selectedPaths {string[]} 选择的路径列表
+   * @param selectedPaths {string[]} 选择的路径列表（可以是绝对路径或相对路径）
    * @param schedulePersistence {boolean} 是否安排延时持久化（默认 true）
    * @param workspacePath {string} 可选的工作区路径（用于持久化）
    */
@@ -234,8 +234,11 @@ export class SelectionStateManager {
     schedulePersistence: boolean = true,
     workspacePath?: string,
   ): void {
-    // 更新内存状态
-    this.memoryState.set(sourceId, new Set(selectedPaths));
+    // 转换为相对路径（如果是绝对路径会被转换，如果已经是相对路径则保持不变）
+    const relativePaths = toRelativePaths(selectedPaths, sourceId);
+
+    // 更新内存状态（存储相对路径）
+    this.memoryState.set(sourceId, new Set(relativePaths));
 
     // 缓存 workspacePath（如果提供）
     if (workspacePath) {
@@ -243,10 +246,10 @@ export class SelectionStateManager {
     }
 
     // 触发状态变更事件
-    const totalCount = this.totalCountCache.get(sourceId) || selectedPaths.length;
+    const totalCount = this.totalCountCache.get(sourceId) || relativePaths.length;
     this.notifyListeners({
       sourceId,
-      selectedPaths,
+      selectedPaths: relativePaths,
       totalCount,
       timestamp: Date.now(),
     });
@@ -258,7 +261,7 @@ export class SelectionStateManager {
 
     Logger.debug('Selection state updated', {
       sourceId,
-      selectedCount: selectedPaths.length,
+      selectedCount: relativePaths.length,
       totalCount,
     });
   }

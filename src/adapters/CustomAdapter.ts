@@ -202,12 +202,15 @@ export class CustomAdapter extends BaseAdapter {
   private applyCustomFilters(rules: ParsedRule[]): ParsedRule[] {
     let filteredRules = rules;
 
-    // 过滤器1: 文件扩展名过滤
+    // 过滤器1: 规则源过滤
+    filteredRules = this.filterBySourceIds(filteredRules);
+
+    // 过滤器2: 文件扩展名过滤
     filteredRules = this.filterByExtension(filteredRules);
 
     // 未来可以在这里添加更多过滤器
-    // 过滤器2: ...
     // 过滤器3: ...
+    // 过滤器4: ...
 
     Logger.debug(`Custom filters applied for adapter ${this.config.id}`, {
       originalCount: rules.length,
@@ -228,6 +231,28 @@ export class CustomAdapter extends BaseAdapter {
    */
   public filterRules(rules: ParsedRule[]): ParsedRule[] {
     return this.applyCustomFilters(rules);
+  }
+
+  /**
+   * 根据规则源 ID 过滤规则
+   * @param rules 所有规则
+   * @returns 过滤后的规则列表
+   */
+  private filterBySourceIds(rules: ParsedRule[]): ParsedRule[] {
+    // 未配置 sourceIds，不过滤
+    if (!this.config.sourceIds || this.config.sourceIds.length === 0) {
+      return rules;
+    }
+
+    const filtered = rules.filter((rule) => this.config.sourceIds!.includes(rule.sourceId));
+
+    Logger.debug(`Filtered rules by sourceIds for adapter: ${this.config.id}`, {
+      totalRules: rules.length,
+      sourceIds: this.config.sourceIds,
+      filteredCount: filtered.length,
+    });
+
+    return filtered;
   }
 
   /**

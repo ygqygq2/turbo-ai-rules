@@ -189,6 +189,13 @@ export class FileGenerator {
       Logger.info('No rules selected, generating empty configurations to clear previous content');
     }
 
+    Logger.debug('[generateAll] Starting generation', {
+      adaptersCount: this.adapters.size,
+      adapterNames: Array.from(this.adapters.keys()),
+      rulesCount: rules.length,
+      targetAdapters,
+    });
+
     // 为每个适配器生成配置
     for (const [name, adapter] of this.adapters.entries()) {
       // 适配器名称匹配规则：
@@ -347,6 +354,12 @@ export class FileGenerator {
       return;
     }
 
+    // ⚠️ 如果规则为空，跳过清理（避免删除输出目录本身）
+    if (rules.length === 0) {
+      Logger.debug('Skipping cleanup: no rules provided');
+      return;
+    }
+
     // 如果适配器启用了用户规则，需要加载用户规则并加入期望列表
     let allRules = [...rules];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -361,114 +374,207 @@ export class FileGenerator {
       }
     }
 
-    // 获取期望的项目列表（文件和目录）
-    const expectedItems = await this.getExpectedItems(adapter, allRules);
-    const expectedFilesArray = Array.from(expectedItems.files);
-    const expectedDirsArray = Array.from(expectedItems.directories);
+    // 获取期望的文件路径和 SKILL 目录映射
+    const { filePaths, skillDirs } = await this.getExpectedFilePaths(adapter, allRules);
 
-    Logger.debug('Expected items in directory', {
-      fileCount: expectedItems.files.size,
-      dirCount: expectedItems.directories.size,
-      files: expectedFilesArray,
-      directories: expectedDirsArray,
+    Logger.debug('Expected file paths for cleanup', {
+      fileCount: filePaths.size,
+      skillDirCount: skillDirs.size,
+      files: Array.from(filePaths),
+      skillDirs: Array.from(skillDirs.keys()),
     });
 
-    // 扫描目录中的所有项目
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
-    let deletedFileCount = 0;
-    let deletedDirCount = 0;
+    // 递归清理不需要的文件和空目录
+    const deletedCount = await this.recursiveCleanup(dir, dir, filePaths, skillDirs);
 
-    for (const entry of entries) {
-      // 跳过索引文件
-      if (entry.name === 'index.md') {
-        continue;
-      }
-
-      if (entry.isDirectory()) {
-        // 检查目录是否在期望列表中
-        if (!expectedItems.directories.has(entry.name)) {
-          const fullPath = path.join(dir, entry.name);
-          const { safeRemove } = await import('../utils/fileSystem');
-
-          try {
-            await safeRemove(fullPath);
-            deletedDirCount++;
-            Logger.debug('Deleted obsolete skill directory', { directory: entry.name });
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            Logger.warn('Failed to delete directory during cleanup', {
-              directory: entry.name,
-              error: errorMessage,
-            });
-          }
-        }
-      } else {
-        // 检查文件是否在期望列表中
-        if (!expectedItems.files.has(entry.name)) {
-          const fullPath = path.join(dir, entry.name);
-
-          try {
-            fs.unlinkSync(fullPath);
-            deletedFileCount++;
-            Logger.debug('Deleted obsolete rule file', { file: entry.name });
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            Logger.warn('Failed to delete file during cleanup', {
-              file: entry.name,
-              error: errorMessage,
-            });
-          }
-        }
-      }
-    }
-
-    if (deletedFileCount > 0 || deletedDirCount > 0) {
+    if (deletedCount.files > 0 || deletedCount.directories > 0) {
       Logger.info('Cleaned obsolete items', {
-        files: deletedFileCount,
-        directories: deletedDirCount,
+        files: deletedCount.files,
+        directories: deletedCount.directories,
       });
     }
   }
 
   /**
-   * 获取适配器期望生成的项目列表（文件名和目录名）
-   * @param adapter 适配器实例
-   * @param rules 规则列表（包括规则源规则和用户规则）
-   * @returns 包含文件名和目录名的对象
+   * 递归清理目录
+   * @param baseDir 基础目录（输出根目录）
+   * @param currentDir 当前扫描的目录
+   * @param expectedFiles 期望的文件路径集合（相对于 baseDir）
+   * @param skillDirs SKILL 目录映射（目录相对路径 -> 源目录绝对路径）
+   * @param currentSkillContext 当前的 SKILL 上下文（如果在 SKILL 目录内）
+   * @returns 删除的文件和目录数量
    */
-  private async getExpectedItems(
-    adapter: AIToolAdapter,
-    rules: ParsedRule[],
-  ): Promise<{ files: Set<string>; directories: Set<string> }> {
-    const files = new Set<string>();
-    const directories = new Set<string>();
+  private async recursiveCleanup(
+    baseDir: string,
+    currentDir: string,
+    expectedFiles: Set<string>,
+    skillDirs: Map<string, string>,
+    currentSkillContext?: { sourceDir: string; skillRelativePath: string },
+  ): Promise<{ files: number; directories: number }> {
+    const deletedCount = { files: 0, directories: 0 };
 
-    // 如果是 CustomAdapter，使用其 getRuleFileName 方法
-    if ('config' in adapter && adapter.config) {
-      const { CustomAdapter } = await import('../adapters');
-      if (adapter instanceof CustomAdapter) {
-        // 检查是否为 Skills 适配器（通过 config.isRuleType 判断）
-        const customConfig = adapter.config as { isRuleType?: boolean };
-        const isSkillsAdapter = customConfig.isRuleType === false;
+    if (!fs.existsSync(currentDir)) {
+      return deletedCount;
+    }
 
-        // 遍历所有规则（包括规则源和用户规则），生成期望的文件名或目录名
-        for (const rule of rules) {
-          const isSkillFile = path.basename(rule.filePath).toLowerCase() === 'skill.md';
+    const entries = fs.readdirSync(currentDir, { withFileTypes: true });
 
-          if (isSkillFile && isSkillsAdapter) {
-            // SKILL.md 文件会复制整个父目录
-            const dirName = path.basename(path.dirname(rule.filePath));
-            directories.add(dirName);
-          } else {
-            // 普通文件
-            const fileName = adapter.getRuleFileName(rule);
-            files.add(fileName);
+    // 计算当前目录相对于基础目录的路径
+    const relativeDir = path.relative(baseDir, currentDir);
+
+    // 确定当前的 SKILL 上下文
+    let skillContext = currentSkillContext;
+
+    if (!skillContext) {
+      // 检查当前目录是否是 SKILL 目录的起点
+      if (skillDirs.has(relativeDir)) {
+        skillContext = {
+          sourceDir: skillDirs.get(relativeDir)!,
+          skillRelativePath: relativeDir,
+        };
+      }
+    }
+
+    for (const entry of entries) {
+      const fullPath = path.join(currentDir, entry.name);
+      const relativePath = path.relative(baseDir, fullPath);
+
+      // 跳过索引文件（仅根目录）
+      if (entry.name === 'index.md' && currentDir === baseDir) {
+        continue;
+      }
+
+      if (entry.isDirectory()) {
+        // 递归处理子目录，传递 SKILL 上下文
+        const subResult = await this.recursiveCleanup(
+          baseDir,
+          fullPath,
+          expectedFiles,
+          skillDirs,
+          skillContext, // 传递当前的 SKILL 上下文到子目录
+        );
+        deletedCount.files += subResult.files;
+        deletedCount.directories += subResult.directories;
+
+        // 检查目录是否为空，如果为空则删除
+        const remaining = fs.readdirSync(fullPath);
+        if (remaining.length === 0) {
+          try {
+            fs.rmdirSync(fullPath);
+            deletedCount.directories++;
+            Logger.debug('Deleted empty directory', { directory: relativePath });
+          } catch (error) {
+            Logger.warn('Failed to delete empty directory', {
+              directory: relativePath,
+              error: (error as Error).message,
+            });
+          }
+        }
+      } else {
+        // 处理文件
+        let shouldDelete = false;
+
+        if (skillContext) {
+          // 在 SKILL 目录内 - 与源目录同步
+          // 计算文件相对于 SKILL 目录的路径
+          const fileRelativeToSkill = path.relative(
+            path.join(baseDir, skillContext.skillRelativePath),
+            fullPath,
+          );
+          const sourceFilePath = path.join(skillContext.sourceDir, fileRelativeToSkill);
+          shouldDelete = !fs.existsSync(sourceFilePath);
+
+          if (shouldDelete) {
+            Logger.debug('File not in source SKILL directory', {
+              file: relativePath,
+              sourceFile: sourceFilePath,
+            });
+          }
+        } else {
+          // 普通文件 - 检查是否在期望列表中
+          shouldDelete = !expectedFiles.has(relativePath);
+        }
+
+        if (shouldDelete) {
+          try {
+            fs.unlinkSync(fullPath);
+            deletedCount.files++;
+            Logger.debug('Deleted obsolete file', { file: relativePath });
+          } catch (error) {
+            Logger.warn('Failed to delete file', {
+              file: relativePath,
+              error: (error as Error).message,
+            });
           }
         }
       }
     }
 
-    return { files, directories };
+    return deletedCount;
+  }
+
+  /**
+   * 获取期望的文件路径集合（完整相对路径）和 SKILL 目录映射
+   * @param adapter 适配器
+   * @param rules 规则列表
+   * @returns 期望的文件路径集合和 SKILL 目录源路径映射
+   */
+  private async getExpectedFilePaths(
+    adapter: AIToolAdapter,
+    rules: ParsedRule[],
+  ): Promise<{ filePaths: Set<string>; skillDirs: Map<string, string> }> {
+    const filePaths = new Set<string>();
+    const skillDirs = new Map<string, string>(); // 目录 -> 源目录路径
+
+    if ('config' in adapter && adapter.config) {
+      const { CustomAdapter } = await import('../adapters');
+      if (adapter instanceof CustomAdapter) {
+        const customConfig = adapter.config as { isRuleType?: boolean };
+        const isSkillsAdapter = customConfig.isRuleType === false;
+
+        for (const rule of rules) {
+          const isSkillFile = path.basename(rule.filePath).toLowerCase() === 'skill.md';
+
+          if (isSkillFile && isSkillsAdapter) {
+            // SKILL.md 文件 - 记录需要同步的目录
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const relativePath = await (adapter as any).getRelativePathFromSubPath(
+              rule.filePath,
+              rule.sourceId,
+            );
+            if (relativePath) {
+              // 获取 SKILL.md 的父目录相对路径（如 git-workflow-expert）
+              const skillDirPath = path.dirname(relativePath);
+              // 记录源目录路径，用于后续同步检查
+              skillDirs.set(skillDirPath, path.dirname(rule.filePath));
+            }
+          } else {
+            // 普通文件 - 记录完整相对路径
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const preserveStructure = (adapter as any).preserveDirectoryStructure ?? true;
+
+            if (preserveStructure && rule.sourceId) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const relativePath = await (adapter as any).getRelativePathFromSubPath(
+                rule.filePath,
+                rule.sourceId,
+              );
+              if (relativePath) {
+                filePaths.add(relativePath);
+              } else {
+                const fileName = adapter.getRuleFileName(rule);
+                filePaths.add(fileName);
+              }
+            } else {
+              const fileName = adapter.getRuleFileName(rule);
+              filePaths.add(fileName);
+            }
+          }
+        }
+      }
+    }
+
+    return { filePaths, skillDirs };
   }
 
   /**

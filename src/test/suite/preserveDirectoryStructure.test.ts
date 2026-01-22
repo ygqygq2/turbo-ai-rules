@@ -16,8 +16,16 @@ describe('Preserve Directory Structure Tests', () => {
     const folders = vscode.workspace.workspaceFolders;
     assert.ok(folders && folders.length > 0, 'No workspace folder found');
 
-    // 使用第一个工作区文件夹
-    workspaceFolder = folders[0];
+    // 查找 rules-for-custom-adapters 工作区文件夹
+    const customAdapterFolder = folders.find((f) =>
+      f.uri.fsPath.includes('rules-for-custom-adapters'),
+    );
+
+    if (!customAdapterFolder) {
+      throw new Error('rules-for-custom-adapters workspace folder not found');
+    }
+
+    workspaceFolder = customAdapterFolder;
 
     // 激活扩展
     const ext = vscode.extensions.getExtension('ygqygq2.turbo-ai-rules');
@@ -42,27 +50,17 @@ describe('Preserve Directory Structure Tests', () => {
   });
 
   it('Should preserve directory structure when preserveDirectoryStructure=true', async function () {
-    this.timeout(120000); // 2 minutes
+    this.timeout(120000);
 
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    const sources = config.get<any[]>('sources', []);
+    const actualSourceId = sources[0]?.id || 'ai-rules-7008d805';
 
-    // 创建测试适配器配置（preserveDirectoryStructure=true）
-    const testAdapter = {
-      id: 'test-preserve-true',
-      name: 'Test Preserve Structure',
-      enabled: true,
-      autoUpdate: true,
-      outputPath: 'test-preserve-structure/true',
-      outputType: 'directory' as const,
-      sourceIds: ['turbo-ai-rules-source'],
-      preserveDirectoryStructure: true,
-    };
-
+    // 启用测试适配器
     const currentAdapters = config.get<any[]>(CONFIG_KEYS.ADAPTERS_CUSTOM, []);
-    const newAdapters = [
-      ...currentAdapters.filter((a: any) => a.id !== testAdapter.id),
-      testAdapter,
-    ];
+    const newAdapters = currentAdapters.map((a: any) =>
+      a.id === 'test-preserve-true' ? { ...a, enabled: true } : a,
+    );
 
     try {
       await config.update(
@@ -70,24 +68,45 @@ describe('Preserve Directory Structure Tests', () => {
         newAdapters,
         vscode.ConfigurationTarget.WorkspaceFolder,
       );
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // 同步规则
       await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
       await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      // 获取扩展导出的服务实例
+      const ext = vscode.extensions.getExtension('ygqygq2.turbo-ai-rules');
+      const api = ext?.exports;
+      const rulesManager = api?.rulesManager;
+      const selectionStateManager = api?.selectionStateManager;
+
+      // 选择所有规则
+      if (rulesManager && selectionStateManager) {
+        const sourceRules = rulesManager.getRulesBySource(actualSourceId);
+        assert.ok(sourceRules.length > 0, `Should have rules, got ${sourceRules.length}`);
+
+        const allPaths = sourceRules.map((rule: any) => rule.filePath);
+        selectionStateManager.updateSelection(
+          actualSourceId,
+          allPaths,
+          false,
+          workspaceFolder.uri.fsPath,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
 
       // 生成配置
       await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // 验证输出目录
-      const outputPath = path.join(workspaceFolder.uri.fsPath, testAdapter.outputPath);
+      const outputPath = path.join(workspaceFolder.uri.fsPath, 'test-preserve-structure/true');
       const outputExists = await fs.pathExists(outputPath);
       assert.ok(outputExists, `Output directory should exist: ${outputPath}`);
 
       // 检查是否保持了目录结构
-      // 假设源仓库中有 ai-rules/1001-naming.md
-      // preserveDirectoryStructure=true 应生成: test-preserve-structure/true/turbo-ai-rules-source/1001-naming.md
-      const sourceDir = path.join(outputPath, 'turbo-ai-rules-source');
+      // preserveDirectoryStructure=true 应生成: test-preserve-structure/true/{sourceId}/...
+      const sourceDir = path.join(outputPath, actualSourceId);
       if (await fs.pathExists(sourceDir)) {
         const files = await fs.readdir(sourceDir);
         // 应该有文件在子目录中
@@ -104,27 +123,17 @@ describe('Preserve Directory Structure Tests', () => {
   });
 
   it('Should flatten files when preserveDirectoryStructure=false', async function () {
-    this.timeout(120000); // 2 minutes
+    this.timeout(120000);
 
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    const sources = config.get<any[]>('sources', []);
+    const actualSourceId = sources[0]?.id || 'ai-rules-7008d805';
 
-    // 创建测试适配器配置（preserveDirectoryStructure=false）
-    const testAdapter = {
-      id: 'test-preserve-false',
-      name: 'Test Flatten Structure',
-      enabled: true,
-      autoUpdate: true,
-      outputPath: 'test-preserve-structure/false',
-      outputType: 'directory' as const,
-      sourceIds: ['turbo-ai-rules-source'],
-      preserveDirectoryStructure: false,
-    };
-
+    // 启用测试适配器
     const currentAdapters = config.get<any[]>(CONFIG_KEYS.ADAPTERS_CUSTOM, []);
-    const newAdapters = [
-      ...currentAdapters.filter((a: any) => a.id !== testAdapter.id),
-      testAdapter,
-    ];
+    const newAdapters = currentAdapters.map((a: any) =>
+      a.id === 'test-preserve-false' ? { ...a, enabled: true } : a,
+    );
 
     try {
       await config.update(
@@ -132,24 +141,44 @@ describe('Preserve Directory Structure Tests', () => {
         newAdapters,
         vscode.ConfigurationTarget.WorkspaceFolder,
       );
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // 同步规则
       await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
       await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      // 获取扩展导出的服务实例
+      const ext = vscode.extensions.getExtension('ygqygq2.turbo-ai-rules');
+      const api = ext?.exports;
+      const rulesManager = api?.rulesManager;
+      const selectionStateManager = api?.selectionStateManager;
+
+      // 选择所有规则
+      if (rulesManager && selectionStateManager) {
+        const sourceRules = rulesManager.getRulesBySource(actualSourceId);
+        const allPaths = sourceRules.map((rule: any) => rule.filePath);
+        selectionStateManager.updateSelection(
+          actualSourceId,
+          allPaths,
+          false,
+          workspaceFolder.uri.fsPath,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
 
       // 生成配置
       await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // 验证输出目录
-      const outputPath = path.join(workspaceFolder.uri.fsPath, testAdapter.outputPath);
+      const outputPath = path.join(workspaceFolder.uri.fsPath, 'test-preserve-structure/false');
       const outputExists = await fs.pathExists(outputPath);
       assert.ok(outputExists, `Output directory should exist: ${outputPath}`);
 
       // 检查文件是否平铺（直接在输出目录或源子目录下）
-      // preserveDirectoryStructure=false 应生成: test-preserve-structure/false/turbo-ai-rules-source/1001-naming.md
+      // preserveDirectoryStructure=false 应生成: test-preserve-structure/false/{sourceId}/...
       // 文件应该直接在源目录下，不保持深层结构
-      const sourceDir = path.join(outputPath, 'turbo-ai-rules-source');
+      const sourceDir = path.join(outputPath, actualSourceId);
       if (await fs.pathExists(sourceDir)) {
         const files = await fs.readdir(sourceDir);
         // 文件应该直接在这一层
@@ -167,27 +196,17 @@ describe('Preserve Directory Structure Tests', () => {
   });
 
   it('Should generate correct index file paths with preserveDirectoryStructure', async function () {
-    this.timeout(120000); // 2 minutes
+    this.timeout(120000);
 
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    const sources = config.get<any[]>('sources', []);
+    const actualSourceId = sources[0]?.id || 'ai-rules-7008d805';
 
-    // 创建测试适配器配置
-    const testAdapter = {
-      id: 'test-index-paths',
-      name: 'Test Index Paths',
-      enabled: true,
-      autoUpdate: true,
-      outputPath: 'test-preserve-structure/index',
-      outputType: 'directory' as const,
-      sourceIds: ['turbo-ai-rules-source'],
-      preserveDirectoryStructure: true,
-    };
-
+    // 启用测试适配器
     const currentAdapters = config.get<any[]>(CONFIG_KEYS.ADAPTERS_CUSTOM, []);
-    const newAdapters = [
-      ...currentAdapters.filter((a: any) => a.id !== testAdapter.id),
-      testAdapter,
-    ];
+    const newAdapters = currentAdapters.map((a: any) =>
+      a.id === 'test-preserve-index' ? { ...a, enabled: true } : a,
+    );
 
     try {
       await config.update(
@@ -195,17 +214,43 @@ describe('Preserve Directory Structure Tests', () => {
         newAdapters,
         vscode.ConfigurationTarget.WorkspaceFolder,
       );
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // 同步规则
       await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
       await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      // 获取扩展导出的服务实例
+      const ext = vscode.extensions.getExtension('ygqygq2.turbo-ai-rules');
+      const api = ext?.exports;
+      const rulesManager = api?.rulesManager;
+      const selectionStateManager = api?.selectionStateManager;
+
+      // 选择所有规则
+      if (rulesManager && selectionStateManager) {
+        const sourceRules = rulesManager.getRulesBySource(actualSourceId);
+        if (sourceRules.length > 0) {
+          const allPaths = sourceRules.map((rule: any) => rule.filePath);
+          selectionStateManager.updateSelection(
+            actualSourceId,
+            allPaths,
+            false,
+            workspaceFolder.uri.fsPath,
+          );
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+      }
 
       // 生成配置
       await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // 验证索引文件
-      const indexPath = path.join(workspaceFolder.uri.fsPath, testAdapter.outputPath, 'index.md');
+      const indexPath = path.join(
+        workspaceFolder.uri.fsPath,
+        'test-preserve-structure/index',
+        'index.md',
+      );
       if (await fs.pathExists(indexPath)) {
         const indexContent = await fs.readFile(indexPath, 'utf-8');
 
@@ -217,7 +262,7 @@ describe('Preserve Directory Structure Tests', () => {
           'Index should have correct relative paths',
         );
         assert.ok(
-          !indexContent.includes(testAdapter.outputPath),
+          !indexContent.includes('test-preserve-structure/index'),
           'Index should not include outputPath in links',
         );
       }

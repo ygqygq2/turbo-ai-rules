@@ -31,6 +31,10 @@
     {
       "path": "rules-generate-test",
       "name": "Test: Generate Config Files"
+    },
+    {
+      "path": "rules-for-custom-adapters",
+      "name": "Test: Custom Adapters"
     }
   ],
   "settings": {

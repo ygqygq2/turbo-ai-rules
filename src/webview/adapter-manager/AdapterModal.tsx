@@ -42,6 +42,13 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({
   const [fileExtensions, setFileExtensions] = useState(adapter.fileExtensions?.join(', ') || '');
   const [organizeBySource, setOrganizeBySource] = useState(adapter.organizeBySource ?? true);
   const [generateIndex, setGenerateIndex] = useState(adapter.generateIndex ?? false);
+  const [preserveDirectoryStructure, setPreserveDirectoryStructure] = useState(
+    adapter.preserveDirectoryStructure ?? false,
+  );
+  const [useOriginalFilename, setUseOriginalFilename] = useState(
+    adapter.useOriginalFilename ?? true,
+  );
+  const [indexFileName, setIndexFileName] = useState(adapter.indexFileName || 'index.md');
   // 排序设置（仅单文件模式）
   const [sortBy, setSortBy] = useState<'id' | 'priority' | 'none'>(adapter.sortBy || 'priority');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(adapter.sortOrder || 'asc');
@@ -134,6 +141,9 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({
       fileExtensions: parsedExtensions.length > 0 ? parsedExtensions : [],
       organizeBySource: format === 'directory' ? organizeBySource : undefined,
       generateIndex: format === 'directory' ? generateIndex : undefined,
+      preserveDirectoryStructure: format === 'directory' ? preserveDirectoryStructure : undefined,
+      useOriginalFilename: format === 'directory' ? useOriginalFilename : undefined,
+      indexFileName: format === 'directory' && generateIndex ? indexFileName : undefined,
       sortBy: format === 'single-file' ? sortBy : undefined,
       sortOrder: format === 'single-file' ? sortOrder : undefined,
       isNew, // 传递 isNew 标志给 Provider
@@ -474,8 +484,52 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({
                       {t('adapterManager.generateIndexDesc')}
                     </span>
                   </label>
+                  <label className="checkbox-option">
+                    <input
+                      type="checkbox"
+                      checked={preserveDirectoryStructure}
+                      onChange={(e) => setPreserveDirectoryStructure(e.target.checked)}
+                    />
+                    <span className="checkbox-label">
+                      <i className="codicon codicon-file-directory"></i>
+                      {t('adapterManager.preserveDirectoryStructure')}
+                    </span>
+                    <span className="checkbox-description">
+                      {t('adapterManager.preserveDirectoryStructureDesc')}
+                    </span>
+                  </label>
+                  <label className="checkbox-option">
+                    <input
+                      type="checkbox"
+                      checked={useOriginalFilename}
+                      onChange={(e) => setUseOriginalFilename(e.target.checked)}
+                    />
+                    <span className="checkbox-label">
+                      <i className="codicon codicon-file-text"></i>
+                      {t('adapterManager.useOriginalFilename')}
+                    </span>
+                    <span className="checkbox-description">
+                      {t('adapterManager.useOriginalFilenameDesc')}
+                    </span>
+                  </label>
                 </div>
               </div>
+
+              {/* 索引文件名（仅当生成索引时显示） */}
+              {generateIndex && (
+                <div className="form-group">
+                  <label htmlFor="index-filename">
+                    <i className="codicon codicon-file-code"></i>
+                    {t('adapterManager.indexFileName')}
+                  </label>
+                  <Input
+                    id="index-filename"
+                    value={indexFileName}
+                    onChange={(e) => setIndexFileName(e.target.value)}
+                    placeholder={t('adapterManager.indexFileNamePlaceholder')}
+                  />
+                </div>
+              )}
             </>
           )}
 

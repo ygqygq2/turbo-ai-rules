@@ -141,6 +141,7 @@ export abstract class BaseAdapter implements AIToolAdapter {
     const path = await import('path');
     const { WorkspaceContextManager } = await import('../services/WorkspaceContextManager');
     const { safeWriteFile } = await import('../utils/fileSystem');
+    const { ensureDir } = await import('fs-extra');
 
     // 获取当前工作区
     const currentWorkspace = WorkspaceContextManager.getInstance().getCurrentWorkspaceFolder();
@@ -153,6 +154,10 @@ export abstract class BaseAdapter implements AIToolAdapter {
     const files: Map<string, string> = new Map();
     const organizeBySource = this.shouldOrganizeBySource();
     const outputPath = this.getDirectoryOutputPath();
+
+    // 确保输出目录存在（即使规则为空）
+    const outputAbsolutePath = path.join(workspaceRoot, outputPath);
+    await ensureDir(outputAbsolutePath);
 
     if (organizeBySource) {
       // 按源 ID 组织
@@ -459,10 +464,27 @@ export abstract class BaseAdapter implements AIToolAdapter {
 
     const path = await import('path');
 
+    // 检查是否是 SKILL.md 文件
+    const isSkillFile = path.basename(rule.filePath).toLowerCase() === 'skill.md';
+
     // 遍历 filesMap，找到匹配的文件
     for (const [relativePath, content] of filesMap) {
-      // 跳过目录条目（值为 [Directory: ...]）
+      // 检查是否是目录条目（SKILL 目录）
       if (content.startsWith('[Directory:')) {
+        // 对于 SKILL 目录，如果当前规则是 SKILL.md，则返回目录下的 SKILL.md 路径
+        if (isSkillFile) {
+          // relativePath 格式: .skills/git-workflow-expert
+          // 需要构建: ./git-workflow-expert/SKILL.md
+          const parts = relativePath.split(path.sep);
+          if (parts.length > 1) {
+            // 去掉第一个部分（outputPath）
+            const relativeToIndex = parts.slice(1).join('/');
+            return `./${relativeToIndex}/SKILL.md`;
+          } else {
+            const dirName = path.basename(relativePath);
+            return `./${dirName}/SKILL.md`;
+          }
+        }
         continue;
       }
 

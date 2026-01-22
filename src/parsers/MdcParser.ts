@@ -379,6 +379,29 @@ export class MdcParser {
       return;
     }
 
+    // 检查当前目录是否包含 SKILL.md（不区分大小写）
+    const entries = await fs.readdir(dirPath, { withFileTypes: true });
+    const hasSkillFile = entries.some(
+      (entry) => entry.isFile() && entry.name.toLowerCase() === 'skill.md',
+    );
+
+    if (hasSkillFile) {
+      // 如果当前目录包含 SKILL.md，只解析 SKILL.md，跳过其他所有文件和子目录
+      const skillFilePath = entries.find(
+        (entry) => entry.isFile() && entry.name.toLowerCase() === 'skill.md',
+      );
+      if (skillFilePath) {
+        const fullPath = path.join(dirPath, skillFilePath.name);
+        await this.parseFile(fullPath, sourceId, rules, errors, state);
+        Logger.debug('Found SKILL.md, skipping other files in directory', {
+          dirPath,
+          skillFile: fullPath,
+        });
+      }
+      // 跳过该目录的其他文件和子目录
+      return;
+    }
+
     // 解析当前目录的文件
     const files = await this.findRuleFiles(dirPath, options.extensions, false);
     for (const filePath of files) {

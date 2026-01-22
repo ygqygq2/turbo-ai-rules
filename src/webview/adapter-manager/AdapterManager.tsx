@@ -53,10 +53,16 @@ export interface CustomAdapter {
   enabled: boolean;
   /** 文件过滤扩展名 */
   fileExtensions?: string[];
-  /** 是否按源组织子目录 */
+  /** 是否按源组织子目录（仅目录模式） */
   organizeBySource?: boolean;
-  /** 是否生成索引文件 */
+  /** 是否生成索引文件（仅目录模式） */
   generateIndex?: boolean;
+  /** 是否保持目录结构（仅目录模式，false=平铺） */
+  preserveDirectoryStructure?: boolean;
+  /** 是否使用原始文件名（仅目录模式） */
+  useOriginalFilename?: boolean;
+  /** 索引文件名（仅目录模式） */
+  indexFileName?: string;
   /** 排序依据（仅单文件模式） */
   sortBy?: 'id' | 'priority' | 'none';
   /** 排序顺序（仅单文件模式） */

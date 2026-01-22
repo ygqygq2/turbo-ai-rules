@@ -82,34 +82,34 @@ export async function generateRulesCommand(): Promise<void> {
       }
     }
 
-    Logger.info('Rules filtered by selection for generation', {
-      totalRules: allRules.length,
-      selectedRules: selectedRules.length,
-    });
-
     // 允许 0 条规则：表示清空所有规则（用户自定义规则会被保护）
     if (selectedRules.length === 0) {
       Logger.info('No rules selected - will generate empty configurations to clear rules');
     }
 
     // 5. 合并规则（解决冲突）
-    // 创建临时 RulesManager 实例用于合并选中的规则
-    const tempRulesManager = RulesManager.getInstance();
-    const sourceRulesMap = new Map<string, ParsedRule[]>();
+    // 直接对选中的规则进行合并，不使用 RulesManager（避免污染全局状态）
 
-    // 按源分组
+    // 按 ID 去重（同一规则可能来自多个源）
+    const rulesById = new Map<string, ParsedRule>();
     for (const rule of selectedRules) {
-      const rules = sourceRulesMap.get(rule.sourceId) || [];
-      rules.push(rule);
-      sourceRulesMap.set(rule.sourceId, rules);
+      const existingRule = rulesById.get(rule.id);
+      if (!existingRule) {
+        rulesById.set(rule.id, rule);
+      } else {
+        // 使用优先级策略：保留优先级更高的规则
+        if (config.sync.conflictStrategy === 'priority') {
+          const existingPriority = existingRule.metadata.priority || 'medium';
+          const newPriority = rule.metadata.priority || 'medium';
+          const priorityOrder: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+          if (priorityOrder[newPriority] > priorityOrder[existingPriority]) {
+            rulesById.set(rule.id, rule);
+          }
+        }
+      }
     }
 
-    // 添加到临时管理器
-    for (const [sourceId, rules] of sourceRulesMap.entries()) {
-      tempRulesManager.addRules(sourceId, rules);
-    }
-
-    const mergedRules = tempRulesManager.mergeRules(config.sync.conflictStrategy || 'priority');
+    const mergedRules = Array.from(rulesById.values());
 
     // 6. 显示进度
     await vscode.window.withProgress(
