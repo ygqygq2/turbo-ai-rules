@@ -8,6 +8,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { PRESET_ADAPTERS } from '../../adapters/PresetAdapter';
+import { TEST_TIMEOUTS } from './testConstants';
 
 describe('Preset Adapters Integration Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
@@ -199,7 +200,7 @@ describe('Preset Adapters Integration Tests', () => {
     });
 
     it('Should support all sortBy options: id, priority, none', async function () {
-      this.timeout(10000);
+      this.timeout(TEST_TIMEOUTS.SHORT);
       const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
 
       const sortByOptions = ['id', 'priority', 'none'];
@@ -247,14 +248,15 @@ describe('Preset Adapters Integration Tests', () => {
   });
 
   describe('Adapter Configuration Persistence', () => {
-    afterEach(async () => {
+    afterEach(async function () {
+      this.timeout(TEST_TIMEOUTS.SHORT);
       // 每个测试后清理配置
       const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
       await config.update('adapters', {}, vscode.ConfigurationTarget.Workspace);
     });
 
     it('Should save adapter configurations correctly (not as empty objects)', async function () {
-      this.timeout(5000);
+      this.timeout(TEST_TIMEOUTS.SHORT);
       const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
 
       // 设置适配器配置
@@ -308,7 +310,7 @@ describe('Preset Adapters Integration Tests', () => {
     });
 
     it('Should only save user-modified adapters to reduce config file size', async function () {
-      this.timeout(5000);
+      this.timeout(TEST_TIMEOUTS.MEDIUM);
       const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
 
       // 设置多个适配器：启用的、禁用但有配置的、完全默认的
@@ -343,7 +345,7 @@ describe('Preset Adapters Integration Tests', () => {
     });
 
     it('Should deep clone configurations to avoid corrupting shared settings.json', async function () {
-      this.timeout(5000);
+      this.timeout(TEST_TIMEOUTS.SHORT);
       const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
 
       // 设置嵌套配置对象
@@ -390,7 +392,7 @@ describe('Preset Adapters Integration Tests', () => {
     });
 
     it('Should handle mixed enabled/disabled adapters with complex configurations', async function () {
-      this.timeout(5000);
+      this.timeout(TEST_TIMEOUTS.SHORT);
       const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
 
       // 复杂混合配置场景

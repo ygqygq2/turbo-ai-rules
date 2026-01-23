@@ -5,6 +5,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { CONFIG_KEYS } from '../../utils/constants';
+import { TEST_TIMEOUTS } from './testConstants';
 
 describe('User Rules Protection Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
@@ -20,7 +21,9 @@ describe('User Rules Protection Tests', () => {
       folders[0];
   });
 
-  beforeEach(async () => {
+  beforeEach(async function () {
+    this.timeout(TEST_TIMEOUTS.MEDIUM);
+
     // 切换到目标工作区：打开该工作区的 README 文件
     const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
     const doc = await vscode.workspace.openTextDocument(readmePath);
@@ -55,7 +58,7 @@ describe('User Rules Protection Tests', () => {
   // 新的测试在下面，使用单文件模式 + ai-rules/ 目录
 
   it('Should create .gitignore with proper patterns', async function () {
-    this.timeout(180000); // 3分钟
+    this.timeout(TEST_TIMEOUTS.EXTRA_LONG);
 
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
     const autoGitignore = config.get<boolean>(CONFIG_KEYS.STORAGE_AUTO_GITIGNORE, true);
@@ -107,7 +110,7 @@ describe('User Rules Protection Tests', () => {
    * 验证：如果文件已存在且不是由扩展管理的，应该停止生成并提示用户
    */
   it('Should stop generation if unmanaged file exists (first-time protection)', async function () {
-    this.timeout(180000); // 3分钟
+    this.timeout(TEST_TIMEOUTS.EXTRA_LONG);
 
     // 1. 创建一个模拟用户已有的 .cursorrules 文件（未被扩展管理）
     const existingRuleFile = path.join(workspaceFolder.uri.fsPath, '.cursorrules');
@@ -198,7 +201,7 @@ This is my precious custom rule content that must not be lost!
    * 验证后续同步时会完全覆盖文件（标记外的内容会丢失，这是预期行为）
    */
   it('Should overwrite managed file completely (markers outside content will be lost)', async function () {
-    this.timeout(180000); // 3分钟
+    this.timeout(TEST_TIMEOUTS.EXTRA_LONG);
 
     const existingRuleFile = path.join(workspaceFolder.uri.fsPath, '.cursorrules');
 
@@ -291,7 +294,7 @@ This content is outside the managed sections and WILL BE LOST on next sync.
    * 验证当 ai-rules/ 目录中的文件变化时，同步会更新生成的配置文件
    */
   it('Should update generated config when user rules files change', async function () {
-    this.timeout(180000); // 3分钟
+    this.timeout(TEST_TIMEOUTS.EXTRA_LONG);
 
     // 先清理 .cursorrules（可能是目录）
     const cursorRulesPath = path.join(workspaceFolder.uri.fsPath, '.cursorrules');
@@ -436,7 +439,7 @@ This is a newly added custom rule.
    * 验证适配器级别的 enableUserRules 配置是否生效
    */
   it('Should respect adapter-level enableUserRules configuration', async function () {
-    this.timeout(180000); // 3分钟
+    this.timeout(TEST_TIMEOUTS.EXTRA_LONG);
 
     // 先清理 .cursorrules（可能是目录）
     const cursorRulesPath = path.join(workspaceFolder.uri.fsPath, '.cursorrules');

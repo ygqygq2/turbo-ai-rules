@@ -138,8 +138,12 @@ export interface CustomAdapterConfig extends AdapterConfig {
   organizeBySource?: boolean;
   /** 是否使用原文件名(仅对 directory 类型有效), 默认 true。false 时使用 sourceId-ruleId.md 格式 */
   useOriginalFilename?: boolean;
+  /** 是否保持目录结构(仅对 directory 类型有效), 默认 true。false 为平铺模式 */
+  preserveDirectoryStructure?: boolean;
   /** 是否生成索引文件(仅对 directory 类型有效), 默认 true */
   generateIndex?: boolean;
+  /** 是否为每个源目录生成单独索引(仅当 organizeBySource=true 且 generateIndex=true 时有效), 默认 false */
+  indexPerSource?: boolean;
   /** 索引文件名(默认 'index.md') */
   indexFileName?: string;
   /** 目录结构配置(仅对 directory 类型有效) */

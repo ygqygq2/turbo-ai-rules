@@ -2,11 +2,12 @@
  * Shared Selection 集成测试
  * 测试 enableSharedSelection 配置的完整功能
  */
-
 import * as assert from 'assert';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as vscode from 'vscode';
+
+import { TEST_TIMEOUTS } from './testConstants';
 
 // 通过扩展获取服务实例
 let selectionStateManager: any;
@@ -18,7 +19,7 @@ describe('Shared Selection Integration Tests', () => {
   const sharedFilePath = path.join('.turbo-ai-rules', 'selections.json');
 
   before(async function () {
-    this.timeout(30000);
+    this.timeout(TEST_TIMEOUTS.MEDIUM);
 
     const folders = vscode.workspace.workspaceFolders;
     assert.ok(folders && folders.length > 0, 'No workspace folder found');
@@ -48,7 +49,7 @@ describe('Shared Selection Integration Tests', () => {
   });
 
   afterEach(async function () {
-    this.timeout(10000);
+    this.timeout(TEST_TIMEOUTS.SHORT);
 
     // 清理启用工作区的共享选择文件
     const enabledPath = path.join(enabledWorkspace.uri.fsPath, sharedFilePath);
@@ -68,7 +69,7 @@ describe('Shared Selection Integration Tests', () => {
   });
 
   it('应该在启用 enableSharedSelection 时创建共享选择文件', async function () {
-    this.timeout(10000);
+    this.timeout(TEST_TIMEOUTS.SHORT);
 
     // 1. 打开 enabledWorkspace 中的文件，切换到该工作区上下文
     const readmePath = path.join(enabledWorkspace.uri.fsPath, 'README.md');
@@ -121,7 +122,7 @@ describe('Shared Selection Integration Tests', () => {
   });
 
   it('应该从共享选择文件加载规则选择状态', async function () {
-    this.timeout(10000);
+    this.timeout(TEST_TIMEOUTS.SHORT);
 
     // 1. 打开 enabledWorkspace 中的文件，切换到该工作区上下文
     const readmePath = path.join(enabledWorkspace.uri.fsPath, 'README.md');
@@ -164,7 +165,7 @@ describe('Shared Selection Integration Tests', () => {
   });
 
   it('应该在禁用 enableSharedSelection 时使用 WorkspaceDataManager', async function () {
-    this.timeout(10000);
+    this.timeout(TEST_TIMEOUTS.MEDIUM);
 
     // 1. 打开 disabledWorkspace 中的文件，切换到该工作区上下文
     const readmePath = path.join(disabledWorkspace.uri.fsPath, 'README.md');
@@ -210,7 +211,7 @@ describe('Shared Selection Integration Tests', () => {
   });
 
   it('应该在共享文件加载失败时降级到 WorkspaceDataManager', async function () {
-    this.timeout(10000);
+    this.timeout(TEST_TIMEOUTS.SHORT);
 
     // 1. 打开 enabledWorkspace 中的文件，切换到该工作区上下文
     const readmePath = path.join(enabledWorkspace.uri.fsPath, 'README.md');
@@ -251,7 +252,7 @@ describe('Shared Selection Integration Tests', () => {
   });
 
   it('应该支持多个规则源的共享选择', async function () {
-    this.timeout(10000);
+    this.timeout(TEST_TIMEOUTS.SHORT);
 
     // 1. 打开 enabledWorkspace 中的文件，切换到该工作区上下文
     const readmePath = path.join(enabledWorkspace.uri.fsPath, 'README.md');

@@ -432,6 +432,22 @@ export class FileGenerator {
           sourceDir: skillDirs.get(relativeDir)!,
           skillRelativePath: relativeDir,
         };
+        Logger.debug('[FileGenerator] Entering SKILL directory context', {
+          relativeDir,
+          sourceDir: skillContext.sourceDir,
+          currentDir,
+        });
+      } else {
+        // 检查是否是 SKILL 目录但不在期望列表中
+        const skillMdPath = path.join(currentDir, 'SKILL.md');
+        const hasSkillMd = fs.existsSync(skillMdPath);
+        if (hasSkillMd) {
+          Logger.debug('[FileGenerator] Found SKILL.md but directory not in expected list', {
+            relativeDir,
+            currentDir,
+            expectedDirs: Array.from(skillDirs.keys()),
+          });
+        }
       }
     }
 
@@ -439,9 +455,20 @@ export class FileGenerator {
       const fullPath = path.join(currentDir, entry.name);
       const relativePath = path.relative(baseDir, fullPath);
 
-      // 跳过索引文件（仅根目录）
-      if (entry.name === 'index.md' && currentDir === baseDir) {
-        continue;
+      // 跳过索引文件
+      // 1. 根目录的 index.md (总是跳过)
+      // 2. 源目录的 index.md (当启用 indexPerSource 时跳过)
+      if (entry.name === 'index.md') {
+        if (currentDir === baseDir) {
+          // 根目录的 index.md，总是跳过
+          continue;
+        }
+        // 检查是否是源目录的 index.md (相对路径只有一层，如 "sourceId/index.md")
+        const pathParts = relativePath.split(path.sep);
+        if (pathParts.length === 2) {
+          // 可能是源目录的 index.md，跳过
+          continue;
+        }
       }
 
       if (entry.isDirectory()) {
@@ -543,15 +570,46 @@ export class FileGenerator {
               rule.sourceId,
             );
             if (relativePath) {
-              // 获取 SKILL.md 的父目录相对路径（如 git-workflow-expert）
-              const skillDirPath = path.dirname(relativePath);
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const preserveStructure = (adapter as any).preserveDirectoryStructure ?? true;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const organizeBySource = (adapter as any).shouldOrganizeBySource?.() ?? false;
+
+              // 获取 SKILL.md 的父目录相对路径
+              let skillDirPath: string;
+              if (preserveStructure) {
+                // 保持目录结构：1300-skills/git-workflow-expert
+                skillDirPath = path.dirname(relativePath);
+              } else {
+                // 平铺模式：git-workflow-expert（只取最后一层目录名）
+                skillDirPath = path.basename(path.dirname(relativePath));
+              }
+
+              // 如果按源组织，前面加上 sourceId
+              if (organizeBySource && rule.sourceId) {
+                skillDirPath = path.join(rule.sourceId, skillDirPath);
+              }
+
               // 记录源目录路径，用于后续同步检查
               skillDirs.set(skillDirPath, path.dirname(rule.filePath));
+
+              Logger.debug('[FileGenerator] Added SKILL directory mapping', {
+                ruleId: rule.id,
+                ruleFilePath: rule.filePath,
+                sourceId: rule.sourceId,
+                relativePath,
+                skillDirPath,
+                sourceDirPath: path.dirname(rule.filePath),
+                preserveStructure,
+                organizeBySource,
+              });
             }
           } else {
             // 普通文件 - 记录完整相对路径
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const preserveStructure = (adapter as any).preserveDirectoryStructure ?? true;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const organizeBySource = (adapter as any).shouldOrganizeBySource?.() ?? false;
 
             if (preserveStructure && rule.sourceId) {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -560,19 +618,37 @@ export class FileGenerator {
                 rule.sourceId,
               );
               if (relativePath) {
-                filePaths.add(relativePath);
+                // 如果按源组织，前面加上 sourceId
+                const finalPath = organizeBySource
+                  ? path.join(rule.sourceId, relativePath)
+                  : relativePath;
+                filePaths.add(finalPath);
               } else {
                 const fileName = adapter.getRuleFileName(rule);
-                filePaths.add(fileName);
+                const finalPath =
+                  organizeBySource && rule.sourceId ? path.join(rule.sourceId, fileName) : fileName;
+                filePaths.add(finalPath);
               }
             } else {
               const fileName = adapter.getRuleFileName(rule);
-              filePaths.add(fileName);
+              const finalPath =
+                organizeBySource && rule.sourceId ? path.join(rule.sourceId, fileName) : fileName;
+              filePaths.add(finalPath);
             }
           }
         }
       }
     }
+
+    Logger.debug('[FileGenerator] Final expected paths summary', {
+      filePathsCount: filePaths.size,
+      skillDirsCount: skillDirs.size,
+      skillDirsMappings: Array.from(skillDirs.entries()).map(([outputPath, sourcePath]) => ({
+        outputPath,
+        sourcePath,
+      })),
+      sampleFilePaths: Array.from(filePaths).slice(0, 5),
+    });
 
     return { filePaths, skillDirs };
   }

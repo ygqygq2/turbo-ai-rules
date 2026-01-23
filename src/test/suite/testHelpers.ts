@@ -9,6 +9,7 @@ import { RulesManager } from '../../services/RulesManager';
 import { SelectionStateManager } from '../../services/SelectionStateManager';
 import { WorkspaceDataManager } from '../../services/WorkspaceDataManager';
 import { CONFIG_KEYS } from '../../utils/constants';
+import { TEST_DELAYS, TEST_RETRY } from './testConstants';
 
 /**
  * @description 为测试源初始化选择状态（全选所有规则）
@@ -24,21 +25,19 @@ export async function initializeTestSourceSelection(
   const rulesManager = RulesManager.getInstance();
   const selectionStateManager = SelectionStateManager.getInstance();
 
-  // 重试获取规则（最多重试5次，每次等待1秒）
+  // 使用重试机制获取规则
   let allRules: any[] = [];
-  let retries = 0;
-  const maxRetries = 5;
-
-  while (allRules.length === 0 && retries < maxRetries) {
-    allRules = rulesManager.getRulesBySource(sourceId);
-    if (allRules.length > 0) {
-      break;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    retries++;
-  }
-
-  if (allRules.length === 0) {
+  try {
+    allRules = await retryUntilSuccess(
+      () => Promise.resolve(rulesManager.getRulesBySource(sourceId)),
+      {
+        maxRetries: 5,
+        retryDelay: 1000,
+        condition: (rules) => rules.length > 0,
+      },
+    );
+  } catch (error) {
+    console.warn(`Failed to get rules for source ${sourceId}:`, error);
     return;
   }
 
@@ -87,6 +86,50 @@ export async function initializeAllTestSourcesSelection(
 }
 
 /**
+ * @description 睡眠指定毫秒数
+ * @param ms {number} 毫秒数
+ * @return {Promise<void>}
+ */
+export async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * @description 重试执行函数直到成功或超时
+ * @param fn {() => Promise<T>} 要执行的异步函数
+ * @param options {{ maxRetries?: number; retryDelay?: number; condition?: (result: T) => boolean }} 重试选项
+ * @return {Promise<T>}
+ */
+export async function retryUntilSuccess<T>(
+  fn: () => Promise<T>,
+  options: {
+    maxRetries?: number;
+    retryDelay?: number;
+    condition?: (result: T) => boolean;
+  } = {},
+): Promise<T> {
+  const { maxRetries = 5, retryDelay = 1000, condition = (r) => !!r } = options;
+  let lastError: Error | undefined;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const result = await fn();
+      if (condition(result)) {
+        return result;
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+    }
+
+    if (i < maxRetries - 1) {
+      await sleep(retryDelay);
+    }
+  }
+
+  throw lastError || new Error(`Failed after ${maxRetries} retries`);
+}
+
+/**
  * @description 为测试预设全选状态（在同步之前写入磁盘）
  * 模拟用户已经勾选了所有规则，这样同步时 initializeState 会加载到这个状态
  * @param sourceId {string} 规则源 ID
@@ -104,4 +147,205 @@ export async function presetAllRulesSelected(
   await workspaceDataManager.setRuleSelection(workspacePath, sourceId, {
     paths: ['**/*'], // 通配符表示全选
   });
+}
+
+/**
+ * @description 等待扩展完全激活
+ * @param extensionId {string} 扩展ID
+ * @return {Promise<vscode.Extension<any> | undefined>}
+ */
+export async function waitForExtensionActivation(
+  extensionId: string = 'ygqygq2.turbo-ai-rules',
+): Promise<vscode.Extension<any> | undefined> {
+  const ext = vscode.extensions.getExtension(extensionId);
+  if (!ext) {
+    throw new Error(`Extension ${extensionId} not found`);
+  }
+
+  if (!ext.isActive) {
+    await ext.activate();
+    await sleep(TEST_DELAYS.MEDIUM);
+  }
+
+  return ext;
+}
+
+/**
+ * @description 等待工作区文件夹上下文更新
+ * @param workspaceFolder {vscode.WorkspaceFolder} 工作区文件夹
+ * @return {Promise<void>}
+ */
+export async function switchToWorkspaceContext(
+  workspaceFolder: vscode.WorkspaceFolder,
+): Promise<void> {
+  const readmePath = vscode.Uri.joinPath(workspaceFolder.uri, 'README.md');
+  const doc = await vscode.workspace.openTextDocument(readmePath);
+  await vscode.window.showTextDocument(doc);
+  await sleep(TEST_DELAYS.SHORT);
+}
+
+/**
+ * @description 等待命令执行完成
+ * @param command {string} 命令ID
+ * @param args {any[]} 命令参数
+ * @param waitTime {number} 等待时间（毫秒）
+ * @return {Promise<any>}
+ */
+export async function executeCommandAndWait(
+  command: string,
+  args: any[] = [],
+  waitTime: number = TEST_DELAYS.MEDIUM,
+): Promise<any> {
+  const result = await vscode.commands.executeCommand(command, ...args);
+  await sleep(waitTime);
+  return result;
+}
+
+/**
+ * @description 获取工作区的服务实例
+ * @return {Promise<{ rulesManager: any; selectionStateManager: any; api: any }>}
+ */
+export async function getExtensionServices(): Promise<{
+  rulesManager: any;
+  selectionStateManager: any;
+  api: any;
+}> {
+  const ext = await waitForExtensionActivation();
+  const api = ext?.exports;
+  const rulesManager = api?.rulesManager;
+  const selectionStateManager = api?.selectionStateManager;
+
+  if (!rulesManager) {
+    throw new Error('RulesManager not available from extension API');
+  }
+  if (!selectionStateManager) {
+    throw new Error('SelectionStateManager not available from extension API');
+  }
+
+  return { rulesManager, selectionStateManager, api };
+}
+
+/**
+ * @description 查找指定名称的工作区文件夹
+ * @param namePattern {string | RegExp} 工作区名称或正则模式
+ * @return {vscode.WorkspaceFolder | undefined}
+ */
+export function findWorkspaceFolder(
+  namePattern: string | RegExp,
+): vscode.WorkspaceFolder | undefined {
+  const folders = vscode.workspace.workspaceFolders;
+  if (!folders || folders.length === 0) {
+    return undefined;
+  }
+
+  if (typeof namePattern === 'string') {
+    return folders.find((f) => f.name === namePattern || f.name.includes(namePattern));
+  } else {
+    return folders.find((f) => namePattern.test(f.name));
+  }
+}
+
+/**
+ * @description 等待规则加载完成
+ * @param rulesManager {any} RulesManager实例
+ * @param minRuleCount {number} 最小规则数量
+ * @return {Promise<any[]>}
+ */
+export async function waitForRulesLoaded(
+  rulesManager: any,
+  minRuleCount: number = 1,
+): Promise<any[]> {
+  return retryUntilSuccess(() => Promise.resolve(rulesManager.getAllRules()), {
+    maxRetries: TEST_RETRY.MAX_RETRIES,
+    retryDelay: TEST_RETRY.RETRY_DELAY,
+    condition: (rules) => rules.length >= minRuleCount,
+  });
+}
+
+/**
+ * @description 清理测试生成的文件和目录
+ * @param workspaceFolder {vscode.WorkspaceFolder} 工作区文件夹
+ * @param paths {string[]} 要清理的相对路径列表
+ * @param preserveUserFiles {boolean} 是否保留用户自定义文件
+ * @return {Promise<void>}
+ */
+export async function cleanupTestFiles(
+  workspaceFolder: vscode.WorkspaceFolder,
+  paths: string[] = [
+    '.cursorrules',
+    '.windsurfrules',
+    '.github',
+    '.continue',
+    '.clinerules',
+    '.roo-clinerules',
+    '.aider.conf.yml',
+    '.bolt',
+    '.qodo',
+    'rules',
+    'skills',
+  ],
+  preserveUserFiles: boolean = true,
+): Promise<void> {
+  const fs = await import('fs-extra');
+  const path = await import('path');
+
+  for (const relativePath of paths) {
+    const fullPath = path.join(workspaceFolder.uri.fsPath, relativePath);
+
+    try {
+      if (!(await fs.pathExists(fullPath))) {
+        continue;
+      }
+
+      const stat = await fs.stat(fullPath);
+
+      if (stat.isFile()) {
+        // 如果是文件，直接删除
+        await fs.remove(fullPath);
+      } else if (stat.isDirectory()) {
+        // 如果是目录，可能需要保留用户文件
+        if (preserveUserFiles) {
+          const files = await fs.readdir(fullPath);
+          for (const file of files) {
+            // 删除非用户自定义文件（不以 'custom-' 或 'user-' 开头）
+            if (!file.startsWith('custom-') && !file.startsWith('user-')) {
+              const filePath = path.join(fullPath, file);
+              await fs.remove(filePath);
+            }
+          }
+
+          // 如果目录为空或只有用户文件，根据策略处理
+          const remainingFiles = await fs.readdir(fullPath);
+          if (remainingFiles.length === 0) {
+            await fs.remove(fullPath);
+          }
+        } else {
+          // 不保留用户文件，直接删除整个目录
+          await fs.remove(fullPath);
+        }
+      }
+    } catch (error) {
+      // 忽略清理失败的错误，避免影响测试结果
+      console.warn(`Failed to clean ${relativePath}:`, error);
+    }
+  }
+}
+
+/**
+ * @description 清理选择状态
+ * @param selectionStateManager {any} SelectionStateManager实例
+ * @param sourceIds {string[]} 源ID列表
+ * @return {Promise<void>}
+ */
+export async function clearSelectionStates(
+  selectionStateManager: any,
+  sourceIds: string[],
+): Promise<void> {
+  for (const sourceId of sourceIds) {
+    try {
+      selectionStateManager.clearState(sourceId);
+    } catch (error) {
+      console.warn(`Failed to clear state for ${sourceId}:`, error);
+    }
+  }
 }

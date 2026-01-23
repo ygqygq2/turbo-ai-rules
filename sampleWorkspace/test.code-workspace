@@ -2,56 +2,44 @@
   "folders": [
     {
       "path": "rules-for-cursor",
-      "name": "Test: Cursor Adapter"
+      "name": "Test: Cursor Adapter",
     },
     {
       "path": "rules-for-copilot",
-      "name": "Test: Copilot Adapter"
+      "name": "Test: Copilot Adapter",
     },
     {
       "path": "rules-for-continue",
-      "name": "Test: Continue Adapter"
+      "name": "Test: Continue Adapter",
     },
     {
       "path": "rules-for-default",
-      "name": "Test: Default Rules Directory"
+      "name": "Test: Default Rules Directory",
     },
     {
       "path": "rules-multi-source",
-      "name": "Test: Multi-Source Conflict Resolution"
+      "name": "Test: Multi-Source Conflict Resolution",
     },
     {
       "path": "rules-with-user-rules",
-      "name": "Test: Multi-Adapter + User Protection"
+      "name": "Test: Multi-Adapter + User Protection",
     },
     {
       "path": "rules-for-skills",
-      "name": "Test: Skills Adapter"
+      "name": "Test: Skills Adapter",
     },
     {
       "path": "rules-generate-test",
-      "name": "Test: Generate Config Files"
+      "name": "Test: Generate Config Files",
     },
     {
       "path": "rules-for-custom-adapters",
-      "name": "Test: Custom Adapters"
-    }
+      "name": "Test: Custom Adapters",
+    },
   ],
   "settings": {
     "turbo-ai-rules.sync.onStartup": false,
-    "turbo-ai-rules.sources": [
-      {
-        "id": "ai-rules-7008d805",
-        "name": "my",
-        "gitUrl": "git@github.com:ygqygq2/ai-rules.git",
-        "branch": "main",
-        "subPath": "/",
-        "enabled": true,
-        "syncInterval": 0,
-        "lastSync": "2025-11-06T09:11:35.378Z"
-      }
-    ],
     "turbo-ai-rules.adapters": {},
-    "turbo-ai-rules.enableSharedSelection": false
-  }
+    "turbo-ai-rules.enableSharedSelection": false,
+  },
 }

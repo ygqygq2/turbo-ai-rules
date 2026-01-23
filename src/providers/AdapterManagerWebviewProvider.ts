@@ -47,6 +47,11 @@ interface CustomAdapterData {
   };
   fileExtensions?: string[];
   organizeBySource?: boolean;
+  generateIndex?: boolean;
+  indexPerSource?: boolean;
+  indexFileName?: string;
+  preserveDirectoryStructure?: boolean;
+  useOriginalFilename?: boolean;
   isNew?: boolean; // 标识是新增还是编辑
 }
 
@@ -292,6 +297,11 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
       enabled: adapter.enabled ?? true, // 默认启用
       fileExtensions: adapter.fileExtensions,
       organizeBySource: adapter.organizeBySource,
+      generateIndex: adapter.generateIndex,
+      indexPerSource: adapter.indexPerSource,
+      indexFileName: adapter.indexFileName,
+      preserveDirectoryStructure: adapter.preserveDirectoryStructure,
+      useOriginalFilename: adapter.useOriginalFilename,
       ...(adapter.outputType === 'file'
         ? { singleFileTemplate: adapter.fileTemplate }
         : {
@@ -420,8 +430,11 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         outputType: adapterData.format === 'directory' ? 'directory' : 'file',
         fileExtensions: adapterData.fileExtensions || [],
         organizeBySource: adapterData.organizeBySource ?? true,
-        generateIndex: true,
-        indexFileName: adapterData.directoryStructure?.pathTemplate || 'index.md',
+        generateIndex: adapterData.generateIndex ?? true,
+        indexPerSource: adapterData.indexPerSource,
+        indexFileName: adapterData.indexFileName || 'index.md',
+        preserveDirectoryStructure: adapterData.preserveDirectoryStructure,
+        useOriginalFilename: adapterData.useOriginalFilename,
         isRuleType: adapterData.isRuleType,
         fileTemplate: adapterData.singleFileTemplate,
       };

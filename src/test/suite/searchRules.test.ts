@@ -1,9 +1,10 @@
 import * as assert from 'assert';
-import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { RulesManager } from '../../services/RulesManager';
 import type { ParsedRule } from '../../types';
+import { TEST_DELAYS, TEST_TIMEOUTS } from './testConstants';
+import { executeCommandAndWait, switchToWorkspaceContext } from './testHelpers';
 
 describe('Search Rules Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
@@ -15,16 +16,13 @@ describe('Search Rules Tests', () => {
   });
 
   it('Should search rules by keyword', async function () {
-    this.timeout(120000); // 2分钟
+    this.timeout(TEST_TIMEOUTS.LONG);
 
-    // 打开 README 确保正确的 workspace folder
-    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
-    const doc = await vscode.workspace.openTextDocument(readmePath);
-    await vscode.window.showTextDocument(doc);
+    // 切换到正确的工作区
+    await switchToWorkspaceContext(workspaceFolder);
 
     // 先同步规则
-    await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await executeCommandAndWait('turbo-ai-rules.syncRules', [], TEST_DELAYS.MEDIUM);
 
     // 获取 RulesManager 实例
     const rulesManager = RulesManager.getInstance();
@@ -46,14 +44,10 @@ describe('Search Rules Tests', () => {
   });
 
   it('Should handle search with no results', async function () {
-    this.timeout(120000);
+    this.timeout(TEST_TIMEOUTS.LONG);
 
-    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
-    const doc = await vscode.workspace.openTextDocument(readmePath);
-    await vscode.window.showTextDocument(doc);
-
-    await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await switchToWorkspaceContext(workspaceFolder);
+    await executeCommandAndWait('turbo-ai-rules.syncRules', [], TEST_DELAYS.MEDIUM);
 
     const rulesManager = RulesManager.getInstance();
 
@@ -64,14 +58,10 @@ describe('Search Rules Tests', () => {
   });
 
   it('Should search rules case-insensitively', async function () {
-    this.timeout(120000);
+    this.timeout(TEST_TIMEOUTS.LONG);
 
-    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
-    const doc = await vscode.workspace.openTextDocument(readmePath);
-    await vscode.window.showTextDocument(doc);
-
-    await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await switchToWorkspaceContext(workspaceFolder);
+    await executeCommandAndWait('turbo-ai-rules.syncRules', [], TEST_DELAYS.MEDIUM);
 
     const rulesManager = RulesManager.getInstance();
 

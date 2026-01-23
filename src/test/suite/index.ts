@@ -17,10 +17,20 @@ export async function run() {
     color: true,
   });
 
-  // 获取所有测试文件（只匹配 suite/ 目录，排除 unit/ 目录）
-  const tsFiles = await glob('suite/**/*.test.js', { cwd: testsRoot });
-  console.log('获取到以下测试文件:');
-  console.log('🚀 ~ file: index.ts:21 ~ tsFiles:', tsFiles);
+  // 支持通过环境变量指定单个测试文件
+  const testFile = process.env.TEST_FILE;
+  let tsFiles: string[];
+
+  if (testFile) {
+    // 只运行指定的测试文件
+    tsFiles = [`suite/${testFile}.test.js`];
+    console.log('运行指定测试文件:', testFile);
+  } else {
+    // 获取所有测试文件（只匹配 suite/ 目录，排除 unit/ 目录）
+    tsFiles = await glob('suite/**/*.test.js', { cwd: testsRoot });
+    console.log('获取到以下测试文件:');
+  }
+  console.log('🚀 ~ file: index.ts:26 ~ tsFiles:', tsFiles);
 
   return new Promise<void>((resolve, reject) => {
     // 添加测试文件

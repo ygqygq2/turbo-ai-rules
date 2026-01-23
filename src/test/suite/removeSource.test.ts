@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 import type { RuleSource } from '../../types';
 import { CONFIG_KEYS } from '../../utils/constants';
 import { restoreAllMocks } from './mocks';
+import { TEST_TIMEOUTS } from './testConstants';
 
 describe('Remove Source Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
@@ -20,7 +21,7 @@ describe('Remove Source Tests', () => {
   });
 
   it('Should list sources before removal', async function () {
-    this.timeout(30000);
+    this.timeout(TEST_TIMEOUTS.MEDIUM);
 
     // 直接从配置读取，不依赖 ConfigManager
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
@@ -38,7 +39,7 @@ describe('Remove Source Tests', () => {
   });
 
   it('Should have proper removeSource command registered', async function () {
-    this.timeout(30000);
+    this.timeout(TEST_TIMEOUTS.MEDIUM);
 
     // 验证命令已注册
     const commands = await vscode.commands.getCommands(true);
@@ -48,7 +49,7 @@ describe('Remove Source Tests', () => {
   });
 
   it('Should handle removing non-existent source gracefully', async function () {
-    this.timeout(30000);
+    this.timeout(TEST_TIMEOUTS.MEDIUM);
 
     const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
     const doc = await vscode.workspace.openTextDocument(readmePath);

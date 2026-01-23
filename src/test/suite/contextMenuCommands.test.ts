@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { RulesManager } from '../../services/RulesManager';
+import { TEST_TIMEOUTS } from './testConstants';
 
 describe('Context Menu Commands Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
@@ -14,7 +15,7 @@ describe('Context Menu Commands Tests', () => {
   });
 
   it('Should copy rule content to clipboard', async function () {
-    this.timeout(120000);
+    this.timeout(TEST_TIMEOUTS.LONG);
 
     const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
     const doc = await vscode.workspace.openTextDocument(readmePath);
@@ -60,7 +61,7 @@ describe('Context Menu Commands Tests', () => {
   });
 
   it('Should toggle rule selection state', async function () {
-    this.timeout(120000);
+    this.timeout(TEST_TIMEOUTS.LONG);
 
     const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
     const doc = await vscode.workspace.openTextDocument(readmePath);
@@ -91,7 +92,7 @@ describe('Context Menu Commands Tests', () => {
   });
 
   it('Should handle commands with no active rule gracefully', async function () {
-    this.timeout(30000);
+    this.timeout(TEST_TIMEOUTS.MEDIUM);
 
     const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
     const doc = await vscode.workspace.openTextDocument(readmePath);

@@ -42,6 +42,7 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({
   const [fileExtensions, setFileExtensions] = useState(adapter.fileExtensions?.join(', ') || '');
   const [organizeBySource, setOrganizeBySource] = useState(adapter.organizeBySource ?? true);
   const [generateIndex, setGenerateIndex] = useState(adapter.generateIndex ?? false);
+  const [indexPerSource, setIndexPerSource] = useState(adapter.indexPerSource ?? false);
   const [preserveDirectoryStructure, setPreserveDirectoryStructure] = useState(
     adapter.preserveDirectoryStructure ?? false,
   );
@@ -139,11 +140,12 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({
       isRuleType,
       enabled: adapter.enabled ?? true,
       fileExtensions: parsedExtensions.length > 0 ? parsedExtensions : [],
-      organizeBySource: format === 'directory' ? organizeBySource : undefined,
-      generateIndex: format === 'directory' ? generateIndex : undefined,
-      preserveDirectoryStructure: format === 'directory' ? preserveDirectoryStructure : undefined,
-      useOriginalFilename: format === 'directory' ? useOriginalFilename : undefined,
-      indexFileName: format === 'directory' && generateIndex ? indexFileName : undefined,
+      organizeBySource,
+      generateIndex,
+      indexPerSource: organizeBySource && generateIndex ? indexPerSource : undefined,
+      preserveDirectoryStructure,
+      useOriginalFilename,
+      indexFileName: generateIndex ? indexFileName : undefined,
       sortBy: format === 'single-file' ? sortBy : undefined,
       sortOrder: format === 'single-file' ? sortOrder : undefined,
       isNew, // 传递 isNew 标志给 Provider
@@ -484,6 +486,22 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({
                       {t('adapterManager.generateIndexDesc')}
                     </span>
                   </label>
+                  {organizeBySource && generateIndex && (
+                    <label className="checkbox-option sub-option">
+                      <input
+                        type="checkbox"
+                        checked={indexPerSource}
+                        onChange={(e) => setIndexPerSource(e.target.checked)}
+                      />
+                      <span className="checkbox-label">
+                        <i className="codicon codicon-file-submodule"></i>
+                        {t('adapterManager.indexPerSource')}
+                      </span>
+                      <span className="checkbox-description">
+                        {t('adapterManager.indexPerSourceDesc')}
+                      </span>
+                    </label>
+                  )}
                   <label className="checkbox-option">
                     <input
                       type="checkbox"

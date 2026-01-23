@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { CONFIG_KEYS, CONFIG_PREFIX, EXTENSION_ID } from '../../utils/constants';
+import { TEST_TIMEOUTS } from './testConstants';
 
 // 通过扩展获取服务实例
 let rulesManager: any;
@@ -77,7 +78,7 @@ describe('Multi-Source Integration Tests', () => {
 
   it('Should sync rules from multiple sources without errors', async function () {
     // 测试多源同步功能
-    this.timeout(180000); // 3分钟 - Git 克隆两个仓库需要更多时间
+    this.timeout(TEST_TIMEOUTS.EXTRA_LONG);
 
     try {
       // 打开当前 workspace folder 中的 README 文件，确保 activeEditor 在正确的 folder

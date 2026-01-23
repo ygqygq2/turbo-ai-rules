@@ -8,12 +8,19 @@
 # 单元测试（Vitest）
 pnpm test:unit
 
-# 集成测试（Mocha）
+# 集成测试（Mocha）- 所有文件
 pnpm test:suite:mocha
+
+# 集成测试（Mocha）- 单个文件（推荐开发时使用，快速）
+TEST_FILE=presetAdapters pnpm test:suite:mocha:file
+TEST_FILE=userRules pnpm test:suite:mocha:file
 
 # 全部测试
 pnpm test
 ```
+
+**可用的测试文件名**：
+`workspaceSwitching`, `userRules`, `syncRules`, `skillsAdapter`, `sharedSelection`, `searchRules`, `removeSource`, `presetAdapters`, `preConfiguredSources`, `performance`, `multiSource`, `generateConfigs`, `errorHandling`, `customAdapters`, `contextMenuCommands`, `addSource`
 
 ### 干净环境测试（推荐 - 重现 CI）
 

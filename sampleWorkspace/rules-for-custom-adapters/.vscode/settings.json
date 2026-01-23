@@ -19,35 +19,53 @@
     }
   ],
 
-  // 自定义适配器配置（测试用，默认禁用）
-  "turbo-ai-rules.adapters.custom": [
-    {
-      "id": "test-preserve-true",
-      "name": "Test Preserve Structure",
-      "enabled": false,
-      "autoUpdate": false,
-      "outputPath": "test-preserve-structure/true",
-      "outputType": "directory",
-      "preserveDirectoryStructure": true
+  // 自定义适配器配置（测试用）
+  "turbo-ai-rules.adapters.custom": [],
+  "turbo-ai-rules.adapters": {
+    "cursor": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc"
     },
-    {
-      "id": "test-preserve-false",
-      "name": "Test Flatten Structure",
+    "windsurf": {
       "enabled": false,
-      "autoUpdate": false,
-      "outputPath": "test-preserve-structure/false",
-      "outputType": "directory",
-      "preserveDirectoryStructure": false
+      "sortBy": "priority",
+      "sortOrder": "asc"
     },
-    {
-      "id": "test-preserve-index",
-      "name": "Test Index Paths",
+    "copilot": {
       "enabled": false,
-      "autoUpdate": false,
-      "outputPath": "test-preserve-structure/index",
-      "outputType": "directory",
-      "preserveDirectoryStructure": true,
-      "generateIndex": true
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "continue": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "cline": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "roo-cline": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "aider": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "bolt": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "qodo-gen": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
     }
-  ]
+  }
 }

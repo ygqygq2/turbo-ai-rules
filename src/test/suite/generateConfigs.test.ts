@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { CONFIG_KEYS } from '../../utils/constants';
+import { TEST_TIMEOUTS } from './testConstants';
 
 // 通过扩展获取服务实例
 let rulesManager: any;
@@ -59,7 +60,7 @@ describe('Generate Config Files Tests', () => {
   });
 
   it('Should generate adapter config files after sync', async function () {
-    this.timeout(180000); // 3分钟 - 需要 Git 克隆
+    this.timeout(TEST_TIMEOUTS.EXTRA_LONG);
 
     // 配置已在 settings.json 中预设
     const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');

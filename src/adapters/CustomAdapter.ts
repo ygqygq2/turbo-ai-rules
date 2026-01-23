@@ -68,6 +68,13 @@ export class CustomAdapter extends BaseAdapter {
   }
 
   /**
+   * 判断是否为每个源目录生成单独索引
+   */
+  protected shouldGenerateIndexPerSource(): boolean {
+    return this.config.indexPerSource ?? false;
+  }
+
+  /**
    * 获取索引文件名（重写基类方法）
    */
   protected getIndexFileName(): string {

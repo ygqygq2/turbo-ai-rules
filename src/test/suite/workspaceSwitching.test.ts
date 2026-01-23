@@ -7,6 +7,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 
 import { WorkspaceDataManager } from '../../services/WorkspaceDataManager';
+import { TEST_TIMEOUTS } from './testConstants';
 
 describe('Workspace Switching Tests', () => {
   let workspaceDataManager: WorkspaceDataManager;
@@ -22,7 +23,7 @@ describe('Workspace Switching Tests', () => {
   });
 
   it('Should isolate rule selections between different workspaces', async function () {
-    this.timeout(10000);
+    this.timeout(TEST_TIMEOUTS.SHORT);
 
     const folders = vscode.workspace.workspaceFolders;
     assert.ok(folders && folders.length >= 2, 'Need at least 2 workspace folders for this test');
@@ -98,7 +99,7 @@ describe('Workspace Switching Tests', () => {
   });
 
   it('Should persist selections to correct workspace directory', async function () {
-    this.timeout(10000);
+    this.timeout(TEST_TIMEOUTS.SHORT);
 
     const folders = vscode.workspace.workspaceFolders;
     assert.ok(folders && folders.length >= 2, 'Need at least 2 workspace folders');

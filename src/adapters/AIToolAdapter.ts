@@ -171,11 +171,45 @@ export abstract class BaseAdapter implements AIToolAdapter {
     let indexContent = '';
     let indexPath = '';
     if (this.shouldGenerateIndex()) {
-      indexContent = await this.generateDirectoryIndex(rules, organizeBySource, files);
       const indexFileName = this.getIndexFileName();
-      indexPath = path.join(outputPath, indexFileName);
-      const indexAbsolutePath = path.join(workspaceRoot, indexPath);
-      await safeWriteFile(indexAbsolutePath, indexContent);
+
+      // 检查是否为每个源目录生成单独索引
+      const generatePerSource = organizeBySource && this.shouldGenerateIndexPerSource();
+
+      if (generatePerSource) {
+        // 为每个源目录生成单独的索引
+        const rulesBySource = new Map<string, ParsedRule[]>();
+        for (const rule of rules) {
+          const sourceRules = rulesBySource.get(rule.sourceId) || [];
+          sourceRules.push(rule);
+          rulesBySource.set(rule.sourceId, sourceRules);
+        }
+
+        for (const [sourceId, sourceRules] of rulesBySource) {
+          // 为源目录生成索引，传入 sourceId 表示索引位置在该源目录下
+          const sourceIndexContent = await this.generateDirectoryIndex(
+            sourceRules,
+            false,
+            files,
+            sourceId,
+          );
+          const sourceIndexPath = path.join(outputPath, sourceId, indexFileName);
+          const sourceIndexAbsolutePath = path.join(workspaceRoot, sourceIndexPath);
+          await safeWriteFile(sourceIndexAbsolutePath, sourceIndexContent);
+        }
+
+        // 仍然生成根目录的总索引
+        indexContent = await this.generateDirectoryIndex(rules, organizeBySource, files);
+        indexPath = path.join(outputPath, indexFileName);
+        const indexAbsolutePath = path.join(workspaceRoot, indexPath);
+        await safeWriteFile(indexAbsolutePath, indexContent);
+      } else {
+        // 只生成根目录的索引
+        indexContent = await this.generateDirectoryIndex(rules, organizeBySource, files);
+        indexPath = path.join(outputPath, indexFileName);
+        const indexAbsolutePath = path.join(workspaceRoot, indexPath);
+        await safeWriteFile(indexAbsolutePath, indexContent);
+      }
     }
 
     const Logger = (await import('../utils/logger')).Logger;
@@ -204,6 +238,14 @@ export abstract class BaseAdapter implements AIToolAdapter {
    */
   protected shouldGenerateIndex(): boolean {
     return true;
+  }
+
+  /**
+   * 判断是否为每个源目录生成单独索引（子类可重写）
+   * 仅当 organizeBySource=true 且 generateIndex=true 时有效
+   */
+  protected shouldGenerateIndexPerSource(): boolean {
+    return false;
   }
 
   /**
@@ -337,10 +379,19 @@ export abstract class BaseAdapter implements AIToolAdapter {
     const shouldCopy = this.shouldCopySkillDirectory();
 
     if (isSkillFile && shouldCopy && relativeToSubPath) {
-      // 复制整个父目录，保持完整的相对路径层级
+      // 复制整个父目录
       const sourceDir = path.dirname(rule.filePath);
-      // 获取目录的相对路径（去掉文件名）
-      const dirRelativePath = path.dirname(relativeToSubPath);
+
+      // 平铺模式：只使用父目录名（去掉所有上层路径）
+      // 保持目录结构：使用完整的相对路径
+      let dirRelativePath: string;
+      if (this.preserveDirectoryStructure) {
+        // 保持目录结构：1300-skills/git-workflow-expert
+        dirRelativePath = path.dirname(relativeToSubPath);
+      } else {
+        // 平铺模式：git-workflow-expert（只取最后一层目录名）
+        dirRelativePath = path.basename(path.dirname(relativeToSubPath));
+      }
 
       const targetDir = sourceId
         ? path.join(workspaceRoot, outputPath, sourceId, dirRelativePath)
@@ -350,6 +401,7 @@ export abstract class BaseAdapter implements AIToolAdapter {
         sourceDir: toRelativePath(sourceDir),
         targetDir: toRelativePath(targetDir),
         relativeToSubPath: dirRelativePath,
+        preserveStructure: this.preserveDirectoryStructure,
       });
       await safeCopyDir(sourceDir, targetDir);
 
@@ -369,7 +421,9 @@ export abstract class BaseAdapter implements AIToolAdapter {
           ? path.join(outputPath, sourceId, relativeToSubPath)
           : path.join(outputPath, relativeToSubPath);
       } else {
-        // 平铺模式：使用文件名
+        // 平铺模式：所有文件直接放在输出目录下，不包含任何子目录
+        // 例如: .skills/rule1.md, .skills/rule2.md
+        // 注意：SKILL.md 文件会在前面的逻辑中复制整个父目录，不会到这里
         const fileName = this.getRuleFileName(rule);
         targetPath = sourceId
           ? path.join(outputPath, sourceId, fileName)
@@ -399,11 +453,13 @@ export abstract class BaseAdapter implements AIToolAdapter {
    * @param rules 规则列表
    * @param organizeBySource 是否按源组织
    * @param filesMap 已生成的文件路径映射（key为相对路径）
+   * @param indexLocationSourceId 索引文件所在的源目录（如果在源目录下生成）
    */
   protected async generateDirectoryIndex(
     rules: ParsedRule[],
     organizeBySource: boolean,
     filesMap?: Map<string, string>,
+    indexLocationSourceId?: string,
   ): Promise<string> {
     const lines: string[] = [];
 
@@ -425,7 +481,11 @@ export abstract class BaseAdapter implements AIToolAdapter {
 
         for (const rule of sourceRules) {
           // 尝试从 filesMap 中找到实际路径
-          const actualPath = await this.findRulePathInFilesMap(rule, filesMap);
+          const actualPath = await this.findRulePathInFilesMap(
+            rule,
+            filesMap,
+            indexLocationSourceId,
+          );
           const linkPath = actualPath || `./${sourceId}/${rule.id}.md`;
           lines.push(`- [${rule.title}](${linkPath})`);
         }
@@ -439,7 +499,7 @@ export abstract class BaseAdapter implements AIToolAdapter {
 
       for (const rule of rules) {
         // 尝试从 filesMap 中找到实际路径
-        const actualPath = await this.findRulePathInFilesMap(rule, filesMap);
+        const actualPath = await this.findRulePathInFilesMap(rule, filesMap, indexLocationSourceId);
         const linkPath = actualPath || `./${rule.sourceId}-${rule.id}.md`;
         lines.push(`- [${rule.title}](${linkPath}) *(from ${rule.sourceId})*`);
       }
@@ -452,11 +512,13 @@ export abstract class BaseAdapter implements AIToolAdapter {
    * 从 filesMap 中查找规则的实际路径
    * @param rule 规则对象
    * @param filesMap 已生成的文件映射
-   * @returns 相对于索引文件的路径，例如 ./sourceId/a/b/c/file.md
+   * @param indexLocationSourceId 索引文件所在的源目录（如果在源目录下生成）
+   * @returns 相对于索引文件的路径，例如 ./sourceId/a/b/c/file.md 或 ./a/b/c/file.md
    */
   private async findRulePathInFilesMap(
     rule: ParsedRule,
     filesMap?: Map<string, string>,
+    indexLocationSourceId?: string,
   ): Promise<string | null> {
     if (!filesMap) {
       return null;
@@ -473,12 +535,17 @@ export abstract class BaseAdapter implements AIToolAdapter {
       if (content.startsWith('[Directory:')) {
         // 对于 SKILL 目录，如果当前规则是 SKILL.md，则返回目录下的 SKILL.md 路径
         if (isSkillFile) {
-          // relativePath 格式: .skills/git-workflow-expert
-          // 需要构建: ./git-workflow-expert/SKILL.md
+          // relativePath 格式: .skills/sourceId/1300-skills/git-workflow-expert 或 .skills/git-workflow-expert
           const parts = relativePath.split(path.sep);
           if (parts.length > 1) {
             // 去掉第一个部分（outputPath）
-            const relativeToIndex = parts.slice(1).join('/');
+            let relativeToIndex = parts.slice(1).join('/');
+
+            // 如果索引在源目录下，还要去掉 sourceId
+            if (indexLocationSourceId && relativeToIndex.startsWith(indexLocationSourceId + '/')) {
+              relativeToIndex = relativeToIndex.substring(indexLocationSourceId.length + 1);
+            }
+
             return `./${relativeToIndex}/SKILL.md`;
           } else {
             const dirName = path.basename(relativePath);
@@ -494,14 +561,19 @@ export abstract class BaseAdapter implements AIToolAdapter {
       // 检查文件名是否匹配
       if (basename === ruleFileName || basename === `${rule.id}.md`) {
         // relativePath 格式: outputPath/sourceId/a/b/c/file.md
-        // 索引文件在: outputPath/index.md
-        // 需要提取 sourceId/a/b/c/file.md 部分
+        // 索引文件在: outputPath/index.md 或 outputPath/sourceId/index.md
+        // 需要提取相对路径部分
 
         // 分割路径，去掉第一个部分（outputPath）
         const parts = relativePath.split(path.sep);
         if (parts.length > 1) {
-          // 重新组合，去掉第一个部分
-          const relativeToIndex = parts.slice(1).join('/');
+          let relativeToIndex = parts.slice(1).join('/');
+
+          // 如果索引在源目录下，去掉 sourceId 前缀
+          if (indexLocationSourceId && relativeToIndex.startsWith(indexLocationSourceId + '/')) {
+            relativeToIndex = relativeToIndex.substring(indexLocationSourceId.length + 1);
+          }
+
           return `./${relativeToIndex}`;
         } else {
           // 如果路径只有一层（不太可能），直接返回

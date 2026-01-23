@@ -1,10 +1,11 @@
 import * as assert from 'assert';
-import * as path from 'path';
 import * as vscode from 'vscode';
 
 import type { RuleSource } from '../../types';
 import { CONFIG_KEYS } from '../../utils/constants';
 import { mockShowInputBox, mockShowQuickPick, restoreAllMocks } from './mocks';
+import { TEST_DELAYS, TEST_TIMEOUTS } from './testConstants';
+import { sleep, switchToWorkspaceContext } from './testHelpers';
 
 describe('Add Source Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
@@ -21,7 +22,7 @@ describe('Add Source Tests', () => {
   });
 
   it('Should add public GitHub repository', async function () {
-    this.timeout(120000);
+    this.timeout(TEST_TIMEOUTS.LONG);
 
     const sourceUrl = 'https://github.com/ygqygq2/ai-rules.git';
 
@@ -31,10 +32,8 @@ describe('Add Source Tests', () => {
     // Mock 用户选择认证方式（None）
     mockShowQuickPick({ label: 'None', description: 'Public repository' } as vscode.QuickPickItem);
 
-    // 打开 README 确保正确的 workspace
-    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
-    const doc = await vscode.workspace.openTextDocument(readmePath);
-    await vscode.window.showTextDocument(doc);
+    // 切换到正确的工作区
+    await switchToWorkspaceContext(workspaceFolder);
 
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
     const sourcesBefore = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);
@@ -42,7 +41,7 @@ describe('Add Source Tests', () => {
 
     // 执行添加命令
     await vscode.commands.executeCommand('turbo-ai-rules.addSource');
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await sleep(TEST_DELAYS.MEDIUM);
 
     const sourcesAfter = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);
     const added = sourcesAfter.find((s: RuleSource) => s.gitUrl === sourceUrl);
@@ -61,7 +60,7 @@ describe('Add Source Tests', () => {
   });
 
   it('Should not add duplicate sources', async function () {
-    this.timeout(120000);
+    this.timeout(TEST_TIMEOUTS.LONG);
 
     const sourceUrl = 'https://github.com/ygqygq2/ai-rules.git';
 
@@ -69,16 +68,14 @@ describe('Add Source Tests', () => {
     mockShowInputBox(sourceUrl);
     mockShowQuickPick({ label: 'None', description: 'Public repository' } as vscode.QuickPickItem);
 
-    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
-    const doc = await vscode.workspace.openTextDocument(readmePath);
-    await vscode.window.showTextDocument(doc);
+    await switchToWorkspaceContext(workspaceFolder);
 
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
     const sourcesBefore = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);
 
     // 尝试添加相同的源
     await vscode.commands.executeCommand('turbo-ai-rules.addSource');
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await sleep(TEST_DELAYS.MEDIUM);
 
     const sourcesAfter = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);
     const countAfter = sourcesAfter.filter((s: RuleSource) => s.gitUrl === sourceUrl).length;
@@ -89,16 +86,14 @@ describe('Add Source Tests', () => {
   });
 
   it('Should validate repository URL format', async function () {
-    this.timeout(60000);
+    this.timeout(TEST_TIMEOUTS.MEDIUM);
 
     const invalidUrl = 'not-a-valid-url';
 
     // Mock 用户输入无效 URL
     mockShowInputBox(invalidUrl);
 
-    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
-    const doc = await vscode.workspace.openTextDocument(readmePath);
-    await vscode.window.showTextDocument(doc);
+    await switchToWorkspaceContext(workspaceFolder);
 
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
     const sourcesBefore = config.get<RuleSource[]>(CONFIG_KEYS.SOURCES, []);

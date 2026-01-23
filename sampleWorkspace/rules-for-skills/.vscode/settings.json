@@ -49,16 +49,16 @@
   "turbo-ai-rules.sync.auto": false,
   "turbo-ai-rules.sync.onStartup": false,
 
-  // Pre-configured skills rule source
+  // Rule Sources Configuration
   "turbo-ai-rules.sources": [
     {
-      "id": "turbo-skills-source",
-      "name": "Turbo AI Skills",
+      "id": "ai-rules",
+      "name": "ygqygq2's AI Rules",
       "gitUrl": "https://github.com/ygqygq2/ai-rules.git",
       "branch": "main",
-      "subPath": "1300-skills/",
+      "subPath": "/",
       "enabled": true,
-      "authentication": {
+      "auth": {
         "type": "none"
       }
     }
@@ -76,7 +76,9 @@
       "organizeBySource": false,
       "generateIndex": true,
       "indexFileName": "index.md",
-      "isRuleType": false
+      "isRuleType": false,
+      "preserveDirectoryStructure": true,
+      "useOriginalFilename": true
     }
   ]
 }

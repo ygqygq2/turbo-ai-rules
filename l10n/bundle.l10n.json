@@ -33,6 +33,8 @@
   "adapterManager.format": "Output Format",
   "adapterManager.generateIndex": "Generate index file",
   "adapterManager.generateIndexDesc": "Automatically create an index file listing all rules (directory mode only)",
+  "adapterManager.indexPerSource": "Index per source",
+  "adapterManager.indexPerSourceDesc": "Generate separate index.md for each source directory (only when organize by source is enabled)",
   "adapterManager.idInvalid": "ID must contain only lowercase letters, numbers, and hyphens",
   "adapterManager.idRequired": "Adapter ID is required",
   "adapterManager.nameRequired": "Display name is required",
