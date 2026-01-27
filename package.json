@@ -449,6 +449,21 @@
           "description": "%turboAiRules.userRules.description%",
           "scope": "resource"
         },
+        "turbo-ai-rules.userSkills": {
+          "type": "object",
+          "default": {
+            "directory": "ai-skills"
+          },
+          "properties": {
+            "directory": {
+              "type": "string",
+              "default": "ai-skills",
+              "description": "%turboAiRules.userSkills.directory.description%"
+            }
+          },
+          "description": "%turboAiRules.userSkills.description%",
+          "scope": "resource"
+        },
         "turbo-ai-rules.userPrefixRange": {
           "type": "object",
           "default": {

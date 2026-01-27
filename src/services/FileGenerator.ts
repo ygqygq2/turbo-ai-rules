@@ -106,6 +106,14 @@ export class FileGenerator {
 
     // 注册自定义适配器
     if (config.custom && Array.isArray(config.custom)) {
+      Logger.debug('[initializeAdapters] Processing custom adapters', {
+        count: config.custom.length,
+        adapters: config.custom.map((a) => ({
+          id: a.id,
+          enabled: a.enabled,
+          isRuleType: a.isRuleType,
+        })),
+      });
       for (const customConfig of config.custom) {
         if (customConfig.enabled) {
           const adapter = new CustomAdapter(customConfig);
@@ -134,8 +142,12 @@ export class FileGenerator {
             `Registered custom adapter: ${customConfig.id}, isRuleType=${customConfig.isRuleType ?? true}, enableUserRules=${customConfig.enableUserRules ?? customConfig.isRuleType ?? true}`,
             customConfig as unknown as Record<string, unknown>,
           );
+        } else {
+          Logger.debug(`Skipping disabled custom adapter: ${customConfig.id}`);
         }
       }
+    } else {
+      Logger.debug('[initializeAdapters] No custom adapters in config');
     }
 
     Logger.debug('Adapters initialized', {
@@ -203,6 +215,16 @@ export class FileGenerator {
       // - 自定义适配器：name 格式为 'custom-{id}'，需要匹配 id 部分
       const adapterId = name.startsWith('custom-') ? name.substring(7) : name;
 
+      console.log(
+        `[FileGenerator] Processing adapter: ${name}, adapterId: ${adapterId}, rules count: ${rules.length}`,
+      );
+      Logger.debug(`[generateAll] Processing adapter ${name}`, {
+        adapterId,
+        isCustomAdapter: adapter instanceof CustomAdapter,
+        config: adapter instanceof CustomAdapter ? adapter.config : undefined,
+        targetAdapters,
+      });
+
       // ✅ 如果指定了目标适配器，只为目标适配器生成配置
       if (targetAdapters && targetAdapters.length > 0) {
         if (!targetAdapters.includes(adapterId) && !targetAdapters.includes(name)) {
@@ -217,6 +239,11 @@ export class FileGenerator {
         // 预设适配器默认都是规则类型，自定义适配器需要检查 isRuleType 属性
         if (adapter instanceof CustomAdapter) {
           const isRuleType = adapter.config.isRuleType ?? true;
+          Logger.debug(`[generateAll] Custom adapter ${name} isRuleType check`, {
+            adapterId,
+            isRuleType,
+            configIsRuleType: adapter.config.isRuleType,
+          });
           if (!isRuleType) {
             Logger.debug(`Skipping skills adapter ${name} (isRuleType=false, not in target list)`, {
               adapterId,
@@ -226,9 +253,15 @@ export class FileGenerator {
         }
       }
       try {
+        console.log(
+          `[FileGenerator] Calling generateForAdapter for ${name}, rules: ${rules.length}, allRules: ${allRules?.length || 0}`,
+        );
         // ✅ 所有适配器都使用传入的规则列表（用户选择的规则）
         // 自定义适配器的特殊过滤逻辑在其 generate() 方法内部处理
         const config = await this.generateForAdapter(adapter, rules, workspaceRoot, allRules);
+        console.log(
+          `[FileGenerator] Generated config for ${name}: ${config.filePath}, ruleCount: ${config.ruleCount}`,
+        );
         result.success.push(config);
 
         Logger.debug(`Generated config for ${name}`, {
@@ -299,6 +332,13 @@ export class FileGenerator {
     adapter?: AIToolAdapter,
     rules?: ParsedRule[],
   ): Promise<void> {
+    console.log(`[FileGenerator.writeConfigFile] Called with:`, {
+      filePath,
+      contentLength: content.length,
+      adapterName: adapter?.name,
+      rulesCount: rules?.length || 0,
+    });
+
     try {
       // 确保目录存在
       const dir = path.dirname(filePath);
@@ -306,9 +346,13 @@ export class FileGenerator {
 
       // 判断是目录模式还是文件模式
       const isDirectoryMode = adapter && this.isDirectoryOutput(adapter);
+      console.log(`[FileGenerator.writeConfigFile] isDirectoryMode:`, isDirectoryMode);
 
       if (isDirectoryMode) {
         // 目录模式：清理旧文件，然后写入新文件
+        console.log(
+          `[FileGenerator.writeConfigFile] Directory mode detected, calling cleanObsoleteDirectoryFiles`,
+        );
         await this.cleanObsoleteDirectoryFiles(dir, adapter, rules || []);
         await this.writeDirectoryModeFile(dir, filePath, content);
       } else {
@@ -349,28 +393,56 @@ export class FileGenerator {
     adapter: AIToolAdapter,
     rules: ParsedRule[],
   ): Promise<void> {
+    console.log(`[FileGenerator.cleanObsoleteDirectoryFiles] Called with:`, {
+      dir,
+      adapterName: adapter.name,
+      rulesCount: rules.length,
+    });
+
     // 检查目录是否存在
     if (!fs.existsSync(dir)) {
+      console.log(`[FileGenerator.cleanObsoleteDirectoryFiles] Directory does not exist, skipping`);
       return;
     }
 
     // ⚠️ 如果规则为空，跳过清理（避免删除输出目录本身）
     if (rules.length === 0) {
+      console.log(`[FileGenerator.cleanObsoleteDirectoryFiles] Rules is empty, skipping cleanup`);
       Logger.debug('Skipping cleanup: no rules provided');
       return;
     }
 
-    // 如果适配器启用了用户规则，需要加载用户规则并加入期望列表
+    // 如果适配器启用了用户规则，需要加载用户内容并加入期望列表
     let allRules = [...rules];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ('enableUserRules' in adapter && (adapter as any).enableUserRules) {
       try {
-        const { loadUserRules } = await import('../utils/userRules');
-        const userRules = await loadUserRules();
-        allRules = [...allRules, ...userRules];
-        Logger.debug('Added user rules to expected list for cleanup', { count: userRules.length });
+        // 根据适配器类型加载用户内容
+        // 检查是否是 CustomAdapter 且 isRuleType 明确设置为 false (skills 适配器)
+        const isSkillAdapter =
+          'config' in adapter &&
+          (adapter as { config?: { isRuleType?: boolean } }).config?.isRuleType === false;
+
+        if (isSkillAdapter) {
+          // 技能适配器：加载 ai-skills/
+          // FIXME: loadUserSkills not implemented yet
+          // const { loadUserSkills } = await import('../utils/userRules');
+          // const userSkills = await loadUserSkills();
+          // allRules = [...allRules, ...userSkills];
+          // Logger.debug('Added user skills to expected list for cleanup', {
+          //   count: userSkills.length,
+          // });
+        } else {
+          // 规则适配器：加载 ai-rules/
+          const { loadUserRules } = await import('../utils/userRules');
+          const userRules = await loadUserRules();
+          allRules = [...allRules, ...userRules];
+          Logger.debug('Added user rules to expected list for cleanup', {
+            count: userRules.length,
+          });
+        }
       } catch (error) {
-        Logger.warn('Failed to load user rules for cleanup', { error: (error as Error).message });
+        Logger.warn('Failed to load user content for cleanup', { error: (error as Error).message });
       }
     }
 
@@ -561,79 +633,119 @@ export class FileGenerator {
 
         for (const rule of rules) {
           const isSkillFile = path.basename(rule.filePath).toLowerCase() === 'skill.md';
+          const isUserSkill = rule.sourceId === 'user-skills';
 
           if (isSkillFile && isSkillsAdapter) {
             // SKILL.md 文件 - 记录需要同步的目录
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const relativePath = await (adapter as any).getRelativePathFromSubPath(
-              rule.filePath,
-              rule.sourceId,
-            );
-            if (relativePath) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const preserveStructure = (adapter as any).preserveDirectoryStructure ?? true;
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const organizeBySource = (adapter as any).shouldOrganizeBySource?.() ?? false;
 
-              // 获取 SKILL.md 的父目录相对路径
-              let skillDirPath: string;
-              if (preserveStructure) {
-                // 保持目录结构：1300-skills/git-workflow-expert
-                skillDirPath = path.dirname(relativePath);
-              } else {
-                // 平铺模式：git-workflow-expert（只取最后一层目录名）
-                skillDirPath = path.basename(path.dirname(relativePath));
+            if (isUserSkill) {
+              // 用户技能：从 ai-skills/ 目录计算相对路径
+              // FIXME: getUserSkillsDirectory not implemented yet
+              // const { getUserSkillsDirectory } = await import('../utils/userRules');
+              // const userSkillsDir = getUserSkillsDirectory();
+              const userSkillsDir = null;
+
+              if (userSkillsDir) {
+                // 获取相对于 ai-skills/ 的路径
+                const relativePath = path.relative(userSkillsDir, rule.filePath);
+                const skillDirName = path.dirname(relativePath); // 例如：my-tool
+
+                // 用户技能直接使用目录名（不按源组织）
+                skillDirs.set(skillDirName, path.dirname(rule.filePath));
+
+                Logger.debug('[FileGenerator] Added user SKILL directory mapping', {
+                  ruleId: rule.id,
+                  ruleFilePath: rule.filePath,
+                  sourceId: rule.sourceId,
+                  skillDirPath: skillDirName,
+                  sourceDirPath: path.dirname(rule.filePath),
+                });
               }
-
-              // 如果按源组织，前面加上 sourceId
-              if (organizeBySource && rule.sourceId) {
-                skillDirPath = path.join(rule.sourceId, skillDirPath);
-              }
-
-              // 记录源目录路径，用于后续同步检查
-              skillDirs.set(skillDirPath, path.dirname(rule.filePath));
-
-              Logger.debug('[FileGenerator] Added SKILL directory mapping', {
-                ruleId: rule.id,
-                ruleFilePath: rule.filePath,
-                sourceId: rule.sourceId,
-                relativePath,
-                skillDirPath,
-                sourceDirPath: path.dirname(rule.filePath),
-                preserveStructure,
-                organizeBySource,
-              });
-            }
-          } else {
-            // 普通文件 - 记录完整相对路径
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const preserveStructure = (adapter as any).preserveDirectoryStructure ?? true;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const organizeBySource = (adapter as any).shouldOrganizeBySource?.() ?? false;
-
-            if (preserveStructure && rule.sourceId) {
+            } else {
+              // 远程技能：使用原有逻辑
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const relativePath = await (adapter as any).getRelativePathFromSubPath(
                 rule.filePath,
                 rule.sourceId,
               );
               if (relativePath) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const preserveStructure = (adapter as any).preserveDirectoryStructure ?? true;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const organizeBySource = (adapter as any).shouldOrganizeBySource?.() ?? false;
+
+                // 获取 SKILL.md 的父目录相对路径
+                let skillDirPath: string;
+                if (preserveStructure) {
+                  // 保持目录结构：1300-skills/git-workflow-expert
+                  skillDirPath = path.dirname(relativePath);
+                } else {
+                  // 平铺模式：git-workflow-expert（只取最后一层目录名）
+                  skillDirPath = path.basename(path.dirname(relativePath));
+                }
+
                 // 如果按源组织，前面加上 sourceId
-                const finalPath = organizeBySource
-                  ? path.join(rule.sourceId, relativePath)
-                  : relativePath;
-                filePaths.add(finalPath);
+                if (organizeBySource && rule.sourceId) {
+                  skillDirPath = path.join(rule.sourceId, skillDirPath);
+                }
+
+                // 记录源目录路径，用于后续同步检查
+                skillDirs.set(skillDirPath, path.dirname(rule.filePath));
+
+                Logger.debug('[FileGenerator] Added SKILL directory mapping', {
+                  ruleId: rule.id,
+                  ruleFilePath: rule.filePath,
+                  sourceId: rule.sourceId,
+                  relativePath,
+                  skillDirPath,
+                  sourceDirPath: path.dirname(rule.filePath),
+                  preserveStructure,
+                  organizeBySource,
+                });
+              }
+            }
+          } else {
+            // 普通文件 - 记录完整相对路径
+            const isUserSkill = rule.sourceId === 'user-skills';
+            const isUserRule = rule.sourceId === 'user-rules';
+
+            if (isUserSkill || isUserRule) {
+              // 用户内容（规则或技能）：使用文件名
+              const fileName = adapter.getRuleFileName(rule);
+              filePaths.add(fileName);
+            } else {
+              // 远程内容：使用原有逻辑
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const preserveStructure = (adapter as any).preserveDirectoryStructure ?? true;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const organizeBySource = (adapter as any).shouldOrganizeBySource?.() ?? false;
+
+              if (preserveStructure && rule.sourceId) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const relativePath = await (adapter as any).getRelativePathFromSubPath(
+                  rule.filePath,
+                  rule.sourceId,
+                );
+                if (relativePath) {
+                  // 如果按源组织，前面加上 sourceId
+                  const finalPath = organizeBySource
+                    ? path.join(rule.sourceId, relativePath)
+                    : relativePath;
+                  filePaths.add(finalPath);
+                } else {
+                  const fileName = adapter.getRuleFileName(rule);
+                  const finalPath =
+                    organizeBySource && rule.sourceId
+                      ? path.join(rule.sourceId, fileName)
+                      : fileName;
+                  filePaths.add(finalPath);
+                }
               } else {
                 const fileName = adapter.getRuleFileName(rule);
                 const finalPath =
                   organizeBySource && rule.sourceId ? path.join(rule.sourceId, fileName) : fileName;
                 filePaths.add(finalPath);
               }
-            } else {
-              const fileName = adapter.getRuleFileName(rule);
-              const finalPath =
-                organizeBySource && rule.sourceId ? path.join(rule.sourceId, fileName) : fileName;
-              filePaths.add(finalPath);
             }
           }
         }

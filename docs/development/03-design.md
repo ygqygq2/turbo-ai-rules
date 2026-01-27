@@ -63,9 +63,9 @@
 
 ### 4. 配置生成
 
-- 生成 Cursor 配置（\`.cursorrules\`）
-- 生成 GitHub Copilot 配置（\`.github/copilot-instructions.md\`）
-- 生成 Continue.dev 配置（\`.continuerules\`）
+- 生成 Cursor 配置（`.cursorrules`）
+- 生成 GitHub Copilot 配置（`.github/copilot-instructions.md`）
+- 生成 Continue.dev 配置（`.continuerules`）
 - 支持自定义适配器
 
 ### 5. 规则浏览
@@ -149,15 +149,14 @@
 
 ## 扩展性
 
-- 自定义适配器（Handlebars 模板）
-- 插件机制（未来）
+- 自定义适配器
 - API 稳定性（语义化版本）
 
 ---
 
 ## 测试覆盖
 
-详细要求见 [41-test-coverage.md](./41-test-coverage.md)
+详细要求见 [60-unit-test-coverage.md](./60-unit-test-coverage.md)
 
 ---
 

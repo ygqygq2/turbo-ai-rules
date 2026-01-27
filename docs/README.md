@@ -46,8 +46,8 @@ This directory contains all project documentation, organized into user guides an
 | [详细设计](./development/03-design.md)                         | Detailed design specification                    |
 | [架构设计](./development/20-architecture.md)                   | System architecture, design patterns, data flows |
 | [自定义适配器设计](./development/23-custom-adapters-design.md) | Custom adapter design and implementation         |
+| [用户规则设计](./development/50-user-rules-design.md)          | User rules protection design                     |
 | [文档导航（必读）](./00-documentation-system.md)               | How to read docs and navigate quickly            |
-| [测试覆盖规范](./development/41-test-coverage.md)              | Test coverage requirements and reports           |
 
 #### 🛠️ 开发层：开发指南和最佳实践
 
@@ -58,15 +58,15 @@ This directory contains all project documentation, organized into user guides an
 | [Webview 最佳实践](./development/43-webview-best-practices.md) | Webview development architecture and patterns |
 | [Webview CSS 规范](./development/44-webview-css-guide.md)      | CSS organization and styling guidelines       |
 | [Codicons 指南](./development/45-codicons-guide.md)            | VS Code Codicons usage guide                  |
+| [状态栏设计](./development/46-status-bar-design.md)            | Status bar design and integration             |
 
 #### 🎨 UI 设计与实施
 
-| Document                                                  | Description                       |
-| --------------------------------------------------------- | --------------------------------- |
-| [UI 设计概述](./development/30-ui-design-overview.md)     | UI design overview                |
-| [UI 设计方案](./development/31-ui-design.md)              | Complete UI design specification  |
-| [UI 开发流程](./development/32-ui-development-process.md) | UI development workflow           |
-| [状态栏设计](./development/46-status-bar-design.md)       | Status bar design and integration |
+| Document                                                  | Description                      |
+| --------------------------------------------------------- | -------------------------------- |
+| [UI 设计概述](./development/30-ui-design-overview.md)     | UI design overview               |
+| [UI 设计方案](./development/31-ui-design.md)              | Complete UI design specification |
+| [UI 开发流程](./development/32-ui-development-process.md) | UI development workflow          |
 
 #### 📊 数据与存储
 
@@ -77,6 +77,19 @@ This directory contains all project documentation, organized into user guides an
 | [解析器与验证器](./development/12-parser-validator.md) | Parser and validator design   |
 | [适配器设计](./development/21-adapter-design.md)       | Adapter design                |
 | [配置同步](./development/22-config-sync.md)            | Configuration synchronization |
+
+#### 🧪 测试文档
+
+| Document                                                          | Description                        |
+| ----------------------------------------------------------------- | ---------------------------------- |
+| [单元测试覆盖](./development/60-unit-test-coverage.md)            | Unit test coverage report          |
+| [单元测试分析](./development/61-unit-test-coverage-analysis.md)   | Unit test coverage analysis        |
+| [单元测试缓存清理](./development/62-unit-test-cache-cleanup.md)   | Unit test cache cleanup guide      |
+| [单元测试命令](./development/63-unit-test-commands.md)            | Unit test commands reference       |
+| [集成测试设计](./development/70-integration-test-design.md)       | Integration test design            |
+| [集成测试总结](./development/71-integration-test-summary.md)      | Integration test summary           |
+| [集成测试参考](./development/72-integration-test-reference.md)    | Integration test quick reference   |
+| [测试总结报告](./development/73-test-summary-report.md)           | Test reorganization summary report |
 
 ### Quick Start for Contributors
 

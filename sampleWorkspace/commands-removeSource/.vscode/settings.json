@@ -1,0 +1,15 @@
+{
+  "turbo-ai-rules.sync.onStartup": false,
+  "turbo-ai-rules.sources": [
+    {
+      "id": "source-to-remove",
+      "name": "Source To Remove",
+      "gitUrl": "https://github.com/ygqygq2/test-rules.git",
+      "branch": "main",
+      "enabled": true,
+      "authentication": {
+        "type": "none"
+      }
+    }
+  ]
+}

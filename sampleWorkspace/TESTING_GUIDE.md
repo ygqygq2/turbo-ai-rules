@@ -1,5 +1,38 @@
 # 测试指南
 
+## 🎯 新的测试组织结构（2026-01-26 重构）
+
+### 核心原则
+
+1. **一个测试文件 = 一个工作空间**：每个集成测试文件始终在单一工作空间中运行，避免切换导致的状态污染
+2. **按真实场景组织**：每个测试对应一个完整的用户操作流程（添加源 → 同步 → 选择 → 生成）
+3. **工作空间合理复用**：多个测试文件可以共享同一个工作空间
+4. **模拟 UI 操作**：通过数据层面模拟 UI 操作结果，然后继续后续测试
+
+### 测试文件组织
+
+```
+src/test/suite/
+├── workflows/               # 完整工作流测试（端到端）
+│   ├── cursor-workflow.test.ts          # Cursor 适配器完整流程
+│   ├── multi-source-workflow.test.ts    # 多源 + 冲突解决
+│   └── user-rules-workflow.test.ts      # 用户规则保护
+├── scenarios/              # 特殊场景测试
+│   └── workspace-isolation.test.ts       # 工作空间隔离
+├── commands/               # 命令单元测试
+│   └── source-management.test.ts         # 源管理命令
+└── .temp-disabled-old/     # 旧的测试文件（待迁移）
+```
+
+### 工作空间分配
+
+| 工作空间 | 测试文件 | 测试内容 |
+|---------|---------|---------|
+| **rules-for-cursor** | `cursor-workflow.test.ts`<br>`source-management.test.ts` | Cursor 适配器完整流程<br>源管理命令 |
+| **rules-multi-source** | `multi-source-workflow.test.ts` | 多源同步、冲突解决、优先级 |
+| **rules-with-user-rules** | `user-rules-workflow.test.ts` | 用户规则保护、多适配器 |
+| **多工作空间** | `workspace-isolation.test.ts` | 工作空间数据隔离（需要2+工作空间）|
+
 ## 工作区分类原则
 
 测试工作区按**功能维度**分类，而非按配置项分类。新测试应复用现有工作区，避免为单个配置创建独立工作区。
@@ -22,18 +55,17 @@
 
 **添加新测试前，先问自己：**
 
-1. **是否属于适配器测试？** → 添加到对应的 `rules-for-*` 工作区
-2. **是否属于存储/状态管理？** → 添加到 `rules-generate-test`
-3. **是否属于多源/冲突处理？** → 添加到 `rules-multi-source`
-4. **是否属于用户内容保护？** → 添加到 `rules-with-user-rules`
-5. **是否是全新的功能维度？** → 考虑创建新工作区（需充分理由）
+1. **是否是完整的用户操作流程？** → 添加到 `workflows/` 目录
+2. **是否是特殊边界场景？** → 添加到 `scenarios/` 目录
+3. **是否是命令功能测试？** → 添加到 `commands/` 目录
+4. **测试是否需要切换工作空间？** → ❌ **禁止**！重新设计测试或使用 API 直接操作
 
 **示例：**
 
-- ❌ 不要为 `enableSharedSelection` 创建独立工作区
-- ✅ 应该整合到 `rules-generate-test`（配置生成相关）
-- ❌ 不要为 `autoGitignore` 创建独立工作区
-- ✅ 应该整合到现有工作区的配置中
+- ✅ 新增 Copilot 完整流程 → `workflows/copilot-workflow.test.ts` (使用 `rules-for-copilot`)
+- ✅ 测试错误处理 → `scenarios/error-handling.test.ts` (复用 `rules-for-cursor`)
+- ✅ 测试搜索命令 → `commands/search-rules.test.ts` (复用 `rules-for-cursor`)
+- ❌ 在一个测试中切换多个工作空间 → **禁止这样做**
 
 ## 测试工作区列表
 

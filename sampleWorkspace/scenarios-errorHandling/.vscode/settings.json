@@ -1,0 +1,25 @@
+{
+  "turbo-ai-rules.sources": [
+    {
+      "id": "ai-rules",
+      "name": "AI Rules",
+      "gitUrl": "https://github.com/ygqygq2/ai-rules.git",
+      "branch": "main",
+      "subPath": "",
+      "enabled": true,
+      "syncStrategy": "manual",
+      "auth": {
+        "type": "none"
+      }
+    }
+  ],
+  "turbo-ai-rules.adapters": [
+    {
+      "id": "default",
+      "name": "Default",
+      "enabled": true,
+      "format": "markdown",
+      "outputPath": ".ai"
+    }
+  ]
+}

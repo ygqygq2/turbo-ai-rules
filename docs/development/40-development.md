@@ -308,16 +308,25 @@ title: Test Rule
 #### 集成测试示例
 
 ```typescript
-// src/test/suite/addSource.test.ts
+// src/test/suite/workflows/cursor-workflow.test.ts
 import * as assert from 'assert';
 import * as vscode from 'vscode';
+import { CONFIG_KEYS } from '../../../utils/constants';
 
-suite('Add Source Command', () => {
-  test('should add a new source', async () => {
-    // 执行命令
-    await vscode.commands.executeCommand('turbo-ai-rules.addSource');
+describe('Cursor Workflow Tests', () => {
+  let workspaceFolder: vscode.WorkspaceFolder;
+  
+  before(async function() {
+    const folders = vscode.workspace.workspaceFolders;
+    assert.ok(folders && folders.length > 0);
+    workspaceFolder = folders.find(f => f.name.includes('cursor')) || folders[0];
+    
+    const ext = vscode.extensions.getExtension('ygqygq2.turbo-ai-rules');
+    if (ext && !ext.isActive) await ext.activate();
+  });
 
-    // 验证结果
+  it('Should complete end-to-end workflow', async function() {
+    // 测试完整流程：添加源 → 同步 → 选择 → 生成
     // ...
   });
 });

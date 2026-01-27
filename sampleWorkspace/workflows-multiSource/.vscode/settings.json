@@ -1,0 +1,25 @@
+{
+  "turbo-ai-rules.sync.onStartup": false,
+  "turbo-ai-rules.sources": [
+    {
+      "id": "source-1",
+      "name": "Source 1",
+      "gitUrl": "https://github.com/ygqygq2/ai-rules.git",
+      "branch": "main",
+      "enabled": true,
+      "authentication": {
+        "type": "none"
+      }
+    },
+    {
+      "id": "source-2",
+      "name": "Source 2", 
+      "gitUrl": "https://github.com/test/rules-2.git",
+      "branch": "main",
+      "enabled": true,
+      "authentication": {
+        "type": "none"
+      }
+    }
+  ]
+}

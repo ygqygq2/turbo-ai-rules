@@ -19,13 +19,20 @@
 - **[31-ui-design.md](./31-ui-design.md)** - UI 设计详细方案
 - **[32-ui-development-process.md](./32-ui-development-process.md)** - UI 开发流程
 - **[40-development.md](./40-development.md)** - 开发指南
-- **[41-test-coverage.md](./41-test-coverage.md)** - 测试覆盖规范
 - **[42-maintaining.md](./42-maintaining.md)** - 维护指南
 - **[43-webview-best-practices.md](./43-webview-best-practices.md)** - Webview 最佳实践
 - **[44-webview-css-guide.md](./44-webview-css-guide.md)** - Webview CSS 规范
 - **[45-codicons-guide.md](./45-codicons-guide.md)** - Codicons 使用指南
-- **[50-test-cache-cleanup.md](./50-test-cache-cleanup.md)** - 测试缓存清理指南
-- **[51-test-commands.md](./51-test-commands.md)** - 测试命令速查表
+- **[46-status-bar-design.md](./46-status-bar-design.md)** - 状态栏设计
+- **[50-user-rules-design.md](./50-user-rules-design.md)** - 用户规则设计
+- **[60-unit-test-coverage.md](./60-unit-test-coverage.md)** - 单元测试覆盖
+- **[61-unit-test-coverage-analysis.md](./61-unit-test-coverage-analysis.md)** - 单元测试分析
+- **[62-unit-test-cache-cleanup.md](./62-unit-test-cache-cleanup.md)** - 单元测试缓存清理
+- **[63-unit-test-commands.md](./63-unit-test-commands.md)** - 单元测试命令
+- **[70-integration-test-design.md](./70-integration-test-design.md)** - 集成测试设计
+- **[71-integration-test-summary.md](./71-integration-test-summary.md)** - 集成测试总结
+- **[72-integration-test-reference.md](./72-integration-test-reference.md)** - 集成测试参考
+- **[73-test-summary-report.md](./73-test-summary-report.md)** - 测试总结报告
 
 ## 文档分层
 

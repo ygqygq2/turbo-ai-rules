@@ -86,6 +86,24 @@ export async function initializeAllTestSourcesSelection(
 }
 
 /**
+ * @description 激活工作区（打开 README.md 设置上下文）
+ * @param workspaceFolder {vscode.WorkspaceFolder} 工作区文件夹
+ * @return {Promise<void>}
+ */
+export async function activateWorkspace(workspaceFolder: vscode.WorkspaceFolder): Promise<void> {
+  const readmePath = vscode.Uri.joinPath(workspaceFolder.uri, 'README.md');
+  try {
+    const doc = await vscode.workspace.openTextDocument(readmePath);
+    await vscode.window.showTextDocument(doc);
+    await sleep(TEST_DELAYS.SHORT);
+  } catch (_error) {
+    console.warn(
+      `[Test] Could not open README.md in ${workspaceFolder.name}, workspace context may not be fully activated`,
+    );
+  }
+}
+
+/**
  * @description 睡眠指定毫秒数
  * @param ms {number} 毫秒数
  * @return {Promise<void>}
@@ -348,4 +366,81 @@ export async function clearSelectionStates(
       console.warn(`Failed to clear state for ${sourceId}:`, error);
     }
   }
+}
+
+/**
+ * @description 切换到指定的测试工作空间
+ * 通过打开 README.md 来激活工作空间上下文，并验证配置加载
+ * @param workspaceNamePattern {string} 工作空间名称匹配模式（如 "User Skills Workflow"）
+ * @param options {object} 可选配置
+ * @param options.verifyAdapter {boolean} 是否验证适配器配置（默认 false）
+ * @param options.adapterType {'rules'|'skills'} 期望的适配器类型（默认 undefined）
+ * @return {Promise<vscode.WorkspaceFolder>} 切换后的工作空间对象
+ */
+export async function switchToWorkspace(
+  workspaceNamePattern: string,
+  options: {
+    verifyAdapter?: boolean;
+    adapterType?: 'rules' | 'skills';
+  } = {},
+): Promise<vscode.WorkspaceFolder> {
+  const fs = await import('fs-extra');
+  const path = await import('path');
+
+  // 1. 查找工作空间
+  const folders = vscode.workspace.workspaceFolders;
+  if (!folders || folders.length === 0) {
+    throw new Error('No workspace folders found');
+  }
+
+  const workspaceFolder = folders.find((f) => f.name.includes(workspaceNamePattern));
+  if (!workspaceFolder) {
+    const available = folders.map((f) => f.name).join(', ');
+    throw new Error(
+      `Workspace matching "${workspaceNamePattern}" not found. Available: ${available}`,
+    );
+  }
+
+  console.log(
+    `[switchToWorkspace] Selected: ${workspaceFolder.name} at ${workspaceFolder.uri.fsPath}`,
+  );
+
+  // 2. 打开 README.md 激活工作空间上下文
+  const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
+  if (await fs.pathExists(readmePath)) {
+    const textDoc = await vscode.workspace.openTextDocument(vscode.Uri.file(readmePath));
+    await vscode.window.showTextDocument(textDoc);
+    console.log(`[switchToWorkspace] Opened: ${readmePath}`);
+    await sleep(1000); // 等待 VSCode 完成上下文切换
+  } else {
+    console.warn(`[switchToWorkspace] README.md not found at ${readmePath}`);
+  }
+
+  // 3. 验证配置（可选）
+  if (options.verifyAdapter) {
+    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    const customAdapters = config.get<any[]>('adapters.custom', []);
+
+    console.log(`[switchToWorkspace] Found ${customAdapters.length} custom adapters`);
+
+    if (options.adapterType) {
+      const expectedIsRuleType = options.adapterType === 'rules';
+      const matchingAdapter = customAdapters.find(
+        (a) =>
+          a.isRuleType === expectedIsRuleType || (expectedIsRuleType && a.isRuleType !== false),
+      );
+
+      if (!matchingAdapter) {
+        throw new Error(
+          `No ${options.adapterType} adapter found in workspace ${workspaceFolder.name}`,
+        );
+      }
+
+      console.log(
+        `[switchToWorkspace] Verified ${options.adapterType} adapter: ${matchingAdapter.name}`,
+      );
+    }
+  }
+
+  return workspaceFolder;
 }

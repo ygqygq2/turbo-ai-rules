@@ -33,6 +33,8 @@
   "turboAiRules.userRules.markers.description": "用户规则源区域的包裹标记（包裹 sourceId='user-rules'）。允许自定义以区分用户规则和其他规则源",
   "turboAiRules.userRules.markers.begin.description": "用户规则源区域的开始标记",
   "turboAiRules.userRules.markers.end.description": "用户规则源区域的结束标记",
+  "turboAiRules.userSkills.description": "用户技能配置",
+  "turboAiRules.userSkills.directory.description": "用户自定义技能目录（相对于工作区根目录，默认: ai-skills）",
   "turboAiRules.userPrefixRange.description": "目录模式下用户自定义规则的文件前缀范围（默认: 80000-99999）",
   "turboAiRules.userPrefixRange.min.description": "用户自定义文件的最小前缀",
   "turboAiRules.userPrefixRange.max.description": "用户自定义文件的最大前缀",

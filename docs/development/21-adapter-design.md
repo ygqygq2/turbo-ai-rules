@@ -45,6 +45,44 @@
 - ✅ **易于扩展**: 添加新工具只需在配置列表中添加一项，无需修改代码逻辑
 - ⚠️ **兼容性**: 旧的独立类（CursorAdapter, CopilotAdapter, ContinueAdapter）保留作为兼容层，将在下一主版本移除
 
+### 1.3 适配器分类：规则 vs 技能
+
+**v2.0+ 引入 `isRuleType` 标识**：
+
+```typescript
+interface AdapterConfig {
+  id: string;
+  enabled: boolean;
+  isRuleType?: boolean;  // true=规则适配器, false=技能适配器
+  // ...
+}
+```
+
+**两种适配器类型**：
+
+| 类型 | `isRuleType` | 用途 | 示例 | 特殊处理 |
+|------|-------------|------|------|----------|
+| **规则适配器** | `true`（默认） | AI 编程规则 | Cursor, Copilot, Continue | block markers 保护用户规则 |
+| **技能适配器** | `false` | AI 技能/工具 | Skills, Custom Tools | skill.md 识别和目录保留 |
+
+**核心差异**：
+
+1. **快速同步支持**
+   - 规则适配器：✅ 支持（sidebar 快速同步按钮）
+   - 技能适配器：❌ 不支持（仅通过 dashboard sync page）
+
+2. **用户内容保护**
+   - 规则适配器：通过 `<!-- TURBO-AI-RULES:BEGIN/END -->` markers
+   - 技能适配器：通过识别 `skill.md` 文件及其父目录
+
+3. **清理策略**
+   - 规则适配器：保留 markers 内的用户规则部分
+   - 技能适配器：保留包含 `skill.md` 的完整目录
+
+4. **输出模式**
+   - 规则适配器：单文件或目录模式
+   - 技能适配器：通常使用目录模式（`outputType: 'directory'`）
+
 ---
 
 ## 2. 适配器基类 (AIToolAdapter)

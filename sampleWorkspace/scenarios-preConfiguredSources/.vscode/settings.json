@@ -1,0 +1,15 @@
+{
+  "turbo-ai-rules.sync.onStartup": false,
+  "turbo-ai-rules.sources": [
+    {
+      "id": "pre-configured-1",
+      "name": "Pre-configured Source 1",
+      "gitUrl": "https://github.com/ygqygq2/ai-rules.git",
+      "branch": "main",
+      "enabled": true,
+      "authentication": {
+        "type": "none"
+      }
+    }
+  ]
+}

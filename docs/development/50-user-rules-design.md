@@ -56,6 +56,9 @@
 
 **字段说明**：
 - `directory`: 用户规则目录（相对于工作区根目录）
+  - **特殊说明**：对于 Skills 适配器（`isRuleType: false`），此目录中的 `SKILL.md` 文件会被特殊处理
+  - 同步规则时会保留用户创建的 skill.md 及其父目录
+  - 清理时会识别并排除用户的 skill.md 文件
 - `blockMarkers`: 全局内容标记（外层）
   - `begin`: 扩展生成内容的开始标记
   - `end`: 扩展生成内容的结束标记
@@ -204,7 +207,73 @@ priority: high
 
 ---
 
-## 5. 版本控制
+## 5. Skill 适配器的特殊处理
+
+### 5.1 skill.md 识别和保留
+
+**背景**：Skills 适配器（`isRuleType: false`）需要保留用户创建的 skill.md 文件及其父目录结构。
+
+**实现机制**：
+
+1. **规则识别**（RulesManager）
+   - 识别 `skill.md` 文件（不区分大小写）
+   - 将其父目录标记为 SKILL 目录
+
+2. **同步保留**（FileGenerator）
+   - 同步规则时检测用户规则目录中的 skill.md
+   - 保留整个 skill.md 父目录结构
+   - 合并到最终输出，不会被远程规则覆盖
+
+3. **清理排除**（CustomAdapter）
+   - 清理输出目录时识别 skill.md 文件
+   - 排除包含 skill.md 的目录（用户创建的 skill）
+   - 只清理远程同步的 skill 目录
+
+**配置示例**：
+
+```json
+{
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "skills",
+      "enabled": true,
+      "isRuleType": false,  // ✅ 标记为 Skills 适配器
+      "outputType": "directory",
+      "outputPath": ".skills",
+      "enableUserRules": false,  // Skills 通常不需要用户规则合并
+      "organizeBySource": false
+    }
+  ]
+}
+```
+
+**工作流程**：
+
+```
+用户创建：ai-rules/my-skill/skill.md
+                     ↓
+         RulesManager 识别为用户 skill
+                     ↓
+      FileGenerator 同步时保留该目录
+                     ↓
+        合并到 .skills/my-skill/skill.md
+                     ↓
+       清理时排除 my-skill/ 目录
+```
+
+### 5.2 与规则适配器的区别
+
+| 特性 | 规则适配器 (`isRuleType: true`) | Skills 适配器 (`isRuleType: false`) |
+|------|--------------------------------|-------------------------------------|
+| 用户内容保留 | 通过 block markers | 通过 skill.md 识别 |
+| 输出模式 | 单文件或目录 | 通常为目录 |
+| 清理策略 | 保留 markers 内的用户规则 | 保留包含 skill.md 的目录 |
+| 适用场景 | AI 编程规则 | AI 技能/工具配置 |
+| 快速同步支持 | ✅ 支持 | ❌ 不支持（仅通过 dashboard） |
+
+---
+
+## 6. 版本控制
 
 **推荐 .gitignore**：
 
@@ -219,7 +288,21 @@ rules/*
 
 ---
 
-## 6. 参考
+## 7. 注意事项
+
+1. **不要在测试中切换工作空间**: 每个测试文件固定在一个工作空间
+2. **模拟 UI 操作**: 通过数据层面模拟 UI 操作结果
+3. **skill.md 文件命名**: 不区分大小写，SKILL.md、skill.md、Skill.md 都会被识别
+4. **用户规则目录结构**: 对于 skills，建议使用 `ai-rules/<skill-name>/skill.md` 结构
+5. **Skills 适配器配置**: 
+   - 必须设置 `isRuleType: false`
+   - 通常使用 `outputType: 'directory'`
+   - 建议 `enableUserRules: false`（skill.md 已自动保留）
+6. **Block Markers**: 规则适配器使用 markers 保护用户内容，Skills 适配器使用 skill.md 识别
+
+---
+
+## 8. 参考
 
 - [适配器设计](./21-adapter-design.md)
 - [配置管理](../user-guide/02-configuration.zh.md)

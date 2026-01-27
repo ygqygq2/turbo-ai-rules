@@ -33,6 +33,8 @@
   "turboAiRules.userRules.markers.description": "Wrapper markers for user rules source region (sourceId='user-rules'). Allows customization to distinguish user rules from other sources",
   "turboAiRules.userRules.markers.begin.description": "Begin marker wrapping user rules source region",
   "turboAiRules.userRules.markers.end.description": "End marker wrapping user rules source region",
+  "turboAiRules.userSkills.description": "User skills configuration",
+  "turboAiRules.userSkills.directory.description": "Directory for user-defined skills (relative to workspace root, default: ai-skills)",
   "turboAiRules.userPrefixRange.description": "File prefix range for user-defined rules in directory mode (default: 80000-99999)",
   "turboAiRules.userPrefixRange.min.description": "Minimum prefix for user-defined files",
   "turboAiRules.userPrefixRange.max.description": "Maximum prefix for user-defined files",

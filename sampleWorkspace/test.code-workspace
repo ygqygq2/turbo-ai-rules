@@ -1,45 +1,124 @@
 {
   "folders": [
+    // Commands Tests
     {
-      "path": "rules-for-cursor",
-      "name": "Test: Cursor Adapter",
+      "path": "commands-addSource-empty",
+      "name": "Commands: Add Source (Empty)"
     },
     {
-      "path": "rules-for-copilot",
-      "name": "Test: Copilot Adapter",
+      "path": "commands-addSource-existing",
+      "name": "Commands: Add Source (With Sources)"
     },
     {
-      "path": "rules-for-continue",
-      "name": "Test: Continue Adapter",
+      "path": "commands-removeSource",
+      "name": "Commands: Remove Source"
     },
     {
-      "path": "rules-for-default",
-      "name": "Test: Default Rules Directory",
+      "path": "commands-searchRules",
+      "name": "Commands: Search Rules"
     },
     {
-      "path": "rules-multi-source",
-      "name": "Test: Multi-Source Conflict Resolution",
+      "path": "commands-contextMenu",
+      "name": "Commands: Context Menu"
     },
     {
-      "path": "rules-with-user-rules",
-      "name": "Test: Multi-Adapter + User Protection",
+      "path": "commands-sourceManagement",
+      "name": "Commands: Source Management"
+    },
+
+    // Scenarios Tests
+    {
+      "path": "scenarios-adapterTypes",
+      "name": "Scenarios: Adapter Types"
     },
     {
-      "path": "rules-for-skills",
-      "name": "Test: Skills Adapter",
+      "path": "scenarios-errorHandling",
+      "name": "Scenarios: Error Handling"
     },
     {
-      "path": "rules-generate-test",
-      "name": "Test: Generate Config Files",
+      "path": "scenarios-performance",
+      "name": "Scenarios: Performance"
     },
     {
-      "path": "rules-for-custom-adapters",
-      "name": "Test: Custom Adapters",
+      "path": "scenarios-preConfiguredSources",
+      "name": "Scenarios: Pre-configured Sources"
     },
+    {
+      "path": "scenarios-sharedSelection",
+      "name": "Scenarios: Shared Selection"
+    },
+    {
+      "path": "scenarios-statusbar",
+      "name": "Scenarios: Status Bar"
+    },
+    {
+      "path": "scenarios-workspaceIsolation-ws1",
+      "name": "Scenarios: Workspace Isolation (WS1)"
+    },
+    {
+      "path": "scenarios-workspaceIsolation-ws2",
+      "name": "Scenarios: Workspace Isolation (WS2)"
+    },
+    {
+      "path": "scenarios-workspaceSwitching-ws1",
+      "name": "Scenarios: Workspace Switching (WS1)"
+    },
+    {
+      "path": "scenarios-workspaceSwitching-ws2",
+      "name": "Scenarios: Workspace Switching (WS2)"
+    },
+
+    // Workflows Tests
+    {
+      "path": "workflows-cursor",
+      "name": "Workflows: Cursor"
+    },
+    {
+      "path": "workflows-generateConfigs",
+      "name": "Workflows: Generate Configs"
+    },
+    {
+      "path": "workflows-multiSource",
+      "name": "Workflows: Multi-Source"
+    },
+    {
+      "path": "workflows-ruleSelection",
+      "name": "Workflows: Rule Selection"
+    },
+    {
+      "path": "workflows-skills",
+      "name": "Workflows: Skills"
+    },
+    {
+      "path": "workflows-syncRules",
+      "name": "Workflows: Sync Rules"
+    },
+    {
+      "path": "workflows-userRules",
+      "name": "Workflows: User Rules"
+    },
+    {
+      "path": "workflows-userSkills",
+      "name": "Workflows: User Skills"
+    },
+
+    // Adapters Tests
+    {
+      "path": "adapters-custom",
+      "name": "Adapters: Custom"
+    },
+    {
+      "path": "adapters-preset",
+      "name": "Adapters: Preset"
+    },
+    {
+      "path": "adapters-skills",
+      "name": "Adapters: Skills"
+    }
   ],
   "settings": {
     "turbo-ai-rules.sync.onStartup": false,
     "turbo-ai-rules.adapters": {},
-    "turbo-ai-rules.enableSharedSelection": false,
-  },
+    "turbo-ai-rules.enableSharedSelection": false
+  }
 }
