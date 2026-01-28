@@ -1,3 +1,9 @@
-
-# Turbo AI Rules - Auto-generated files
+# Generated files by turbo-ai-rules
 .cursorrules
+.windsurfrules
+.clinerules
+.github/copilot-instructions.md
+.continue/
+
+# Git cache
+.git-cache/

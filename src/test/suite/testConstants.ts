@@ -48,6 +48,17 @@ export const TEST_RETRY = {
 } as const;
 
 /**
+ * @description 测试调试配置
+ * 通过环境变量 TEST_DEBUG=1 启用详细日志
+ */
+export const TEST_DEBUG = {
+  /** 是否启用详细调试日志 */
+  ENABLED: process.env.TEST_DEBUG === '1' || process.env.TEST_DEBUG === 'true',
+  /** 详细程度：silent（静默）| minimal（最少）| verbose（详细） */
+  LEVEL: (process.env.TEST_DEBUG_LEVEL || 'minimal') as 'silent' | 'minimal' | 'verbose',
+} as const;
+
+/**
  * @description 测试工作区名称
  */
 export const TEST_WORKSPACES = {

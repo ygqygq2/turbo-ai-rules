@@ -13,6 +13,7 @@ import type { AdaptersConfig } from '../types/config';
 import { GenerateError, SystemError } from '../types/errors';
 import type { PartialUpdateOptions } from '../types/ruleMarker';
 import type { ConflictStrategy, ParsedRule } from '../types/rules';
+import { debugLog } from '../utils/debugLog';
 import { ensureDir, safeWriteFile } from '../utils/fileSystem';
 import { ensureIgnored } from '../utils/gitignore';
 import { Logger } from '../utils/logger';
@@ -215,7 +216,7 @@ export class FileGenerator {
       // - 自定义适配器：name 格式为 'custom-{id}'，需要匹配 id 部分
       const adapterId = name.startsWith('custom-') ? name.substring(7) : name;
 
-      console.log(
+      debugLog(
         `[FileGenerator] Processing adapter: ${name}, adapterId: ${adapterId}, rules count: ${rules.length}`,
       );
       Logger.debug(`[generateAll] Processing adapter ${name}`, {
@@ -253,13 +254,13 @@ export class FileGenerator {
         }
       }
       try {
-        console.log(
+        debugLog(
           `[FileGenerator] Calling generateForAdapter for ${name}, rules: ${rules.length}, allRules: ${allRules?.length || 0}`,
         );
         // ✅ 所有适配器都使用传入的规则列表（用户选择的规则）
         // 自定义适配器的特殊过滤逻辑在其 generate() 方法内部处理
         const config = await this.generateForAdapter(adapter, rules, workspaceRoot, allRules);
-        console.log(
+        debugLog(
           `[FileGenerator] Generated config for ${name}: ${config.filePath}, ruleCount: ${config.ruleCount}`,
         );
         result.success.push(config);
@@ -332,7 +333,7 @@ export class FileGenerator {
     adapter?: AIToolAdapter,
     rules?: ParsedRule[],
   ): Promise<void> {
-    console.log(`[FileGenerator.writeConfigFile] Called with:`, {
+    debugLog(`[FileGenerator.writeConfigFile] Called with:`, {
       filePath,
       contentLength: content.length,
       adapterName: adapter?.name,
@@ -346,11 +347,11 @@ export class FileGenerator {
 
       // 判断是目录模式还是文件模式
       const isDirectoryMode = adapter && this.isDirectoryOutput(adapter);
-      console.log(`[FileGenerator.writeConfigFile] isDirectoryMode:`, isDirectoryMode);
+      debugLog(`[FileGenerator.writeConfigFile] isDirectoryMode:`, isDirectoryMode);
 
       if (isDirectoryMode) {
         // 目录模式：清理旧文件，然后写入新文件
-        console.log(
+        debugLog(
           `[FileGenerator.writeConfigFile] Directory mode detected, calling cleanObsoleteDirectoryFiles`,
         );
         await this.cleanObsoleteDirectoryFiles(dir, adapter, rules || []);
@@ -393,7 +394,7 @@ export class FileGenerator {
     adapter: AIToolAdapter,
     rules: ParsedRule[],
   ): Promise<void> {
-    console.log(`[FileGenerator.cleanObsoleteDirectoryFiles] Called with:`, {
+    debugLog(`[FileGenerator.cleanObsoleteDirectoryFiles] Called with:`, {
       dir,
       adapterName: adapter.name,
       rulesCount: rules.length,
@@ -401,13 +402,13 @@ export class FileGenerator {
 
     // 检查目录是否存在
     if (!fs.existsSync(dir)) {
-      console.log(`[FileGenerator.cleanObsoleteDirectoryFiles] Directory does not exist, skipping`);
+      debugLog(`[FileGenerator.cleanObsoleteDirectoryFiles] Directory does not exist, skipping`);
       return;
     }
 
     // ⚠️ 如果规则为空，跳过清理（避免删除输出目录本身）
     if (rules.length === 0) {
-      console.log(`[FileGenerator.cleanObsoleteDirectoryFiles] Rules is empty, skipping cleanup`);
+      debugLog(`[FileGenerator.cleanObsoleteDirectoryFiles] Rules is empty, skipping cleanup`);
       Logger.debug('Skipping cleanup: no rules provided');
       return;
     }

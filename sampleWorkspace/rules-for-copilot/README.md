@@ -1,20 +1,71 @@
-# Copilot Rules Test Workspace
+# Rules for GitHub Copilot Adapter
 
-这是用于测试 GitHub Copilot 适配器的工作区。
+## 📋 测试信息
 
-## 测试场景
+- **测试文件**: `src/test/suite/（示例工作空间）`
+- **测试内容**: GitHub Copilot 适配器配置示例和 HTTPS Token 认证测试
 
-1. 添加带 HTTPS Token 的私有仓库
-2. 同步规则并生成 `.github/copilot-instructions.md` 文件
-3. 验证认证和文件生成
+## 🧪 测试场景
 
-## 使用步骤
+### 1. HTTPS Token 私有仓库认证
+**步骤**:
+- 添加 HTTPS 私有仓库源
+- 选择 "HTTPS Token" 认证
+- 输入 Personal Access Token (PAT)
+- 选择保存范围（Global 或 Project）
 
-1. 打开命令面板
-2. 运行 `Turbo AI Rules: Add Source`
-3. 输入 HTTPS Git 仓库 URL (私有仓库)
-4. 选择 "HTTPS Token" 认证
-5. 输入 Personal Access Token
-6. 选择保存范围（Global 或 Project）
-7. 运行 `Turbo AI Rules: Sync Rules`
-8. 检查生成的 `.github/copilot-instructions.md` 文件
+**验证**:
+- ✅ Token 认证成功
+- ✅ 访问私有仓库
+- ✅ Token 安全存储（VSCode Secrets API）
+- ✅ 规则同步完成
+
+### 2. Copilot 指令文件生成
+**步骤**:
+- 同步规则
+- 生成 `.github/copilot-instructions.md`
+
+**验证**:
+- ✅ 文件生成在 .github 目录
+- ✅ Markdown 格式正确
+- ✅ 包含所有规则内容
+- ✅ 符合 GitHub Copilot 规范
+
+### 3. Token 安全管理
+**步骤**:
+- 保存 Token 到 Global 范围
+- 检查日志输出
+
+**验证**:
+- ✅ Token 不出现在日志
+- ✅ 使用 VSCode Secrets API
+- ✅ 跨工作区共享（Global 模式）
+- ✅ 工作区隔离（Project 模式）
+
+## ⚙️ 工作空间配置
+
+```json
+{
+  "turbo-ai-rules.sources": [
+    {
+      "id": "copilot-test",
+      "name": "Copilot Test Source",
+      "gitUrl": "https://github.com/user/private-repo.git",
+      "branch": "main",
+      "authType": "https",
+      "enabled": true
+    }
+  ],
+  "turbo-ai-rules.adapters.copilot.enabled": true
+}
+```
+
+## 🎯 关键验证点
+
+- ✅ HTTPS Token 认证流程
+- ✅ Personal Access Token (PAT) 管理
+- ✅ Token 安全存储（不记录日志）
+- ✅ .github/copilot-instructions.md 生成
+- ✅ Global vs Project 范围选择
+
+---

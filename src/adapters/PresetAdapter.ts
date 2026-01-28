@@ -30,6 +30,8 @@ export interface PresetAdapterConfig {
   description?: string;
   /** 工具官网链接 */
   website?: string;
+  /** 是否为规则类型（true=rules, false=skills），默认 true */
+  isRuleType?: boolean;
 }
 
 /**
@@ -121,14 +123,27 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     description: 'StackBlitz AI-powered full-stack development',
     website: 'https://bolt.new',
   },
+
+  // === Skills 适配器 ===
   {
-    id: 'qodo-gen',
-    name: 'Qodo Gen',
-    filePath: '.qodo/rules.md',
-    type: 'file',
+    id: 'cursor-skills',
+    name: 'Cursor Skills',
+    filePath: '.cursor/skills',
+    type: 'directory',
     defaultEnabled: false,
-    description: 'AI test generation and code quality tool',
-    website: 'https://www.qodo.ai/products/qodo-gen/',
+    description: 'Cursor AI skills library',
+    website: 'https://cursor.com/docs/context/skills',
+    isRuleType: false,
+  },
+  {
+    id: 'copilot-skills',
+    name: 'GitHub Copilot Skills',
+    filePath: '.github/skills',
+    type: 'directory',
+    defaultEnabled: false,
+    description: 'GitHub Copilot agent skills',
+    website: 'https://code.visualstudio.com/docs/copilot/customization/agent-skills',
+    isRuleType: false,
   },
 ] as const;
 
@@ -172,6 +187,14 @@ export class PresetAdapter extends BaseAdapter {
    */
   protected getOutputType(): 'file' | 'directory' {
     return this.config.type;
+  }
+
+  /**
+   * 是否应该复制 SKILL.md 的整个目录
+   * Skills 适配器（isRuleType: false）应该复制整个目录
+   */
+  protected shouldCopySkillDirectory(): boolean {
+    return this.config.isRuleType === false;
   }
 
   /**

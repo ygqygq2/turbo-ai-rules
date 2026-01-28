@@ -228,10 +228,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<{
         treeProvider.refresh();
       }),
 
-      vscode.commands.registerCommand('turbo-ai-rules.removeSource', async (sourceId?: string) => {
-        await removeSourceCommand(sourceId);
-        treeProvider.refresh();
-      }),
+      vscode.commands.registerCommand(
+        'turbo-ai-rules.removeSource',
+        async (sourceIdOrItem?: string | { data?: { source?: { id: string } } }) => {
+          // 兼容从 TreeView 上下文菜单触发（传入 TreeItem 对象）或直接传入字符串 ID
+          const actualSourceId =
+            typeof sourceIdOrItem === 'object' && sourceIdOrItem?.data?.source?.id
+              ? sourceIdOrItem.data.source.id
+              : typeof sourceIdOrItem === 'string'
+                ? sourceIdOrItem
+                : undefined;
+
+          await removeSourceCommand(actualSourceId);
+          treeProvider.refresh();
+        },
+      ),
 
       vscode.commands.registerCommand(
         'turbo-ai-rules.syncRules',

@@ -74,51 +74,141 @@
       "name": "Workflows: Cursor"
     },
     {
-      "path": "workflows-generateConfigs",
-      "name": "Workflows: Generate Configs"
+      "path": "workflows-preset-single-file",
+      "name": "Workflows: Preset Single File"
+    },
+    {
+      "path": "workflows-preset-directory",
+      "name": "Workflows: Preset Directory"
+    },
+    {
+      "path": "workflows-preset-skills",
+      "name": "Workflows: Preset Skills"
+    },
+    {
+      "path": "workflows-custom-single-file",
+      "name": "Workflows: Custom Single File"
+    },
+    {
+      "path": "workflows-custom-directory",
+      "name": "Workflows: Custom Directory"
+    },
+    {
+      "path": "workflows-custom-skills",
+      "name": "Workflows: Custom Skills"
+    },
+    {
+      "path": "workflows-custom-user-rules",
+      "name": "Workflows: Custom User Rules"
     },
     {
       "path": "workflows-multiSource",
       "name": "Workflows: Multi-Source"
     },
-    {
-      "path": "workflows-ruleSelection",
-      "name": "Workflows: Rule Selection"
-    },
-    {
-      "path": "workflows-skills",
-      "name": "Workflows: Skills"
-    },
-    {
-      "path": "workflows-syncRules",
-      "name": "Workflows: Sync Rules"
-    },
-    {
-      "path": "workflows-userRules",
-      "name": "Workflows: User Rules"
-    },
-    {
-      "path": "workflows-userSkills",
-      "name": "Workflows: User Skills"
-    },
 
     // Adapters Tests
     {
-      "path": "adapters-custom",
-      "name": "Adapters: Custom"
+      "path": "adapters-custom-rule",
+      "name": "Adapters: Custom Rule"
+    },
+    {
+      "path": "adapters-custom-skills",
+      "name": "Adapters: Custom Skills"
     },
     {
       "path": "adapters-preset",
       "name": "Adapters: Preset"
-    },
-    {
-      "path": "adapters-skills",
-      "name": "Adapters: Skills"
     }
   ],
   "settings": {
     "turbo-ai-rules.sync.onStartup": false,
     "turbo-ai-rules.adapters": {},
-    "turbo-ai-rules.enableSharedSelection": false
+    "turbo-ai-rules.enableSharedSelection": false,
+    "turbo-ai-rules.sources": [
+      {
+        "id": "ygqygq2-profile",
+        "name": "ygqygq2 Profile",
+        "gitUrl": "https://github.com/ygqygq2/ygqygq2.git",
+        "branch": "main",
+        "subPath": "",
+        "enabled": true,
+        "syncStrategy": "manual",
+        "auth": {
+          "type": "none"
+        }
+      },
+      {
+        "id": "ygqygq2-profile-1769492854256",
+        "name": "ygqygq2 Profile Test",
+        "gitUrl": "https://github.com/ygqygq2/ygqygq2.git",
+        "branch": "main",
+        "subPath": "",
+        "enabled": true,
+        "syncStrategy": "manual",
+        "auth": {
+          "type": "none"
+        }
+      },
+      {
+        "id": "ygqygq2-profile-1769492935648",
+        "name": "ygqygq2 Profile Test",
+        "gitUrl": "https://github.com/ygqygq2/ygqygq2.git",
+        "branch": "main",
+        "subPath": "",
+        "enabled": true,
+        "syncStrategy": "manual",
+        "auth": {
+          "type": "none"
+        }
+      },
+      {
+        "id": "ygqygq2-profile-1769493059264",
+        "name": "ygqygq2 Profile Test",
+        "gitUrl": "https://github.com/ygqygq2/ygqygq2.git",
+        "branch": "main",
+        "subPath": "",
+        "enabled": true,
+        "syncStrategy": "manual",
+        "auth": {
+          "type": "none"
+        }
+      },
+      {
+        "id": "ygqygq2-profile-1769497245138",
+        "name": "ygqygq2 Profile Test",
+        "gitUrl": "https://github.com/ygqygq2/ygqygq2.git",
+        "branch": "main",
+        "subPath": "",
+        "enabled": true,
+        "syncStrategy": "manual",
+        "auth": {
+          "type": "none"
+        }
+      },
+      {
+        "id": "ygqygq2-profile-1769561674949",
+        "name": "ygqygq2 Profile Test",
+        "gitUrl": "https://github.com/ygqygq2/ygqygq2.git",
+        "branch": "main",
+        "subPath": "",
+        "enabled": true,
+        "syncStrategy": "manual",
+        "auth": {
+          "type": "none"
+        }
+      },
+      {
+        "id": "ygqygq2-profile-1769561773467",
+        "name": "ygqygq2 Profile Test",
+        "gitUrl": "https://github.com/ygqygq2/ygqygq2.git",
+        "branch": "main",
+        "subPath": "",
+        "enabled": true,
+        "syncStrategy": "manual",
+        "auth": {
+          "type": "none"
+        }
+      }
+    ]
   }
 }

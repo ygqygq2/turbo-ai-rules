@@ -14,6 +14,7 @@ sampleWorkspace/*/.cursorrules
 sampleWorkspace/*/.github/
 sampleWorkspace/*/.continue/
 sampleWorkspace/*/.cursor/
+sampleWorkspace/*-backup-*/
 
 # Turbo AI Rules - Auto-generated files
 .cursorrules

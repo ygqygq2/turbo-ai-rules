@@ -25,9 +25,15 @@ interface PresetAdapterData {
   description: string;
   enabled: boolean;
   outputPath: string;
+  type: 'file' | 'directory';
   isRuleType: boolean;
   sortBy?: 'id' | 'priority' | 'none';
   sortOrder?: 'asc' | 'desc';
+  organizeBySource?: boolean;
+  preserveDirectoryStructure?: boolean;
+  useOriginalFilename?: boolean;
+  generateIndex?: boolean;
+  indexPerSource?: boolean;
 }
 
 /**
@@ -272,6 +278,11 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
             enabled?: boolean;
             sortBy?: 'id' | 'priority' | 'none';
             sortOrder?: 'asc' | 'desc';
+            organizeBySource?: boolean;
+            preserveDirectoryStructure?: boolean;
+            useOriginalFilename?: boolean;
+            generateIndex?: boolean;
+            indexPerSource?: boolean;
           }
         >
       )[presetConfig.id];
@@ -281,9 +292,15 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         description: presetConfig.description || `${presetConfig.name} AI coding assistant`,
         enabled: adapterConfig?.enabled ?? presetConfig.defaultEnabled ?? false,
         outputPath: presetConfig.filePath,
-        isRuleType: true, // 所有预设适配器都是规则类型
+        type: presetConfig.type,
+        isRuleType: presetConfig.isRuleType ?? true, // 根据配置决定，默认为规则类型
         sortBy: adapterConfig?.sortBy ?? 'priority',
         sortOrder: adapterConfig?.sortOrder ?? 'asc',
+        organizeBySource: adapterConfig?.organizeBySource,
+        preserveDirectoryStructure: adapterConfig?.preserveDirectoryStructure,
+        useOriginalFilename: adapterConfig?.useOriginalFilename,
+        generateIndex: adapterConfig?.generateIndex,
+        indexPerSource: adapterConfig?.indexPerSource,
       };
     });
 

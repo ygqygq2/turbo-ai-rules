@@ -119,9 +119,7 @@ export const SourceManager: React.FC = () => {
    * @param source {Source}
    */
   const handleDeleteSource = (source: Source) => {
-    if (confirm(t('confirm.deleteSource', { name: source.name }))) {
-      vscodeApi.postMessage('deleteSource', { sourceId: source.id });
-    }
+    vscodeApi.postMessage('deleteSource', { sourceId: source.id });
   };
 
   /**

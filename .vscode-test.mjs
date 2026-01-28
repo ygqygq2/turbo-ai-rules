@@ -6,10 +6,11 @@ import { defineConfig } from '@vscode/test-cli';
 export default defineConfig([
   {
     label: 'suiteTests',
-    files: 'out/test/suite/*.test.js',
+    files: 'out/test/suite/**/*.test.js',
+    workspaceFolder: 'sampleWorkspace/test.code-workspace',
     mocha: {
-      ui: 'tdd',
-      timeout: 20000,
+      ui: 'bdd',
+      timeout: 60000,
       require: ['ts-node/register', 'tsconfig-paths/register'],
     },
   },

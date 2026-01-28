@@ -53,7 +53,7 @@ All notable changes to the "turbo-ai-rules" extension will be documented in this
 
 ## 🚀 功能增强
 
-- **配置驱动的预设适配器** - 重构预设适配器架构，从 3 个扩展到 9 个主流 AI 工具
+- **配置驱动的预设适配器** - 重构预设适配器架构，从 3 个扩展到 10 个主流 AI 工具（8 个 rules + 2 个 skills）
   - 新增支持：Windsurf, Cline, Roo-Cline, Aider, Bolt, Qodo Gen
   - 采用配置驱动，添加新工具无需修改代码
 - **适配器管理器 UI** - 全新的可视化适配器管理界面

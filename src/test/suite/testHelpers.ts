@@ -3,13 +3,64 @@
  * 用于初始化测试环境和状态
  */
 
+import * as fs from 'fs-extra';
+import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { RulesManager } from '../../services/RulesManager';
 import { SelectionStateManager } from '../../services/SelectionStateManager';
 import { WorkspaceDataManager } from '../../services/WorkspaceDataManager';
 import { CONFIG_KEYS } from '../../utils/constants';
-import { TEST_DELAYS, TEST_RETRY } from './testConstants';
+import { TEST_DEBUG, TEST_DELAYS, TEST_RETRY } from './testConstants';
+
+/**
+ * 测试日志辅助函数
+ * 根据 TEST_DEBUG 配置控制日志输出
+ */
+
+/**
+ * @description 测试日志（仅当 TEST_DEBUG 启用时输出）
+ * @param message {string} 日志消息
+ * @param data {any} 可选数据
+ * @return {void}
+ */
+export function testLog(message: string, ...data: any[]): void {
+  if (TEST_DEBUG.ENABLED && TEST_DEBUG.LEVEL !== 'silent') {
+    console.log(`[TEST] ${message}`, ...data);
+  }
+}
+
+/**
+ * @description 测试详细日志（仅当 LEVEL=verbose 时输出）
+ * @param message {string} 日志消息
+ * @param data {any} 可选数据
+ * @return {void}
+ */
+export function testLogVerbose(message: string, ...data: any[]): void {
+  if (TEST_DEBUG.ENABLED && TEST_DEBUG.LEVEL === 'verbose') {
+    console.log(`[TEST:VERBOSE] ${message}`, ...data);
+  }
+}
+
+/**
+ * @description 测试警告日志（始终输出）
+ * @param message {string} 日志消息
+ * @param data {any} 可选数据
+ * @return {void}
+ */
+export function testWarn(message: string, ...data: any[]): void {
+  console.warn(`[TEST:WARN] ${message}`, ...data);
+}
+
+/**
+ * @description 测试错误日志（始终输出）
+ * @param message {string} 日志消息
+ * @param data {any} 可选数据
+ * @return {void}
+ */
+export function testError(message: string, ...data: any[]): void {
+  console.error(`[TEST:ERROR] ${message}`, ...data);
+}
 
 /**
  * @description 为测试源初始化选择状态（全选所有规则）
@@ -37,7 +88,7 @@ export async function initializeTestSourceSelection(
       },
     );
   } catch (error) {
-    console.warn(`Failed to get rules for source ${sourceId}:`, error);
+    testWarn(`Failed to get rules for source ${sourceId}:`, error);
     return;
   }
 
@@ -72,7 +123,7 @@ export async function initializeAllTestSourcesSelection(
   const sources = config.get<Array<{ id: string; enabled: boolean }>>(CONFIG_KEYS.SOURCES);
 
   if (!sources || sources.length === 0) {
-    console.warn('[Test] No sources configured for test workspace');
+    testWarn('No sources configured for test workspace');
     return;
   }
 
@@ -97,8 +148,8 @@ export async function activateWorkspace(workspaceFolder: vscode.WorkspaceFolder)
     await vscode.window.showTextDocument(doc);
     await sleep(TEST_DELAYS.SHORT);
   } catch (_error) {
-    console.warn(
-      `[Test] Could not open README.md in ${workspaceFolder.name}, workspace context may not be fully activated`,
+    testWarn(
+      `Could not open README.md in ${workspaceFolder.name}, workspace context may not be fully activated`,
     );
   }
 }
@@ -344,7 +395,7 @@ export async function cleanupTestFiles(
       }
     } catch (error) {
       // 忽略清理失败的错误，避免影响测试结果
-      console.warn(`Failed to clean ${relativePath}:`, error);
+      testWarn(`Failed to clean ${relativePath}:`, error);
     }
   }
 }
@@ -363,7 +414,7 @@ export async function clearSelectionStates(
     try {
       selectionStateManager.clearState(sourceId);
     } catch (error) {
-      console.warn(`Failed to clear state for ${sourceId}:`, error);
+      testWarn(`Failed to clear state for ${sourceId}:`, error);
     }
   }
 }
@@ -401,46 +452,203 @@ export async function switchToWorkspace(
     );
   }
 
-  console.log(
-    `[switchToWorkspace] Selected: ${workspaceFolder.name} at ${workspaceFolder.uri.fsPath}`,
-  );
+  testLog(`[switchToWorkspace] Selected: ${workspaceFolder.name} at ${workspaceFolder.uri.fsPath}`);
 
   // 2. 打开 README.md 激活工作空间上下文
   const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
   if (await fs.pathExists(readmePath)) {
     const textDoc = await vscode.workspace.openTextDocument(vscode.Uri.file(readmePath));
     await vscode.window.showTextDocument(textDoc);
-    console.log(`[switchToWorkspace] Opened: ${readmePath}`);
+    testLog(`[switchToWorkspace] Opened: ${readmePath}`);
     await sleep(1000); // 等待 VSCode 完成上下文切换
   } else {
-    console.warn(`[switchToWorkspace] README.md not found at ${readmePath}`);
+    testWarn(`[switchToWorkspace] README.md not found at ${readmePath}`);
   }
 
   // 3. 验证配置（可选）
   if (options.verifyAdapter) {
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
-    const customAdapters = config.get<any[]>('adapters.custom', []);
 
-    console.log(`[switchToWorkspace] Found ${customAdapters.length} custom adapters`);
+    // 检查预设适配器
+    const adaptersConfig = config.get<any>('adapters', {});
+    const presetAdapters = ['cursor', 'copilot', 'continue', 'windsurf', 'cline'];
+    const enabledPresetAdapters = presetAdapters.filter(
+      (name) => adaptersConfig[name]?.enabled === true,
+    );
+
+    // 检查自定义适配器
+    const customAdapters = config.get<any[]>('adapters.custom', []);
+    const enabledCustomAdapters = customAdapters.filter((a) => a.enabled);
+
+    testLogVerbose(
+      `[switchToWorkspace] Found ${enabledPresetAdapters.length} enabled preset adapters, ${enabledCustomAdapters.length} enabled custom adapters`,
+    );
 
     if (options.adapterType) {
       const expectedIsRuleType = options.adapterType === 'rules';
-      const matchingAdapter = customAdapters.find(
+
+      // 预设适配器都是 rules 类型
+      const hasMatchingPreset = enabledPresetAdapters.length > 0 && expectedIsRuleType;
+
+      // 自定义适配器需要检查 isRuleType
+      const hasMatchingCustom = enabledCustomAdapters.some(
         (a) =>
           a.isRuleType === expectedIsRuleType || (expectedIsRuleType && a.isRuleType !== false),
       );
 
-      if (!matchingAdapter) {
+      if (!hasMatchingPreset && !hasMatchingCustom) {
         throw new Error(
           `No ${options.adapterType} adapter found in workspace ${workspaceFolder.name}`,
         );
       }
 
-      console.log(
-        `[switchToWorkspace] Verified ${options.adapterType} adapter: ${matchingAdapter.name}`,
-      );
+      const adapterName = hasMatchingPreset
+        ? `preset (${enabledPresetAdapters.join(', ')})`
+        : `custom (${enabledCustomAdapters.map((a) => a.id).join(', ')})`;
+
+      testLog(`[switchToWorkspace] Verified ${options.adapterType} adapter: ${adapterName}`);
     }
   }
 
   return workspaceFolder;
+}
+
+/**
+ * 工作空间快照管理器
+ * 用于测试隔离 - 在测试前备份工作空间，测试后恢复
+ */
+interface WorkspaceSnapshot {
+  /** 工作空间路径 */
+  workspacePath: string;
+  /** 备份目录路径 */
+  backupPath: string;
+  /** 备份时间戳 */
+  timestamp: number;
+}
+
+const activeSnapshots = new Map<string, WorkspaceSnapshot>();
+
+/**
+ * @description 创建工作空间快照（完整备份）
+ * 在 before/beforeEach 中调用，备份整个工作空间目录到临时位置
+ * @param workspaceFolder {vscode.WorkspaceFolder} 工作区文件夹
+ * @return {Promise<WorkspaceSnapshot>} 快照信息
+ */
+export async function createWorkspaceSnapshot(
+  workspaceFolder: vscode.WorkspaceFolder,
+): Promise<WorkspaceSnapshot> {
+  const workspacePath = workspaceFolder.uri.fsPath;
+  const timestamp = Date.now();
+
+  // 使用工作空间名称 + 时间戳作为备份目录名
+  const backupName = `${path.basename(workspacePath)}-backup-${timestamp}`;
+  const backupPath = path.join(path.dirname(workspacePath), backupName);
+
+  testLog(`[Snapshot] Creating backup: ${workspacePath} → ${backupPath}`);
+
+  try {
+    // 复制整个工作空间目录
+    await fs.copy(workspacePath, backupPath, {
+      overwrite: true,
+      errorOnExist: false,
+      // 排除不需要备份的目录（提高性能）
+      filter: (src) => {
+        const relativePath = path.relative(workspacePath, src);
+        // 排除 node_modules, .git 等大目录
+        return !relativePath.match(/^(node_modules|\.git|dist|out|build|coverage)($|\/)/);
+      },
+    });
+
+    const snapshot: WorkspaceSnapshot = {
+      workspacePath,
+      backupPath,
+      timestamp,
+    };
+
+    // 记录活跃快照
+    activeSnapshots.set(workspacePath, snapshot);
+    testLog(`[Snapshot] Backup created successfully`);
+
+    return snapshot;
+  } catch (error) {
+    testError(`[Snapshot] Failed to create backup:`, error);
+    throw new Error(`Failed to create workspace snapshot: ${(error as Error).message}`);
+  }
+}
+
+/**
+ * @description 恢复工作空间快照
+ * 在 after/afterEach 中调用，删除测试后的目录并恢复备份
+ * @param workspaceFolder {vscode.WorkspaceFolder} 工作区文件夹
+ * @param deleteBackup {boolean} 是否删除备份目录（默认 true）
+ * @return {Promise<void>}
+ */
+export async function restoreWorkspaceSnapshot(
+  workspaceFolder: vscode.WorkspaceFolder,
+  deleteBackup = true,
+): Promise<void> {
+  const workspacePath = workspaceFolder.uri.fsPath;
+  const snapshot = activeSnapshots.get(workspacePath);
+
+  if (!snapshot) {
+    testWarn(`[Snapshot] No backup found for ${workspacePath}, skipping restore`);
+    return;
+  }
+
+  testLog(`[Snapshot] Restoring: ${snapshot.backupPath} → ${workspacePath}`);
+
+  try {
+    // 1. 删除测试后的工作空间目录
+    if (await fs.pathExists(workspacePath)) {
+      await fs.remove(workspacePath);
+      testLogVerbose(`[Snapshot] Removed modified workspace`);
+    }
+
+    // 2. 将备份复制回原位置
+    await fs.copy(snapshot.backupPath, workspacePath, {
+      overwrite: true,
+      errorOnExist: false,
+    });
+    testLog(`[Snapshot] Workspace restored`);
+  } catch (error) {
+    testError(`[Snapshot] Failed to restore backup:`, error);
+  } finally {
+    // 3. 无论成功失败，都删除备份目录（如果指定）
+    if (deleteBackup) {
+      try {
+        if (await fs.pathExists(snapshot.backupPath)) {
+          await fs.remove(snapshot.backupPath);
+          testLogVerbose(`[Snapshot] Backup directory cleaned up`);
+        }
+        // 4. 从活跃快照中移除
+        activeSnapshots.delete(workspacePath);
+      } catch (cleanupError) {
+        testError(`[Snapshot] Failed to cleanup backup:`, cleanupError);
+      }
+    }
+  }
+}
+
+/**
+ * @description 清理所有活跃快照（用于测试套件清理）
+ * 在 after()/suiteTeardown() 中调用
+ * @return {Promise<void>}
+ */
+export async function cleanupAllSnapshots(): Promise<void> {
+  testLog(`[Snapshot] Cleaning up ${activeSnapshots.size} active snapshots`);
+
+  const cleanupTasks = Array.from(activeSnapshots.values()).map(async (snapshot) => {
+    try {
+      if (await fs.pathExists(snapshot.backupPath)) {
+        await fs.remove(snapshot.backupPath);
+        testLogVerbose(`[Snapshot] Cleaned up backup: ${snapshot.backupPath}`);
+      }
+    } catch (error) {
+      testError(`[Snapshot] Failed to cleanup backup ${snapshot.backupPath}:`, error);
+    }
+  });
+
+  await Promise.all(cleanupTasks);
+  activeSnapshots.clear();
+  testLog(`[Snapshot] All snapshots cleaned up`);
 }

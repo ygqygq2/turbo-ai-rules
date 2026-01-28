@@ -32,6 +32,16 @@ export interface PresetAdapter {
   sortBy?: 'id' | 'priority' | 'none';
   /** 排序顺序 */
   sortOrder?: 'asc' | 'desc';
+  /** 按源组织 */
+  organizeBySource?: boolean;
+  /** 保留目录结构 */
+  preserveDirectoryStructure?: boolean;
+  /** 使用原文件名 */
+  useOriginalFilename?: boolean;
+  /** 生成索引 */
+  generateIndex?: boolean;
+  /** 每个源一个索引 */
+  indexPerSource?: boolean;
 }
 
 /**
@@ -188,7 +198,25 @@ export const AdapterManager: React.FC = () => {
    * @param adapter {PresetAdapter}
    */
   const handleOpenPresetSettings = (adapter: PresetAdapter) => {
-    setEditingPresetAdapter(adapter);
+    // 判断type: 如果outputPath包含.且不包含/则为file，否则为directory
+    const type: 'file' | 'directory' =
+      adapter.outputPath.includes('.') && !adapter.outputPath.includes('/') ? 'file' : 'directory';
+
+    const settings: PresetAdapterSettings = {
+      id: adapter.id,
+      name: adapter.name,
+      type,
+      isRuleType: adapter.isRuleType ?? true, // 默认为规则类型
+      sortBy: adapter.sortBy || 'priority',
+      sortOrder: adapter.sortOrder || 'asc',
+      organizeBySource: adapter.organizeBySource,
+      preserveDirectoryStructure: adapter.preserveDirectoryStructure,
+      useOriginalFilename: adapter.useOriginalFilename,
+      generateIndex: adapter.generateIndex,
+      indexPerSource: adapter.indexPerSource,
+    };
+
+    setEditingPresetAdapter(settings);
     setSettingsModalOpen(true);
   };
 
@@ -200,7 +228,16 @@ export const AdapterManager: React.FC = () => {
     // 更新本地状态
     const updatedPresetAdapters = presetAdapters.map((adapter) =>
       adapter.id === settings.id
-        ? { ...adapter, sortBy: settings.sortBy, sortOrder: settings.sortOrder }
+        ? {
+            ...adapter,
+            sortBy: settings.sortBy,
+            sortOrder: settings.sortOrder,
+            organizeBySource: settings.organizeBySource,
+            preserveDirectoryStructure: settings.preserveDirectoryStructure,
+            useOriginalFilename: settings.useOriginalFilename,
+            generateIndex: settings.generateIndex,
+            indexPerSource: settings.indexPerSource,
+          }
         : adapter,
     );
     setPresetAdapters(updatedPresetAdapters);

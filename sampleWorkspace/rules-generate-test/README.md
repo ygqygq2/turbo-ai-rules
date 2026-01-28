@@ -1,3 +1,12 @@
+# rules generate test
+
+## 📋 测试信息
+
+- **测试文件**: `src/test/suite/（示例工作空间）`
+- **测试内容**: 生成配置测试示例
+
+---
+
 # Generate Config Files + Shared Selection Test Workspace
 
 This workspace is used for testing:

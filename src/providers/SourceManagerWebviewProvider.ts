@@ -283,6 +283,20 @@ export class SourceManagerWebviewProvider extends BaseWebviewProvider {
         throw new Error(`Source not found: ${sourceId}`);
       }
 
+      // 显示确认对话框
+      const confirmed = await notify(
+        `${t('Are you sure you want to remove this source?')}\n\n${source.name} (${source.gitUrl})`,
+        'warning',
+        undefined,
+        t('Remove'),
+        true,
+      );
+
+      if (!confirmed) {
+        Logger.info('Delete source cancelled by user', { sourceId });
+        return;
+      }
+
       // 删除规则源
       await this.configManager.removeSource(sourceId);
 

@@ -60,7 +60,7 @@ export async function removeSourceCommand(sourceId?: string): Promise<void> {
     }
 
     const confirmed = await notify(
-      t('Are you sure you want to remove this source?'),
+      t('Are you sure you want to remove this source?') + `\n\n${source.name} (${source.gitUrl})`,
       'warning',
       undefined,
       t('Remove'),

@@ -110,18 +110,19 @@ workspace/
 
 ### Supported AI Tools
 
-| Tool            | Config File                       | Default Status | Description                                   |
-| --------------- | --------------------------------- | -------------- | --------------------------------------------- |
-| Cursor          | `.cursorrules`                    | ✅ Enabled     | AI-first code editor                          |
-| Windsurf        | `.windsurfrules`                  | ⚙️ Disabled    | Codeium AI IDE                                |
-| GitHub Copilot  | `.github/copilot-instructions.md` | ⚙️ Disabled    | GitHub official AI pair programmer            |
-| Continue        | `.continuerules`                  | ⚙️ Disabled    | Open-source AI coding assistant (VSCode ext)  |
-| Cline           | `.clinerules`                     | ⚙️ Disabled    | Autonomous coding agent (formerly Claude Dev) |
-| Roo-Cline       | `.roorules`                       | ⚙️ Disabled    | Enhanced fork of Cline                        |
-| Aider           | `.aider.conf.yml`                 | ⚙️ Disabled    | AI pair programming in the terminal           |
-| Bolt.new        | `.bolt/prompt`                    | ⚙️ Disabled    | StackBlitz AI-powered full-stack development  |
-| Qodo Gen        | `.qodo/rules.md`                  | ⚙️ Disabled    | AI test generation and code quality tool      |
-| Custom Adapters | Configurable                      | ⚙️ On-demand   | Support any AI tool with custom configuration |
+| Tool                 | Config File                       | Default Status | Description                                   |
+| -------------------- | --------------------------------- | -------------- | --------------------------------------------- |
+| Cursor               | `.cursorrules`                    | ✅ Enabled     | AI-first code editor                          |
+| Windsurf             | `.windsurfrules`                  | ⚙️ Disabled    | Codeium AI IDE                                |
+| GitHub Copilot       | `.github/copilot-instructions.md` | ⚙️ Disabled    | GitHub official AI pair programmer            |
+| Continue             | `.continuerules`                  | ⚙️ Disabled    | Open-source AI coding assistant (VSCode ext)  |
+| Cline                | `.clinerules`                     | ⚙️ Disabled    | Autonomous coding agent (formerly Claude Dev) |
+| Roo-Cline            | `.roorules`                       | ⚙️ Disabled    | Enhanced fork of Cline                        |
+| Aider                | `.aider.conf.yml`                 | ⚙️ Disabled    | AI pair programming in the terminal           |
+| Bolt.new             | `.bolt/prompt`                    | ⚙️ Disabled    | StackBlitz AI-powered full-stack development  |
+| Cursor Skills        | `.cursor/skills`                  | ⚙️ Disabled    | Cursor AI skills library                      |
+| GitHub Copilot Skills| `.github/skills`                  | ⚙️ Disabled    | GitHub Copilot agent skills                   |
+| Custom Adapters      | Configurable                      | ⚙️ On-demand   | Support any AI tool with custom configuration |
 
 ### Rule File Format
 

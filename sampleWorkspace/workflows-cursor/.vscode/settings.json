@@ -13,14 +13,26 @@
       }
     }
   ],
-  "turbo-ai-rules.adapters.custom": [
-    {
-      "id": "cursor-workflow",
-      "name": "Cursor Rules",
+  "turbo-ai-rules.adapters": {
+    "cursor": {
       "enabled": true,
-      "outputPath": ".cursorrules",
-      "templatePath": "",
-      "isRuleType": true
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "windsurf": {
+      "enabled": false
+    },
+    "copilot": {
+      "enabled": false
+    },
+    "continue": {
+      "enabled": false
+    },
+    "cline": {
+      "enabled": false
     }
-  ]
+  },
+  "turbo-ai-rules.adapters.preset": [],
+  "turbo-ai-rules.adapters.custom": [],
+  "turbo-ai-rules.sync.onStartup": false
 }
