@@ -173,6 +173,35 @@ Add to `.vscode/settings.json` or VS Code settings:
 | Cursor   | `cursor.enabled`   | `false` | `.cursorrules`                    |
 | Continue | `continue.enabled` | `false` | `.continuerules`                  |
 
+**Common Adapter Options**:
+
+| Option       | Type    | Default     | Description                                                  |
+| ------------ | ------- | ----------- | ------------------------------------------------------------ |
+| `enabled`    | boolean | varies      | Enable/disable this adapter                                  |
+| `autoUpdate` | boolean | `undefined` | Whether to participate in scheduled auto-sync (inherits `sync.auto` when undefined) |
+
+**Auto-Update Behavior**:
+
+- `undefined` (default): Inherits global `sync.auto` setting
+- `true`: Force enable auto-sync for this adapter (even if `sync.auto` is `false`)
+- `false`: Force disable auto-sync for this adapter (even if `sync.auto` is `true`)
+- **Requirement**: Adapter must have been manually synced at least once
+
+**Example**:
+
+```json
+{
+  "turbo-ai-rules.adapters.cursor": {
+    "enabled": true,
+    "autoUpdate": true  // Always auto-sync
+  },
+  "turbo-ai-rules.adapters.copilot": {
+    "enabled": true,
+    "autoUpdate": false  // Manual sync only
+  }
+}
+```
+
 **Continue Directory Support**:
 
 Continue also supports loading rules from `.continue/rules/` directory with **full recursive subdirectory support**:
