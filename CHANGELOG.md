@@ -2,6 +2,18 @@
 
 All notable changes to the "turbo-ai-rules" extension will be documented in this file.
 
+# [2.0.8]
+
+## ✨ 新增特性
+
+- 适配器级别自动更新控制（`autoUpdate` 字段），默认继承全局 `sync.auto` 配置
+- Skills 适配器支持增强：sourceIds 过滤、目录结构保持、skill.md 过滤
+
+## 🐛 修复问题
+
+- 修复 Windows 路径兼容问题（添加 `splitPath()` 跨平台工具函数）
+- 修复源统计计数不准确和用户技能清理逻辑错误
+
 # [2.0.7]
 
 ## 🐛 修复问题
