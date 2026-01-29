@@ -268,8 +268,8 @@ interface RuleSelection {
 interface AdapterRuleMapping {
   adapterId: string; // 适配器 ID（主键）
   selectedRules: string[]; // 选中的规则路径（格式：sourceId/relativePath）
-  lastSyncedAt?: string; // 最后同步时间
-  autoSync: boolean; // 是否自动同步
+  lastSyncedAt?: string; // 最后同步时间（ISO 8601）
+  // 注意：autoUpdate 配置已移至 AdapterConfig.autoUpdate，此字段已弃用
 }
 
 // 适配器映射文件结构

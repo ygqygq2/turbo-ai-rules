@@ -331,9 +331,76 @@ TreeView 显示格式：
 同步可通过以下方式触发：
 
 - **手动触发**: 用户执行 `turbo-ai-rules.syncRules` 命令
-- **定时触发**: 根据 `syncInterval` 配置定时同步
-- **启动触发**: 扩展激活时根据 `onStartup` 配置同步
+- **定时触发**: 根据全局 `sync.auto` 和 `sync.interval` 配置定时同步
+- **启动触发**: 扩展激活时根据 `sync.onStartup` 配置同步
 - **文件监听触发**: 监听配置文件变化自动同步
+
+### 2.1.1 适配器级别的自动更新控制
+
+每个适配器可以通过 `autoUpdate` 配置独立控制是否参与定时同步：
+
+**配置示例**:
+
+```json
+{
+  "turbo-ai-rules.sync": {
+    "auto": true,
+    "interval": 60  // 全局定时同步间隔（分钟）
+  },
+  "turbo-ai-rules.adapters": {
+    "cursor": {
+      "enabled": true,
+      "autoUpdate": true  // ✅ 参与定时同步
+    },
+    "copilot": {
+      "enabled": true,
+      "autoUpdate": false  // ❌ 不参与定时同步（仅手动）
+    }
+  }
+}
+```
+
+**触发条件（必须同时满足）**:
+
+1. ✅ 全局自动同步开启：`sync.auto = true`
+2. ✅ 全局同步间隔有效：`sync.interval > 0`（分钟）
+3. ✅ 适配器已启用：`adapter.enabled = true`
+4. ✅ 适配器自动更新开启：`adapter.autoUpdate = true`
+5. ✅ 适配器有持久化数据：至少手动同步过一次（`adapter-mappings.json` 中存在该适配器的记录）
+
+**设计考量**:
+
+- **手动优先原则**: 新添加的适配器默认 `autoUpdate = false`，避免未经用户确认就自动同步
+- **持久化前提**: 只有手动同步过的适配器才会参与定时同步，确保用户明确知道哪些规则会被同步
+- **独立控制**: 不同适配器可以有不同的同步策略（如 Cursor 自动更新，Copilot 手动更新）
+- **全局开关**: 全局 `sync.auto = false` 时，所有适配器的 `autoUpdate` 配置都不生效
+
+**实现逻辑**:
+
+```typescript
+// 定时同步时过滤适配器
+function getAutoUpdateAdapters(): string[] {
+  const config = getConfig();
+  if (!config.sync.auto || config.sync.interval <= 0) {
+    return [];
+  }
+
+  const autoUpdateAdapters: string[] = [];
+  const adapterMappings = loadAdapterMappings(); // 加载持久化数据
+
+  for (const [adapterId, adapterConfig] of Object.entries(config.adapters)) {
+    if (
+      adapterConfig.enabled &&
+      adapterConfig.autoUpdate === true &&
+      adapterMappings[adapterId] // 确保有持久化数据
+    ) {
+      autoUpdateAdapters.push(adapterId);
+    }
+  }
+
+  return autoUpdateAdapters;
+}
+```
 
 ### 2.2 规则选择与同步行为
 
