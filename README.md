@@ -22,6 +22,10 @@
 - 🌐 **Multi-Source Support** - Sync rules from multiple Git repositories
 - 🔄 **Auto Sync** - Schedule or manually sync rule updates
 - 🎯 **Smart Adapters** - Generate configs for Cursor, Copilot, Continue, and custom tools
+- 🧠 **Skills Support** - Full support for AI agent skills (Cursor Skills, Copilot Skills)
+  - Directory structure preservation with `skill.md` detection
+  - Automatic resource copying (images, configs, etc.)
+  - Source filtering for multi-repository skills management
 - 🔍 **Rule Search** - Quickly find and browse rules
 - 🔐 **Private Repos** - Support Token authentication
 - 📊 **Visual Management** - Tree view and status bar integration
