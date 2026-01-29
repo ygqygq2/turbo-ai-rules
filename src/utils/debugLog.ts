@@ -19,10 +19,10 @@ function isDebugEnabled(): boolean {
 /**
  * @description 调试日志（仅在测试/开发环境输出）
  * @param message {string} 日志消息
- * @param data {any} 可选数据
+ * @param data {unknown} 可选数据
  * @return {void}
  */
-export function debugLog(message: string, ...data: any[]): void {
+export function debugLog(message: string, ...data: unknown[]): void {
   if (isDebugEnabled()) {
     console.log(`[DEBUG] ${message}`, ...data);
   }
@@ -31,10 +31,10 @@ export function debugLog(message: string, ...data: any[]): void {
 /**
  * @description 调试警告（仅在测试/开发环境输出）
  * @param message {string} 警告消息
- * @param data {any} 可选数据
+ * @param data {unknown} 可选数据
  * @return {void}
  */
-export function debugWarn(message: string, ...data: any[]): void {
+export function debugWarn(message: string, ...data: unknown[]): void {
   if (isDebugEnabled()) {
     console.warn(`[DEBUG:WARN] ${message}`, ...data);
   }
@@ -43,10 +43,10 @@ export function debugWarn(message: string, ...data: any[]): void {
 /**
  * @description 调试错误（仅在测试/开发环境输出）
  * @param message {string} 错误消息
- * @param data {any} 可选数据
+ * @param data {unknown} 可选数据
  * @return {void}
  */
-export function debugError(message: string, ...data: any[]): void {
+export function debugError(message: string, ...data: unknown[]): void {
   if (isDebugEnabled()) {
     console.error(`[DEBUG:ERROR] ${message}`, ...data);
   }

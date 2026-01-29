@@ -113,6 +113,13 @@ export interface AdapterConfig {
    * false: 所有文件平铺到输出目录根
    */
   preserveDirectoryStructure?: boolean;
+  /** 是否启用自动更新（默认继承全局 sync.auto 配置）
+   * true: 参与定时同步，当全局 sync.auto=true 且 sync.interval > 0 时自动同步
+   * false: 不参与定时同步，只能手动同步
+   * undefined: 继承全局 sync.auto 配置
+   * 前提条件：适配器必须至少手动同步过一次（有持久化数据）才会参与定时同步
+   */
+  autoUpdate?: boolean;
 }
 
 /**

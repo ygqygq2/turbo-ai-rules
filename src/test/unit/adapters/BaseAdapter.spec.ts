@@ -142,12 +142,12 @@ describe('BaseAdapter sorting and deduplication', () => {
       filePath: `/test/${id}.md`,
     });
 
-    it('should deduplicate rules by id (keep first after sorting)', () => {
+    it('should deduplicate rules by id (keep first after sorting)', async () => {
       const remoteRules = [createRule('naming', 'medium', 'remote')];
       const userRules = [createRule('naming', 'high', 'user-rules')];
 
       adapter.setSortConfig('priority', 'asc');
-      const merged = adapter['mergeWithUserRules'](remoteRules, userRules);
+      const merged = await adapter['mergeWithUserRules'](remoteRules, userRules);
 
       // sortOrder: asc -> [medium, high] -> 去重保留第一个 (medium)
       expect(merged).toHaveLength(1);
@@ -155,12 +155,12 @@ describe('BaseAdapter sorting and deduplication', () => {
       expect(merged[0].metadata.priority).toBe('medium');
     });
 
-    it('should keep high priority user rule when sortOrder is desc', () => {
+    it('should keep high priority user rule when sortOrder is desc', async () => {
       const remoteRules = [createRule('naming', 'medium', 'remote')];
       const userRules = [createRule('naming', 'high', 'user-rules')];
 
       adapter.setSortConfig('priority', 'desc');
-      const merged = adapter['mergeWithUserRules'](remoteRules, userRules);
+      const merged = await adapter['mergeWithUserRules'](remoteRules, userRules);
 
       // sortOrder: desc → high → medium → low (降序，高优先级在前)
       // 排序结果: [high(user), medium(remote)]
@@ -170,7 +170,7 @@ describe('BaseAdapter sorting and deduplication', () => {
       expect(merged[0].metadata.priority).toBe('high');
     });
 
-    it('should not deduplicate rules with different ids', () => {
+    it('should not deduplicate rules with different ids', async () => {
       const remoteRules = [
         createRule('rule1', 'medium', 'remote'),
         createRule('rule2', 'low', 'remote'),
@@ -178,7 +178,7 @@ describe('BaseAdapter sorting and deduplication', () => {
       const userRules = [createRule('rule3', 'high', 'user-rules')];
 
       adapter.setSortConfig('priority', 'asc');
-      const merged = adapter['mergeWithUserRules'](remoteRules, userRules);
+      const merged = await adapter['mergeWithUserRules'](remoteRules, userRules);
 
       expect(merged).toHaveLength(3);
       // asc: low -> medium -> high
@@ -187,7 +187,7 @@ describe('BaseAdapter sorting and deduplication', () => {
       expect(merged[2].id).toBe('rule3');
     });
 
-    it('should handle multiple duplicate ids correctly', () => {
+    it('should handle multiple duplicate ids correctly', async () => {
       const remoteRules = [
         createRule('duplicate', 'low', 'remote1'),
         createRule('duplicate', 'medium', 'remote2'),
@@ -195,7 +195,7 @@ describe('BaseAdapter sorting and deduplication', () => {
       const userRules = [createRule('duplicate', 'high', 'user-rules')];
 
       adapter.setSortConfig('priority', 'asc');
-      const merged = adapter['mergeWithUserRules'](remoteRules, userRules);
+      const merged = await adapter['mergeWithUserRules'](remoteRules, userRules);
 
       // asc: low -> medium -> high -> 保留第一个 (low)
       expect(merged).toHaveLength(1);

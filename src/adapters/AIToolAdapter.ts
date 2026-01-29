@@ -86,7 +86,7 @@ export abstract class BaseAdapter implements AIToolAdapter {
     const userRules = await this.loadUserRules();
 
     // 2. 合并规则（去重、排序）
-    const allRules = this.mergeWithUserRules(rules, userRules);
+    const allRules = await this.mergeWithUserRules(rules, userRules);
 
     // 3. 根据输出类型生成
     const outputType = this.getOutputType();
@@ -681,7 +681,10 @@ export abstract class BaseAdapter implements AIToolAdapter {
    * @param remoteRules {ParsedRule[]}
    * @param userRules {ParsedRule[]}
    */
-  protected mergeWithUserRules(remoteRules: ParsedRule[], userRules: ParsedRule[]): ParsedRule[] {
+  protected async mergeWithUserRules(
+    remoteRules: ParsedRule[],
+    userRules: ParsedRule[],
+  ): Promise<ParsedRule[]> {
     // 对于技能适配器，应用 skill.md 过滤逻辑
     let processedUserRules = userRules;
     if (!this.isRuleType && userRules.length > 0) {
