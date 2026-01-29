@@ -26,10 +26,13 @@ describe('Skills Adapter Workflow Tests', () => {
   before(async function () {
     this.timeout(TEST_TIMEOUTS.LONG);
 
-    // 获取 Skills 测试工作空间
+    // 获取 Skills 测试工作空间（注意工作区名称带冒号和空格）
     const folders = vscode.workspace.workspaceFolders;
     assert.ok(folders && folders.length > 0, 'Workspace folders not found');
-    workspaceFolder = folders.find((f) => f.name.includes('Skills Workflow')) || folders[0];
+    workspaceFolder =
+      folders.find((f) => f.name.includes('Preset Skills')) ||
+      folders.find((f) => f.name.includes('Skills Workflow')) ||
+      folders[0];
 
     // 激活扩展
     const ext = vscode.extensions.getExtension('ygqygq2.turbo-ai-rules');
@@ -82,13 +85,9 @@ describe('Skills Adapter Workflow Tests', () => {
     const customAdapters = config.get<any[]>(CONFIG_KEYS.ADAPTERS_CUSTOM, []);
 
     // 查找 skill 适配器 (isRuleType: false)
-    const skillsAdapter = customAdapters?.find(
-      (adapter) => adapter.skills === true || adapter.isRuleType === false,
-    );
+    const skillsAdapter = customAdapters?.find((adapter) => adapter.isRuleType === false);
 
-    if (!skillsAdapter) {
-      console.warn('No skills adapter configured, some tests will be skipped');
-    }
+    assert.ok(skillsAdapter, 'Should have skill adapter configured');
   });
 
   it('Should sync skill files through dashboard sync page', async function () {
@@ -96,7 +95,7 @@ describe('Skills Adapter Workflow Tests', () => {
 
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
     const customAdapters = config.get<any[]>(CONFIG_KEYS.ADAPTERS_CUSTOM, []);
-    const skillsAdapter = customAdapters?.find((adapter) => adapter.skills === true);
+    const skillsAdapter = customAdapters?.find((adapter) => adapter.isRuleType === false);
 
     if (!skillsAdapter) {
       this.skip();
@@ -152,7 +151,7 @@ describe('Skills Adapter Workflow Tests', () => {
 
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
     const customAdapters = config.get<any[]>(CONFIG_KEYS.ADAPTERS_CUSTOM, []);
-    const skillsAdapter = customAdapters?.find((adapter) => adapter.skills === true);
+    const skillsAdapter = customAdapters?.find((adapter) => adapter.isRuleType === false);
 
     if (!skillsAdapter) {
       this.skip();
@@ -201,7 +200,7 @@ describe('Skills Adapter Workflow Tests', () => {
 
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
     const customAdapters = config.get<any[]>(CONFIG_KEYS.ADAPTERS_CUSTOM, []);
-    const skillsAdapter = customAdapters?.find((adapter) => adapter.skills === true);
+    const skillsAdapter = customAdapters?.find((adapter) => adapter.isRuleType === false);
 
     if (!skillsAdapter) {
       this.skip();
@@ -240,19 +239,14 @@ describe('Skills Adapter Workflow Tests', () => {
 
     // 统计规则适配器和 skill 适配器
     const ruleAdapters = customAdapters.filter((adapter) => adapter.isRuleType !== false);
-    const skillAdapters = customAdapters.filter(
-      (adapter) => adapter.isRuleType === false || adapter.skills === true,
-    );
+    const skillAdapters = customAdapters.filter((adapter) => adapter.isRuleType === false);
 
     console.log(`Rule adapters: ${ruleAdapters.length}, Skill adapters: ${skillAdapters.length}`);
 
     // 验证分类
     if (skillAdapters && skillAdapters.length > 0) {
       for (const adapter of skillAdapters) {
-        assert.ok(
-          adapter.isRuleType === false || adapter.skills === true,
-          'Skill adapter should have isRuleType: false or skills: true',
-        );
+        assert.ok(adapter.isRuleType === false, 'Skill adapter should have isRuleType: false');
       }
     }
   });

@@ -5,7 +5,9 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { CONFIG_KEYS } from '../../../utils/constants';
+import { testGenerateRules, testSyncRules } from '../../helpers/testCommands';
 import { TEST_TIMEOUTS } from '../testConstants';
+import { switchToWorkspaceContext } from '../testHelpers';
 
 describe('User Rules Protection Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
@@ -14,8 +16,9 @@ describe('User Rules Protection Tests', () => {
     const folders = vscode.workspace.workspaceFolders;
     assert.ok(folders && folders.length > 0, 'No workspace folder found');
 
-    // 查找 User Protection 或 Multi-Adapter + User Protection 测试工作区
+    // 查找正确的测试工作区（注意工作区名称带冒号和空格）
     workspaceFolder =
+      folders.find((f) => f.name.includes('Custom User Rules')) ||
       folders.find((f) => f.name.includes('User Protection')) ||
       folders.find((f) => f.name.includes('rules-with-user-rules')) ||
       folders[0];
@@ -24,13 +27,8 @@ describe('User Rules Protection Tests', () => {
   beforeEach(async function () {
     this.timeout(TEST_TIMEOUTS.MEDIUM);
 
-    // 切换到目标工作区：打开该工作区的 README 文件
-    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
-    const doc = await vscode.workspace.openTextDocument(readmePath);
-    await vscode.window.showTextDocument(doc);
-
-    // 等待工作区上下文更新
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // 使用双管齐下的工作区切换函数
+    await switchToWorkspaceContext(workspaceFolder);
   });
 
   afterEach(async () => {
@@ -67,13 +65,8 @@ describe('User Rules Protection Tests', () => {
       this.skip(); // 如果禁用自动 gitignore，跳过此测试
     }
 
-    // 打开当前 workspace folder 中的 README 文件，确保 activeEditor 在正确的 folder
-    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
-    const doc = await vscode.workspace.openTextDocument(readmePath);
-    await vscode.window.showTextDocument(doc);
-
     try {
-      await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+      await testSyncRules();
 
       const gitignorePath = path.join(workspaceFolder.uri.fsPath, '.cursorrules', '.gitignore');
       const exists = await fs.pathExists(gitignorePath);
@@ -149,21 +142,16 @@ This is my precious custom rule content that must not be lost!
       'adapters.cursor',
     );
 
-    // 3. 打开当前 workspace folder 中的文件,确保 activeEditor 在正确的 folder
-    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
-    const doc = await vscode.workspace.openTextDocument(readmePath);
-    await vscode.window.showTextDocument(doc);
-
-    // 4. 执行同步和生成流程（应该失败）
+    // 3. 执行同步和生成流程（应该失败）
     try {
       // 同步规则
-      await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+      await testSyncRules();
       await new Promise((resolve) => setTimeout(resolve, 3000)); // 等待同步完成
 
       // 尝试生成配置文件（应该失败并提示）
       let _generateError: Error | null = null;
       try {
-        await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
+        await testGenerateRules();
         await new Promise((resolve) => setTimeout(resolve, 1000));
       } catch (error) {
         _generateError = error as Error;
@@ -247,16 +235,12 @@ This content is outside the managed sections and WILL BE LOST on next sync.
 
     // 配置已在 settings.json 中预设
 
-    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
-    const doc = await vscode.workspace.openTextDocument(readmePath);
-    await vscode.window.showTextDocument(doc);
-
     try {
       // 执行同步和生成（模拟后续更新）
-      await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+      await testSyncRules();
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
+      await testGenerateRules();
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // 验证
@@ -326,16 +310,12 @@ This is the initial version.
 `;
     await fs.writeFile(userRuleFile1, initialContent1, 'utf-8');
 
-    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
-    const doc = await vscode.workspace.openTextDocument(readmePath);
-    await vscode.window.showTextDocument(doc);
-
     try {
       // 第一次同步和生成
-      await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+      await testSyncRules();
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
+      await testGenerateRules();
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // 读取第一次生成的配置文件
@@ -396,10 +376,10 @@ This is a newly added custom rule.
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // 第二次同步和生成
-      await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+      await testSyncRules();
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
+      await testGenerateRules();
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // 读取第二次生成的配置文件
@@ -469,20 +449,16 @@ This should only appear when enableUserRules is true.
 `;
     await fs.writeFile(userRuleFile, userContent, 'utf-8');
 
-    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
-    const doc = await vscode.workspace.openTextDocument(readmePath);
-    await vscode.window.showTextDocument(doc);
-
     try {
       // 检查 cursor 适配器的 enableUserRules 配置（默认应该是 true）
       const cursorAdapterConfig = config.get<{ enableUserRules?: boolean }>('adapters.cursor');
       const enableUserRules = cursorAdapterConfig?.enableUserRules !== false; // 默认为 true
 
       // 执行同步和生成
-      await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+      await testSyncRules();
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
+      await testGenerateRules();
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // 读取生成的配置文件

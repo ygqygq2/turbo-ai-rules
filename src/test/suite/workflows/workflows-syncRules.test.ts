@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 
 import { CONFIG_KEYS } from '../../../utils/constants';
 import { TEST_TIMEOUTS } from '../testConstants';
+import { switchToWorkspaceContext } from '../testHelpers';
 
 // 通过扩展获取服务实例，避免模块重复加载
 let rulesManager: any;
@@ -14,17 +15,8 @@ describe('Sync Rules Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
 
   beforeEach(async () => {
-    const folders = vscode.workspace.workspaceFolders;
-    assert.ok(folders && folders.length > 0, 'No workspace folder found');
-
-    // 使用 workflows-syncRules 工作区
-    workspaceFolder =
-      folders.find(
-        (f) =>
-          f.name === 'Workflows: Sync Rules' ||
-          f.name.includes('syncRules') ||
-          f.uri.fsPath.includes('syncRules'),
-      ) || folders[0];
+    // 使用 switchToWorkspaceContext 切换到正确的工作区
+    workspaceFolder = await switchToWorkspaceContext('Sync Rules');
 
     // 从扩展获取服务实例
     const ext = vscode.extensions.getExtension('ygqygq2.turbo-ai-rules');
@@ -124,11 +116,6 @@ describe('Sync Rules Tests', () => {
     const sources = config.get<Array<{ id: string; name: string }>>('sources');
 
     assert.ok(sources && sources.length > 0, 'Should have pre-configured sources');
-
-    // 打开当前 workspace folder 中的 README 文件，确保 activeEditor 在正确的 folder
-    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
-    const doc = await vscode.workspace.openTextDocument(readmePath);
-    await vscode.window.showTextDocument(doc);
 
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
 
@@ -363,26 +350,23 @@ describe('Sync Rules Tests', () => {
     );
   });
 
-  it('Should clean orphan files but preserve user rules in directory mode', async function () {
+  it('Should clean orphan files but preserve user rules from ai-rules directory', async function () {
+    // enableUserRules: true 时，应保留 ai-rules/ 目录的用户规则，删除孤儿文件
     this.timeout(TEST_TIMEOUTS.LONG);
 
-    // 使用配置了用户规则的工作区
-    const folders = vscode.workspace.workspaceFolders;
-    assert.ok(folders && folders.length > 0, 'No workspace folder found');
+    // 切换到 "Multi-Adapter + User Protection" 工作区（有用户规则保护和目录模式配置）
+    const targetWorkspaceFolder = await switchToWorkspaceContext('Multi-Adapter + User Protection');
 
-    // 使用 "Test: Multi-Adapter + User Protection" 工作区
-    const testFolder = folders.find((f) => f.name === 'Test: Multi-Adapter + User Protection');
-    assert.ok(testFolder, 'Should have "Test: Multi-Adapter + User Protection" workspace folder');
+    // 1. 在 ai-rules/ 目录创建用户规则（enableUserRules 保护的目录）
+    const userRulesDir = path.join(targetWorkspaceFolder.uri.fsPath, 'ai-rules');
+    await fs.ensureDir(userRulesDir);
+    const userRulePath = path.join(userRulesDir, 'custom-user-rule.md');
+    await fs.writeFile(
+      userRulePath,
+      '---\nid: custom-user\ntitle: Custom User Rule\npriority: high\n---\n\n# My Custom Rule\n\nUser-defined rule.',
+    );
 
-    // 使用这个特定的工作区
-    const targetWorkspaceFolder = testFolder;
-
-    // 打开这个工作区中的 README 文件
-    const readmePath = path.join(targetWorkspaceFolder.uri.fsPath, 'README.md');
-    const doc = await vscode.workspace.openTextDocument(readmePath);
-    await vscode.window.showTextDocument(doc);
-
-    // 1. 同步规则
+    // 2. 同步规则（会同时加载远程规则和 ai-rules/ 的用户规则）
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
 
     // 等待同步完成和规则加载
@@ -397,10 +381,8 @@ describe('Sync Rules Tests', () => {
 
     assert.ok(allRules.length > 0, 'Rules should be loaded after sync');
 
-    // 2. 获取这个工作区的配置
+    // 3. 获取工作区配置
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', targetWorkspaceFolder.uri);
-
-    // 确保有自定义适配器（使用新的 adapters.custom 格式）
     const adaptersConfig = config.get<any>('adapters');
     const customAdapters = adaptersConfig?.custom;
     assert.ok(
@@ -408,7 +390,7 @@ describe('Sync Rules Tests', () => {
       'Should have custom adapters configured',
     );
 
-    // 选择所有规则并生成配置
+    // 4. 选择所有规则并生成配置
     const sources = config.get<Array<{ id: string; enabled: boolean }>>('sources');
     assert.ok(sources && sources.length > 0, 'Should have configured sources');
 
@@ -425,89 +407,41 @@ describe('Sync Rules Tests', () => {
       }
     }
 
-    // 等待选择状态持久化
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // 3. 生成配置（初次生成）
+    // 5. 生成配置（初次生成，应包含远程规则 + ai-rules/ 的用户规则）
     await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
-    await new Promise((resolve) => setTimeout(resolve, 3000)); // 增加等待时间
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
-    // 4. 验证配置目录存在 - 查找启用的自定义适配器
-    let targetAdapter: any = null;
-    for (const adapter of customAdapters) {
-      if (adapter.enabled && adapter.outputType === 'directory') {
-        targetAdapter = adapter;
-        break;
-      }
-    }
-
+    // 6. 找到目录类型的适配器
+    const targetAdapter = customAdapters.find(
+      (a: any) => a.enabled && a.outputType === 'directory',
+    );
     if (!targetAdapter) {
-      console.log('No enabled directory-type custom adapter found, checking all adapters...');
-      console.log('Custom adapters:', JSON.stringify(customAdapters, null, 2));
-      // 尝试使用第一个目录类型适配器（即使未启用）
-      targetAdapter =
-        customAdapters.find((a: any) => a.outputType === 'directory') || customAdapters[0];
-    }
-
-    const outputDir = path.join(targetWorkspaceFolder.uri.fsPath, targetAdapter.outputPath);
-    console.log(`Checking output directory: ${outputDir}`);
-    console.log(`Adapter config:`, JSON.stringify(targetAdapter, null, 2));
-
-    // 列出工作区根目录内容以诊断问题
-    const workspaceContents = await fs.readdir(targetWorkspaceFolder.uri.fsPath);
-    console.log('Workspace root contents:', workspaceContents);
-
-    const dirExists = await fs.pathExists(outputDir);
-    if (!dirExists) {
-      // 如果目录不存在，这可能是因为没有选中的规则或其他原因
-      // 不要失败整个测试，而是跳过后续验证
-      console.warn(
-        `Output directory ${targetAdapter.outputPath} does not exist, test may be incomplete`,
-      );
+      console.warn('No enabled directory-type custom adapter found');
       this.skip();
       return;
     }
 
-    assert.ok(dirExists, `Custom adapter output directory should exist: ${outputDir}`);
+    const outputDir = path.join(targetWorkspaceFolder.uri.fsPath, targetAdapter.outputPath);
+    const dirExists = await fs.pathExists(outputDir);
+    if (!dirExists) {
+      console.warn(`Output directory ${targetAdapter.outputPath} does not exist`);
+      this.skip();
+      return;
+    }
 
-    // 5. 验证 ai-rules/ 中的用户规则已存在
-    const aiRulesDir = path.join(targetWorkspaceFolder.uri.fsPath, 'ai-rules');
-    const userRuleFiles = await fs.readdir(aiRulesDir);
-    const userRuleMdFiles = userRuleFiles.filter((f) => f.endsWith('.md') || f.endsWith('.mdc'));
-    assert.ok(userRuleMdFiles.length > 0, 'Should have user rules in ai-rules/');
-
-    // 6. 在输出目录创建孤儿文件（不在 ai-rules/，不在选中规则中）
-    const orphanFilename = 'orphan-rule.md';
-    const orphanFilePath = path.join(outputDir, orphanFilename);
+    // 7. 在输出目录创建孤儿文件（不在 ai-rules/，不在远程规则中）
+    const orphanFilePath = path.join(outputDir, 'orphan-rule.md');
     await fs.writeFile(
       orphanFilePath,
-      '---\nid: orphan\ntitle: Orphan Rule\n---\n\n# Orphan Rule\n\nThis file should be deleted.',
+      '---\nid: orphan\ntitle: Orphan Rule\n---\n\n# Orphan Rule\n\nThis should be deleted.',
     );
 
     let orphanExists = await fs.pathExists(orphanFilePath);
     assert.ok(orphanExists, 'Orphan file should be created for testing');
 
-    // 7. 取消选择部分规则
-    const enabledSource = sources.find((s) => s.enabled);
-    assert.ok(enabledSource, 'Should have at least one enabled source');
-
-    const sourceRules = rulesManager.getRulesBySource(enabledSource.id);
-    if (sourceRules.length > 1) {
-      // 只选择前一半的规则
-      const halfCount = Math.floor(sourceRules.length / 2);
-      const selectedPaths = sourceRules.slice(0, halfCount).map((r: any) => r.filePath);
-      selectionStateManager.updateSelection(
-        enabledSource.id,
-        selectedPaths,
-        false,
-        targetWorkspaceFolder.uri.fsPath,
-      );
-    }
-
-    // 等待选择状态持久化
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // 8. 再次生成配置（应该删除孤儿文件，保留用户规则）
+    // 8. 再次生成配置（不改变选择，应删除孤儿文件，保留 ai-rules/ 的用户规则）
     await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
@@ -515,11 +449,18 @@ describe('Sync Rules Tests', () => {
     orphanExists = await fs.pathExists(orphanFilePath);
     assert.ok(!orphanExists, 'Orphan file should be deleted during cleanup');
 
-    // 10. 验证用户规则被保留（通过孤儿文件删除间接验证）
+    // 10. 验证 ai-rules/ 的用户规则文件被复制到输出目录
+    const userRuleInOutput = path.join(outputDir, 'custom-user-rule.md');
+    const userRuleInOutputExists = await fs.pathExists(userRuleInOutput);
+    assert.ok(
+      userRuleInOutputExists,
+      'User rule from ai-rules/ should be copied to output directory',
+    );
 
     // 清理测试创建的文件
     if (await fs.pathExists(orphanFilePath)) {
       await fs.remove(orphanFilePath);
     }
+    await fs.remove(userRulePath);
   });
 });

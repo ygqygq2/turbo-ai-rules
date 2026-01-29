@@ -1,0 +1,10 @@
+# Generated files
+rules/
+!rules/custom-*
+.cursorrules
+.windsurfrules
+.continue/
+.github/copilot-instructions.md
+
+# Turbo AI Rules - Auto-generated files
+rules

@@ -6,31 +6,21 @@ import * as vscode from 'vscode';
 
 import { CONFIG_KEYS } from '../../../utils/constants';
 import { TEST_TIMEOUTS } from '../testConstants';
+import { switchToWorkspaceContext } from '../testHelpers';
 
 describe('User Rules Protection Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
 
   before(async () => {
-    const folders = vscode.workspace.workspaceFolders;
-    assert.ok(folders && folders.length > 0, 'No workspace folder found');
-
-    // 查找 User Protection 或 Multi-Adapter + User Protection 测试工作区
-    workspaceFolder =
-      folders.find((f) => f.name.includes('User Protection')) ||
-      folders.find((f) => f.name.includes('rules-with-user-rules')) ||
-      folders[0];
+    // 查找并切换到 Custom User Rules 工作区
+    workspaceFolder = await switchToWorkspaceContext('Custom User Rules');
   });
 
   beforeEach(async function () {
     this.timeout(TEST_TIMEOUTS.MEDIUM);
 
-    // 切换到目标工作区：打开该工作区的 README 文件
-    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
-    const doc = await vscode.workspace.openTextDocument(readmePath);
-    await vscode.window.showTextDocument(doc);
-
-    // 等待工作区上下文更新
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // 重新切换到目标工作区
+    await switchToWorkspaceContext(workspaceFolder);
   });
 
   afterEach(async () => {

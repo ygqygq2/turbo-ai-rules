@@ -29,7 +29,6 @@ describe('Preset Single File Workflow Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
   let rulesManager: any;
   let selectionStateManager: any;
-  const testSourceUrl = 'https://github.com/ygqygq2/ygqygq2.git';
 
   before(async function () {
     this.timeout(TEST_TIMEOUTS.LONG);

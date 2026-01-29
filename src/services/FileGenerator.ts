@@ -138,7 +138,7 @@ export class FileGenerator {
             adapter.setPreserveDirectoryStructure(customConfig.preserveDirectoryStructure);
           }
 
-          this.adapters.set(`custom-${customConfig.id}`, adapter);
+          this.adapters.set(customConfig.id, adapter);
           Logger.debug(
             `Registered custom adapter: ${customConfig.id}, isRuleType=${customConfig.isRuleType ?? true}, enableUserRules=${customConfig.enableUserRules ?? customConfig.isRuleType ?? true}`,
             customConfig as unknown as Record<string, unknown>,
@@ -210,17 +210,13 @@ export class FileGenerator {
     });
 
     // 为每个适配器生成配置
-    for (const [name, adapter] of this.adapters.entries()) {
-      // 适配器名称匹配规则：
-      // - 预置适配器：直接匹配（如 'copilot', 'cursor', 'continue'）
-      // - 自定义适配器：name 格式为 'custom-{id}'，需要匹配 id 部分
-      const adapterId = name.startsWith('custom-') ? name.substring(7) : name;
+    for (const [adapterId, adapter] of this.adapters.entries()) {
+      // 适配器 ID 统一使用 Map key（预设/自定义都是配置中的原始 ID）
+      const name = adapter instanceof PresetAdapter ? adapter.name : `CustomAdapter.${adapterId}`;
 
-      debugLog(
-        `[FileGenerator] Processing adapter: ${name}, adapterId: ${adapterId}, rules count: ${rules.length}`,
-      );
-      Logger.debug(`[generateAll] Processing adapter ${name}`, {
+      Logger.debug(`[generateAll] Processing adapter ${adapterId}`, {
         adapterId,
+        name,
         isCustomAdapter: adapter instanceof CustomAdapter,
         config: adapter instanceof CustomAdapter ? adapter.config : undefined,
         targetAdapters,
@@ -228,7 +224,8 @@ export class FileGenerator {
 
       // ✅ 如果指定了目标适配器，只为目标适配器生成配置
       if (targetAdapters && targetAdapters.length > 0) {
-        if (!targetAdapters.includes(adapterId) && !targetAdapters.includes(name)) {
+        // adapterId 就是配置中的原始 ID（预设/自定义统一）
+        if (!targetAdapters.includes(adapterId)) {
           Logger.debug(`Skipping adapter ${name} (not in target list)`, {
             adapterId,
             targetAdapters,
@@ -254,15 +251,9 @@ export class FileGenerator {
         }
       }
       try {
-        debugLog(
-          `[FileGenerator] Calling generateForAdapter for ${name}, rules: ${rules.length}, allRules: ${allRules?.length || 0}`,
-        );
         // ✅ 所有适配器都使用传入的规则列表（用户选择的规则）
         // 自定义适配器的特殊过滤逻辑在其 generate() 方法内部处理
         const config = await this.generateForAdapter(adapter, rules, workspaceRoot, allRules);
-        debugLog(
-          `[FileGenerator] Generated config for ${name}: ${config.filePath}, ruleCount: ${config.ruleCount}`,
-        );
         result.success.push(config);
 
         Logger.debug(`Generated config for ${name}`, {
@@ -333,13 +324,6 @@ export class FileGenerator {
     adapter?: AIToolAdapter,
     rules?: ParsedRule[],
   ): Promise<void> {
-    debugLog(`[FileGenerator.writeConfigFile] Called with:`, {
-      filePath,
-      contentLength: content.length,
-      adapterName: adapter?.name,
-      rulesCount: rules?.length || 0,
-    });
-
     try {
       // 确保目录存在
       const dir = path.dirname(filePath);
@@ -347,13 +331,9 @@ export class FileGenerator {
 
       // 判断是目录模式还是文件模式
       const isDirectoryMode = adapter && this.isDirectoryOutput(adapter);
-      debugLog(`[FileGenerator.writeConfigFile] isDirectoryMode:`, isDirectoryMode);
 
       if (isDirectoryMode) {
         // 目录模式：清理旧文件，然后写入新文件
-        debugLog(
-          `[FileGenerator.writeConfigFile] Directory mode detected, calling cleanObsoleteDirectoryFiles`,
-        );
         await this.cleanObsoleteDirectoryFiles(dir, adapter, rules || []);
         await this.writeDirectoryModeFile(dir, filePath, content);
       } else {
@@ -406,13 +386,6 @@ export class FileGenerator {
       return;
     }
 
-    // ⚠️ 如果规则为空，跳过清理（避免删除输出目录本身）
-    if (rules.length === 0) {
-      debugLog(`[FileGenerator.cleanObsoleteDirectoryFiles] Rules is empty, skipping cleanup`);
-      Logger.debug('Skipping cleanup: no rules provided');
-      return;
-    }
-
     // 如果适配器启用了用户规则，需要加载用户内容并加入期望列表
     let allRules = [...rules];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -426,13 +399,12 @@ export class FileGenerator {
 
         if (isSkillAdapter) {
           // 技能适配器：加载 ai-skills/
-          // FIXME: loadUserSkills not implemented yet
-          // const { loadUserSkills } = await import('../utils/userRules');
-          // const userSkills = await loadUserSkills();
-          // allRules = [...allRules, ...userSkills];
-          // Logger.debug('Added user skills to expected list for cleanup', {
-          //   count: userSkills.length,
-          // });
+          const { loadUserSkills } = await import('../utils/userRules');
+          const userSkills = await loadUserSkills();
+          allRules = [...allRules, ...userSkills];
+          Logger.debug('Added user skills to expected list for cleanup', {
+            count: userSkills.length,
+          });
         } else {
           // 规则适配器：加载 ai-rules/
           const { loadUserRules } = await import('../utils/userRules');
@@ -445,6 +417,15 @@ export class FileGenerator {
       } catch (error) {
         Logger.warn('Failed to load user content for cleanup', { error: (error as Error).message });
       }
+    }
+
+    // ⚠️ 如果最终规则（包括用户规则）为空，跳过清理
+    if (allRules.length === 0) {
+      debugLog(
+        `[FileGenerator.cleanObsoleteDirectoryFiles] No rules (including user content), skipping cleanup`,
+      );
+      Logger.debug('Skipping cleanup: no rules provided');
+      return;
     }
 
     // 获取期望的文件路径和 SKILL 目录映射

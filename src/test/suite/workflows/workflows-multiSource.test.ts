@@ -65,8 +65,8 @@ describe('Multi-Source Integration Tests', () => {
 
     assert.ok(sources, 'Sources should be defined');
     assert.strictEqual(sources!.length, 2, 'Should have 2 sources configured');
-    assert.strictEqual(sources![0].id, 'ai-rules-7008d805', 'First source ID should match');
-    assert.strictEqual(sources![1].id, 'cursor-rules-17caee3c', 'Second source ID should match');
+    assert.strictEqual(sources![0].id, 'source-1', 'First source ID should match');
+    assert.strictEqual(sources![1].id, 'source-2', 'Second source ID should match');
   });
 
   it('Should respect conflict resolution strategy', async () => {
@@ -165,8 +165,11 @@ describe('Multi-Source Integration Tests', () => {
 
   it('Should enable multiple adapters simultaneously', async () => {
     const config = vscode.workspace.getConfiguration(CONFIG_PREFIX, workspaceFolder.uri);
-    const cursorEnabled = config.get<boolean>(CONFIG_KEYS.ADAPTERS_CURSOR_ENABLED);
-    const copilotEnabled = config.get<boolean>(CONFIG_KEYS.ADAPTERS_COPILOT_ENABLED);
+    const cursorAdapter = config.get<{ enabled?: boolean }>('adapters.cursor');
+    const copilotAdapter = config.get<{ enabled?: boolean }>('adapters.copilot');
+
+    const cursorEnabled = cursorAdapter?.enabled !== false; // 默认为true
+    const copilotEnabled = copilotAdapter?.enabled !== false; // 默认为true
 
     assert.strictEqual(cursorEnabled, true, 'Cursor adapter should be enabled');
     assert.strictEqual(copilotEnabled, true, 'Copilot adapter should be enabled');

@@ -1,0 +1,28 @@
+{
+  "turbo-ai-rules.sources": [
+    {
+      "id": "ai-rules",
+      "name": "AI Rules (Community)",
+      "gitUrl": "https://github.com/ygqygq2/ai-rules.git",
+      "branch": "main",
+      "enabled": true,
+      "autoSync": false
+    }
+  ],
+  "turbo-ai-rules.adapters": {
+    "custom": [
+      {
+        "id": "test-directory-adapter",
+        "name": "Test Directory Adapter",
+        "enabled": true,
+        "outputType": "directory",
+        "outputPath": "rules",
+        "fileExtension": ".md",
+        "sortBy": "priority",
+        "sortOrder": "asc",
+        "enableUserRules": true,
+        "isRuleType": true
+      }
+    ]
+  }
+}

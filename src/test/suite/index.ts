@@ -23,7 +23,18 @@ export async function run() {
 
   if (testFile) {
     // 只运行指定的测试文件
-    tsFiles = [`suite/${testFile}.test.js`];
+    // 自动处理各种后缀情况
+    let jsFile = testFile
+      .replace(/\.ts$/, '') // 移除 .ts
+      .replace(/\.test$/, ''); // 移除 .test（如果有）
+
+    // 确保有 .test.js 后缀
+    if (!jsFile.endsWith('.test')) {
+      jsFile = `${jsFile}.test`;
+    }
+    jsFile = `${jsFile}.js`;
+
+    tsFiles = [`suite/${jsFile}`];
     console.log('运行指定测试文件:', testFile);
   } else {
     // 获取所有测试文件（只匹配 suite/ 目录，排除 unit/ 目录）

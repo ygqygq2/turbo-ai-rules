@@ -26,11 +26,13 @@ export class CustomAdapter extends BaseAdapter {
     this.name = config.name;
     this.enabled = config.enabled;
 
+    // 设置适配器类型
+    this.isRuleType = config.isRuleType ?? true;
+
     // 设置enableUserRules：
     // - 如果配置中明确指定，使用配置值
-    // - 否则：skills类型(isRuleType=false)默认为false，规则类型默认为true
-    const isRuleType = config.isRuleType ?? true;
-    this.enableUserRules = config.enableUserRules ?? isRuleType;
+    // - 否则默认为 true（规则适配器加载 ai-rules/，技能适配器加载 ai-skills/）
+    this.enableUserRules = config.enableUserRules ?? true;
 
     // 设置preserveDirectoryStructure：仅目录类型有效
     if (config.outputType === 'directory') {
@@ -193,14 +195,8 @@ export class CustomAdapter extends BaseAdapter {
    * @description 在调用父类方法前应用自定义适配器的所有预处理逻辑
    */
   async generate(rules: ParsedRule[], allRules?: ParsedRule[]): Promise<GeneratedConfig> {
-    console.log(
-      `[CustomAdapter.${this.config.id}] generate called with ${rules.length} rules, allRules: ${allRules?.length || 0}`,
-    );
     // 1. 应用自定义适配器的预处理逻辑
     const filteredRules = this.applyCustomFilters(rules);
-    console.log(
-      `[CustomAdapter.${this.config.id}] After filtering: ${filteredRules.length} rules, outputType: ${this.config.outputType}`,
-    );
 
     // 2. 调用父类方法处理统一的同步逻辑（加载用户规则、合并、排序、生成）
     return super.generate(filteredRules, allRules);

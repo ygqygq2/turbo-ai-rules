@@ -241,16 +241,52 @@ export async function waitForExtensionActivation(
 
 /**
  * @description 等待工作区文件夹上下文更新
- * @param workspaceFolder {vscode.WorkspaceFolder} 工作区文件夹
- * @return {Promise<void>}
+ * @param workspaceFolderOrName {vscode.WorkspaceFolder | string} 工作区文件夹对象或名称匹配模式
+ * @return {Promise<vscode.WorkspaceFolder>} 切换后的工作区对象
  */
 export async function switchToWorkspaceContext(
-  workspaceFolder: vscode.WorkspaceFolder,
-): Promise<void> {
+  workspaceFolderOrName: vscode.WorkspaceFolder | string,
+): Promise<vscode.WorkspaceFolder> {
+  // 如果是字符串，查找工作区
+  let workspaceFolder: vscode.WorkspaceFolder;
+  if (typeof workspaceFolderOrName === 'string') {
+    const folders = vscode.workspace.workspaceFolders;
+    if (!folders || folders.length === 0) {
+      throw new Error('No workspace folders found');
+    }
+    const found = folders.find((f) => f.name.includes(workspaceFolderOrName));
+    if (!found) {
+      const available = folders.map((f) => f.name).join(', ');
+      throw new Error(
+        `Workspace matching "${workspaceFolderOrName}" not found. Available: ${available}`,
+      );
+    }
+    workspaceFolder = found;
+  } else {
+    workspaceFolder = workspaceFolderOrName;
+  }
+
+  // 双管齐下：
+  // 1. 打开 README 触发切换
   const readmePath = vscode.Uri.joinPath(workspaceFolder.uri, 'README.md');
   const doc = await vscode.workspace.openTextDocument(readmePath);
   await vscode.window.showTextDocument(doc);
-  await sleep(TEST_DELAYS.SHORT);
+
+  // 2. 等待上下文更新
+  await sleep(200);
+
+  // 3. 验证配置已加载
+  const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+  const sources = config.get('sources');
+  if (!sources) {
+    testWarn(`[switchToWorkspaceContext] Config not loaded, waiting...`);
+    await sleep(800);
+  }
+
+  // 4. 最后确保上下文完全更新
+  await sleep(100);
+
+  return workspaceFolder;
 }
 
 /**
@@ -420,8 +456,8 @@ export async function clearSelectionStates(
 }
 
 /**
- * @description 切换到指定的测试工作空间
- * 通过打开 README.md 来激活工作空间上下文，并验证配置加载
+ * @description 切换到指定的测试工作空间（带适配器验证）
+ * 内部调用 switchToWorkspaceContext 完成工作区切换，然后可选地验证适配器配置
  * @param workspaceNamePattern {string} 工作空间名称匹配模式（如 "User Skills Workflow"）
  * @param options {object} 可选配置
  * @param options.verifyAdapter {boolean} 是否验证适配器配置（默认 false）
@@ -435,37 +471,12 @@ export async function switchToWorkspace(
     adapterType?: 'rules' | 'skills';
   } = {},
 ): Promise<vscode.WorkspaceFolder> {
-  const fs = await import('fs-extra');
-  const path = await import('path');
-
-  // 1. 查找工作空间
-  const folders = vscode.workspace.workspaceFolders;
-  if (!folders || folders.length === 0) {
-    throw new Error('No workspace folders found');
-  }
-
-  const workspaceFolder = folders.find((f) => f.name.includes(workspaceNamePattern));
-  if (!workspaceFolder) {
-    const available = folders.map((f) => f.name).join(', ');
-    throw new Error(
-      `Workspace matching "${workspaceNamePattern}" not found. Available: ${available}`,
-    );
-  }
+  // 1. 使用 switchToWorkspaceContext 完成工作区切换
+  const workspaceFolder = await switchToWorkspaceContext(workspaceNamePattern);
 
   testLog(`[switchToWorkspace] Selected: ${workspaceFolder.name} at ${workspaceFolder.uri.fsPath}`);
 
-  // 2. 打开 README.md 激活工作空间上下文
-  const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
-  if (await fs.pathExists(readmePath)) {
-    const textDoc = await vscode.workspace.openTextDocument(vscode.Uri.file(readmePath));
-    await vscode.window.showTextDocument(textDoc);
-    testLog(`[switchToWorkspace] Opened: ${readmePath}`);
-    await sleep(1000); // 等待 VSCode 完成上下文切换
-  } else {
-    testWarn(`[switchToWorkspace] README.md not found at ${readmePath}`);
-  }
-
-  // 3. 验证配置（可选）
+  // 2. 验证适配器配置（可选）
   if (options.verifyAdapter) {
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
 

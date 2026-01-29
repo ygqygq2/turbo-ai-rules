@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 
 import { CONFIG_KEYS } from '../../../utils/constants';
 import { TEST_TIMEOUTS } from '../testConstants';
+import { switchToWorkspaceContext } from '../testHelpers';
 
 // 通过扩展获取服务实例
 let rulesManager: any;
@@ -14,13 +15,8 @@ describe('Generate Config Files Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
 
   beforeEach(async () => {
-    const folders = vscode.workspace.workspaceFolders;
-    assert.ok(folders && folders.length > 0, 'No workspace folder found');
-    // 使用专门的 Generate Rules 测试工作区
-    workspaceFolder =
-      folders.find(
-        (f) => f.name === 'Workflows: Generate Rules' || f.uri.fsPath.includes('generateRules'),
-      ) || folders[0];
+    // 使用 switchToWorkspaceContext 切换到正确的工作区
+    workspaceFolder = await switchToWorkspaceContext('Generate Rules');
 
     // 从扩展获取服务实例
     const ext = vscode.extensions.getExtension('ygqygq2.turbo-ai-rules');
@@ -64,11 +60,6 @@ describe('Generate Config Files Tests', () => {
 
   it('Should generate adapter config files after sync', async function () {
     this.timeout(TEST_TIMEOUTS.EXTRA_LONG);
-
-    // 配置已在 settings.json 中预设
-    const readmePath = path.join(workspaceFolder.uri.fsPath, 'README.md');
-    const doc = await vscode.workspace.openTextDocument(readmePath);
-    await vscode.window.showTextDocument(doc);
 
     // 先同步规则
     await vscode.commands.executeCommand('turbo-ai-rules.syncRules');

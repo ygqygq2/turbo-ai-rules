@@ -1,5 +1,4 @@
 import * as assert from 'assert';
-import * as vscode from 'vscode';
 
 import { RulesManager } from '../../../services/RulesManager';
 import type { ParsedRule } from '../../../types';
@@ -7,19 +6,11 @@ import { TEST_DELAYS, TEST_TIMEOUTS } from '../testConstants';
 import { executeCommandAndWait, switchToWorkspaceContext } from '../testHelpers';
 
 describe('Search Rules Tests', () => {
-  let workspaceFolder: vscode.WorkspaceFolder;
-
-  beforeEach(() => {
-    const folders = vscode.workspace.workspaceFolders;
-    assert.ok(folders && folders.length > 0, 'No workspace folder found');
-    workspaceFolder = folders[0];
-  });
-
   it('Should search rules by keyword', async function () {
     this.timeout(TEST_TIMEOUTS.LONG);
 
-    // 切换到正确的工作区
-    await switchToWorkspaceContext(workspaceFolder);
+    // 切换到正确的工作区（使用字符串查找）
+    await switchToWorkspaceContext('Search Rules');
 
     // 先同步规则
     await executeCommandAndWait('turbo-ai-rules.syncRules', [], TEST_DELAYS.MEDIUM);
@@ -46,7 +37,7 @@ describe('Search Rules Tests', () => {
   it('Should handle search with no results', async function () {
     this.timeout(TEST_TIMEOUTS.LONG);
 
-    await switchToWorkspaceContext(workspaceFolder);
+    await switchToWorkspaceContext('Search Rules');
     await executeCommandAndWait('turbo-ai-rules.syncRules', [], TEST_DELAYS.MEDIUM);
 
     const rulesManager = RulesManager.getInstance();
@@ -60,7 +51,7 @@ describe('Search Rules Tests', () => {
   it('Should search rules case-insensitively', async function () {
     this.timeout(TEST_TIMEOUTS.LONG);
 
-    await switchToWorkspaceContext(workspaceFolder);
+    await switchToWorkspaceContext('Search Rules');
     await executeCommandAndWait('turbo-ai-rules.syncRules', [], TEST_DELAYS.MEDIUM);
 
     const rulesManager = RulesManager.getInstance();

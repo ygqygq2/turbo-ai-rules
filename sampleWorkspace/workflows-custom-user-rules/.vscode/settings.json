@@ -11,5 +11,20 @@
         "type": "none"
       }
     }
-  ]
+  ],
+  "turbo-ai-rules.adapters": {
+    "cursor": {
+      "enabled": true,
+      "enableUserRules": true,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    }
+  },
+  "turbo-ai-rules.userRules": {
+    "directory": "ai-rules",
+    "markers": {
+      "begin": "<!-- USER-RULES:BEGIN -->",
+      "end": "<!-- USER-RULES:END -->"
+    }
+  }
 }

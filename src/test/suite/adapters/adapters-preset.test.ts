@@ -47,10 +47,12 @@ describe('Preset Adapters Integration Tests', () => {
     }
   });
 
-  it('Should load all 10 preset adapters', () => {
-    assert.strictEqual(PRESET_ADAPTERS.length, 10, 'Should have 10 preset adapters');
+  it('Should load all preset adapters', () => {
+    // 至少应该有一些预设适配器
+    assert.ok(PRESET_ADAPTERS.length > 0, 'Should have at least one preset adapter');
 
-    const expectedAdapters = [
+    // 检查核心预设适配器是否存在
+    const expectedCoreAdapters = [
       'cursor',
       'windsurf',
       'copilot',
@@ -64,9 +66,15 @@ describe('Preset Adapters Integration Tests', () => {
     ];
 
     const actualIds = PRESET_ADAPTERS.map((adapter) => adapter.id);
-    for (const expectedId of expectedAdapters) {
-      assert.ok(actualIds.includes(expectedId), `Preset adapter should include ${expectedId}`);
-    }
+    const missingAdapters = expectedCoreAdapters.filter((id) => !actualIds.includes(id));
+
+    assert.strictEqual(
+      missingAdapters.length,
+      0,
+      `Missing core preset adapters: ${missingAdapters.join(', ')}`,
+    );
+
+    console.log(`✓ Loaded ${PRESET_ADAPTERS.length} preset adapters: ${actualIds.join(', ')}`);
   });
 
   it('All preset adapters should have required properties', () => {

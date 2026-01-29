@@ -146,6 +146,9 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
       return;
     }
 
+    // 清理已删除源的统计数据
+    await workspaceStateManager.cleanupDeletedSources(sources.map((s) => s.id));
+
     // 设置同步状态
     statusBarProvider.setSyncStatus('syncing', {
       completed: 0,
@@ -381,7 +384,15 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
         let totalSyncedRules = 0;
         let syncedSourceCount = 0;
 
+        // 创建当前有效源 ID 集合
+        const validSourceIds = new Set(sources.map((s) => s.id));
+
         for (const sourceId of Object.keys(allSourceSyncStats)) {
+          // 只统计当前配置中仍存在的源
+          if (!validSourceIds.has(sourceId)) {
+            continue;
+          }
+
           const stats = allSourceSyncStats[sourceId];
           if (stats.syncStatus === 'success') {
             totalSyncedRules += stats.syncedRulesCount;

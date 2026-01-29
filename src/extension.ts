@@ -437,6 +437,39 @@ export async function activate(context: vscode.ExtensionContext): Promise<{
 
     Logger.info('Commands registered');
 
+    // ✅ 注册测试专用命令（仅在非生产环境下可用）
+    if (context.extensionMode !== vscode.ExtensionMode.Production) {
+      context.subscriptions.push(
+        // 测试专用：同步指定适配器
+        vscode.commands.registerCommand(
+          'turbo-ai-rules.test.syncWithAdapters',
+          async (adapterIds: string[]) => {
+            Logger.debug('[TEST] syncWithAdapters called', { adapterIds });
+            await syncRulesCommand({ targetAdapters: adapterIds });
+            treeProvider.refresh();
+          },
+        ),
+
+        // 测试专用：同步指定规则源
+        vscode.commands.registerCommand(
+          'turbo-ai-rules.test.syncSource',
+          async (sourceId: string) => {
+            Logger.debug('[TEST] syncSource called', { sourceId });
+            await syncRulesCommand({ sourceId });
+            treeProvider.refresh();
+          },
+        ),
+
+        // 测试专用：生成规则配置
+        vscode.commands.registerCommand('turbo-ai-rules.test.generateRules', async () => {
+          Logger.debug('[TEST] generateRules called');
+          await generateRulesCommand();
+          treeProvider.refresh();
+        }),
+      );
+      Logger.info('Test commands registered (non-production mode)');
+    }
+
     // 4. 首次启动显示快速开始页面
     const welcomeShown = context.globalState.get('welcomeShown', false);
     if (!welcomeShown) {
@@ -553,10 +586,9 @@ async function updateGitignoreForAdapters(): Promise<void> {
         const enabled = adapterConfig?.enabled ?? true;
         filePath = new PresetAdapter(presetAdapterDef, enabled).getFilePath();
       }
-      // 检查自定义适配器
-      else if (adapterName.startsWith('custom-')) {
-        const customId = adapterName.replace('custom-', '');
-        const customConfig = config.adapters.custom?.find((c) => c.id === customId);
+      // 检查自定义适配器（adapterName 就是配置 ID，不带前缀）
+      else {
+        const customConfig = config.adapters.custom?.find((c) => c.id === adapterName);
         if (customConfig) {
           filePath = new CustomAdapter(customConfig).getFilePath();
         }

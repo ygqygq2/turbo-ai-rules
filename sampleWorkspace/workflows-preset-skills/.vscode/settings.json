@@ -11,5 +11,16 @@
         "type": "none"
       }
     }
+  ],
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "test-skills",
+      "name": "Test Skills Adapter",
+      "outputPath": "test-skills",
+      "outputType": "directory",
+      "fileExtension": ".md",
+      "enabled": true,
+      "isRuleType": false
+    }
   ]
 }

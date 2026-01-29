@@ -11,6 +11,15 @@
       "auth": {
         "type": "none"
       }
+    },
+    {
+      "id": "ygqygq2-994ee40b",
+      "name": "1",
+      "gitUrl": "https://github.com/ygqygq2/ygqygq2.git",
+      "branch": "main",
+      "subPath": "/",
+      "enabled": true,
+      "syncInterval": 0
     }
   ],
   "turbo-ai-rules.adapters": {
@@ -32,7 +41,6 @@
       "enabled": false
     }
   },
-  "turbo-ai-rules.adapters.preset": [],
   "turbo-ai-rules.adapters.custom": [],
   "turbo-ai-rules.sync.onStartup": false
 }

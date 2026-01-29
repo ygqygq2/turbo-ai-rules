@@ -4,8 +4,10 @@
  */
 
 import * as path from 'path';
+import * as vscode from 'vscode';
 
 import type { ParsedRule } from '../types/rules';
+import { debugLog } from '../utils/debugLog';
 import { generateMarkedFileContent } from '../utils/ruleMarkerGenerator';
 import { getBlockMarkers, getMarkers } from '../utils/userRules';
 
@@ -62,6 +64,9 @@ export abstract class BaseAdapter implements AIToolAdapter {
   abstract readonly name: string;
   abstract readonly enabled: boolean;
 
+  /** 是否为规则类型适配器（true=规则，false=技能） */
+  protected isRuleType: boolean = true;
+
   /** 是否启用用户规则 */
   protected enableUserRules: boolean = true;
 
@@ -80,18 +85,8 @@ export abstract class BaseAdapter implements AIToolAdapter {
     // 1. 加载用户规则（作为 sourceId = 'user-rules' 的规则源）
     const userRules = await this.loadUserRules();
 
-    if (process.env.TEST_DEBUG === 'true') {
-      console.log(
-        `[${this.name}] generate called with ${rules.length} rules, loaded ${userRules.length} user rules`,
-      );
-    }
-
     // 2. 合并规则（去重、排序）
     const allRules = this.mergeWithUserRules(rules, userRules);
-
-    if (process.env.TEST_DEBUG === 'true') {
-      console.log(`[${this.name}] After merge: ${allRules.length} total rules`);
-    }
 
     // 3. 根据输出类型生成
     const outputType = this.getOutputType();
@@ -137,8 +132,6 @@ export abstract class BaseAdapter implements AIToolAdapter {
     rules: ParsedRule[],
     _allRules?: ParsedRule[],
   ): Promise<GeneratedConfig> {
-    const vscode = await import('vscode');
-    const path = await import('path');
     const { WorkspaceContextManager } = await import('../services/WorkspaceContextManager');
     const { safeWriteFile } = await import('../utils/fileSystem');
     const { ensureDir } = await import('fs-extra');
@@ -214,6 +207,12 @@ export abstract class BaseAdapter implements AIToolAdapter {
 
     const Logger = (await import('../utils/logger')).Logger;
     Logger.info(`Generated directory: ${outputPath}`, {
+      fileCount: files.size,
+      ruleCount: rules.length,
+    });
+
+    debugLog(`[${this.name}] Directory generated:`, {
+      outputPath,
       fileCount: files.size,
       ruleCount: rules.length,
     });
@@ -312,6 +311,8 @@ export abstract class BaseAdapter implements AIToolAdapter {
    * 计算规则文件相对于规则源 subPath 的相对路径
    * 例如：filePath = /cache/source/1300-skills/a/b/c/file.md, subPath = 1300-skills/
    * 返回：a/b/c/file.md
+   *
+   * 对于用户技能/规则（sourceId = 'user-skills' | 'user-rules'），返回相对于用户目录的路径
    */
   private async getRelativePathFromSubPath(
     filePath: string,
@@ -319,6 +320,39 @@ export abstract class BaseAdapter implements AIToolAdapter {
   ): Promise<string | null> {
     try {
       const path = await import('path');
+      const {
+        getUserSkillsDirectory,
+        getUserRulesDirectory,
+        USER_SKILLS_SOURCE_ID,
+        USER_RULES_SOURCE_ID,
+      } = await import('../utils/userRules');
+
+      // 对于用户技能/规则（虚拟规则源），使用用户目录作为基准
+      if (sourceId === USER_SKILLS_SOURCE_ID) {
+        const userSkillsDir = getUserSkillsDirectory();
+        if (!userSkillsDir) {
+          return null;
+        }
+        const relativePath = path.relative(userSkillsDir, filePath);
+        if (relativePath.startsWith('..')) {
+          return null;
+        }
+        return relativePath;
+      }
+
+      if (sourceId === USER_RULES_SOURCE_ID) {
+        const userRulesDir = getUserRulesDirectory();
+        if (!userRulesDir) {
+          return null;
+        }
+        const relativePath = path.relative(userRulesDir, filePath);
+        if (relativePath.startsWith('..')) {
+          return null;
+        }
+        return relativePath;
+      }
+
+      // 对于远程规则源
       const { ConfigManager } = await import('../services/ConfigManager');
       const { GitManager } = await import('../services/GitManager');
 
@@ -622,41 +656,45 @@ export abstract class BaseAdapter implements AIToolAdapter {
   }
 
   /**
-   * @description 加载用户规则
+   * @description 加载用户规则或用户技能（根据适配器类型）
    * @return default {Promise<ParsedRule[]>}
    */
   protected async loadUserRules(): Promise<ParsedRule[]> {
-    if (process.env.TEST_DEBUG === 'true') {
-      console.log(`[BaseAdapter] loadUserRules called, enableUserRules:`, this.enableUserRules);
-    }
     if (!this.enableUserRules) {
-      if (process.env.TEST_DEBUG === 'true') {
-        console.log(`[BaseAdapter] User rules disabled, returning empty array`);
-      }
       return [];
     }
 
-    const { loadUserRules } = await import('../utils/userRules');
-    const rules = await loadUserRules();
-    if (process.env.TEST_DEBUG === 'true') {
-      console.log(`[BaseAdapter] loadUserRules returned`, rules.length, 'rules');
+    if (this.isRuleType) {
+      // 加载用户规则（ai-rules/）
+      const { loadUserRules } = await import('../utils/userRules');
+      return await loadUserRules();
+    } else {
+      // 加载用户技能（ai-skills/）
+      const { loadUserSkills } = await import('../utils/userRules');
+      return await loadUserSkills();
     }
-    return rules;
   }
 
   /**
-   * @description 合并远程规则和用户规则，按排序配置处理冲突
+   * @description 合并远程规则和用户规则/技能，按排序配置处理冲突
    * @return default {ParsedRule[]}
    * @param remoteRules {ParsedRule[]}
    * @param userRules {ParsedRule[]}
    */
   protected mergeWithUserRules(remoteRules: ParsedRule[], userRules: ParsedRule[]): ParsedRule[] {
-    if (userRules.length === 0) {
+    // 对于技能适配器，应用 skill.md 过滤逻辑
+    let processedUserRules = userRules;
+    if (!this.isRuleType && userRules.length > 0) {
+      const { filterSkillRules } = await import('../utils/userRules');
+      processedUserRules = filterSkillRules(userRules);
+    }
+
+    if (processedUserRules.length === 0) {
       return this.sortRules(remoteRules); // 即使没有用户规则，也要排序
     }
 
     // 合并所有规则
-    const allRules = [...remoteRules, ...userRules];
+    const allRules = [...remoteRules, ...processedUserRules];
 
     // 按 ID 去重，使用排序后的结果（排序高的优先）
     const ruleMap = new Map<string, ParsedRule>();

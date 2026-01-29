@@ -15,8 +15,9 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { testSyncWithAdapters } from '../../helpers/testCommands';
 import { TEST_DELAYS, TEST_TIMEOUTS } from '../testConstants';
-import { sleep, switchToWorkspace } from '../testHelpers';
+import { sleep, switchToWorkspace, testLog } from '../testHelpers';
 
 describe('Custom Skills Workflow Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;
@@ -31,6 +32,17 @@ describe('Custom Skills Workflow Tests', () => {
       verifyAdapter: true,
       adapterType: 'skills',
     });
+
+    //  检查工作空间是否切换成功
+    testLog(`[before] Switched to: ${workspaceFolder.uri.fsPath}`);
+
+    // ✅ 等待扩展完全激活并初始化所有服务
+    const extension = vscode.extensions.getExtension('ygqygq2.turbo-ai-rules');
+    if (extension && !extension.isActive) {
+      await extension.activate();
+    }
+    // 额外等待确保所有服务初始化
+    await sleep(TEST_DELAYS.SHORT);
 
     // 获取配置的用户技能目录
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
@@ -84,16 +96,33 @@ Just call the helper function.
     await fs.writeFile(singleFileSkill, skillContent, 'utf-8');
 
     // 用户技能会被自动加载
+    testLog('Created user skill file:', singleFileSkill);
+    testLog('File exists:', await fs.pathExists(singleFileSkill));
+    testLog('ai-skills files:', await fs.readdir(userSkillsDir));
 
-    // 生成配置
-    await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
-    await sleep(TEST_DELAYS.MEDIUM);
+    // 模拟规则同步页：选择 skills 适配器并点击同步
+    // 使用测试代理层，与实际 webview 行为一致
+    await testSyncWithAdapters(['skills']);
+    await sleep(TEST_DELAYS.LONG); // 等待生成完成
 
     // 验证输出
     const outputFile = path.join(skillsOutputPath, 'quick-helper.md');
-    assert.ok(await fs.pathExists(outputFile), 'Single-file user skill should be generated');
+    testLog('Expected output file:', outputFile);
+    testLog('Skills output directory:', skillsOutputPath);
+    testLog('Skills output directory exists:', await fs.pathExists(skillsOutputPath));
+
+    if (await fs.pathExists(skillsOutputPath)) {
+      const files = await fs.readdir(skillsOutputPath);
+      testLog('Files in skills output directory:', files);
+    }
+
+    const outputExists = await fs.pathExists(outputFile);
+    testLog('Output file exists:', outputExists);
+
+    assert.ok(outputExists, 'Single-file user skill should be generated');
 
     const outputContent = await fs.readFile(outputFile, 'utf-8');
+    testLog('Output content preview:', outputContent.substring(0, 200));
     assert.ok(outputContent.includes('Quick Helper'), 'Output should contain skill content');
     assert.ok(outputContent.includes('quick tasks'), 'Output should contain skill description');
   });
@@ -140,8 +169,8 @@ A comprehensive data processing tool.
     const configJson = path.join(toolDir, 'config.json');
     await fs.writeFile(configJson, '{"mode": "auto"}', 'utf-8');
 
-    // 生成配置
-    await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
+    // 生成配置（只同步 skills 适配器）
+    await testSyncWithAdapters(['skills']);
     await sleep(TEST_DELAYS.MEDIUM);
 
     // 验证输出目录结构
@@ -196,8 +225,8 @@ title: Multi-Doc Tool
 
     // 用户技能会被自动加载
 
-    // 生成配置
-    await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
+    // 生成配置（只同步 skills 适配器）
+    await testSyncWithAdapters(['skills']);
     await sleep(TEST_DELAYS.MEDIUM);
 
     // 验证：只有 skill.md 被作为技能加载（README.md 和 DOCS.md 作为辅助文件复制）
@@ -237,8 +266,8 @@ title: My Custom Tool
 
     // 用户技能会被自动加载
 
-    // 2. 第一次生成
-    await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
+    // 2. 第一次生成（只同步 skills 适配器）
+    await testSyncWithAdapters(['skills']);
     await sleep(TEST_DELAYS.MEDIUM);
 
     // 验证用户技能已生成
@@ -251,8 +280,8 @@ title: My Custom Tool
 
     // 加载并选中用户技能（重新加载）
 
-    // 4. 再次生成（触发清理）
-    await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
+    // 4. 再次生成（触发清理，只同步 skills 适配器）
+    await testSyncWithAdapters(['skills']);
     await sleep(TEST_DELAYS.MEDIUM);
 
     // 5. 验证：用户技能保留，孤儿文件被清理
@@ -285,8 +314,8 @@ title: Complex Tool
 
     // 用户技能会被自动加载
 
-    // 2. 第一次生成
-    await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
+    // 2. 第一次生成（只同步 skills 适配器）
+    await testSyncWithAdapters(['skills']);
     await sleep(TEST_DELAYS.MEDIUM);
 
     const outputToolDir = path.join(skillsOutputPath, 'my-complex-tool');
@@ -299,8 +328,8 @@ title: Complex Tool
 
     // 加载并选中用户技能（重新加载）
 
-    // 4. 再次生成（触发清理）
-    await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
+    // 4. 再次生成（触发清理，只同步 skills 适配器）
+    await testSyncWithAdapters(['skills']);
     await sleep(TEST_DELAYS.MEDIUM);
 
     // 5. 验证：用户目录保留，孤儿目录被清理
@@ -349,8 +378,8 @@ title: Advanced Tool
 
     // 用户技能会被自动加载
 
-    // 3. 生成（可能包含远程技能）
-    await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
+    // 3. 生成（只同步 skills 适配器，可能包含远程技能）
+    await testSyncWithAdapters(['skills']);
     await sleep(TEST_DELAYS.LONG);
 
     // 4. 验证所有技能都存在
@@ -409,8 +438,8 @@ title: JSON Validator
 
     // 用户技能会被自动加载
 
-    // 生成配置
-    await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
+    // 生成配置（只同步 skills 适配器）
+    await testSyncWithAdapters(['skills']);
     await sleep(TEST_DELAYS.MEDIUM);
 
     // 验证两个嵌套技能都被识别

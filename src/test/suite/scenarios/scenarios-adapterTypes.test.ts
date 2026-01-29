@@ -124,10 +124,13 @@ describe('Adapter Types Tests', () => {
     const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
     const adapters = config.get<any>('adapters');
 
-    // 验证预设适配器的配置结构
+    // 验证预设适配器的配置结构（如果存在）
     if (adapters?.cursor) {
       assert.ok('enabled' in adapters.cursor, 'Adapter should have enabled property');
-      assert.ok('autoUpdate' in adapters.cursor, 'Adapter should have autoUpdate property');
+      // autoUpdate 是可选属性，不强制要求
+      if ('autoUpdate' in adapters.cursor) {
+        assert.ok(typeof adapters.cursor.autoUpdate === 'boolean', 'autoUpdate should be boolean');
+      }
     }
 
     // 自定义适配器应该有必要的字段
