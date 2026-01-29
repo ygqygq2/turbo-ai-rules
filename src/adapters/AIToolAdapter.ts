@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 
 import type { ParsedRule } from '../types/rules';
 import { debugLog } from '../utils/debugLog';
+import { splitPath } from '../utils/pathHelper';
 import { generateMarkedFileContent } from '../utils/ruleMarkerGenerator';
 import { getBlockMarkers, getMarkers } from '../utils/userRules';
 
@@ -570,7 +571,7 @@ export abstract class BaseAdapter implements AIToolAdapter {
         // 对于 SKILL 目录，如果当前规则是 SKILL.md，则返回目录下的 SKILL.md 路径
         if (isSkillFile) {
           // relativePath 格式: .skills/sourceId/1300-skills/git-workflow-expert 或 .skills/git-workflow-expert
-          const parts = relativePath.split(path.sep);
+          const parts = splitPath(relativePath);
           if (parts.length > 1) {
             // 去掉第一个部分（outputPath）
             let relativeToIndex = parts.slice(1).join('/');
@@ -599,7 +600,7 @@ export abstract class BaseAdapter implements AIToolAdapter {
         // 需要提取相对路径部分
 
         // 分割路径，去掉第一个部分（outputPath）
-        const parts = relativePath.split(path.sep);
+        const parts = splitPath(relativePath);
         if (parts.length > 1) {
           let relativeToIndex = parts.slice(1).join('/');
 
