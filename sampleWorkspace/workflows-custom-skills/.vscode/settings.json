@@ -68,20 +68,6 @@
       "isRuleType": false,
       "preserveStructure": true,
       "enabled": true
-    },
-    {
-      "id": "cursor",
-      "name": "Cursor",
-      "enabled": true,
-      "outputPath": "a",
-      "outputType": "directory",
-      "fileExtensions": [],
-      "organizeBySource": true,
-      "generateIndex": false,
-      "indexFileName": "index.md",
-      "preserveDirectoryStructure": false,
-      "useOriginalFilename": true,
-      "isRuleType": true
     }
   ]
 }
