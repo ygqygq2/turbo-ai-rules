@@ -1,5 +1,9 @@
 # SuperDesign 设计文档 - 扩展首页 Dashboard
 
+> **Webview 实现**: `src/webview/dashboard/`  
+> **HTML 原型**: `design_iterations/02-dashboard_1.html`  
+> **实施文档**: `docs/implementation/ui/02-dashboard-implementation.md`  
+> **最后更新**: 2026-02-03  
 > **页面名称**: Dashboard (扩展功能中心)  
 > **用途**: 扩展主入口,提供所有功能的快捷访问和状态概览  
 > **优先级**: high

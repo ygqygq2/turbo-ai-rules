@@ -1,5 +1,9 @@
 # SuperDesign 设计文档 - 规则源管理页面 V2
 
+> **Webview 实现**: `src/webview/source-manager/`  
+> **HTML 原型**: `design_iterations/03-source-manager_2.html`  
+> **实施文档**: `docs/implementation/ui/03-source-manager-implementation.md`  
+> **最后更新**: 2026-02-03  
 > **页面名称**: Source Manager (规则源管理)  
 > **用途**: 集中管理所有规则源配置  
 > **优先级**: high  

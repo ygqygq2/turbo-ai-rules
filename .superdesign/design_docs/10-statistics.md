@@ -1,5 +1,10 @@
 # 统计仪表板设计文档
 
+> **Webview 实现**: `src/webview/statistics/`  
+> **HTML 原型**: `design_iterations/10-statistics_1.html`  
+> **实施文档**: `docs/implementation/ui/10-statistics-implementation.md`  
+> **最后更新**: 2026-02-03  
+
 ## 页面概述
 
 **页面名称**: Statistics Dashboard (统计仪表板)  

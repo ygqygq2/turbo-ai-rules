@@ -1,5 +1,10 @@
 # 树视图界面设计文档
 
+> **实现**: `src/providers/RulesTreeProvider.ts`  
+> **HTML 原型**: `design_iterations/A-tree-view_2.html`  
+> **实施文档**: `docs/implementation/ui/A-tree-view-implementation.md`  
+> **最后更新**: 2026-02-03  
+
 ## 页面概述
 
 **页面名称**: Rules Tree View (规则树视图)  

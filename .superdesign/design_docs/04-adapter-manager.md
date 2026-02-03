@@ -1,5 +1,9 @@
 # SuperDesign 设计文档 - 适配器管理页
 
+> **Webview 实现**: `src/webview/adapter-manager/`  
+> **HTML 原型**: `design_iterations/04-adapter-manager_1.html`  
+> **实施文档**: `docs/implementation/ui/04-adapter-manager-implementation.md`  
+> **最后更新**: 2026-02-03  
 > **页面名称**: Adapter Manager (适配器管理)  
 > **用途**: 管理预置适配器和自定义适配器的启用状态和配置  
 > **优先级**: high

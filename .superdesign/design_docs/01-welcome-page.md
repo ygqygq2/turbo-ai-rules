@@ -1,5 +1,10 @@
 # 01 - 欢迎页面设计文档
 
+> **Webview 实现**: `src/webview/welcome/`  
+> **HTML 原型**: `design_iterations/01-welcome-page_1.html`  
+> **实施文档**: `docs/implementation/ui/01-welcome-page-implementation.md`  
+> **最后更新**: 2026-02-03  
+
 ## 页面概述
 
 **页面名称**: Welcome Page (欢迎页面)  

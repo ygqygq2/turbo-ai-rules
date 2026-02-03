@@ -1,5 +1,10 @@
 # 规则详情面板设计文档
 
+> **Webview 实现**: `src/webview/rule-details/`  
+> **HTML 原型**: `design_iterations/07-rule-details_1.html`  
+> **实施文档**: `docs/implementation/ui/07-rule-details-implementation.md`  
+> **最后更新**: 2026-02-03  
+
 ## 页面概述
 
 **页面名称**: Rule Details Panel (规则详情面板)  

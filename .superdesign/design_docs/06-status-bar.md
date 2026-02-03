@@ -1,5 +1,10 @@
 # 状态栏界面设计文档
 
+> **实现**: `src/providers/StatusBarProvider.ts`  
+> **HTML 原型**: `design_iterations/06-status-bar_1.html`  
+> **实施文档**: `docs/implementation/ui/06-status-bar-implementation.md`  
+> **最后更新**: 2026-02-03  
+
 ## 页面概述
 
 **页面名称**: Status Bar (状态栏)  

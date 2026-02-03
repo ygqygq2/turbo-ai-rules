@@ -1,5 +1,10 @@
 # 规则源表单页面设计（新增/编辑双模式）
 
+> **Webview 实现**: `src/webview/source-detail/NewSourceForm.tsx`  
+> **HTML 原型**: `design_iterations/09-add-source_1.html`  
+> **实施文档**: `docs/implementation/ui/09-add-source-implementation.md`  
+> **最后更新**: 2026-02-03  
+
 ## 页面目标
 
 - 让用户通过表单**添加新的规则源**或**编辑现有规则源**（Git 仓库），支持多种认证方式，表单校验，体验一致。

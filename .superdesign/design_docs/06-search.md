@@ -1,5 +1,10 @@
 # 高级搜索界面设计文档
 
+> **Webview 实现**: `src/webview/search/`  
+> **HTML 原型**: `design_iterations/06-search_1.html`  
+> **实施文档**: `docs/implementation/ui/06-search-implementation.md`  
+> **最后更新**: 2026-02-03  
+
 ## 页面概述
 
 **页面名称**: Advanced Search (高级搜索界面)  

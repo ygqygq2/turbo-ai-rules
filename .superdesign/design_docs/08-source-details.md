@@ -1,5 +1,9 @@
 # 规则源详情页面设计
 
+> **Webview 实现**: `src/webview/source-detail/`  
+> **HTML 原型**: `design_iterations/08-source-details_1.html`  
+> **实施文档**: `docs/implementation/ui/08-source-details-implementation.md`  
+> **最后更新**: 2026-02-03  
 > **SuperDesign 设计文档**  
 > **功能**: 查看单个规则源的详细信息、统计数据和规则列表  
 > **优先级**: High  

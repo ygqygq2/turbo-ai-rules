@@ -1,5 +1,10 @@
 # 规则同步页面设计文档
 
+> **Webview 实现**: `src/webview/rule-sync-page/`  
+> **HTML 原型**: `design_iterations/05-rule-sync-page_1.html`  
+> **实施文档**: `docs/implementation/ui/05-rule-sync-page-implementation.md`  
+> **最后更新**: 2026-02-03  
+
 ## 1. 页面概述
 
 ### 功能定位
