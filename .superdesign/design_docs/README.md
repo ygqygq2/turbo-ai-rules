@@ -72,5 +72,5 @@ VSCode 原生 UI 组件，非 Webview 页面。
 
 ## 📚 相关文档
 
-- 📋 [完成报告](../REORGANIZATION-COMPLETION-REPORT.md) - UI 设计整理完成报告
-- 🧹 [整理计划](../CLEANUP-PLAN.md) - 整理概述
+- 📋 [SuperDesign 设计迭代](../design_iterations/) - HTML 原型集合
+- 🧹 [归档文档](../archive/) - 未来功能设计
