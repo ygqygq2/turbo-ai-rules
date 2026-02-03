@@ -143,6 +143,13 @@
   - `directory`: 保持原有目录结构
 - `fileExtensions`: 文件过滤规则（可选，如 `['.md', '.mdc']`）
   - 为空或不设置时同步所有文件
+- `sortBy`: 排序依据（仅 file 类型，可选）
+  - `'id'`: 按规则 ID 字典序排序
+  - `'priority'`: 按优先级排序 (high > medium > low，默认)
+  - `'none'`: 不排序，保持源文件顺序
+- `sortOrder`: 排序顺序（仅 file 类型，可选，默认 'asc'）
+  - `'asc'`: 升序 (A→Z, low→high)
+  - `'desc'`: 降序 (Z→A, high→low)
 - `organizeBySource`: 是否按源 ID 组织子目录（仅 directory 类型，默认 false）
 - `preserveDirectoryStructure`: 是否保持源仓库的目录层级结构（仅 directory 类型，默认 true）
   - true: 保持相对于 subPath 的完整目录层级（如 `a/b/c/file.md`）
@@ -151,7 +158,9 @@
   - true: 使用原文件名（如 `1303.md`）
   - false: 使用 `{sourceId-}ruleId.md` 格式
 - `generateIndex`: 是否生成索引文件（仅 directory 类型，默认 true）
+- `indexPerSource`: 是否为每个源生成单独索引（仅当 organizeBySource=true 且 generateIndex=true 时有效，默认 false）
 - `indexFileName`: 索引文件名（默认 'index.md'）
+- `fileTemplate`: 文件模板（仅 file 类型，用于自定义单文件输出格式）
 
 **设计考量**:
 

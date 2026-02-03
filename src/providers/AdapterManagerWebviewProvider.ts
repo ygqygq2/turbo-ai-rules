@@ -58,6 +58,8 @@ interface CustomAdapterData {
   indexFileName?: string;
   preserveDirectoryStructure?: boolean;
   useOriginalFilename?: boolean;
+  sortBy?: 'id' | 'priority' | 'none'; // 排序依据（仅单文件模式）
+  sortOrder?: 'asc' | 'desc'; // 排序顺序（仅单文件模式）
   isNew?: boolean; // 标识是新增还是编辑
 }
 
@@ -319,6 +321,8 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
       indexFileName: adapter.indexFileName,
       preserveDirectoryStructure: adapter.preserveDirectoryStructure,
       useOriginalFilename: adapter.useOriginalFilename,
+      sortBy: adapter.sortBy,
+      sortOrder: adapter.sortOrder,
       ...(adapter.outputType === 'file'
         ? { singleFileTemplate: adapter.fileTemplate }
         : {
@@ -383,6 +387,8 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
           indexFileName: adapter.directoryStructure?.pathTemplate || 'index.md',
           isRuleType: adapter.isRuleType,
           fileTemplate: adapter.singleFileTemplate,
+          sortBy: adapter.format === 'single-file' ? adapter.sortBy : undefined,
+          sortOrder: adapter.format === 'single-file' ? adapter.sortOrder : undefined,
         }));
         await this.configManager.updateCustomAdapters(customAdapters);
       }
@@ -454,6 +460,8 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         useOriginalFilename: adapterData.useOriginalFilename,
         isRuleType: adapterData.isRuleType,
         fileTemplate: adapterData.singleFileTemplate,
+        sortBy: adapterData.format === 'single-file' ? adapterData.sortBy : undefined,
+        sortOrder: adapterData.format === 'single-file' ? adapterData.sortOrder : undefined,
       };
 
       // 根据 isNew 标志决定是新增还是更新

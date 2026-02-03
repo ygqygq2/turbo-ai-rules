@@ -2,315 +2,75 @@
 
 > **项目**: Turbo AI Rules Extension  
 > **目的**: 为 SuperDesign AI 提供完整的 UI 页面设计参考  
-> **版本**: 2.0  
-> **最后更新**: 2025-10-27
+> **版本**: 3.0 (重组版)  
+> **最后更新**: 2026-02-03  
+> **更新说明**: 统一编号、整理关联关系、完善缺失内容
 
 ---
 
-## 📋 文档目录
+## 📋 文档导航
 
-本目录包含 Turbo AI Rules 扩展所有 UI 页面的完整设计文档。
+### ✅ 完整页面（01-10）
 
-### Webview 页面
+Webview 页面，每个都有对应的实现和 HTML 原型。
 
-1. **[01-welcome-page.md](./01-welcome-page.md)** - 欢迎页面
+| # | 页面名称 | 功能 | 实现路径 | 设计文档 | HTML 原型 | 状态 |
+|---|---------|------|---------|---------|---------|------|
+| **01** | 欢迎页 | 首次使用引导、快速开始 | `src/webview/welcome/` | ✅ [01-welcome-page.md](./01-welcome-page.md) | ✅ 01-welcome-page_1.html | ✅ 完整 |
+| **02** | Dashboard | 功能中心、快速访问 | `src/webview/dashboard/` | ✅ [02-dashboard.md](./02-dashboard.md) | ✅ 02-dashboard_1.html | ✅ 完整 |
+| **03** | 源管理 | 管理规则源 | `src/webview/source-manager/` | ✅ [03-source-manager.md](./03-source-manager.md) | ✅ 03-source-manager_2.html | ✅ 完整 |
+| **04** | 适配器管理 | 管理输出适配器 | `src/webview/adapter-manager/` | ✅ [04-adapter-manager.md](./04-adapter-manager.md) | ✅ 04-adapter-manager_1.html | ✅ 完整 |
+| **05** | 规则同步 | 同步规则流程 | `src/webview/rule-sync-page/` | ✅ [05-rule-sync-page.md](./05-rule-sync-page.md) | ✅ 05-rule-sync-page_1.html | ✅ 完整 |
+| **06** | 搜索 | 高级搜索界面 | `src/webview/search/` | ✅ [06-search.md](./06-search.md) | ✅ 06-search_1.html | ✅ 完整 |
+| **07** | 规则详情 | 规则全文展示 | `src/webview/rule-details/` | ✅ [07-rule-details.md](./07-rule-details.md) | ✅ 07-rule-details_1.html | ✅ 完整 |
+| **08** | 源详情 | 查看单个源的详情 | `src/webview/source-detail/` | ✅ [08-source-details.md](./08-source-details.md) | ✅ 08-source-details_1.html | ✅ 完整 |
+| **09** | 添加源 | 添加/编辑规则源表单 | `src/webview/source-detail/` | ✅ [09-add-source.md](./09-add-source.md) | ✅ 09-add-source_1.html | ✅ 完整 |
+| **10** | 统计 | 规则统计面板 | `src/webview/statistics/` | ✅ [10-statistics.md](./10-statistics.md) | ✅ 10-statistics_1.html | ✅ 完整 |
 
-   - 首次使用引导
-   - 3 步快速开始
-   - 模板库
+### 🔧 原生 UI 组件（A-B）
 
-2. **[02-statistics-dashboard.md](./02-statistics-dashboard.md)** - 统计仪表板
+VSCode 原生 UI 组件，非 Webview 页面。
 
-   - 规则统计数据
-   - 优先级分布图
-   - 源统计表格
-   - 热门标签云
-
-3. **[03-rule-details-panel.md](./03-rule-details-panel.md)** - 规则详情面板
-
-   - 完整元数据展示
-   - Markdown 内容预览
-   - 快速操作工具栏
-
-4. **[04-advanced-search.md](./04-advanced-search.md)** - 高级搜索界面
-   - 多条件搜索
-   - 搜索历史
-   - 结果导出
-
-### 原生 UI 组件
-
-5. **[05-tree-view.md](./05-tree-view.md)** - 规则树视图
-
-   - 分层展示源和规则
-   - 图标和颜色编码
-   - 右键上下文菜单
-
-6. **[06-status-bar.md](./06-status-bar.md)** - 状态栏
-   - 实时状态显示
-   - 快捷操作菜单
-   - 冲突和错误提示
+| # | 组件名称 | 功能 | 实现 | 设计文档 | HTML 原型 | 状态 |
+|---|---------|------|------|---------|---------|------|
+| **A** | 树视图 | 规则源和规则树 | `src/providers/RulesTreeProvider.ts` | ✅ [A-tree-view.md](./A-tree-view.md) | ✅ A-tree-view_2.html | ✅ 完整 |
+| **B** | 状态栏 | VS Code 状态栏显示 | `src/providers/StatusBarProvider.ts` | ✅ [06-status-bar.md](./06-status-bar.md) | ✅ 06-status-bar_1.html | ✅ 完整 |
 
 ---
 
-## 🎨 设计系统
+## 📦 归档文件
 
-### 视觉一致性
+未来功能的设计文档已移到 [archive/](../archive/) 目录：
 
-所有页面遵循统一的设计语言：
+- 08-config-manager - 配置管理面板（功能已通过源管理和适配器管理实现）
+- 09-rule-editor - 规则编辑器（未来增强功能）
+- 10-conflict-resolution - 冲突解决（未来功能）
+- 11-sync-progress - 同步进度（未来功能）
 
-- **主题系统**: 使用 VS Code CSS 变量，禁止硬编码颜色
-- **图标库**: VS Code Codicons
-- **间距系统**: 4px 基准单位 (xs/sm/md/lg/xl)
-- **圆角**: 统一 4px
-- **字体**: VS Code 默认字体系统
-
-### 响应式设计
-
-- **最小宽度**: 300px（窄面板）
-- **常规宽度**: 600px - 1200px
-- **最大宽度**: 1920px+
-
-### 颜色编码
-
-**优先级颜色**:
-
-- 🔥 High: `errorForeground` (红色)
-- ⚠️ Medium: `editorWarning.foreground` (黄色)
-- ℹ️ Low: `descriptionForeground` (灰色)
-
-**状态颜色**:
-
-- ✅ Success: `charts.green`
-- ❌ Error: `errorForeground`
-- ⚠️ Warning: `editorWarning.foreground`
+详见 [archive/README.md](../archive/README.md)
 
 ---
 
-## 📐 布局模式
+## 🔄 维护指南
 
-### Webview 布局
+### 新增 Webview 页面
 
-所有 Webview 页面使用居中布局模式：
+1. 创建实现：`src/webview/{name}/`
+2. 创建设计文档：`.superdesign/design_docs/{序号}-{name}.md`
+3. 创建 HTML 原型：`.superdesign/design_iterations/{序号}-{name}_1.html`
+4. 创建实施文档：`docs/implementation/ui/{序号}-{name}-implementation.md`
+5. 更新本 README.md
 
-```css
-.container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-}
-```
+### 更新现有页面
 
-### 卡片组件
-
-```css
-.card {
-  background-color: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-editorWidget-border);
-  border-radius: 4px;
-  padding: 16px;
-}
-```
-
-### 网格布局
-
-```css
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
-}
-```
+1. 更新实现代码
+2. 更新设计文档
+3. 生成新版本 HTML 原型（版本号 +1）
+4. 更新实施文档
 
 ---
 
-## ✨ 交互设计
+## 📚 相关文档
 
-### 动画原则
-
-- **性能优先**: 使用 `transform` 和 `opacity`
-- **时长**: 150-300ms（快速反馈），300-600ms（过渡）
-- **缓动**: `ease-out` (淡入), `ease-in-out` (双向)
-
-### 通用动画
-
-```css
-/* 淡入 */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 按钮交互 */
-.button:hover {
-  transform: scale(1.05);
-}
-
-.button:active {
-  transform: scale(0.98);
-}
-```
-
----
-
-## 📡 消息通信
-
-### 通用消息格式
-
-**Webview → Extension**:
-
-```typescript
-interface WebviewMessage {
-  type: string; // 消息类型
-  payload?: any; // 消息数据
-}
-```
-
-**Extension → Webview**:
-
-```typescript
-interface ExtensionMessage {
-  type: string; // 消息类型
-  data?: any; // 响应数据
-  error?: string; // 错误信息
-}
-```
-
-### 常用消息类型
-
-| 方向                | 类型          | 说明     |
-| ------------------- | ------------- | -------- |
-| Webview → Extension | `refresh`     | 刷新数据 |
-| Webview → Extension | `export`      | 导出数据 |
-| Webview → Extension | `viewDetails` | 查看详情 |
-| Extension → Webview | `updateData`  | 更新数据 |
-| Extension → Webview | `error`       | 错误通知 |
-
----
-
-## 🔧 技术架构
-
-### Webview 基础架构
-
-所有 Webview 继承自 `BaseWebviewProvider`:
-
-```typescript
-export class YourWebviewProvider extends BaseWebviewProvider {
-  protected getHtmlContent(webview: vscode.Webview): string {
-    // 返回 HTML 内容
-  }
-
-  protected handleMessage(message: WebviewMessage): void {
-    // 处理来自 Webview 的消息
-  }
-}
-```
-
-### 安全策略 (CSP)
-
-所有 Webview 必须配置内容安全策略：
-
-```html
-<meta
-  http-equiv="Content-Security-Policy"
-  content="default-src 'none'; 
-           style-src ${cspSource} 'unsafe-inline'; 
-           script-src 'nonce-${nonce}'; 
-           img-src ${cspSource} https:;"
-/>
-```
-
----
-
-## ♿ 无障碍支持
-
-### 键盘导航
-
-- 所有交互元素支持 Tab 键导航
-- 提供清晰的焦点指示
-- 支持常用快捷键
-
-### 屏幕阅读器
-
-- 使用语义化 HTML 标签
-- 提供 `aria-label` 和 `aria-describedby`
-- 使用 `role` 属性标识组件类型
-
-### 颜色对比度
-
-- 文本对比度符合 WCAG 2.1 AA 标准
-- 不仅依赖颜色传达信息
-
----
-
-## 📊 性能指标
-
-### 加载性能
-
-| 页面            | 初始加载 | 刷新速度 | 内存占用 |
-| --------------- | -------- | -------- | -------- |
-| Welcome         | < 100ms  | -        | < 5MB    |
-| Statistics      | < 500ms  | < 100ms  | < 10MB   |
-| Rule Details    | < 100ms  | -        | < 5MB    |
-| Advanced Search | < 200ms  | < 100ms  | < 10MB   |
-| Tree View       | < 200ms  | < 100ms  | < 10MB   |
-| Status Bar      | < 50ms   | < 50ms   | < 1MB    |
-
-### 优化策略
-
-- **缓存**: 缓存计算结果和数据
-- **防抖/节流**: 限制频繁操作
-- **虚拟滚动**: 大列表性能优化
-- **懒加载**: 按需加载内容
-
----
-
-## 🚀 使用指南
-
-### For SuperDesign AI
-
-在设计新页面时：
-
-1. **参考现有设计**: 查看对应的设计文档
-2. **遵循设计系统**: 使用统一的颜色、间距、图标
-3. **保持一致性**: 布局和交互模式与现有页面一致
-4. **考虑响应式**: 确保在不同尺寸下都能良好显示
-5. **注重无障碍**: 提供键盘导航和屏幕阅读器支持
-
-### 设计工作流
-
-1. **布局设计**: 使用 ASCII 线框图规划布局
-2. **主题设计**: 使用 CSS 变量定义样式
-3. **动画设计**: 添加合适的交互动画
-4. **生成 HTML**: 创建完整的 HTML 文件
-5. **测试验证**: 在不同主题和尺寸下测试
-
----
-
-## 📚 参考资源
-
-- [VS Code UX Guidelines](https://code.visualstudio.com/api/ux-guidelines/overview)
-- [VS Code Codicons](https://microsoft.github.io/vscode-codicons/dist/codicon.html)
-- [VS Code Webview API](https://code.visualstudio.com/api/extension-guides/webview)
-- [VS Code Theme Colors](https://code.visualstudio.com/api/references/theme-color)
-
----
-
-## 📝 更新日志
-
-### Version 2.0 (2025-10-27)
-
-- ✨ 新增：所有 UI 页面的完整设计文档
-- 📐 优化：统一设计系统和布局模式
-- 🎨 完善：视觉规范和颜色编码
-- ⚡ 改进：性能指标和优化策略
-
----
-
-_维护者: ygqygq2_  
-_贡献指南: 查看项目 CONTRIBUTING.md_
+- 📋 [完成报告](../REORGANIZATION-COMPLETION-REPORT.md) - UI 设计整理完成报告
+- 🧹 [整理计划](../CLEANUP-PLAN.md) - 整理概述

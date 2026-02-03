@@ -500,8 +500,15 @@ export const AdapterManager: React.FC = () => {
           adapter={{
             id: editingPresetAdapter.id,
             name: editingPresetAdapter.name,
+            type: editingPresetAdapter.type,
+            isRuleType: editingPresetAdapter.isRuleType,
             sortBy: editingPresetAdapter.sortBy || 'priority',
             sortOrder: editingPresetAdapter.sortOrder || 'asc',
+            organizeBySource: editingPresetAdapter.organizeBySource,
+            preserveDirectoryStructure: editingPresetAdapter.preserveDirectoryStructure,
+            useOriginalFilename: editingPresetAdapter.useOriginalFilename,
+            generateIndex: editingPresetAdapter.generateIndex,
+            indexPerSource: editingPresetAdapter.indexPerSource,
           }}
           onSave={handleSavePresetSettings}
           onClose={() => {

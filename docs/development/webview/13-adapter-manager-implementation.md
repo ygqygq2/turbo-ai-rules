@@ -46,7 +46,15 @@ interface PresetAdapter {
   description: string;
   enabled: boolean;
   outputPath: string;
+  type: 'file' | 'directory';
   isRuleType: boolean;
+  sortBy?: 'id' | 'priority' | 'none';
+  sortOrder?: 'asc' | 'desc';
+  organizeBySource?: boolean;
+  preserveDirectoryStructure?: boolean;
+  useOriginalFilename?: boolean;
+  generateIndex?: boolean;
+  indexPerSource?: boolean;
 }
 
 // 自定义适配器
@@ -56,14 +64,22 @@ interface CustomAdapter {
   outputPath: string;
   format: 'single-file' | 'directory';
   isRuleType: boolean;
+  enabled: boolean;
   fileExtensions?: string[];
   organizeBySource?: boolean;
   generateIndex?: boolean;
+  indexPerSource?: boolean;
+  indexFileName?: string;
+  preserveDirectoryStructure?: boolean;
+  useOriginalFilename?: boolean;
   singleFileTemplate?: string;
+  sortBy?: 'id' | 'priority' | 'none'; // 排序依据（仅单文件模式）
+  sortOrder?: 'asc' | 'desc'; // 排序顺序（仅单文件模式）
   directoryStructure?: {
     filePattern: string;
     pathTemplate: string;
   };
+  isNew?: boolean; // 标识是新增还是编辑
 }
 ```
 

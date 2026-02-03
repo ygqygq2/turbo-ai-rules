@@ -147,245 +147,16 @@
 
 ### 配色方案
 
-```css
-/* 容器 */
-.adapter-manager {
-  background-color: var(--vscode-editor-background);
-  color: var(--vscode-foreground);
-  padding: var(--spacing-lg);
-  max-width: 900px;
-  margin: 0 auto;
-}
+**VSCode 主题变量**:
+- 背景：`var(--vscode-editor-background)`
+- 文字：`var(--vscode-foreground)`
+- 边框：`var(--vscode-editorWidget-border)`
+- 按钮：`var(--vscode-button-primaryBackground)`
+- 错误：`var(--vscode-errorForeground)`
+- 成功：`var(--vscode-testing-iconPassed)`
 
-/* 适配器组标题 */
-.adapter-group-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: var(--spacing-md);
-  font-size: 1.1rem;
-  font-weight: 600;
-}
+**样式实现详见**: `src/webview/adapter-manager/adapter-manager.css`
 
-.adapter-group-header i {
-  margin-right: var(--spacing-sm);
-}
-
-/* 预置适配器卡片 */
-.preset-adapter {
-  background-color: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-editorWidget-border);
-  border-radius: var(--border-radius);
-  padding: var(--spacing-md);
-  margin-bottom: var(--spacing-sm);
-}
-
-.preset-adapter.enabled {
-  border-left: 3px solid var(--vscode-testing-iconPassed);
-}
-
-.preset-adapter.disabled {
-  opacity: 0.6;
-}
-
-/* 自定义适配器卡片 */
-.custom-adapter {
-  background-color: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-editorWidget-border);
-  border-radius: var(--border-radius);
-  padding: var(--spacing-md);
-  margin-bottom: var(--spacing-sm);
-  position: relative;
-}
-
-.custom-adapter.enabled {
-  border-left: 3px solid var(--vscode-charts-blue);
-}
-
-/* 适配器头部 */
-.adapter-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--spacing-sm);
-}
-
-.adapter-title {
-  display: flex;
-  align-items: center;
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.adapter-toggle {
-  margin-right: var(--spacing-sm);
-}
-
-/* 适配器详情 */
-.adapter-details {
-  color: var(--vscode-descriptionForeground);
-  font-size: 0.9rem;
-  line-height: 1.6;
-}
-
-.adapter-details-row {
-  display: flex;
-  align-items: center;
-  margin-bottom: var(--spacing-xs);
-}
-
-.adapter-details-row i {
-  margin-right: var(--spacing-xs);
-  width: 16px;
-}
-
-/* 展开/折叠按钮 */
-.expand-toggle {
-  background: none;
-  border: none;
-  color: var(--vscode-textLink-foreground);
-  cursor: pointer;
-  padding: 0;
-  font-size: 0.9rem;
-}
-
-.expand-toggle:hover {
-  text-decoration: underline;
-}
-
-/* 配置选项 */
-.adapter-options {
-  margin-top: var(--spacing-sm);
-  padding-left: var(--spacing-lg);
-}
-
-.adapter-option {
-  display: flex;
-  align-items: center;
-  margin-bottom: var(--spacing-xs);
-}
-
-.adapter-option input[type='checkbox'] {
-  margin-right: var(--spacing-xs);
-}
-
-/* 操作按钮 */
-.adapter-actions {
-  display: flex;
-  gap: var(--spacing-xs);
-  margin-top: var(--spacing-sm);
-}
-
-.btn-edit {
-  background-color: var(--vscode-button-secondaryBackground);
-  color: var(--vscode-button-secondaryForeground);
-  border: none;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-}
-
-.btn-delete {
-  background-color: var(--vscode-errorForeground);
-  color: white;
-}
-
-/* 弹窗 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background-color: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-editorWidget-border);
-  border-radius: var(--border-radius);
-  padding: var(--spacing-lg);
-  max-width: 600px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: var(--spacing-md);
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-
-/* 表单 */
-.form-group {
-  margin-bottom: var(--spacing-md);
-}
-
-.form-label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: var(--spacing-xs);
-  color: var(--vscode-foreground);
-}
-
-.form-label.required::after {
-  content: ' *';
-  color: var(--vscode-errorForeground);
-}
-
-.form-input {
-  width: 100%;
-  padding: var(--spacing-sm);
-  background-color: var(--vscode-input-background);
-  color: var(--vscode-input-foreground);
-  border: 1px solid var(--vscode-input-border);
-  border-radius: var(--border-radius);
-  font-family: inherit;
-}
-
-.form-input:focus {
-  outline: 1px solid var(--vscode-focusBorder);
-  outline-offset: -1px;
-}
-
-.form-hint {
-  display: block;
-  margin-top: var(--spacing-xs);
-  font-size: 0.85rem;
-  color: var(--vscode-descriptionForeground);
-}
-
-.form-error {
-  color: var(--vscode-errorForeground);
-  font-size: 0.85rem;
-  margin-top: var(--spacing-xs);
-}
-
-/* 单选按钮组 */
-.radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
-
-.radio-option {
-  display: flex;
-  align-items: center;
-}
-
-.radio-option input[type='radio'] {
-  margin-right: var(--spacing-xs);
-}
-```
 
 ### 图标使用
 
@@ -537,33 +308,65 @@
 {
   type: 'init',
   payload: {
-    presetAdapters: {
-      copilot: {
+    presetAdapters: [
+      {
+        id: string,
+        name: string,
+        description: string,
         enabled: boolean,
-        autoUpdate: boolean,
-        includeMetadata: boolean
-      },
-      cursor: { ... },
-      continue: { ... }
-    },
-    customAdapters: CustomAdapterConfig[]
+        outputPath: string,
+        type: 'file' | 'directory',
+        isRuleType: boolean,
+        sortBy?: 'id' | 'priority' | 'none',
+        sortOrder?: 'asc' | 'desc',
+        organizeBySource?: boolean,
+        preserveDirectoryStructure?: boolean,
+        useOriginalFilename?: boolean,
+        generateIndex?: boolean,
+        indexPerSource?: boolean
+      }
+    ],
+    customAdapters: [
+      {
+        id: string,
+        name: string,
+        outputPath: string,
+        format: 'single-file' | 'directory',
+        isRuleType: boolean,
+        enabled: boolean,
+        fileExtensions?: string[],
+        organizeBySource?: boolean,
+        generateIndex?: boolean,
+        indexPerSource?: boolean,
+        indexFileName?: string,
+        preserveDirectoryStructure?: boolean,
+        useOriginalFilename?: boolean,
+        sortBy?: 'id' | 'priority' | 'none',
+        sortOrder?: 'asc' | 'desc',
+        singleFileTemplate?: string,
+        directoryStructure?: {
+          filePattern: string,
+          pathTemplate: string
+        }
+      }
+    ]
   }
 }
 
 // 保存成功
 {
-  type: 'saveSuccess',
+  type: 'saveResult',
   payload: {
-    message: '配置已保存'
+    success: true
   }
 }
 
 // 保存失败
 {
-  type: 'saveError',
+  type: 'saveResult',
   payload: {
-    message: string,
-    errors: string[]
+    success: false,
+    message: string
   }
 }
 ```
@@ -571,53 +374,79 @@
 ### Webview → Extension
 
 ```typescript
-// 保存配置
+// 保存所有适配器配置
 {
-  type: 'saveConfig',
+  type: 'saveAllAdapters',
   payload: {
-    presetAdapters: { ... },
-    customAdapters: CustomAdapterConfig[]
+    presetAdapters: [{ ... }],
+    customAdapters: [{ ... }]
   }
 }
 
-// 添加自定义适配器
+// 保存单个自定义适配器
 {
-  type: 'addCustomAdapter',
+  type: 'saveAdapter',
   payload: {
-    id: string,
-    name: string,
-    outputPath: string,
-    outputType: 'file' | 'directory',
-    fileExtensions?: string[],
-    organizeBySource?: boolean,
-    generateIndex?: boolean,
-    indexFileName?: string,
-    autoUpdate: boolean,
-    includeMetadata?: boolean
-  }
-}
-
-// 更新自定义适配器
-{
-  type: 'updateCustomAdapter',
-  payload: {
-    id: string,
-    updates: Partial<CustomAdapterConfig>
+    adapter: {
+      id: string,
+      name: string,
+      outputPath: string,
+      format: 'single-file' | 'directory',
+      isRuleType: boolean,
+      enabled: boolean,
+      fileExtensions?: string[],
+      organizeBySource?: boolean,
+      generateIndex?: boolean,
+      indexPerSource?: boolean,
+      indexFileName?: string,
+      preserveDirectoryStructure?: boolean,
+      useOriginalFilename?: boolean,
+      sortBy?: 'id' | 'priority' | 'none',
+      sortOrder?: 'asc' | 'desc',
+      singleFileTemplate?: string,
+      directoryStructure?: {
+        filePattern: string,
+        pathTemplate: string
+      },
+      isNew: boolean
+    }
   }
 }
 
 // 删除自定义适配器
 {
-  type: 'deleteCustomAdapter',
+  type: 'deleteAdapter',
   payload: {
     id: string
   }
 }
 
-// 验证适配器 ID
+// 打开预设适配器设置
 {
-  type: 'validateAdapterId',
+  type: 'openPresetSettings',
   payload: {
+    adapterId: string
+  }
+}
+
+// 保存预设适配器设置
+{
+  type: 'savePresetSettings',
+  payload: {
+    adapter: {
+      id: string,
+      name: string,
+      sortBy?: 'id' | 'priority' | 'none',
+      sortOrder?: 'asc' | 'desc',
+      organizeBySource?: boolean,
+      preserveDirectoryStructure?: boolean,
+      useOriginalFilename?: boolean,
+      generateIndex?: boolean,
+      indexPerSource?: boolean
+    }
+  }
+}
+```
     id: string,
     excludeId?: string // 编辑时排除自身
   }

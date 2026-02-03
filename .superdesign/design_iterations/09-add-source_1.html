@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline';"
+    />
+    <title>Add/Edit Rule Source</title>
+
+    <style nonce="${nonce}">
+      :root {
+        /* VS Code 主题变量 */
+        --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+          Arial, sans-serif;
+        --vscode-editor-font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas,
+          'Courier New', monospace;
+        --vscode-font-weight: 400;
+        --vscode-font-size: 13px;
+        --vscode-foreground: #cccccc;
+        --vscode-descriptionForeground: #8c8c8c;
+        --vscode-errorForeground: #f48771;
+        --vscode-warningForeground: #cca700;
+
+        --vscode-editor-background: #1e1e1e;
+        --vscode-editorWidget-background: #252526;
+        --vscode-input-background: #3c3c3c;
+        --vscode-panel-border: #454545;
+        --vscode-editorWidget-border: #454545;
+        --vscode-input-border: #454545;
+        --vscode-focusBorder: #007fd4;
+        --vscode-input-foreground: #cccccc;
+        --vscode-input-placeholderForeground: #8c8c8c;
+
+        --vscode-button-background: #0e639c;
+        --vscode-button-foreground: #ffffff;
+        --vscode-button-hoverBackground: #1177bb;
+        --vscode-button-secondaryBackground: #3a3d41;
+        --vscode-button-secondaryForeground: #ffffff;
+        --vscode-button-secondaryHoverBackground: #45494e;
+
+        --vscode-list-hoverBackground: #2a2d2e;
+        --vscode-charts-green: #89d185;
+        --vscode-charts-red: #f48771;
+
+        --spacing-xs: 4px;
+        --spacing-sm: 8px;
+        --spacing-md: 12px;
+        --spacing-lg: 16px;
+        --border-radius: 4px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        background-color: var(--vscode-editor-background);
+        color: var(--vscode-foreground);
+        font-family: var(--vscode-font-family);
+        padding: var(--spacing-lg);
+        max-width: 700px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        font-size: 1.4rem;
+        margin: 0 0 var(--spacing-lg) 0;
+        font-weight: 600;
+      }
+
+      .mode-indicator {
+        display: inline-block;
+        font-size: 0.75rem;
+        color: var(--vscode-descriptionForeground);
+        margin-left: var(--spacing-sm);
+      }
+
+      .form-group {
+        margin-bottom: var(--spacing-lg);
+      }
+
+      label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: var(--spacing-xs);
+        color: var(--vscode-foreground);
+      }
+
+      .form-label-help {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--vscode-descriptionForeground);
+        margin-top: var(--spacing-xs);
+      }
+
+      input[type='text'],
+      input[type='password'],
+      select,
+      textarea {
+        width: 100%;
+        padding: var(--spacing-sm) var(--spacing-md);
+        background-color: var(--vscode-input-background);
+        border: 1px solid var(--vscode-input-border);
+        border-radius: var(--border-radius);
+        color: var(--vscode-input-foreground);
+        font-family: var(--vscode-font-family);
+        font-size: 0.9rem;
+      }
+
+      input[type='text']:focus,
+      input[type='password']:focus,
+      select:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--vscode-focusBorder);
+        box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+      }
+
+      input[type='text']::placeholder,
+      input[type='password']::placeholder {
+        color: var(--vscode-input-placeholderForeground);
+      }
+
+      .field-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-md);
+      }
+
+      .field-group.full {
+        grid-template-columns: 1fr;
+      }
+
+      .section {
+        margin-top: var(--spacing-lg);
+        padding-top: var(--spacing-lg);
+        border-top: 1px solid var(--vscode-panel-border);
+      }
+
+      .section-title {
+        font-weight: 600;
+        margin-bottom: var(--spacing-md);
+        color: var(--vscode-foreground);
+      }
+
+      .radio-group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+      }
+
+      .radio-item {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+      }
+
+      input[type='radio'] {
+        cursor: pointer;
+      }
+
+      .radio-label {
+        cursor: pointer;
+        margin: 0;
+      }
+
+      .auth-fields {
+        margin-top: var(--spacing-md);
+        padding: var(--spacing-md);
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: var(--border-radius);
+      }
+
+      .button-group {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-lg);
+        justify-content: flex-end;
+      }
+
+      button {
+        padding: var(--spacing-sm) var(--spacing-lg);
+        border-radius: var(--border-radius);
+        border: 1px solid transparent;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn-primary {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        background-color: var(--vscode-button-hoverBackground);
+      }
+
+      .btn-secondary {
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+      }
+
+      .btn-secondary:hover:not(:disabled) {
+        background-color: var(--vscode-button-secondaryHoverBackground);
+      }
+
+      .btn-test {
+        padding: var(--spacing-xs) var(--spacing-md);
+        font-size: 0.8rem;
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+      }
+
+      .btn-test:hover:not(:disabled) {
+        background-color: var(--vscode-button-secondaryHoverBackground);
+      }
+
+      .test-connection {
+        margin-top: var(--spacing-md);
+        padding: var(--spacing-md);
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: var(--border-radius);
+        font-size: 0.85rem;
+      }
+
+      .test-result {
+        margin-top: var(--spacing-sm);
+        padding: var(--spacing-sm);
+        border-radius: var(--border-radius);
+        font-size: 0.8rem;
+      }
+
+      .test-result.success {
+        background-color: rgba(137, 209, 133, 0.2);
+        color: var(--vscode-charts-green);
+      }
+
+      .test-result.error {
+        background-color: rgba(244, 135, 113, 0.2);
+        color: var(--vscode-charts-red);
+      }
+
+      .error-message {
+        padding: var(--spacing-md);
+        background-color: rgba(244, 135, 113, 0.2);
+        border: 1px solid rgba(244, 135, 113, 0.5);
+        border-radius: var(--border-radius);
+        color: var(--vscode-errorForeground);
+        font-size: 0.85rem;
+        margin-bottom: var(--spacing-lg);
+      }
+
+      .progress {
+        margin-top: var(--spacing-md);
+        padding: var(--spacing-md);
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: var(--border-radius);
+        font-size: 0.85rem;
+      }
+
+      .loading-spinner {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border: 2px solid var(--vscode-descriptionForeground);
+        border-top-color: var(--vscode-foreground);
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        margin-right: var(--spacing-xs);
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>
+      添加规则源
+      <span class="mode-indicator">[新增模式]</span>
+    </h1>
+
+    <!-- Error Display -->
+    <div class="error-message" style="display: none; margin-bottom: var(--spacing-lg);">
+      仓库 URL 格式错误，请确认
+    </div>
+
+    <!-- Form -->
+    <form>
+      <!-- Basic Information -->
+      <div class="form-group field-group full">
+        <div>
+          <label for="name">规则源名称</label>
+          <input
+            type="text"
+            id="name"
+            placeholder="e.g., company-rules, personal-rules"
+            value=""
+          />
+          <div class="form-label-help">
+            用于标识规则源，必须唯一，建议使用 kebab-case 格式
+          </div>
+        </div>
+      </div>
+
+      <!-- Git Repository Information -->
+      <div class="section">
+        <div class="section-title">Git 仓库信息</div>
+
+        <div class="form-group field-group full">
+          <div>
+            <label for="gitUrl">Git 仓库 URL</label>
+            <input
+              type="text"
+              id="gitUrl"
+              placeholder="https://github.com/example/rules.git"
+              value=""
+            />
+            <div class="form-label-help">HTTPS 或 SSH 格式</div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div>
+            <label for="branch">分支</label>
+            <input type="text" id="branch" placeholder="main" value="main" />
+          </div>
+          <div>
+            <label for="subPath">规则文件路径</label>
+            <input type="text" id="subPath" placeholder="/" value="/" />
+            <div class="form-label-help">相对于仓库根目录</div>
+          </div>
+        </div>
+
+        <!-- Test Connection Button -->
+        <div class="test-connection">
+          <button type="button" class="btn-test">
+            🔗 测试连接
+          </button>
+          <div class="test-result success" style="display: none;">
+            ✓ 连接成功，找到 24 个规则文件
+          </div>
+        </div>
+      </div>
+
+      <!-- Authentication -->
+      <div class="section">
+        <div class="section-title">认证方式</div>
+
+        <div class="radio-group">
+          <div class="radio-item">
+            <input type="radio" id="auth-none" name="authType" value="none" checked />
+            <label for="auth-none" class="radio-label">无需认证 (Public)</label>
+          </div>
+          <div class="radio-item">
+            <input type="radio" id="auth-token" name="authType" value="token" />
+            <label for="auth-token" class="radio-label">Personal Access Token</label>
+          </div>
+          <div class="radio-item">
+            <input type="radio" id="auth-ssh" name="authType" value="ssh" />
+            <label for="auth-ssh" class="radio-label">SSH Key</label>
+          </div>
+        </div>
+
+        <!-- Token Auth Fields (hidden by default) -->
+        <div class="auth-fields" style="display: none;">
+          <label for="token">Token</label>
+          <input
+            type="password"
+            id="token"
+            placeholder="输入你的 Personal Access Token"
+            value=""
+          />
+          <div class="form-label-help">
+            Token 将安全存储在 VS Code 的 Secret Storage 中
+          </div>
+        </div>
+
+        <!-- SSH Auth Fields (hidden by default) -->
+        <div class="auth-fields" style="display: none;">
+          <div class="form-group">
+            <label for="sshKeyPath">SSH Key 路径</label>
+            <input type="text" id="sshKeyPath" placeholder="~/.ssh/id_rsa" value="" />
+          </div>
+          <div class="form-group">
+            <label for="sshPassphrase">SSH Key 密码（如果有）</label>
+            <input type="password" id="sshPassphrase" placeholder="留空如果没有密码" value="" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="progress" style="display: none;">
+        <div style="display: flex; align-items: center;">
+          <span class="loading-spinner"></span>
+          正在克隆仓库并解析规则...
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="button-group">
+        <button type="button" class="btn-secondary">取消</button>
+        <button type="submit" class="btn-primary">添加规则源</button>
+      </div>
+    </form>
+  </body>
+</html>

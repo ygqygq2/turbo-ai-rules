@@ -2,6 +2,12 @@
 
 All notable changes to the "turbo-ai-rules" extension will be documented in this file.
 
+# [2.0.9]
+
+## 🐛 修复问题
+
+- 修复浅色主题下技能类型标签字体颜色不清晰和预设适配器单文件模式显示目录配置的问题
+
 # [2.0.8]
 
 ## ✨ 新增特性
