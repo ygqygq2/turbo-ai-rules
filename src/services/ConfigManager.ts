@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 
 import type {
+  AdapterSuiteConfig,
   AdaptersConfig,
   CustomAdapterConfig,
   ExtensionConfig,
@@ -83,10 +84,20 @@ export class ConfigManager {
         }
       }
 
+      const adapterSuitesInspection = vscodeConfig.inspect<AdapterSuiteConfig[]>(
+        CONFIG_KEYS.ADAPTER_SUITES,
+      );
+      const mergedSuites = mergeById(
+        adapterSuitesInspection?.workspaceFolderValue,
+        adapterSuitesInspection?.workspaceValue,
+        adapterSuitesInspection?.globalValue,
+      );
+
       const config: ExtensionConfig = {
         sources,
         storage: vscodeConfig.get<StorageConfig>(CONFIG_KEYS.STORAGE, DEFAULT_CONFIG.storage),
         adapters,
+        adapterSuites: mergedSuites,
         sync: vscodeConfig.get<SyncConfig>(CONFIG_KEYS.SYNC, DEFAULT_CONFIG.sync),
         parser: vscodeConfig.get<ParserConfig>(CONFIG_KEYS.PARSER, DEFAULT_CONFIG.parser),
         userRules: vscodeConfig.get<UserRulesConfig>(

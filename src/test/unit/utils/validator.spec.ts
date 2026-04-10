@@ -230,6 +230,14 @@ describe('validator 单元测试', () => {
         storage: {
           autoGitignore: true,
         },
+        adapterSuites: [
+          {
+            id: 'cursor-core',
+            name: 'Cursor Core',
+            adapterIds: ['cursor', 'cursor-skills'],
+            enabled: true,
+          },
+        ],
         sync: {
           auto: false,
           interval: 60,
@@ -291,6 +299,31 @@ describe('validator 单元测试', () => {
       const result = validateConfig(config);
       expect(result.valid).toBe(false);
       expect(result.errors).toContain('sync configuration is missing');
+    });
+
+    it('应该检测无效的 adapterSuites 配置', () => {
+      const config = {
+        sources: [],
+        storage: { autoGitignore: true },
+        adapterSuites: [
+          {
+            id: '',
+            name: 123,
+            adapterIds: ['copilot', ''],
+            enabled: 'yes',
+          },
+        ],
+        sync: { auto: false, interval: 60, onStartup: false },
+      };
+
+      const result = validateConfig(config);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain('adapterSuites[0].id must be a non-empty string');
+      expect(result.errors).toContain('adapterSuites[0].name must be a non-empty string');
+      expect(result.errors).toContain(
+        'adapterSuites[0].adapterIds must contain only non-empty strings',
+      );
+      expect(result.errors).toContain('adapterSuites[0].enabled must be a boolean');
     });
 
     it('应该检测无效的 sync 字段', () => {

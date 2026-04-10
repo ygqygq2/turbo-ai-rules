@@ -11,7 +11,9 @@ import { ConfigManager } from '../../services/ConfigManager';
 import { GitManager } from '../../services/GitManager';
 import { RulesManager } from '../../services/RulesManager';
 import { SelectionStateManager } from '../../services/SelectionStateManager';
-import type { AdapterConfig } from '../../types/config';
+import type { AdapterConfig, AdapterSuiteConfig } from '../../types/config';
+import { PRESET_ADAPTERS } from '../../adapters/PresetAdapter';
+import { mergeById } from '../../utils/configMerge';
 import { EXTENSION_ICON_PATH } from '../../utils/constants';
 import { buildFileTreeFromRules, type FileTreeNode } from '../../utils/fileTreeBuilder';
 import { t } from '../../utils/i18n';
@@ -34,6 +36,13 @@ interface AdapterState {
   outputPath: string;
   assetCount: number;
   isRuleType: boolean;
+}
+
+interface AdapterSuiteState {
+  id: string;
+  name: string;
+  description: string;
+  adapterIds: string[];
 }
 
 /**
@@ -297,6 +306,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
       selectedPaths: string[]; // ✅ 选中路径数组
       stats: { total: number; selected: number };
     }>;
+    suites: AdapterSuiteState[];
     adapters: AdapterState[];
   }> {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
@@ -369,8 +379,9 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
 
     // 构建适配器列表
     const adapters = await this.getAdapterStates();
+    const suites = this.getAdapterSuiteStates(adapters, config.adapterSuites || []);
 
-    return { sources, adapters };
+    return { sources, suites, adapters };
   }
 
   // ✅ 不再需要转换方法，直接使用 FileTreeNode 和 selectedPaths 数组
@@ -385,20 +396,11 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
     const adapters: AdapterState[] = [];
 
     // 预置适配器
-    const presetAdapters: Array<{
-      id: string;
-      name: string;
-      config: AdapterConfig | undefined;
-    }> = [
-      { id: 'copilot', name: 'GitHub Copilot', config: config.adapters.copilot },
-      { id: 'cursor', name: 'Cursor', config: config.adapters.cursor },
-      { id: 'continue', name: 'Continue', config: config.adapters.continue },
-    ];
-
-    for (const preset of presetAdapters) {
-      const enabled = preset.config?.enabled ?? true;
-      const outputPath = this.getAdapterOutputPath(preset.id);
-      const isRuleType = preset.config?.isRuleType ?? true;
+    for (const preset of PRESET_ADAPTERS) {
+      const presetConfig = config.adapters[preset.id] as AdapterConfig | undefined;
+      const enabled = presetConfig?.enabled ?? preset.defaultEnabled ?? false;
+      const outputPath = normalizeOutputPathForDisplay(preset.filePath);
+      const isRuleType = presetConfig?.isRuleType ?? preset.isRuleType ?? true;
 
       adapters.push({
         id: preset.id,
@@ -434,22 +436,46 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
     return adapters;
   }
 
-  /**
-   * @description 获取适配器输出路径（相对于工作区根目录）
-   * @return default {string} 相对路径，目录以/结尾，文件不以/结尾，不以/开头
-   * @param adapterId {string}
-   */
-  private getAdapterOutputPath(adapterId: string): string {
-    switch (adapterId) {
-      case 'copilot':
-        return '.github/copilot-instructions.md';
-      case 'cursor':
-        return '.cursorrules';
-      case 'continue':
-        return '.continuerules';
-      default:
-        return '';
-    }
+  private getAdapterSuiteStates(
+    adapters: AdapterState[],
+    configuredSuites: AdapterSuiteConfig[],
+  ): AdapterSuiteState[] {
+    const adapterMap = new Map(adapters.map((adapter) => [adapter.id, adapter]));
+    const suiteDefinitions = mergeById<AdapterSuiteConfig>(
+      configuredSuites,
+      this.getDefaultAdapterSuites(),
+    );
+
+    return suiteDefinitions
+      .filter((suite) => suite.enabled !== false)
+      .map((suite) => ({
+        id: suite.id,
+        name: suite.name,
+        description: suite.description || '',
+        adapterIds: Array.from(
+          new Set(suite.adapterIds.filter((adapterId) => adapterMap.has(adapterId))),
+        ),
+      }))
+      .filter((suite) => suite.adapterIds.length >= 2);
+  }
+
+  private getDefaultAdapterSuites(): AdapterSuiteConfig[] {
+    return [
+      {
+        id: 'cursor-core',
+        name: t('ruleSyncPage.suite.cursorCore.name'),
+        description: t('ruleSyncPage.suite.cursorCore.description'),
+        adapterIds: ['cursor', 'cursor-skills'],
+        enabled: true,
+      },
+      {
+        id: 'copilot-core',
+        name: t('ruleSyncPage.suite.copilotCore.name'),
+        description: t('ruleSyncPage.suite.copilotCore.description'),
+        adapterIds: ['copilot', 'copilot-skills'],
+        enabled: true,
+      },
+    ];
   }
 
   /**

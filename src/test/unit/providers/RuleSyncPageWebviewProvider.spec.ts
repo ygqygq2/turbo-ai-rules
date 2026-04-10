@@ -67,6 +67,15 @@ vi.mock('@/services/ConfigManager', () => ({
             },
           ],
         },
+        adapterSuites: [
+          {
+            id: 'custom-suite',
+            name: 'Custom Suite',
+            description: 'Custom adapter bundle',
+            adapterIds: ['copilot', 'custom1'],
+            enabled: true,
+          },
+        ],
       })),
       // ✅ 添加 getSources 方法
       getSources: vi.fn(() => [
@@ -142,9 +151,11 @@ describe('RuleSyncPageWebviewProvider', () => {
       const data = await (provider as any).getRuleSyncData();
 
       expect(data).toHaveProperty('sources');
+      expect(data).toHaveProperty('suites');
       expect(data).toHaveProperty('adapters');
 
       expect(Array.isArray(data.sources)).toBe(true);
+      expect(Array.isArray(data.suites)).toBe(true);
       expect(Array.isArray(data.adapters)).toBe(true);
     });
 
@@ -164,16 +175,42 @@ describe('RuleSyncPageWebviewProvider', () => {
     it('应该包含所有适配器（预置和自定义）', async () => {
       const data = await (provider as any).getRuleSyncData();
 
-      expect(data.adapters.length).toBeGreaterThanOrEqual(4); // 3 预置 + 1 自定义
+      expect(data.adapters.length).toBeGreaterThanOrEqual(11); // 10 预置 + 1 自定义
 
       const copilotAdapter = data.adapters.find((a: any) => a.id === 'copilot');
       expect(copilotAdapter).toBeDefined();
       expect(copilotAdapter.type).toBe('preset');
       expect(copilotAdapter.enabled).toBe(true);
 
+      const cursorSkillsAdapter = data.adapters.find((a: any) => a.id === 'cursor-skills');
+      expect(cursorSkillsAdapter).toBeDefined();
+      expect(cursorSkillsAdapter.isRuleType).toBe(false);
+
       const customAdapter = data.adapters.find((a: any) => a.id === 'custom1');
       expect(customAdapter).toBeDefined();
       expect(customAdapter.type).toBe('custom');
+    });
+
+    it('应该返回适配器综合体并包含子适配器', async () => {
+      const data = await (provider as any).getRuleSyncData();
+
+      const cursorSuite = data.suites.find((suite: any) => suite.id === 'cursor-core');
+      const copilotSuite = data.suites.find((suite: any) => suite.id === 'copilot-core');
+
+      expect(cursorSuite).toBeDefined();
+      expect(cursorSuite.adapterIds).toEqual(['cursor', 'cursor-skills']);
+      expect(copilotSuite).toBeDefined();
+      expect(copilotSuite.adapterIds).toEqual(['copilot', 'copilot-skills']);
+    });
+
+    it('应该合并配置中的自定义综合体', async () => {
+      const data = await (provider as any).getRuleSyncData();
+
+      const customSuite = data.suites.find((suite: any) => suite.id === 'custom-suite');
+
+      expect(customSuite).toBeDefined();
+      expect(customSuite.name).toBe('Custom Suite');
+      expect(customSuite.adapterIds).toEqual(['copilot', 'custom1']);
     });
   });
 
@@ -182,7 +219,7 @@ describe('RuleSyncPageWebviewProvider', () => {
       const states = await (provider as any).getAdapterStates();
 
       expect(Array.isArray(states)).toBe(true);
-      expect(states.length).toBeGreaterThanOrEqual(4);
+      expect(states.length).toBeGreaterThanOrEqual(11);
     });
 
     it('应该正确设置适配器属性', async () => {
@@ -195,7 +232,7 @@ describe('RuleSyncPageWebviewProvider', () => {
         type: 'preset',
         enabled: true,
         checked: false, // 默认未启用，checked 为 false
-        ruleCount: 0,
+        assetCount: 0,
       });
     });
 
@@ -210,30 +247,6 @@ describe('RuleSyncPageWebviewProvider', () => {
         enabled: true,
         outputPath: 'custom/path/',
       });
-    });
-  });
-
-  // buildFileTree 方法已移除，改用公共方法 buildFileTreeFromRules (utils/fileTreeBuilder.ts)
-
-  describe('getAdapterOutputPath', () => {
-    it('应该返回 Copilot 的输出路径', () => {
-      const path = (provider as any).getAdapterOutputPath('copilot');
-      expect(path).toContain('.github/copilot-instructions.md');
-    });
-
-    it('应该返回 Cursor 的输出路径', () => {
-      const path = (provider as any).getAdapterOutputPath('cursor');
-      expect(path).toContain('.cursorrules');
-    });
-
-    it('应该返回 Continue 的输出路径', () => {
-      const path = (provider as any).getAdapterOutputPath('continue');
-      expect(path).toContain('.continuerules');
-    });
-
-    it('应该返回未知适配器的空路径', () => {
-      const path = (provider as any).getAdapterOutputPath('unknown');
-      expect(path).toBe('');
     });
   });
 

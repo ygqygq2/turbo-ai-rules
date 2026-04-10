@@ -44,6 +44,7 @@ export const CONFIG_KEYS = {
   SYNC: 'sync',
   PARSER: 'parser',
   ADAPTERS: 'adapters',
+  ADAPTER_SUITES: 'adapterSuites',
   IGNORE_PATTERNS: 'ignorePatterns',
 
   /** 存储配置 */

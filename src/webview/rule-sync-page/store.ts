@@ -40,6 +40,13 @@ interface AdapterInfo {
   isRuleType: boolean;
 }
 
+interface SuiteInfo {
+  id: string;
+  name: string;
+  description: string;
+  adapterIds: string[];
+}
+
 interface InitialData {
   sources: Array<{
     id: string;
@@ -48,6 +55,7 @@ interface InitialData {
     selectedPaths: string[]; // ✅ 选中路径数组
     stats: { total: number; selected: number };
   }>;
+  suites: SuiteInfo[];
   adapters: AdapterInfo[];
 }
 
@@ -61,6 +69,7 @@ interface RuleSyncPageState {
   expandedNodes: Set<string>;
 
   // 适配器状态
+  suites: SuiteInfo[];
   adapters: AdapterInfo[];
   selectedAdapters: Set<string>;
 
@@ -76,6 +85,7 @@ interface RuleSyncPageState {
   updateSelectionFromExtension: (sourceId: string, selectedPaths: string[]) => void; // ✅ 新增：从扩展更新选择
   toggleAllRules: () => void;
   toggleAllAdapters: () => void;
+  toggleSuite: (suiteId: string) => void;
   toggleAdapter: (adapterId: string) => void;
   setSearchTerm: (term: string) => void;
   setKindFilter: (kind: string | null) => void;
@@ -85,10 +95,13 @@ interface RuleSyncPageState {
   // 计算属性
   isAllRulesSelected: () => boolean;
   isAllAdaptersSelected: () => boolean;
+  isSuiteSelected: (suiteId: string) => boolean;
+  isSuiteIndeterminate: (suiteId: string) => boolean;
   getSelectedAssetCount: () => number;
   getSelectedAdaptersCount: () => number;
   getTotalAssetCount: () => number;
-  getAdapterSelectDisabled: (adapterId: string, selectedAdapters?: Set<string>) => boolean;
+  getStandaloneAdapters: () => AdapterInfo[];
+  getSuiteAdapters: (suiteId: string) => AdapterInfo[];
   getAvailableKinds: () => string[];
   getFilteredTreeNodes: (sourceId: string) => TreeNode[];
 }
@@ -105,6 +118,7 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
       treeNodesBySource: {},
       selectedPathsBySource: {}, // ✅ 按源分组，格式：{ [sourceId]: string[] }
       expandedNodes: new Set(),
+      suites: [],
       adapters: [],
       selectedAdapters: new Set(),
       searchTerm: '',
@@ -153,6 +167,7 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
           treeNodesBySource,
           selectedPathsBySource, // ✅ 按源分组的选择状态
           expandedNodes,
+          suites: data.suites || [],
           adapters: data.adapters || [],
           selectedAdapters, // ✅ 初始为空
         });
@@ -282,16 +297,35 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
           });
         }
 
-        // 更新所有适配器的 selectDisabled 状态
-        const updatedAdapters = state.adapters.map((a) => {
-          const selectDisabled = state.getAdapterSelectDisabled(a.id, newSelected);
-          return { ...a, selectDisabled };
-        });
-
         set({
           selectedAdapters: newSelected,
-          adapters: updatedAdapters,
         });
+      },
+
+      toggleSuite: (suiteId) => {
+        const state = get();
+        const suite = state.suites.find((item) => item.id === suiteId);
+        if (!suite) {
+          return;
+        }
+
+        const selectableAdapterIds = suite.adapterIds.filter((adapterId) => {
+          const adapter = state.adapters.find((item) => item.id === adapterId);
+          return adapter?.enabled;
+        });
+
+        const areAllSelected =
+          selectableAdapterIds.length > 0 &&
+          selectableAdapterIds.every((adapterId) => state.selectedAdapters.has(adapterId));
+
+        const nextSelected = new Set(state.selectedAdapters);
+        if (areAllSelected) {
+          selectableAdapterIds.forEach((adapterId) => nextSelected.delete(adapterId));
+        } else {
+          selectableAdapterIds.forEach((adapterId) => nextSelected.add(adapterId));
+        }
+
+        set({ selectedAdapters: nextSelected });
       },
 
       /**
@@ -314,15 +348,8 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
           newSelected.add(adapterId);
         }
 
-        // 更新所有适配器的 selectDisabled 状态
-        const updatedAdapters = state.adapters.map((a) => {
-          const selectDisabled = state.getAdapterSelectDisabled(a.id, newSelected);
-          return { ...a, selectDisabled };
-        });
-
         set({
           selectedAdapters: newSelected,
-          adapters: updatedAdapters,
         });
       },
 
@@ -391,6 +418,42 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
         );
       },
 
+      isSuiteSelected: (suiteId) => {
+        const state = get();
+        const suite = state.suites.find((item) => item.id === suiteId);
+        if (!suite) {
+          return false;
+        }
+
+        const enabledAdapterIds = suite.adapterIds.filter((adapterId) => {
+          const adapter = state.adapters.find((item) => item.id === adapterId);
+          return adapter?.enabled;
+        });
+
+        return (
+          enabledAdapterIds.length > 0 &&
+          enabledAdapterIds.every((adapterId) => state.selectedAdapters.has(adapterId))
+        );
+      },
+
+      isSuiteIndeterminate: (suiteId) => {
+        const state = get();
+        const suite = state.suites.find((item) => item.id === suiteId);
+        if (!suite) {
+          return false;
+        }
+
+        const enabledAdapterIds = suite.adapterIds.filter((adapterId) => {
+          const adapter = state.adapters.find((item) => item.id === adapterId);
+          return adapter?.enabled;
+        });
+        const selectedCount = enabledAdapterIds.filter((adapterId) =>
+          state.selectedAdapters.has(adapterId),
+        ).length;
+
+        return selectedCount > 0 && selectedCount < enabledAdapterIds.length;
+      },
+
       getSelectedAssetCount: () => {
         const state = get();
         let count = 0;
@@ -413,53 +476,21 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
         return total;
       },
 
-      /**
-       * @description 判断适配器是否因互斥而被禁用
-       * @return default {boolean}
-       * @param adapterId {string} 适配器ID
-       * @param selectedAdapters {Set<string> | undefined} 选中的适配器集合（可选，默认使用当前状态）
-       */
-      getAdapterSelectDisabled: (adapterId, selectedAdapters) => {
+      getStandaloneAdapters: () => {
         const state = get();
-        const selected = selectedAdapters ?? state.selectedAdapters;
+        const suiteAdapterIds = new Set(state.suites.flatMap((suite) => suite.adapterIds));
+        return state.adapters.filter((adapter) => !suiteAdapterIds.has(adapter.id));
+      },
 
-        // 没有选中任何适配器，所有适配器都可选
-        if (selected.size === 0) {
-          return false;
+      getSuiteAdapters: (suiteId) => {
+        const state = get();
+        const suite = state.suites.find((item) => item.id === suiteId);
+        if (!suite) {
+          return [];
         }
-
-        const adapter = state.adapters.find((a) => a.id === adapterId);
-        if (!adapter) {
-          return false;
-        }
-
-        // 如果该适配器已被选中，不应被禁用
-        if (selected.has(adapterId)) {
-          return false;
-        }
-
-        // 检查是否有相反类型的适配器被选中
-        const hasRuleTypeSelected = Array.from(selected).some((id) => {
-          const a = state.adapters.find((adapter) => adapter.id === id);
-          return a?.isRuleType === true;
-        });
-
-        const hasSkillsTypeSelected = Array.from(selected).some((id) => {
-          const a = state.adapters.find((adapter) => adapter.id === id);
-          return a?.isRuleType === false;
-        });
-
-        // 如果选中了规则类型，禁用 skills 类型
-        if (hasRuleTypeSelected && adapter.isRuleType === false) {
-          return true;
-        }
-
-        // 如果选中了 skills 类型，禁用规则类型
-        if (hasSkillsTypeSelected && adapter.isRuleType === true) {
-          return true;
-        }
-
-        return false;
+        return suite.adapterIds
+          .map((adapterId) => state.adapters.find((adapter) => adapter.id === adapterId))
+          .filter((adapter): adapter is AdapterInfo => Boolean(adapter));
       },
 
       /**

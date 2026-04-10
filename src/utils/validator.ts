@@ -134,6 +134,43 @@ export function validateConfig(config: unknown): {
     }
   }
 
+  // 验证 adapterSuites（可选）
+  if (cfg.adapterSuites !== undefined) {
+    if (!Array.isArray(cfg.adapterSuites)) {
+      errors.push('adapterSuites must be an array');
+    } else {
+      for (const [index, suite] of cfg.adapterSuites.entries()) {
+        if (!suite || typeof suite !== 'object') {
+          errors.push(`adapterSuites[${index}] must be an object`);
+          continue;
+        }
+
+        const suiteConfig = suite as Record<string, unknown>;
+        if (typeof suiteConfig.id !== 'string' || !suiteConfig.id.trim()) {
+          errors.push(`adapterSuites[${index}].id must be a non-empty string`);
+        }
+        if (typeof suiteConfig.name !== 'string' || !suiteConfig.name.trim()) {
+          errors.push(`adapterSuites[${index}].name must be a non-empty string`);
+        }
+        if (!Array.isArray(suiteConfig.adapterIds) || suiteConfig.adapterIds.length === 0) {
+          errors.push(`adapterSuites[${index}].adapterIds must be a non-empty array`);
+        } else if (
+          !suiteConfig.adapterIds.every(
+            (adapterId) => typeof adapterId === 'string' && adapterId.trim().length > 0,
+          )
+        ) {
+          errors.push(`adapterSuites[${index}].adapterIds must contain only non-empty strings`);
+        }
+        if (suiteConfig.description !== undefined && typeof suiteConfig.description !== 'string') {
+          errors.push(`adapterSuites[${index}].description must be a string`);
+        }
+        if (suiteConfig.enabled !== undefined && typeof suiteConfig.enabled !== 'boolean') {
+          errors.push(`adapterSuites[${index}].enabled must be a boolean`);
+        }
+      }
+    }
+  }
+
   // 验证 sync
   if (!cfg.sync || typeof cfg.sync !== 'object') {
     errors.push('sync configuration is missing');

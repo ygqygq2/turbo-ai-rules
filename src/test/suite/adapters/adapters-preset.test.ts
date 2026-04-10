@@ -8,7 +8,9 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { PRESET_ADAPTERS } from '../../../adapters/PresetAdapter';
+import { CONFIG_KEYS } from '../../../utils/constants';
 import { TEST_DELAYS, TEST_TIMEOUTS } from '../testConstants';
+import { testSyncWithAdapters } from '../../helpers/testCommands';
 import { sleep, switchToWorkspace } from '../testHelpers';
 
 describe('Preset Adapters Integration Tests', () => {
@@ -75,6 +77,79 @@ describe('Preset Adapters Integration Tests', () => {
     );
 
     console.log(`✓ Loaded ${PRESET_ADAPTERS.length} preset adapters: ${actualIds.join(', ')}`);
+  });
+
+  it('Should sync preset rule and skills adapters together', async function () {
+    this.timeout(TEST_TIMEOUTS.EXTRA_LONG);
+
+    const ext = vscode.extensions.getExtension('ygqygq2.turbo-ai-rules');
+    if (ext && !ext.isActive) {
+      await ext.activate();
+    }
+
+    const api = ext?.exports;
+    const rulesManager = api?.rulesManager;
+    const selectionStateManager = api?.selectionStateManager;
+
+    assert.ok(rulesManager, 'RulesManager should be available');
+    assert.ok(selectionStateManager, 'SelectionStateManager should be available');
+
+    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    const originalAdapters = config.get<Record<string, any>>('adapters', {});
+
+    try {
+      const adapters = { ...originalAdapters };
+      adapters.cursor = { ...(adapters.cursor || {}), enabled: true };
+      adapters['cursor-skills'] = { ...(adapters['cursor-skills'] || {}), enabled: true };
+      await config.update('adapters', adapters, vscode.ConfigurationTarget.WorkspaceFolder);
+
+      await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+      await sleep(TEST_DELAYS.EXTRA_LONG);
+
+      let allRules: any[] = [];
+      for (let i = 0; i < 20; i++) {
+        allRules = rulesManager.getAllRules();
+        if (allRules.length > 0) {
+          break;
+        }
+        await sleep(TEST_DELAYS.SHORT);
+      }
+
+      if (allRules.length === 0) {
+        this.skip();
+        return;
+      }
+
+      const sources = config.get<Array<{ id: string; enabled: boolean }>>(CONFIG_KEYS.SOURCES, []);
+      for (const source of sources.filter((item) => item.enabled)) {
+        const sourceRules = rulesManager.getRulesBySource(source.id);
+        if (sourceRules.length > 0) {
+          selectionStateManager.updateSelection(
+            source.id,
+            sourceRules.map((rule: any) => rule.filePath),
+            false,
+            workspaceFolder.uri.fsPath,
+          );
+        }
+      }
+
+      await sleep(TEST_DELAYS.LONG);
+      await testSyncWithAdapters(['cursor', 'cursor-skills']);
+      await sleep(TEST_DELAYS.LONG);
+
+      const cursorRulesPath = path.join(workspaceFolder.uri.fsPath, '.cursorrules');
+      const cursorSkillsPath = path.join(workspaceFolder.uri.fsPath, '.cursor/skills');
+
+      const cursorRulesExists = await fs.pathExists(cursorRulesPath);
+      const cursorSkillsExists = await fs.pathExists(cursorSkillsPath);
+
+      assert.ok(
+        cursorRulesExists || cursorSkillsExists,
+        'Expected at least one preset target to be generated when syncing mixed adapters',
+      );
+    } finally {
+      await config.update('adapters', originalAdapters, vscode.ConfigurationTarget.WorkspaceFolder);
+    }
   });
 
   it('All preset adapters should have required properties', () => {

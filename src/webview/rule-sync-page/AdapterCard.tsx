@@ -42,7 +42,7 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
     if ((e.target as HTMLElement).tagName === 'INPUT') {
       return;
     }
-    // 如果适配器被禁用或因互斥被禁止选择，不响应点击
+    // 如果适配器被禁用，不响应点击
     if (!adapter.enabled || adapter.selectDisabled) {
       return;
     }
@@ -50,13 +50,7 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
   };
 
   const isDisabled = !adapter.enabled || adapter.selectDisabled;
-  const disabledReason = adapter.selectDisabled
-    ? adapter.isRuleType
-      ? '已选择 Skills 适配器，无法同时选择规则类适配器'
-      : '已选择规则类适配器，无法同时选择 Skills 适配器'
-    : !adapter.enabled
-      ? '适配器未启用'
-      : '';
+  const disabledReason = !adapter.enabled ? '适配器未启用' : '';
 
   return (
     <div

@@ -43,7 +43,7 @@ interface CustomAdapterData {
   id: string;
   name: string;
   outputPath: string;
-  format: 'single-file' | 'directory';
+  format: 'single-file' | 'directory' | 'merge-json';
   isRuleType: boolean;
   enabled: boolean;
   singleFileTemplate?: string;

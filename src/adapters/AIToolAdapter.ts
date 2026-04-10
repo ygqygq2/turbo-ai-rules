@@ -624,7 +624,7 @@ export abstract class BaseAdapter implements AIToolAdapter {
    * 获取输出类型
    * 子类需要实现
    */
-  protected abstract getOutputType(): 'file' | 'directory';
+  protected abstract getOutputType(): 'file' | 'directory' | 'merge-json';
 
   /**
    * 生成头部内容（文件元数据、标题、说明、目录等）

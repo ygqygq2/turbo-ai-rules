@@ -109,7 +109,7 @@ export class CustomAdapter extends BaseAdapter {
   /**
    * 获取输出类型
    */
-  protected getOutputType(): 'file' | 'directory' {
+  protected getOutputType(): 'file' | 'directory' | 'merge-json' {
     return this.config.outputType;
   }
 

@@ -173,6 +173,22 @@ export interface CustomAdapterConfig extends AdapterConfig {
 }
 
 /**
+ * 适配器综合体配置
+ */
+export interface AdapterSuiteConfig {
+  /** 综合体唯一标识 (kebab-case) */
+  id: string;
+  /** 综合体显示名称 */
+  name: string;
+  /** 综合体描述 */
+  description?: string;
+  /** 子适配器 ID 列表 */
+  adapterIds: string[];
+  /** 是否启用，默认 true */
+  enabled?: boolean;
+}
+
+/**
  * AI 工具适配器配置集合
  *
  * 支持预设适配器和自定义适配器：
@@ -247,6 +263,8 @@ export interface ExtensionConfig {
   storage: StorageConfig; /** 用户规则配置 */ /** 用户规则配置 */
   userRules: UserRulesConfig; /** AI 工具适配器配置 */
   adapters: AdaptersConfig;
+  /** 适配器综合体配置 */
+  adapterSuites: AdapterSuiteConfig[];
   /** 同步策略 */
   sync: SyncConfig;
   /** 解析器配置 */
@@ -301,6 +319,7 @@ export const DEFAULT_CONFIG: ExtensionConfig = {
       },
     ],
   },
+  adapterSuites: [],
   sync: {
     auto: true,
     interval: 60,

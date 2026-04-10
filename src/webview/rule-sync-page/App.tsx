@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { Icon } from '../components/Icon';
 import { CompactRuleSelector } from '../components/CompactRuleSelector';
 import { AdapterCard } from './AdapterCard';
+import { AdapterSuiteCard } from './AdapterSuiteCard';
 import { useRuleSyncPageStore } from './store';
 import { t } from '../utils/i18n';
 import { createWebviewRPC } from '../common/messaging';
@@ -17,6 +18,7 @@ export const App: React.FC = () => {
     sources,
     selectedPathsBySource,
     expandedNodes, // ✅ 添加展开状态
+    suites,
     adapters,
     selectedAdapters,
     searchTerm,
@@ -27,15 +29,20 @@ export const App: React.FC = () => {
     selectNode,
     updateSelectionFromExtension, // ✅ 新增：从扩展更新选择
     toggleAllAdapters,
+    toggleSuite,
     toggleAdapter,
     setSearchTerm,
     setKindFilter,
     sync,
     cancel,
     isAllAdaptersSelected,
+    isSuiteSelected,
+    isSuiteIndeterminate,
     getSelectedAssetCount,
     getSelectedAdaptersCount,
     getTotalAssetCount,
+    getStandaloneAdapters,
+    getSuiteAdapters,
     getAvailableKinds,
     getFilteredTreeNodes,
   } = useRuleSyncPageStore();
@@ -128,6 +135,7 @@ export const App: React.FC = () => {
   const selectedAssetCount = getSelectedAssetCount();
   const selectedAdaptersCount = getSelectedAdaptersCount();
   const totalAssetCount = getTotalAssetCount();
+  const standaloneAdapters = getStandaloneAdapters();
   // 只要选择了适配器就可以同步，0条资产表示清空（保留用户自定义规则）
   const canSync = selectedAdaptersCount > 0;
 
@@ -204,15 +212,51 @@ export const App: React.FC = () => {
             </div>
           </div>
           <div className="adapters-container">
-            {adapters.map((adapter) => (
-              <AdapterCard
-                key={adapter.id}
-                adapter={adapter}
-                isSelected={selectedAdapters.has(adapter.id)}
-                selectedAssetCount={selectedAssetCount}
-                onToggle={() => toggleAdapter(adapter.id)}
-              />
-            ))}
+            {suites.length > 0 && (
+              <div className="suite-section">
+                <div className="suite-section-title">{t('ruleSyncPage.adapterSuites')}</div>
+                {suites.map((suite) => (
+                  <AdapterSuiteCard
+                    key={suite.id}
+                    suite={suite}
+                    adapters={getSuiteAdapters(suite.id)}
+                    isSelected={isSuiteSelected(suite.id)}
+                    isIndeterminate={isSuiteIndeterminate(suite.id)}
+                    selectedAssetCount={selectedAssetCount}
+                    selectedAdapters={selectedAdapters}
+                    onToggleSuite={() => toggleSuite(suite.id)}
+                    onToggleAdapter={(adapterId) => toggleAdapter(adapterId)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {standaloneAdapters.length > 0 && (
+              <div className="suite-section">
+                <div className="suite-section-title">{t('ruleSyncPage.individualAdapters')}</div>
+                {standaloneAdapters.map((adapter) => (
+                  <AdapterCard
+                    key={adapter.id}
+                    adapter={adapter}
+                    isSelected={selectedAdapters.has(adapter.id)}
+                    selectedAssetCount={selectedAssetCount}
+                    onToggle={() => toggleAdapter(adapter.id)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {suites.length === 0 &&
+              standaloneAdapters.length === 0 &&
+              adapters.map((adapter) => (
+                <AdapterCard
+                  key={adapter.id}
+                  adapter={adapter}
+                  isSelected={selectedAdapters.has(adapter.id)}
+                  selectedAssetCount={selectedAssetCount}
+                  onToggle={() => toggleAdapter(adapter.id)}
+                />
+              ))}
           </div>
         </div>
       </div>

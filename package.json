@@ -635,6 +635,49 @@
           },
           "description": "%turboAiRules.adapters.custom.description%"
         },
+        "turbo-ai-rules.adapterSuites": {
+          "type": "array",
+          "default": [],
+          "scope": "resource",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "adapterIds"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9-]+$",
+                "description": "%turboAiRules.adapterSuites.items.properties.id.description%"
+              },
+              "name": {
+                "type": "string",
+                "description": "%turboAiRules.adapterSuites.items.properties.name.description%"
+              },
+              "description": {
+                "type": "string",
+                "description": "%turboAiRules.adapterSuites.items.properties.description.description%"
+              },
+              "enabled": {
+                "type": "boolean",
+                "default": true,
+                "description": "%turboAiRules.adapterSuites.items.properties.enabled.description%"
+              },
+              "adapterIds": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9-]+$"
+                },
+                "description": "%turboAiRules.adapterSuites.items.properties.adapterIds.description%"
+              }
+            }
+          },
+          "description": "%turboAiRules.adapterSuites.description%"
+        },
         "turbo-ai-rules.sync.auto": {
           "type": "boolean",
           "default": true,
