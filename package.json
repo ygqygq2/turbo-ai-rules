@@ -598,7 +598,8 @@
                 "type": "string",
                 "enum": [
                   "file",
-                  "directory"
+                  "directory",
+                  "merge-json"
                 ],
                 "description": "%turboAiRules.adapters.custom.items.properties.outputType.description%"
               },

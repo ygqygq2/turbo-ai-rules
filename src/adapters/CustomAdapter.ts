@@ -4,6 +4,7 @@
  */
 
 import * as path from 'path';
+import yaml from 'js-yaml';
 
 import type { CustomAdapterConfig } from '../types/config';
 import type { ParsedRule } from '../types/rules';
@@ -198,8 +199,82 @@ export class CustomAdapter extends BaseAdapter {
     // 1. 应用自定义适配器的预处理逻辑
     const filteredRules = this.applyCustomFilters(rules);
 
+    if (this.config.outputType === 'merge-json') {
+      return this.generateMergedJson(filteredRules);
+    }
+
     // 2. 调用父类方法处理统一的同步逻辑（加载用户规则、合并、排序、生成）
     return super.generate(filteredRules, allRules);
+  }
+
+  override validate(content: string): boolean {
+    if (this.config.outputType === 'merge-json') {
+      try {
+        JSON.parse(content);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    return super.validate(content);
+  }
+
+  private generateMergedJson(rules: ParsedRule[]): GeneratedConfig {
+    const merged = rules.reduce<Record<string, unknown>>((acc, rule) => {
+      if (!rule.rawContent?.trim()) {
+        return acc;
+      }
+
+      const ext = path.extname(rule.filePath).toLowerCase();
+      let parsed: unknown;
+
+      if (ext === '.json') {
+        parsed = JSON.parse(rule.rawContent);
+      } else if (ext === '.yaml' || ext === '.yml') {
+        parsed = yaml.load(rule.rawContent);
+      } else {
+        return acc;
+      }
+
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return acc;
+      }
+
+      return this.deepMerge(acc, parsed as Record<string, unknown>);
+    }, {});
+
+    return {
+      filePath: this.getFilePath(),
+      content: `${JSON.stringify(merged, null, 2)}\n`,
+      generatedAt: new Date(),
+      ruleCount: rules.length,
+    };
+  }
+
+  private deepMerge(
+    target: Record<string, unknown>,
+    source: Record<string, unknown>,
+  ): Record<string, unknown> {
+    const result: Record<string, unknown> = { ...target };
+
+    for (const [key, value] of Object.entries(source)) {
+      const existingValue = result[key];
+      if (this.isPlainObject(existingValue) && this.isPlainObject(value)) {
+        result[key] = this.deepMerge(
+          existingValue as Record<string, unknown>,
+          value as Record<string, unknown>,
+        );
+      } else {
+        result[key] = value;
+      }
+    }
+
+    return result;
+  }
+
+  private isPlainObject(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
   }
 
   /**

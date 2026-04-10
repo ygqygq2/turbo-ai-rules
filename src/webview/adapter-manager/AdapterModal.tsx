@@ -26,7 +26,7 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({
   const [id, setId] = useState(adapter.id || '');
   const [name, setName] = useState(adapter.name || '');
   const [outputPath, setOutputPath] = useState(adapter.outputPath || '');
-  const [format, setFormat] = useState<'single-file' | 'directory'>(
+  const [format, setFormat] = useState<'single-file' | 'directory' | 'merge-json'>(
     adapter.format || 'single-file',
   );
   const [isRuleType, setIsRuleType] = useState(adapter.isRuleType ?? false);
@@ -103,7 +103,7 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({
       if (!singleFileTemplate.trim()) {
         newErrors.singleFileTemplate = t('adapterManager.templateRequired');
       }
-    } else {
+    } else if (format === 'directory') {
       if (!directoryFilePattern.trim()) {
         newErrors.directoryFilePattern = t('adapterManager.filePatternRequired');
       }
@@ -151,12 +151,14 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({
       isNew, // 传递 isNew 标志给 Provider
       ...(format === 'single-file'
         ? { singleFileTemplate }
-        : {
-            directoryStructure: {
-              filePattern: directoryFilePattern,
-              pathTemplate: directoryPathTemplate,
-            },
-          }),
+        : format === 'directory'
+          ? {
+              directoryStructure: {
+                filePattern: directoryFilePattern,
+                pathTemplate: directoryPathTemplate,
+              },
+            }
+          : {}),
     };
 
     onSave(newAdapter);
@@ -305,6 +307,16 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({
                 />
                 <span className="radio-label">{t('adapterManager.directory')}</span>
                 <span className="radio-description">{t('adapterManager.directoryDesc')}</span>
+              </label>
+              <label className="radio-option">
+                <input
+                  type="radio"
+                  name="format"
+                  checked={format === 'merge-json'}
+                  onChange={() => setFormat('merge-json')}
+                />
+                <span className="radio-label">{t('adapterManager.mergeJson')}</span>
+                <span className="radio-description">{t('adapterManager.mergeJsonDesc')}</span>
               </label>
             </div>
           </div>
@@ -549,6 +561,12 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({
                 </div>
               )}
             </>
+          )}
+
+          {format === 'merge-json' && (
+            <div className="form-group">
+              <span className="hint">{t('adapterManager.mergeJsonHint')}</span>
+            </div>
           )}
 
           {/* 提示框 */}

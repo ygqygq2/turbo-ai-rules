@@ -311,7 +311,12 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
       id: adapter.id,
       name: adapter.name,
       outputPath: adapter.outputPath,
-      format: adapter.outputType === 'directory' ? 'directory' : 'single-file',
+      format:
+        adapter.outputType === 'directory'
+          ? 'directory'
+          : adapter.outputType === 'merge-json'
+            ? 'merge-json'
+            : 'single-file',
       isRuleType: adapter.isRuleType ?? true, // 默认为规则类型
       enabled: adapter.enabled ?? true, // 默认启用
       fileExtensions: adapter.fileExtensions,
@@ -379,7 +384,12 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
           name: adapter.name,
           enabled: adapter.enabled ?? true,
           outputPath: adapter.outputPath,
-          outputType: adapter.format === 'directory' ? 'directory' : 'file',
+          outputType:
+            adapter.format === 'directory'
+              ? 'directory'
+              : adapter.format === 'merge-json'
+                ? 'merge-json'
+                : 'file',
           fileExtensions:
             adapter.fileExtensions || adapter.directoryStructure?.filePattern?.split(', ') || [],
           organizeBySource: adapter.organizeBySource ?? false,
@@ -450,7 +460,12 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         name: adapterData.name,
         enabled: adapterData.enabled ?? true,
         outputPath: adapterData.outputPath,
-        outputType: adapterData.format === 'directory' ? 'directory' : 'file',
+        outputType:
+          adapterData.format === 'directory'
+            ? 'directory'
+            : adapterData.format === 'merge-json'
+              ? 'merge-json'
+              : 'file',
         fileExtensions: adapterData.fileExtensions || [],
         organizeBySource: adapterData.organizeBySource ?? true,
         generateIndex: adapterData.generateIndex ?? true,

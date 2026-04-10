@@ -163,7 +163,7 @@ export const RULE_FILE_EXTENSIONS = ['.md', '.mdc'];
 /**
  * 支持扫描的所有资产文件扩展名（含结构化格式）
  */
-export const ASSET_FILE_EXTENSIONS = ['.md', '.mdc', '.json', '.yaml', '.yml'];
+export const ASSET_FILE_EXTENSIONS = ['.md', '.mdc', '.json', '.yaml', '.yml', '.sh'];
 
 /**
  * .gitignore 标记

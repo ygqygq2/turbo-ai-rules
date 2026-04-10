@@ -51,7 +51,7 @@ export interface CustomAdapter {
   id: string;
   name: string;
   outputPath: string;
-  format: 'single-file' | 'directory';
+  format: 'single-file' | 'directory' | 'merge-json';
   singleFileTemplate?: string;
   directoryStructure?: {
     filePattern: string;

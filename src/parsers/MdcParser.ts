@@ -5,6 +5,7 @@
 
 import * as fs from 'fs-extra';
 import matter from 'gray-matter';
+import yaml from 'js-yaml';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
@@ -12,6 +13,7 @@ import { AssetClassifier } from './AssetClassifier';
 import { ErrorCodes, ParseError } from '../types/errors';
 import type { ParsedRule, RuleMetadata } from '../types/rules';
 import {
+  ASSET_FILE_EXTENSIONS,
   CONFIG_KEYS,
   MAX_PARSE_DEPTH,
   MAX_PARSE_FILES,
@@ -224,6 +226,68 @@ export class MdcParser {
   }
 
   /**
+   * 解析结构化或纯文本资产文件（json/yaml/sh 等）
+   * @param filePath 文件路径
+   * @param sourceId 规则源 ID
+   */
+  public async parseAssetFile(filePath: string, sourceId: string): Promise<ParsedRule> {
+    const content = await safeReadFile(filePath);
+    const ext = path.extname(filePath).toLowerCase();
+
+    let metadata: RuleMetadata = {};
+    if (ext === '.json') {
+      const parsed = JSON.parse(content) as Record<string, unknown>;
+      metadata = this.extractMetadataFromStructuredAsset(parsed);
+    } else if (ext === '.yaml' || ext === '.yml') {
+      const parsed = yaml.load(content);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        metadata = this.extractMetadataFromStructuredAsset(parsed as Record<string, unknown>);
+      }
+    }
+
+    const id = metadata.id || this.extractIdFromFilename(filePath);
+    const title = metadata.title || this.extractTitleFromContent(content, filePath);
+
+    return {
+      id: String(id),
+      title,
+      content: content.trim(),
+      rawContent: content,
+      metadata: {
+        ...metadata,
+        id: String(id),
+        title,
+      },
+      sourceId,
+      filePath,
+      kind: AssetClassifier.classifyFile(filePath, metadata as Record<string, unknown>),
+      format: AssetClassifier.getFormat(filePath),
+    };
+  }
+
+  private extractMetadataFromStructuredAsset(data: Record<string, unknown>): RuleMetadata {
+    const title =
+      (typeof data.title === 'string' && data.title) ||
+      (typeof data.name === 'string' && data.name) ||
+      undefined;
+
+    return {
+      ...(typeof data.id === 'string' ? { id: data.id } : {}),
+      ...(title ? { title } : {}),
+      ...(typeof data.description === 'string' ? { description: data.description } : {}),
+      ...(Array.isArray(data.tags)
+        ? { tags: data.tags.filter((tag): tag is string => typeof tag === 'string') }
+        : {}),
+      ...(typeof data.version === 'string' ? { version: data.version } : {}),
+      ...(typeof data.priority === 'string' && ['low', 'medium', 'high'].includes(data.priority)
+        ? { priority: data.priority as RuleMetadata['priority'] }
+        : {}),
+      ...(typeof data.author === 'string' ? { author: data.author } : {}),
+      ...(typeof data.applyTo === 'string' ? { applyTo: data.applyTo } : {}),
+    };
+  }
+
+  /**
    * 从文件名提取 ID
    * @param filePath 文件路径
    * @returns 规则 ID
@@ -279,7 +343,7 @@ export class MdcParser {
       recursive: options?.recursive ?? true,
       maxDepth: options?.maxDepth ?? MAX_PARSE_DEPTH,
       maxFiles: options?.maxFiles ?? MAX_PARSE_FILES,
-      extensions: options?.extensions ?? RULE_FILE_EXTENSIONS,
+      extensions: options?.extensions ?? ASSET_FILE_EXTENSIONS,
     };
 
     try {
@@ -500,14 +564,17 @@ export class MdcParser {
     sourceDirPath?: string,
   ): Promise<void> {
     try {
-      const rule = await this.parseMdcFile(filePath, sourceId);
+      const ext = path.extname(filePath).toLowerCase();
+      const rule = RULE_FILE_EXTENSIONS.includes(ext)
+        ? await this.parseMdcFile(filePath, sourceId)
+        : await this.parseAssetFile(filePath, sourceId);
       if (sourceDirPath) {
         rule.relativePath = path.relative(sourceDirPath, filePath);
       }
       rules.push(rule);
       state.filesProcessed++;
     } catch (error) {
-      Logger.warn('Failed to parse MDC file, skipping', {
+      Logger.warn('Failed to parse asset file, skipping', {
         filePath,
         error: (error as Error).message,
       });

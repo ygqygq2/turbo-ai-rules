@@ -1,3 +1,6 @@
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MdcParser } from '../../../parsers/MdcParser';
@@ -18,9 +21,11 @@ vi.mock('vscode', () => ({
 
 describe('MdcParser', () => {
   let parser: MdcParser;
+  let tempDir: string;
 
   beforeEach(() => {
     parser = new MdcParser();
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'turbo-ai-rules-parser-'));
     vi.clearAllMocks();
   });
 
@@ -69,6 +74,46 @@ Simple content.
       expect(extractId('/path/to/clean-code.md')).toBe('clean-code');
       expect(extractId('rust-best-practices.md')).toBe('rust-best-practices');
       expect(extractId('/nested/folder/my-rule.md')).toBe('my-rule');
+    });
+  });
+
+  describe('parseAssetFile', () => {
+    it('should parse json asset files with structured metadata', async () => {
+      const filePath = path.join(tempDir, 'server.json');
+      fs.writeFileSync(
+        filePath,
+        JSON.stringify(
+          {
+            name: 'Context7 Server',
+            description: 'MCP server config fragment',
+            mcpServers: {
+              context7: {
+                command: 'npx',
+              },
+            },
+          },
+          null,
+          2,
+        ),
+      );
+
+      const asset = await parser.parseAssetFile(filePath, 'test-source');
+
+      expect(asset.id).toBe('server');
+      expect(asset.title).toBe('Context7 Server');
+      expect(asset.format).toBe('json');
+      expect(asset.content).toContain('mcpServers');
+    });
+
+    it('should parse shell script assets as text format', async () => {
+      const filePath = path.join(tempDir, 'lint-on-save.sh');
+      fs.writeFileSync(filePath, '#!/usr/bin/env bash\necho lint\n');
+
+      const asset = await parser.parseAssetFile(filePath, 'test-source');
+
+      expect(asset.id).toBe('lint-on-save');
+      expect(asset.format).toBe('text');
+      expect(asset.content).toContain('echo lint');
     });
   });
 });

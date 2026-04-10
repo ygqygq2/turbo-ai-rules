@@ -94,6 +94,8 @@ export class AssetClassifier {
       case '.yaml':
       case '.yml':
         return 'yaml';
+      case '.sh':
+        return 'text';
       default:
         return 'markdown';
     }

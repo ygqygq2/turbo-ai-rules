@@ -3,6 +3,7 @@ import * as path from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AIToolAdapter, GeneratedConfig } from '../../../adapters/AIToolAdapter';
+import { CustomAdapter } from '../../../adapters/CustomAdapter';
 import { FileGenerator } from '../../../services/FileGenerator';
 import { GenerateError } from '../../../types/errors';
 import type { ParsedRule } from '../../../types/rules';
@@ -118,5 +119,63 @@ describe('FileGenerator', () => {
       custom: [],
     });
     await expect(gen2.generateAll([], tempDir, 'priority')).rejects.toThrow(GenerateError);
+  });
+
+  it('should write merged json output for merge-json adapters', async () => {
+    generator.initializeAdapters({
+      cursor: { enabled: false },
+      copilot: { enabled: false },
+      continue: { enabled: false },
+      custom: [
+        {
+          id: 'mcp-json',
+          name: 'MCP JSON',
+          enabled: true,
+          outputPath: '.vscode/mcp.json',
+          outputType: 'merge-json',
+          enableUserRules: false,
+          fileExtensions: ['.json'],
+        },
+      ],
+    });
+
+    const rules: ParsedRule[] = [
+      {
+        id: 'server-a',
+        title: 'Server A',
+        content: '{"mcpServers":{"a":{"command":"npx"}}}',
+        rawContent: '{"mcpServers":{"a":{"command":"npx"}}}',
+        sourceId: 's',
+        filePath: '/tmp/a.json',
+        metadata: {},
+        kind: 'mcp',
+        format: 'json',
+        relativePath: 'a.json',
+      },
+      {
+        id: 'server-b',
+        title: 'Server B',
+        content: '{"mcpServers":{"b":{"command":"uvx"}}}',
+        rawContent: '{"mcpServers":{"b":{"command":"uvx"}}}',
+        sourceId: 's',
+        filePath: '/tmp/b.json',
+        metadata: {},
+        kind: 'mcp',
+        format: 'json',
+        relativePath: 'b.json',
+      },
+    ];
+
+    const result = await generator.generateAll(rules, tempDir, 'priority');
+    const outputPath = path.join(tempDir, '.vscode', 'mcp.json');
+
+    expect(result.failures).toHaveLength(0);
+    expect(fs.existsSync(outputPath)).toBe(true);
+    expect(JSON.parse(fs.readFileSync(outputPath, 'utf-8'))).toEqual({
+      mcpServers: {
+        a: { command: 'npx' },
+        b: { command: 'uvx' },
+      },
+    });
   });
 });

@@ -125,7 +125,7 @@ export interface AdapterConfig {
 /**
  * 输出类型
  */
-export type OutputType = 'file' | 'directory';
+export type OutputType = 'file' | 'directory' | 'merge-json';
 
 /**
  * 自定义适配器配置
@@ -137,7 +137,7 @@ export interface CustomAdapterConfig extends AdapterConfig {
   name: string;
   /** 输出目标路径(相对于工作区根目录) */
   outputPath: string;
-  /** 输出类型: file=单个文件, directory=目录结构 */
+  /** 输出类型: file=单个文件, directory=目录结构, merge-json=合并结构化 JSON 资产 */
   outputType: OutputType;
   /** 文件过滤规则(文件后缀,如 ['.md', '.mdc']), 不配置或空数组则不过滤(同步所有文件) */
   fileExtensions?: string[];

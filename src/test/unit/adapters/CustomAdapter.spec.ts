@@ -204,4 +204,54 @@ describe('CustomAdapter', () => {
       expect(adapter['getDirectoryOutputPath']()).toBe('.ai/custom-rules');
     });
   });
+
+  describe('merge-json output', () => {
+    it('should deep merge selected structured assets into one json file', async () => {
+      const adapter = new CustomAdapter({
+        id: 'mcp-json',
+        name: 'MCP JSON',
+        enabled: true,
+        outputPath: '.vscode/mcp.json',
+        outputType: 'merge-json',
+        enableUserRules: false,
+        fileExtensions: ['.json'],
+      });
+
+      const result = await adapter.generate([
+        {
+          id: 'server-a',
+          title: 'Server A',
+          content: '{"mcpServers":{"a":{"command":"npx"}}}',
+          rawContent: '{"mcpServers":{"a":{"command":"npx"}}}',
+          sourceId: 'demo',
+          metadata: {},
+          filePath: '/tmp/a.json',
+          format: 'json',
+          kind: 'mcp',
+        },
+        {
+          id: 'server-b',
+          title: 'Server B',
+          content: '{"mcpServers":{"b":{"command":"uvx"}},"env":{"MODE":"dev"}}',
+          rawContent: '{"mcpServers":{"b":{"command":"uvx"}},"env":{"MODE":"dev"}}',
+          sourceId: 'demo',
+          metadata: {},
+          filePath: '/tmp/b.json',
+          format: 'json',
+          kind: 'mcp',
+        },
+      ] as any);
+
+      expect(result.filePath).toBe('.vscode/mcp.json');
+      expect(JSON.parse(result.content)).toEqual({
+        mcpServers: {
+          a: { command: 'npx' },
+          b: { command: 'uvx' },
+        },
+        env: {
+          MODE: 'dev',
+        },
+      });
+    });
+  });
 });

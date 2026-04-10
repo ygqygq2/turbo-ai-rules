@@ -28,7 +28,7 @@ export type AssetKind =
 /**
  * 资产的文件格式
  */
-export type AssetFormat = 'markdown' | 'mdc' | 'json' | 'yaml' | 'directory';
+export type AssetFormat = 'markdown' | 'mdc' | 'json' | 'yaml' | 'text' | 'directory';
 
 /**
  * 解析后的通用 AI 资产（v3 核心类型）

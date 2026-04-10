@@ -12,7 +12,7 @@ export interface AdapterCardProps {
   /** 是否为规则类型适配器 */
   isRuleType: boolean;
   /** 输出格式（自定义适配器） */
-  format?: 'single-file' | 'directory';
+  format?: 'single-file' | 'directory' | 'merge-json';
   /** 文件过滤扩展名 */
   fileExtensions?: string[];
   /** 是否按源组织子目录 */
@@ -111,7 +111,9 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
               <span className="value">
                 {format === 'single-file'
                   ? t('adapterManager.singleFile')
-                  : t('adapterManager.directory')}
+                  : format === 'merge-json'
+                    ? t('adapterManager.mergeJson')
+                    : t('adapterManager.directory')}
               </span>
             </div>
             {fileExtensions && fileExtensions.length > 0 && (
