@@ -475,6 +475,20 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         adapterIds: ['copilot', 'copilot-skills'],
         enabled: true,
       },
+      {
+        id: 'claude-core',
+        name: t('ruleSyncPage.suite.claudeCore.name'),
+        description: t('ruleSyncPage.suite.claudeCore.description'),
+        adapterIds: ['cline', 'roo-cline', 'aider', 'bolt'],
+        enabled: true,
+      },
+      {
+        id: 'agentic-core',
+        name: t('ruleSyncPage.suite.agenticCore.name'),
+        description: t('ruleSyncPage.suite.agenticCore.description'),
+        adapterIds: ['continue', 'cline', 'roo-cline', 'aider'],
+        enabled: true,
+      },
     ];
   }
 

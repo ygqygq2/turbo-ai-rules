@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from '../components/Icon';
+import { t } from '../utils/i18n';
 
 interface AdapterInfo {
   id: string;
@@ -71,6 +72,9 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
           <Icon icon={iconName} size={16} />
         </span>
         <span className="adapter-card-name">{adapter.name}</span>
+        {!adapter.enabled && (
+          <span className="adapter-card-status">{t('ruleSyncPage.adapterDisabled')}</span>
+        )}
       </div>
       <div className="adapter-card-details">
         <div className="adapter-card-detail-item">

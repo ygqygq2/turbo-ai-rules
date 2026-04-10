@@ -222,7 +222,6 @@ export const App: React.FC = () => {
                     adapters={getSuiteAdapters(suite.id)}
                     isSelected={isSuiteSelected(suite.id)}
                     isIndeterminate={isSuiteIndeterminate(suite.id)}
-                    selectedAssetCount={selectedAssetCount}
                     selectedAdapters={selectedAdapters}
                     onToggleSuite={() => toggleSuite(suite.id)}
                     onToggleAdapter={(adapterId) => toggleAdapter(adapterId)}

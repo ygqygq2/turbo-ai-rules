@@ -25,7 +25,6 @@ interface AdapterSuiteCardProps {
   adapters: AdapterInfo[];
   isSelected: boolean;
   isIndeterminate: boolean;
-  selectedAssetCount: number;
   selectedAdapters: Set<string>;
   onToggleSuite: () => void;
   onToggleAdapter: (adapterId: string) => void;
@@ -36,7 +35,6 @@ export const AdapterSuiteCard: React.FC<AdapterSuiteCardProps> = ({
   adapters,
   isSelected,
   isIndeterminate,
-  selectedAssetCount,
   selectedAdapters,
   onToggleSuite,
   onToggleAdapter,
@@ -65,19 +63,6 @@ export const AdapterSuiteCard: React.FC<AdapterSuiteCardProps> = ({
         </div>
       </div>
 
-      <div className="adapter-suite-summary">
-        <span>
-          <Icon icon="extensions" size={12} />{' '}
-          {t('ruleSyncPage.suite.defaultSelectChildren', [String(adapters.length)])}
-        </span>
-        <span>
-          <Icon icon="check" size={12} />{' '}
-          {t('ruleSyncPage.suite.syncedAssets', [
-            String(isSelected || isIndeterminate ? selectedAssetCount : 0),
-          ])}
-        </span>
-      </div>
-
       <div className="adapter-suite-children">
         {adapters.map((adapter) => (
           <label
@@ -93,8 +78,15 @@ export const AdapterSuiteCard: React.FC<AdapterSuiteCardProps> = ({
               onChange={() => onToggleAdapter(adapter.id)}
             />
             <span className="adapter-suite-child-name">{adapter.name}</span>
-            <span className="adapter-suite-child-path">
-              {adapter.outputPath || t('ruleSyncPage.suite.notConfigured')}
+            <span className="adapter-suite-child-path-row">
+              <span className="adapter-suite-child-path">
+                {adapter.outputPath || t('ruleSyncPage.suite.notConfigured')}
+              </span>
+              {!adapter.enabled && (
+                <span className="adapter-suite-child-status">
+                  {t('ruleSyncPage.adapterDisabled')}
+                </span>
+              )}
             </span>
           </label>
         ))}

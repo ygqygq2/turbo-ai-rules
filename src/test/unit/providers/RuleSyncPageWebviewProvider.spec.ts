@@ -196,11 +196,17 @@ describe('RuleSyncPageWebviewProvider', () => {
 
       const cursorSuite = data.suites.find((suite: any) => suite.id === 'cursor-core');
       const copilotSuite = data.suites.find((suite: any) => suite.id === 'copilot-core');
+      const claudeSuite = data.suites.find((suite: any) => suite.id === 'claude-core');
+      const agenticSuite = data.suites.find((suite: any) => suite.id === 'agentic-core');
 
       expect(cursorSuite).toBeDefined();
       expect(cursorSuite.adapterIds).toEqual(['cursor', 'cursor-skills']);
       expect(copilotSuite).toBeDefined();
       expect(copilotSuite.adapterIds).toEqual(['copilot', 'copilot-skills']);
+      expect(claudeSuite).toBeDefined();
+      expect(claudeSuite.adapterIds).toEqual(['cline', 'roo-cline', 'aider', 'bolt']);
+      expect(agenticSuite).toBeDefined();
+      expect(agenticSuite.adapterIds).toEqual(['continue', 'cline', 'roo-cline', 'aider']);
     });
 
     it('应该合并配置中的自定义综合体', async () => {
