@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 
 import { PRESET_ADAPTERS } from '../adapters';
 import { ConfigManager } from '../services/ConfigManager';
-import type { CustomAdapterConfig } from '../types/config';
+import type { CustomAdapterConfig, OutputType } from '../types/config';
 import { EXTENSION_ICON_PATH } from '../utils/constants';
 import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
@@ -69,6 +69,97 @@ interface CustomAdapterData {
 interface AdapterData {
   presetAdapters: PresetAdapterData[];
   customAdapters: CustomAdapterData[];
+}
+
+function toCustomAdapterFormat(outputType: OutputType): CustomAdapterData['format'] {
+  switch (outputType) {
+    case 'directory':
+      return 'directory';
+    case 'merge-json':
+      return 'merge-json';
+    case 'file':
+    default:
+      return 'single-file';
+  }
+}
+
+function toCustomAdapterOutputType(format: CustomAdapterData['format']): OutputType {
+  switch (format) {
+    case 'directory':
+      return 'directory';
+    case 'merge-json':
+      return 'merge-json';
+    case 'single-file':
+    default:
+      return 'file';
+  }
+}
+
+function getCustomAdapterDataByOutputType(
+  adapter: CustomAdapterConfig,
+): Pick<CustomAdapterData, 'singleFileTemplate' | 'directoryStructure'> {
+  switch (adapter.outputType) {
+    case 'file':
+      return {
+        singleFileTemplate: adapter.fileTemplate,
+      };
+    case 'directory':
+      return {
+        directoryStructure: {
+          filePattern: adapter.fileExtensions?.join(', ') || '*.md',
+          pathTemplate: adapter.indexFileName || 'index.md',
+        },
+      };
+    case 'merge-json':
+    default:
+      return {};
+  }
+}
+
+function getCustomAdapterConfigByFormat(
+  adapter: CustomAdapterData,
+): Pick<
+  CustomAdapterConfig,
+  | 'outputType'
+  | 'fileExtensions'
+  | 'organizeBySource'
+  | 'generateIndex'
+  | 'indexFileName'
+  | 'fileTemplate'
+  | 'sortBy'
+  | 'sortOrder'
+> {
+  switch (adapter.format) {
+    case 'directory':
+      return {
+        outputType: 'directory',
+        fileExtensions:
+          adapter.fileExtensions || adapter.directoryStructure?.filePattern?.split(', ') || [],
+        organizeBySource: adapter.organizeBySource ?? false,
+        generateIndex: adapter.generateIndex ?? true,
+        indexFileName: adapter.directoryStructure?.pathTemplate || 'index.md',
+      };
+    case 'merge-json':
+      return {
+        outputType: 'merge-json',
+        fileExtensions: adapter.fileExtensions || [],
+        organizeBySource: adapter.organizeBySource ?? false,
+        generateIndex: false,
+        indexFileName: adapter.indexFileName,
+      };
+    case 'single-file':
+    default:
+      return {
+        outputType: 'file',
+        fileExtensions: adapter.fileExtensions || [],
+        organizeBySource: adapter.organizeBySource ?? false,
+        generateIndex: adapter.generateIndex ?? true,
+        indexFileName: adapter.indexFileName || 'index.md',
+        fileTemplate: adapter.singleFileTemplate,
+        sortBy: adapter.sortBy,
+        sortOrder: adapter.sortOrder,
+      };
+  }
 }
 
 /**
@@ -311,12 +402,7 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
       id: adapter.id,
       name: adapter.name,
       outputPath: adapter.outputPath,
-      format:
-        adapter.outputType === 'directory'
-          ? 'directory'
-          : adapter.outputType === 'merge-json'
-            ? 'merge-json'
-            : 'single-file',
+      format: toCustomAdapterFormat(adapter.outputType),
       isRuleType: adapter.isRuleType ?? true, // 默认为规则类型
       enabled: adapter.enabled ?? true, // 默认启用
       fileExtensions: adapter.fileExtensions,
@@ -328,14 +414,7 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
       useOriginalFilename: adapter.useOriginalFilename,
       sortBy: adapter.sortBy,
       sortOrder: adapter.sortOrder,
-      ...(adapter.outputType === 'file'
-        ? { singleFileTemplate: adapter.fileTemplate }
-        : {
-            directoryStructure: {
-              filePattern: adapter.fileExtensions?.join(', ') || '*.md',
-              pathTemplate: adapter.indexFileName || 'index.md',
-            },
-          }),
+      ...getCustomAdapterDataByOutputType(adapter),
     }));
 
     return {
@@ -384,21 +463,8 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
           name: adapter.name,
           enabled: adapter.enabled ?? true,
           outputPath: adapter.outputPath,
-          outputType:
-            adapter.format === 'directory'
-              ? 'directory'
-              : adapter.format === 'merge-json'
-                ? 'merge-json'
-                : 'file',
-          fileExtensions:
-            adapter.fileExtensions || adapter.directoryStructure?.filePattern?.split(', ') || [],
-          organizeBySource: adapter.organizeBySource ?? false,
-          generateIndex: true,
-          indexFileName: adapter.directoryStructure?.pathTemplate || 'index.md',
           isRuleType: adapter.isRuleType,
-          fileTemplate: adapter.singleFileTemplate,
-          sortBy: adapter.format === 'single-file' ? adapter.sortBy : undefined,
-          sortOrder: adapter.format === 'single-file' ? adapter.sortOrder : undefined,
+          ...getCustomAdapterConfigByFormat(adapter),
         }));
         await this.configManager.updateCustomAdapters(customAdapters);
       }
@@ -460,23 +526,11 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         name: adapterData.name,
         enabled: adapterData.enabled ?? true,
         outputPath: adapterData.outputPath,
-        outputType:
-          adapterData.format === 'directory'
-            ? 'directory'
-            : adapterData.format === 'merge-json'
-              ? 'merge-json'
-              : 'file',
-        fileExtensions: adapterData.fileExtensions || [],
-        organizeBySource: adapterData.organizeBySource ?? true,
-        generateIndex: adapterData.generateIndex ?? true,
-        indexPerSource: adapterData.indexPerSource,
-        indexFileName: adapterData.indexFileName || 'index.md',
         preserveDirectoryStructure: adapterData.preserveDirectoryStructure,
         useOriginalFilename: adapterData.useOriginalFilename,
         isRuleType: adapterData.isRuleType,
-        fileTemplate: adapterData.singleFileTemplate,
-        sortBy: adapterData.format === 'single-file' ? adapterData.sortBy : undefined,
-        sortOrder: adapterData.format === 'single-file' ? adapterData.sortOrder : undefined,
+        indexPerSource: adapterData.indexPerSource,
+        ...getCustomAdapterConfigByFormat(adapterData),
       };
 
       // 根据 isNew 标志决定是新增还是更新
