@@ -85,6 +85,11 @@ export const TreeNode: React.FC<TreeNodeProps> = ({
           {node.name}
         </span>
 
+        {/* 资产类型徽章（文件节点，排除默认 rule 类型） */}
+        {!isDirectory && node.kind && node.kind !== 'rule' && node.kind !== 'unknown' && (
+          <span className={`tree-node-kind-badge tree-node-kind-${node.kind}`}>{node.kind}</span>
+        )}
+
         {/* 规则数量（文件节点） */}
         {!isDirectory && node.ruleCount && node.ruleCount > 0 && (
           <span className="tree-node-count">({node.ruleCount})</span>

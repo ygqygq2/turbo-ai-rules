@@ -15,6 +15,7 @@
 - **[21-adapter-design.md](./21-adapter-design.md)** - 适配器架构和扩展机制
 - **[22-config-sync.md](./22-config-sync.md)** - 配置管理和同步策略
 - **[23-custom-adapters-design.md](./23-custom-adapters-design.md)** - 自定义适配器设计
+- **[24-asset-suite-architecture.md](./24-asset-suite-architecture.md)** - 资产化与适配器综合体架构设计
 - **[30-ui-design-overview.md](./30-ui-design-overview.md)** - UI 设计概览(包含复选框功能)
 - **[31-ui-design.md](./31-ui-design.md)** - UI 设计详细方案
 - **[32-ui-development-process.md](./32-ui-development-process.md)** - UI 开发流程

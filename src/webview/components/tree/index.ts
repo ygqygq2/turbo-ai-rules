@@ -10,6 +10,8 @@ export {
   getAllFilePaths,
   getDirectoryFilePaths,
   toggleNode,
+  collectKinds,
+  filterTreeByKind,
   type TreeNode as TreeNodeType,
 } from './tree-utils';
 export { TreeNode } from './TreeNode';

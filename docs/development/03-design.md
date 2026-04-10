@@ -16,12 +16,17 @@
 - **[22-config-sync.md](./22-config-sync.md)** - 配置管理和同步策略
 - **[12-parser-validator.md](./12-parser-validator.md)** - 解析验证和错误处理
 - **[10-data-model.md](./10-data-model.md)** - 数据结构和类型定义
+- **[24-asset-suite-architecture.md](./24-asset-suite-architecture.md)** - v3.0.0 资产化与适配器综合体架构设计
 
 ---
 
 ## 产品定位
 
-**Turbo AI Rules** 是一个 VSCode 扩展，用于从外部 Git 仓库管理 AI 编码规则，并自动生成多个 AI 工具的配置文件。
+**Turbo AI Rules** 是一个 VSCode 扩展，用于从外部 Git 仓库同步 AI 资产（rules、instructions、skills、agents、prompts、commands、hooks、mcp 等），并将其安装到工作区各 AI 工具的指定位置。
+
+> 对应产品定位：**AI Asset Sync / AI Asset Installer**
+>
+> 详细架构见 [24-asset-suite-architecture.md](./24-asset-suite-architecture.md)。
 
 ### 核心价值
 
@@ -84,6 +89,8 @@
 ## 架构概览
 
 详细架构请参见 [20-architecture.md](./20-architecture.md)
+
+架构分四层：`Asset → Adapter → Adapter Suite → Sync Plan`，详见 [24-asset-suite-architecture.md](./24-asset-suite-architecture.md)。
 
 ---
 

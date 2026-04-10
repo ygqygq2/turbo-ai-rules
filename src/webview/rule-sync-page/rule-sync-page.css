@@ -72,12 +72,18 @@
 /* Panel Header */
 .panel-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   padding: var(--spacing-sm) var(--spacing-md);
   border-bottom: 1px solid var(--vscode-editorWidget-border);
   background: var(--vscode-editorWidget-background);
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
+}
+
+.right-panel .panel-header {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .panel-title {
@@ -106,6 +112,48 @@
   outline: none;
   border-color: var(--vscode-focusBorder);
 }
+
+/* Kind filter tabs */
+.kind-filter-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 4px 0 2px;
+  width: 100%;
+}
+
+.kind-filter-tab {
+  padding: 2px 8px;
+  border: 1px solid var(--vscode-button-secondaryBackground, var(--vscode-editorWidget-border));
+  border-radius: 10px;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: background 0.1s, color 0.1s;
+}
+
+.kind-filter-tab:hover {
+  background: var(--vscode-list-hoverBackground);
+  color: var(--vscode-foreground);
+}
+
+.kind-filter-tab.active {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border-color: var(--vscode-button-background);
+}
+
+.kind-filter-tab-skill.active  { background: #2d6a4f; color: #d8f3dc; border-color: #2d6a4f; }
+.kind-filter-tab-agent.active  { background: #1d3557; color: #a8dadc; border-color: #1d3557; }
+.kind-filter-tab-prompt.active { background: #4a1942; color: #f4acb7; border-color: #4a1942; }
+.kind-filter-tab-instruction.active { background: #7b2d00; color: #ffd6a5; border-color: #7b2d00; }
+.kind-filter-tab-command.active { background: #3d3d3d; color: #eeeeee; border-color: #3d3d3d; }
+.kind-filter-tab-hook.active   { background: #1b2a49; color: #caf0f8; border-color: #1b2a49; }
+.kind-filter-tab-mcp.active    { background: #3a0ca3; color: #e2cfff; border-color: #3a0ca3; }
 
 /* Rules Tree Container */
 .rules-tree-container {

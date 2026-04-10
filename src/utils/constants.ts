@@ -161,6 +161,11 @@ export const MAX_PARSE_FILES = 1000;
 export const RULE_FILE_EXTENSIONS = ['.md', '.mdc'];
 
 /**
+ * 支持扫描的所有资产文件扩展名（含结构化格式）
+ */
+export const ASSET_FILE_EXTENSIONS = ['.md', '.mdc', '.json', '.yaml', '.yml'];
+
+/**
  * .gitignore 标记
  */
 export const GITIGNORE_MARKER = '# Turbo AI Rules - Auto-generated files';

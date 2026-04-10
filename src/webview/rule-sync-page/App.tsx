@@ -15,12 +15,12 @@ import './rule-sync-page.css';
 export const App: React.FC = () => {
   const {
     sources,
-    treeNodesBySource,
     selectedPathsBySource,
     expandedNodes, // ✅ 添加展开状态
     adapters,
     selectedAdapters,
     searchTerm,
+    kindFilter,
     syncing,
     setInitialData,
     toggleTreeNode,
@@ -29,12 +29,15 @@ export const App: React.FC = () => {
     toggleAllAdapters,
     toggleAdapter,
     setSearchTerm,
+    setKindFilter,
     sync,
     cancel,
     isAllAdaptersSelected,
-    getSelectedRulesCount,
+    getSelectedAssetCount,
     getSelectedAdaptersCount,
-    getTotalRulesCount,
+    getTotalAssetCount,
+    getAvailableKinds,
+    getFilteredTreeNodes,
   } = useRuleSyncPageStore();
 
   const rpc = useMemo(() => createWebviewRPC(), []);
@@ -101,7 +104,7 @@ export const App: React.FC = () => {
     }
 
     return sources.map((source) => {
-      const tree = treeNodesBySource[source.id] || [];
+      const tree = getFilteredTreeNodes(source.id);
       const selectedPaths = selectedPathsBySource[source.id] || [];
       const isExpanded = expandedNodes.has(source.id);
 
@@ -120,10 +123,12 @@ export const App: React.FC = () => {
     });
   };
 
-  const selectedRulesCount = getSelectedRulesCount();
+  const availableKinds = getAvailableKinds();
+
+  const selectedAssetCount = getSelectedAssetCount();
   const selectedAdaptersCount = getSelectedAdaptersCount();
-  const totalRulesCount = getTotalRulesCount();
-  // 只要选择了适配器就可以同步，0条规则表示清空（保留用户自定义规则）
+  const totalAssetCount = getTotalAssetCount();
+  // 只要选择了适配器就可以同步，0条资产表示清空（保留用户自定义规则）
   const canSync = selectedAdaptersCount > 0;
 
   return (
@@ -136,11 +141,11 @@ export const App: React.FC = () => {
         </div>
         <div className="header-stats">
           <span>
-            <Icon icon="file" /> {t('ruleSyncPage.totalRules')}: <strong>{totalRulesCount}</strong>
+            <Icon icon="file" /> {t('ruleSyncPage.totalAssets')}: <strong>{totalAssetCount}</strong>
           </span>
           <span>
-            <Icon icon="check" /> {t('ruleSyncPage.selectedRules')}:{' '}
-            <strong>{selectedRulesCount}</strong>
+            <Icon icon="check" /> {t('ruleSyncPage.selectedAssets')}:{' '}
+            <strong>{selectedAssetCount}</strong>
           </span>
           <span>
             <Icon icon="extensions" /> {t('ruleSyncPage.targetAdapters')}:{' '}
@@ -157,10 +162,30 @@ export const App: React.FC = () => {
             <input
               type="text"
               className="search-input"
-              placeholder={t('ruleSyncPage.searchRules')}
+              placeholder={t('ruleSyncPage.searchAssets')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            {/* 资产类型过滤 tabs */}
+            {availableKinds.length > 0 && (
+              <div className="kind-filter-tabs">
+                <button
+                  className={`kind-filter-tab ${kindFilter === null ? 'active' : ''}`}
+                  onClick={() => setKindFilter(null)}
+                >
+                  {t('ruleSyncPage.allKinds') ?? 'All'}
+                </button>
+                {availableKinds.map((k) => (
+                  <button
+                    key={k}
+                    className={`kind-filter-tab kind-filter-tab-${k} ${kindFilter === k ? 'active' : ''}`}
+                    onClick={() => setKindFilter(kindFilter === k ? null : k)}
+                  >
+                    {k}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="rules-tree-container">{renderRuleTree()}</div>
         </div>
@@ -184,7 +209,7 @@ export const App: React.FC = () => {
                 key={adapter.id}
                 adapter={adapter}
                 isSelected={selectedAdapters.has(adapter.id)}
-                selectedRulesCount={selectedRulesCount}
+                selectedAssetCount={selectedAssetCount}
                 onToggle={() => toggleAdapter(adapter.id)}
               />
             ))}
@@ -195,10 +220,10 @@ export const App: React.FC = () => {
       {/* Footer */}
       <footer className="footer">
         <div className="footer-info">
-          {selectedRulesCount === 0 ? (
-            <>💡 {t('ruleSyncPage.clearRulesHint', selectedAdaptersCount)}</>
+          {selectedAssetCount === 0 ? (
+            <>💡 {t('ruleSyncPage.clearAssetsHint', selectedAdaptersCount)}</>
           ) : (
-            <>💡 {t('ruleSyncPage.footerInfo', selectedRulesCount, selectedAdaptersCount)}</>
+            <>💡 {t('ruleSyncPage.footerInfo', selectedAssetCount, selectedAdaptersCount)}</>
           )}
         </div>
         <div className="footer-actions">

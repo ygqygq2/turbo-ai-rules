@@ -7,6 +7,8 @@ import {
   getAllFilePaths,
   getDirectoryFilePaths,
   toggleNode as toggleTreeNode,
+  collectKinds,
+  filterTreeByKind,
   type TreeNodeType as TreeNode,
 } from '../components/tree';
 
@@ -24,7 +26,7 @@ interface FileTreeNode {
 interface SourceInfo {
   id: string;
   name: string;
-  totalRules?: number;
+  totalAssets?: number;
 }
 
 interface AdapterInfo {
@@ -51,7 +53,7 @@ interface InitialData {
 
 // Store 接口
 interface RuleSyncPageState {
-  // 规则树状态
+  // 资产树状态
   sources: SourceInfo[];
   treeNodesBySource: { [sourceId: string]: TreeNode[] };
   // ✅ 复用规则选择器的数据结构：按源分组，每个源使用 string[] 存储路径
@@ -64,6 +66,7 @@ interface RuleSyncPageState {
 
   // UI 状态
   searchTerm: string;
+  kindFilter: string | null;
   syncing: boolean;
 
   // Actions
@@ -75,16 +78,19 @@ interface RuleSyncPageState {
   toggleAllAdapters: () => void;
   toggleAdapter: (adapterId: string) => void;
   setSearchTerm: (term: string) => void;
+  setKindFilter: (kind: string | null) => void;
   sync: () => Promise<void>;
   cancel: () => void;
 
   // 计算属性
   isAllRulesSelected: () => boolean;
   isAllAdaptersSelected: () => boolean;
-  getSelectedRulesCount: () => number;
+  getSelectedAssetCount: () => number;
   getSelectedAdaptersCount: () => number;
-  getTotalRulesCount: () => number;
+  getTotalAssetCount: () => number;
   getAdapterSelectDisabled: (adapterId: string, selectedAdapters?: Set<string>) => boolean;
+  getAvailableKinds: () => string[];
+  getFilteredTreeNodes: (sourceId: string) => TreeNode[];
 }
 
 /**
@@ -102,6 +108,7 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
       adapters: [],
       selectedAdapters: new Set(),
       searchTerm: '',
+      kindFilter: null,
       syncing: false,
 
       /**
@@ -118,7 +125,7 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
           sources.push({
             id: source.id,
             name: source.name,
-            totalRules: source.stats?.total || 0,
+            totalAssets: source.stats?.total || 0,
           });
 
           // ✅ 构建 UI 树结构（FileTreeNode → TreeNode）
@@ -327,6 +334,13 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
       },
 
       /**
+       * @description 设置资产类型过滤
+       */
+      setKindFilter: (kind) => {
+        set({ kindFilter: kind });
+      },
+
+      /**
        * @description 执行同步
        */
       sync: async () => {
@@ -334,14 +348,15 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
         set({ syncing: true });
 
         try {
-          // 转换为扁平的规则路径数组
-          const allRules: string[] = [];
+          // 转换为扁平的资产路径数组
+          const allAssets: string[] = [];
           for (const [sourceId, paths] of Object.entries(state.selectedPathsBySource)) {
-            paths.forEach((path) => allRules.push(`${sourceId}:${path}`));
+            paths.forEach((path) => allAssets.push(`${sourceId}:${path}`));
           }
 
           await getRpc().request('sync', {
-            rules: allRules,
+            assets: allAssets,
+            rules: allAssets,
             adapters: Array.from(state.selectedAdapters),
           });
         } catch (error) {
@@ -362,8 +377,8 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
       // 计算属性
       isAllRulesSelected: () => {
         const state = get();
-        const totalCount = state.getTotalRulesCount();
-        const selectedCount = state.getSelectedRulesCount();
+        const totalCount = state.getTotalAssetCount();
+        const selectedCount = state.getSelectedAssetCount();
         return totalCount > 0 && selectedCount === totalCount;
       },
 
@@ -376,7 +391,7 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
         );
       },
 
-      getSelectedRulesCount: () => {
+      getSelectedAssetCount: () => {
         const state = get();
         let count = 0;
         for (const paths of Object.values(state.selectedPathsBySource)) {
@@ -389,7 +404,7 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
         return get().selectedAdapters.size;
       },
 
-      getTotalRulesCount: () => {
+      getTotalAssetCount: () => {
         const state = get();
         let total = 0;
         for (const tree of Object.values(state.treeNodesBySource)) {
@@ -445,6 +460,27 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
         }
 
         return false;
+      },
+
+      /**
+       * @description 获取所有源中可用的资产类型列表（去重排序）
+       */
+      getAvailableKinds: () => {
+        const state = get();
+        const kinds = new Set<string>();
+        for (const tree of Object.values(state.treeNodesBySource)) {
+          collectKinds(tree).forEach((k) => kinds.add(k));
+        }
+        return Array.from(kinds).sort();
+      },
+
+      /**
+       * @description 获取按 kindFilter 过滤后的树节点
+       */
+      getFilteredTreeNodes: (sourceId: string) => {
+        const state = get();
+        const tree = state.treeNodesBySource[sourceId] || [];
+        return filterTreeByKind(tree, state.kindFilter);
       },
     }),
     {

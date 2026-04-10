@@ -8,6 +8,7 @@ import matter from 'gray-matter';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { AssetClassifier } from './AssetClassifier';
 import { ErrorCodes, ParseError } from '../types/errors';
 import type { ParsedRule, RuleMetadata } from '../types/rules';
 import {
@@ -199,6 +200,8 @@ export class MdcParser {
         },
         sourceId,
         filePath,
+        kind: AssetClassifier.classifyFile(filePath, metadata as Record<string, unknown>),
+        format: AssetClassifier.getFormat(filePath),
       };
 
       Logger.debug('MDC file parsed successfully', { filePath, ruleId: id, strictMode });
@@ -290,6 +293,8 @@ export class MdcParser {
       const rules: ParsedRule[] = [];
       const errors: Array<{ filePath: string; error: Error }> = [];
       const state = { filesProcessed: 0 };
+      // sourceDirPath 用于计算每条规则的 relativePath
+      const sourceDirPath = dirPath;
 
       // 递归或非递归解析
       if (opts.recursive) {
@@ -301,6 +306,7 @@ export class MdcParser {
           errors,
           state,
           0, // 当前深度
+          sourceDirPath,
         );
       } else {
         // 非递归：只解析当前目录
@@ -312,7 +318,7 @@ export class MdcParser {
             });
             break;
           }
-          await this.parseFile(filePath, sourceId, rules, errors, state);
+          await this.parseFile(filePath, sourceId, rules, errors, state, sourceDirPath);
         }
       }
 
@@ -360,6 +366,7 @@ export class MdcParser {
     errors: Array<{ filePath: string; error: Error }>,
     state: { filesProcessed: number },
     currentDepth: number,
+    sourceDirPath: string,
   ): Promise<void> {
     // 检查深度限制
     if (currentDepth >= options.maxDepth) {
@@ -392,7 +399,7 @@ export class MdcParser {
       );
       if (skillFilePath) {
         const fullPath = path.join(dirPath, skillFilePath.name);
-        await this.parseFile(fullPath, sourceId, rules, errors, state);
+        await this.parseFile(fullPath, sourceId, rules, errors, state, sourceDirPath);
         Logger.debug('Found SKILL.md, skipping other files in directory', {
           dirPath,
           skillFile: fullPath,
@@ -408,7 +415,7 @@ export class MdcParser {
       if (state.filesProcessed >= options.maxFiles) {
         break;
       }
-      await this.parseFile(filePath, sourceId, rules, errors, state);
+      await this.parseFile(filePath, sourceId, rules, errors, state, sourceDirPath);
     }
 
     // 递归解析子目录
@@ -425,6 +432,7 @@ export class MdcParser {
         errors,
         state,
         currentDepth + 1,
+        sourceDirPath,
       );
     }
   }
@@ -489,9 +497,13 @@ export class MdcParser {
     rules: ParsedRule[],
     errors: Array<{ filePath: string; error: Error }>,
     state: { filesProcessed: number },
+    sourceDirPath?: string,
   ): Promise<void> {
     try {
       const rule = await this.parseMdcFile(filePath, sourceId);
+      if (sourceDirPath) {
+        rule.relativePath = path.relative(sourceDirPath, filePath);
+      }
       rules.push(rule);
       state.filesProcessed++;
     } catch (error) {

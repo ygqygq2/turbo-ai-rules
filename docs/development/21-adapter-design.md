@@ -1,6 +1,7 @@
 # 适配器设计
 
 > 本文档描述 Turbo AI Rules 的适配器架构、接口设计和扩展机制。
+> 更高层的适配器综合体（Adapter Suite）见 [24-asset-suite-architecture.md](./24-asset-suite-architecture.md)。
 
 ---
 
@@ -44,6 +45,7 @@
 - ✅ **统一实现**: 所有预设适配器共享同一个 `PresetAdapter` 类，减少代码重复
 - ✅ **易于扩展**: 添加新工具只需在配置列表中添加一项，无需修改代码逻辑
 - ⚠️ **兼容性**: 旧的独立类（CursorAdapter, CopilotAdapter, ContinueAdapter）保留作为兼容层，将在下一主版本移除
+
 
 ### 1.3 适配器分类：规则 vs 技能
 

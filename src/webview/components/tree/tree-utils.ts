@@ -9,6 +9,8 @@ export interface FileTreeNode {
   type: 'file' | 'directory';
   children?: FileTreeNode[];
   checked?: boolean; // ✅ 添加选中状态（后端标记）
+  /** 资产语义类型，由后端 AssetClassifier 填充 */
+  kind?: string;
 }
 
 export interface TreeNode {
@@ -19,6 +21,8 @@ export interface TreeNode {
   children?: TreeNode[]; // 子节点（目录）
   expanded?: boolean; // 是否展开
   checked?: boolean; // ✅ 选中状态（保留后端标记）
+  /** 资产语义类型 */
+  kind?: string;
 }
 
 /**
@@ -44,6 +48,7 @@ function convertFileNode(node: FileTreeNode): TreeNode {
     children: node.children ? node.children.map(convertFileNode) : undefined,
     expanded: false,
     checked: node.checked, // ✅ 保留后端标记的选中状态
+    kind: node.kind,
   };
 }
 
@@ -122,4 +127,51 @@ export function flattenTree(nodes: TreeNode[], filterFn?: (node: TreeNode) => bo
   }
 
   return result;
+}
+
+/**
+ * @description 收集树中所有文件节点的 kind 值（去重）
+ * @return default {string[]}
+ * @param nodes {TreeNode[]}
+ */
+export function collectKinds(nodes: TreeNode[]): string[] {
+  const kinds = new Set<string>();
+  const walk = (list: TreeNode[]) => {
+    for (const node of list) {
+      if (node.type === 'file' && node.kind) {
+        kinds.add(node.kind);
+      }
+      if (node.children) walk(node.children);
+    }
+  };
+  walk(nodes);
+  return Array.from(kinds).sort();
+}
+
+/**
+ * @description 按 kind 过滤树（仅保留 kind 匹配的文件节点及所在的父目录）
+ * 若 kind 为 null/undefined 则返回原树
+ * @return default {TreeNode[]}
+ * @param nodes {TreeNode[]}
+ * @param kind {string | null}
+ */
+export function filterTreeByKind(nodes: TreeNode[], kind: string | null): TreeNode[] {
+  if (!kind) return nodes;
+
+  const filter = (list: TreeNode[]): TreeNode[] => {
+    const result: TreeNode[] = [];
+    for (const node of list) {
+      if (node.type === 'file') {
+        if (node.kind === kind) result.push(node);
+      } else if (node.children) {
+        const filteredChildren = filter(node.children);
+        if (filteredChildren.length > 0) {
+          result.push({ ...node, children: filteredChildren });
+        }
+      }
+    }
+    return result;
+  };
+
+  return filter(nodes);
 }

@@ -2,6 +2,26 @@
 
 All notable changes to the "turbo-ai-rules" extension will be documented in this file.
 
+# [3.0.0] (Planned)
+
+## ♻️ 架构升级
+
+- 从 `Rule` 中心模型升级为 `Asset` 中心模型，支持更通用的 AI 资产语义
+- 在原子适配器之上引入 `Adapter Suite`（适配器综合体），降低同步页选择复杂度
+- 同步页从“规则/技能二分”升级为“资产列表 + Suite 选择”模式
+
+## ✨ 规划中的能力
+
+- 扫描并分类更多输入资产：`markdown / mdc / json / yaml / directory`
+- 统一支持 `rule / instruction / skill / agent / prompt / command / hook / mcp / unknown` 等资产类型
+- 扩展通用安装模式：`aggregate-file / copy-file / copy-directory / merge-json / merge-yaml`
+
+## ⚠️ 破坏性变更（预期）
+
+- 内部数据模型从 `ParsedRule` 向 `ParsedAsset` 迁移
+- 规则选择与技能选择逻辑将逐步迁移到更通用的资产选择模型
+- 适配器配置将逐步支持更通用的 `input.kinds` / Suite 语义
+
 # [2.0.9]
 
 ## 🐛 修复问题

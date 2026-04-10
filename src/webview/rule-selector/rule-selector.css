@@ -114,6 +114,49 @@
   flex-shrink: 0;
 }
 
+/* ===== 资产类型徽章 ===== */
+.tree-node-kind-badge {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  background-color: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+}
+
+.tree-node-kind-skill {
+  background-color: #2d6a4f;
+  color: #d8f3dc;
+}
+.tree-node-kind-agent {
+  background-color: #1d3557;
+  color: #a8dadc;
+}
+.tree-node-kind-prompt {
+  background-color: #4a1942;
+  color: #f4acb7;
+}
+.tree-node-kind-instruction {
+  background-color: #7b2d00;
+  color: #ffd6a5;
+}
+.tree-node-kind-command {
+  background-color: #3d3d3d;
+  color: #eeeeee;
+}
+.tree-node-kind-hook {
+  background-color: #1b2a49;
+  color: #caf0f8;
+}
+.tree-node-kind-mcp {
+  background-color: #3a0ca3;
+  color: #e2cfff;
+}
+
 /* 平铺列表样式（兼容旧版） */
 .rule-list {
   list-style: none;

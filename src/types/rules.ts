@@ -7,6 +7,60 @@
  */
 export type RulePriority = 'low' | 'medium' | 'high';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// v3 Asset 模型
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * AI 资产的语义类型
+ */
+export type AssetKind =
+  | 'rule'
+  | 'instruction'
+  | 'skill'
+  | 'agent'
+  | 'prompt'
+  | 'command'
+  | 'hook'
+  | 'mcp'
+  | 'unknown';
+
+/**
+ * 资产的文件格式
+ */
+export type AssetFormat = 'markdown' | 'mdc' | 'json' | 'yaml' | 'directory';
+
+/**
+ * 解析后的通用 AI 资产（v3 核心类型）
+ *
+ * 用于表示从规则源扫描出的任意"可同步单元"。
+ * `ParsedRule` 是 `kind='rule'` 的 ParsedAsset 特例。
+ */
+export interface ParsedAsset {
+  /** 资产唯一 ID */
+  id: string;
+  /** 来源的 RuleSource.id */
+  sourceId: string;
+  /** 原始文件绝对路径 */
+  filePath: string;
+  /** 相对于规则源 subPath 的路径 */
+  relativePath: string;
+  /** 资产语义类型 */
+  kind: AssetKind;
+  /** 文件格式 */
+  format: AssetFormat;
+  /** 标题（可选） */
+  title?: string;
+  /** 元数据（可选） */
+  metadata?: Record<string, unknown>;
+  /** 原始完整内容（可选） */
+  rawContent?: string;
+  /** 目录型资产的根目录（如 skill 目录） */
+  rootDir?: string;
+  /** 目录型资产的入口文件（如 SKILL.md） */
+  entryFile?: string;
+}
+
 /**
  * 规则元数据
  */
@@ -31,6 +85,9 @@ export interface RuleMetadata {
 
 /**
  * 解析后的规则
+ *
+ * v3 起额外携带可选的 `kind` / `format` / `relativePath` 字段；
+ * 现有代码无感知，可按原有方式使用。
  */
 export interface ParsedRule {
   /** 规则唯一 ID */
@@ -45,8 +102,15 @@ export interface ParsedRule {
   metadata: RuleMetadata;
   /** 来源的 RuleSource.id */
   sourceId: string;
-  /** 原始文件路径 */
+  /** 原始文件绝对路径 */
   filePath: string;
+  // ── v3 扩展字段（可选，向后兼容） ────────────────────────────
+  /** 资产语义类型（v3） */
+  kind?: AssetKind;
+  /** 文件格式（v3） */
+  format?: AssetFormat;
+  /** 相对于规则源 subPath 的路径（v3） */
+  relativePath?: string;
 }
 
 /**

@@ -32,7 +32,7 @@ interface AdapterState {
   checked: boolean;
   selectDisabled: boolean;
   outputPath: string;
-  ruleCount: number;
+  assetCount: number;
   isRuleType: boolean;
 }
 
@@ -57,9 +57,9 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
 
     // ✅ 订阅状态变更事件，自动向 Webview 发送消息（使用 ExtensionMessenger）
     this.stateChangeDisposable = this.selectionStateManager.onStateChanged((event) => {
-      // 规则同步页监听所有源的变化（与规则选择器不同，规则选择器只监听当前源）
+      // 同步页监听所有源的变化（与规则选择器不同，规则选择器只监听当前源）
       if (this.panel && this.messenger) {
-        Logger.debug('Selection state changed, notifying rule sync page', {
+        Logger.debug('Selection state changed, notifying sync page', {
           sourceId: event.sourceId,
           selectedCount: event.selectedPaths.length,
         });
@@ -99,7 +99,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
   }
 
   /**
-   * @description 显示规则同步页
+   * @description 显示同步页
    * @return default {Promise<void>}
    */
   public async showRuleSyncPage(): Promise<void> {
@@ -124,11 +124,11 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         Logger.debug('Rule sync page messenger initialized');
       }
 
-      Logger.info('Rule sync page webview opened');
+      Logger.info('Sync page webview opened');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      Logger.error('Failed to show rule sync page', error as Error, { code: 'TAI-5015' });
-      notify(`Failed to open rule sync page: ${errorMessage}`, 'error');
+      Logger.error('Failed to show sync page', error as Error, { code: 'TAI-5015' });
+      notify(`Failed to open sync page: ${errorMessage}`, 'error');
     }
   }
 
@@ -151,11 +151,11 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
       );
 
       if (!fs.existsSync(htmlPath)) {
-        Logger.error('Rule sync page HTML template not found', undefined, {
+        Logger.error('Sync page HTML template not found', undefined, {
           path: htmlPath,
           code: 'TAI-5016',
         });
-        return this.getErrorHtml('Rule sync page template not found', false);
+        return this.getErrorHtml('Sync page template not found', false);
       }
 
       // 读取 HTML 文件
@@ -197,8 +197,8 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
       return html;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      Logger.error('Failed to generate rule sync page HTML', error as Error, { code: 'TAI-5017' });
-      return this.getErrorHtml(`Failed to load rule sync page: ${errorMessage}`, false);
+      Logger.error('Failed to generate sync page HTML', error as Error, { code: 'TAI-5017' });
+      return this.getErrorHtml(`Failed to load sync page: ${errorMessage}`, false);
     }
   }
 
@@ -232,14 +232,14 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
           // 更新状态并触发延时落盘，会自动通知其他页面刷新
           this.selectionStateManager.updateSelection(sourceId, paths, true, workspacePath);
 
-          Logger.debug('Selection changed from rule sync page', {
+          Logger.debug('Selection changed from sync page', {
             sourceId,
             pathCount: paths.length,
           });
 
           return { message: 'Selection updated' };
         } catch (error) {
-          Logger.error('Failed to handle selection change from rule sync page', error as Error, {
+          Logger.error('Failed to handle selection change from sync page', error as Error, {
             sourceId,
           });
           throw error;
@@ -256,7 +256,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         await this.handleSyncInternal(payload);
         return { success: true };
       } catch (error) {
-        Logger.error('Failed to sync rules', error as Error, { code: 'TAI-5021' });
+        Logger.error('Failed to sync assets', error as Error, { code: 'TAI-5021' });
         return {
           success: false,
           error: error instanceof Error ? error.message : String(error),
@@ -286,7 +286,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
   }
 
   /**
-   * @description 获取规则同步数据（✅ 与规则选择器保持一致的数据格式）
+   * @description 获取同步数据（✅ 与规则选择器保持一致的数据格式）
    * @return default {Promise<{ sources: SourceData[]; adapters: AdapterState[] }>}
    */
   private async getRuleSyncData(): Promise<{
@@ -408,7 +408,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         checked: false, // 默认不选中任何适配器
         selectDisabled: false, // 初始状态可选
         outputPath,
-        ruleCount: 0, // 前端会实时计算
+        assetCount: 0, // 前端会实时计算
         isRuleType,
       });
     }
@@ -426,7 +426,7 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         checked: false, // 默认不选中任何适配器
         selectDisabled: false, // 初始状态可选
         outputPath: normalizeOutputPathForDisplay(custom.outputPath || ''),
-        ruleCount: 0,
+        assetCount: 0,
         isRuleType,
       });
     }
@@ -460,32 +460,33 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
   private async handleSyncInternal(
     payload: unknown,
   ): Promise<{ ruleCount: number; adapterCount: number }> {
-    let syncData: { rules: string[]; adapters: string[] };
+    let syncData: { assets?: string[]; rules?: string[]; adapters: string[] };
 
     if (typeof payload === 'object' && payload !== null) {
       syncData =
         'data' in payload
-          ? (payload as { data: { rules: string[]; adapters: string[] } }).data
-          : (payload as { rules: string[]; adapters: string[] });
+          ? (payload as { data: { assets?: string[]; rules?: string[]; adapters: string[] } }).data
+          : (payload as { assets?: string[]; rules?: string[]; adapters: string[] });
     } else {
       throw new Error('Invalid sync payload format');
     }
 
-    const { rules, adapters } = syncData;
+    const assets = syncData.assets ?? syncData.rules ?? [];
+    const { adapters } = syncData;
 
-    if (!rules || !adapters || !Array.isArray(rules) || !Array.isArray(adapters)) {
-      throw new Error('Invalid sync payload: missing or invalid rules/adapters array');
+    if (!adapters || !Array.isArray(assets) || !Array.isArray(adapters)) {
+      throw new Error('Invalid sync payload: missing or invalid assets/adapters array');
     }
 
-    Logger.info('Starting rule sync from webview', {
-      ruleCount: rules.length,
+    Logger.info('Starting asset sync from webview', {
+      assetCount: assets.length,
       adapterCount: adapters.length,
       selectedAdapters: adapters,
     });
 
-    // 解析选中的规则路径
+    // 解析选中的资产路径
     const selectedRulePaths: Map<string, string[]> = new Map();
-    for (const ruleId of rules) {
+    for (const ruleId of assets) {
       const [sourceId, ...pathParts] = ruleId.split(':');
       const relativePath = pathParts.join(':');
 
@@ -527,14 +528,14 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
     await syncRulesCommand({ targetAdapters: adapters });
 
     // 获取实际同步的规则数量
-    let totalSelectedRules = 0;
+    let totalSelectedAssets = 0;
     for (const source of enabledSources) {
       const selectedPaths = this.selectionStateManager.getSelection(source.id);
-      totalSelectedRules += selectedPaths.length;
+      totalSelectedAssets += selectedPaths.length;
     }
 
     notify(
-      `Successfully synced ${totalSelectedRules} rules to ${adapters.length} adapters`,
+      `Successfully synced ${totalSelectedAssets} assets to ${adapters.length} adapters`,
       'info',
     );
 
@@ -542,13 +543,13 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
     if (this.messenger) {
       this.messenger.pushEvent('syncComplete', {
         success: true,
-        ruleCount: totalSelectedRules,
+        ruleCount: totalSelectedAssets,
         adapterCount: adapters.length,
       });
     }
 
     return {
-      ruleCount: totalSelectedRules,
+      ruleCount: totalSelectedAssets,
       adapterCount: adapters.length,
     };
   }

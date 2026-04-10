@@ -1,6 +1,7 @@
 # 顶层架构设计
 
 > 本文档描述 Turbo AI Rules 的整体架构、设计原则、模块分工和数据流向。
+> 适配器综合体与资产化模型详见 [24-asset-suite-architecture.md](./24-asset-suite-architecture.md)。
 
 ---
 

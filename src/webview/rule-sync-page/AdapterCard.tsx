@@ -14,7 +14,7 @@ interface AdapterInfo {
 interface AdapterCardProps {
   adapter: AdapterInfo;
   isSelected: boolean;
-  selectedRulesCount: number;
+  selectedAssetCount: number;
   onToggle: () => void;
 }
 
@@ -32,7 +32,7 @@ const iconMap: { [key: string]: string } = {
 export const AdapterCard: React.FC<AdapterCardProps> = ({
   adapter,
   isSelected,
-  selectedRulesCount,
+  selectedAssetCount,
   onToggle,
 }) => {
   const iconName = iconMap[adapter.id] || 'extensions';
@@ -52,8 +52,8 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
   const isDisabled = !adapter.enabled || adapter.selectDisabled;
   const disabledReason = adapter.selectDisabled
     ? adapter.isRuleType
-      ? '已选择 Skills 适配器，无法选择规则适配器'
-      : '已选择规则适配器，无法选择 Skills 适配器'
+      ? '已选择 Skills 适配器，无法同时选择规则类适配器'
+      : '已选择规则类适配器，无法同时选择 Skills 适配器'
     : !adapter.enabled
       ? '适配器未启用'
       : '';
@@ -86,7 +86,7 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
         <div className="adapter-card-detail-item">
           <Icon icon="check" size={12} />
           <span>
-            将同步 <strong>{isSelected ? selectedRulesCount : 0}</strong> 条规则
+            将同步 <strong>{isSelected ? selectedAssetCount : 0}</strong> 项资产
           </span>
         </div>
       </div>

@@ -64,18 +64,59 @@
 - `lastModified`: 最后修改时间（ISO 8601）
 - `description`: 简短描述（可选）
 - `sourceId`: 来源规则源 ID（关联到 RuleSource）
-- `filePath`: 文件路径（相对于规则源根目录）
+- `filePath`: 文件绝对路径
+- `kind`: 资产语义类型（`AssetKind`，由 `AssetClassifier` 自动推断）
+- `format`: 文件格式（`'markdown' | 'mdc' | 'json' | 'yaml' | 'directory'`）
+- `relativePath`: 相对于规则源 subPath 的路径（可选）
 
 **设计考量**:
 
 - `id` 在规则源内唯一，跨源可能冲突（由冲突解决策略处理）
 - `priority` 用于冲突解决时决定优先级
 - `sourceId` 和 `filePath` 用于追溯规则来源
+- `kind` 由 `AssetClassifier` 在解析时自动填充，无需在 frontmatter 中声明
 - **推荐**: 技能类规则使用 `tags: ["skill"]` 标记，便于在 UI 中区分和过滤
 
 ---
 
-### 1.3 ExtensionConfig (扩展配置)
+### 1.3 ParsedAsset (通用 AI 资产)
+
+`ParsedAsset` 是更通用的资产表示，用于表示任意"可同步单元"（不限于规则）。
+
+**字段**:
+
+- `id`: 资产唯一 ID
+- `sourceId`: 来源 RuleSource.id
+- `filePath`: 原始文件绝对路径
+- `relativePath`: 相对于规则源 subPath 的路径
+- `kind`: `AssetKind`（见下方）
+- `format`: `AssetFormat`（markdown / mdc / json / yaml / directory）
+- `title`: 标题（可选）
+- `metadata`: frontmatter 键值对（可选）
+- `rawContent`: 原始文件内容（可选）
+- `rootDir`: 目录型资产的根目录（如 skill 目录）
+- `entryFile`: 目录型资产的入口文件（如 SKILL.md）
+
+### 1.4 AssetKind (资产语义类型)
+
+```ts
+type AssetKind =
+  | 'rule'        // 通用 AI 编码规则 (.md / .mdc)
+  | 'instruction' // AI 工具级指令 (CLAUDE.md / .instructions.md 等)
+  | 'skill'       // AI 技能目录 (含 SKILL.md)
+  | 'agent'       // AI 代理定义 (*.agent.md)
+  | 'prompt'      // 提示词文件 (*.prompt.md)
+  | 'command'     // 命令定义 (.claude/commands/ 等)
+  | 'hook'        // 钩子配置 (.json，在 hooks/ 目录下)
+  | 'mcp'         // MCP 配置 (mcp.json / .mcp.json)
+  | 'unknown';    // 未能识别类型
+```
+
+分类由 `AssetClassifier`（`src/parsers/AssetClassifier.ts`）根据文件名、父目录名及 frontmatter 字段自动推断。
+
+---
+
+### 1.5 ExtensionConfig (扩展配置)
 
 扩展的完整配置包含四大部分：
 

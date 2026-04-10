@@ -6,7 +6,7 @@
 
 import * as path from 'path';
 
-import type { ParsedRule } from '../types/rules';
+import type { AssetKind, ParsedRule } from '../types/rules';
 
 /**
  * 通用文件树节点
@@ -16,6 +16,8 @@ export interface FileTreeNode {
   name: string;
   type: 'file' | 'directory';
   children?: FileTreeNode[];
+  /** 资产语义类型（仅文件节点，由 AssetClassifier 填充） */
+  kind?: AssetKind;
 }
 
 /**
@@ -52,6 +54,7 @@ export function buildFileTreeFromRules(rules: ParsedRule[], basePath: string): F
         path: relativePath,
         name: fileName,
         type: 'file',
+        kind: rule.kind,
       });
     }
 
