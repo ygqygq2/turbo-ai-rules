@@ -472,14 +472,20 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         id: 'copilot-core',
         name: t('ruleSyncPage.suite.copilotCore.name'),
         description: t('ruleSyncPage.suite.copilotCore.description'),
-        adapterIds: ['copilot', 'copilot-skills'],
+        adapterIds: [
+          'copilot',
+          'copilot-instructions-files',
+          'copilot-skills',
+          'copilot-agents',
+          'copilot-prompts',
+        ],
         enabled: true,
       },
       {
         id: 'claude-core',
         name: t('ruleSyncPage.suite.claudeCore.name'),
         description: t('ruleSyncPage.suite.claudeCore.description'),
-        adapterIds: ['cline', 'roo-cline', 'aider', 'bolt'],
+        adapterIds: ['claude-md', 'claude-skills', 'claude-commands', 'claude-agents'],
         enabled: true,
       },
       {

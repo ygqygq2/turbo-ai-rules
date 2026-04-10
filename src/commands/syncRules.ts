@@ -4,6 +4,7 @@
 
 import * as vscode from 'vscode';
 
+import { PRESET_ADAPTERS } from '../adapters';
 import { MdcParser } from '../parsers/MdcParser';
 import { RulesValidator } from '../parsers/RulesValidator';
 import { StatusBarProvider } from '../providers/StatusBarProvider';
@@ -409,8 +410,9 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
         if (effectiveTargetAdapters && effectiveTargetAdapters.length > 0) {
           // 获取所有自定义适配器配置
           const customAdapters = config.adapters.custom || [];
-          // 获取所有预设适配器配置
-          const presetAdapters = ['copilot', 'cursor', 'continue', 'windsurf'];
+          const presetRuleAdapters = PRESET_ADAPTERS.filter(
+            (adapter) => adapter.isRuleType !== false,
+          ).map((adapter) => adapter.id);
 
           for (const targetAdapter of effectiveTargetAdapters) {
             // 查找对应的自定义适配器配置
@@ -426,7 +428,7 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
                 // 规则适配器
                 syncedRulesAdapterCount++;
               }
-            } else if (presetAdapters.includes(targetAdapter)) {
+            } else if (presetRuleAdapters.includes(targetAdapter)) {
               // 预设适配器都是规则类型
               syncedRulesAdapterCount++;
             }
@@ -440,8 +442,10 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
         } else {
           // 没有指定适配器，统计所有启用的规则适配器
           // 预设适配器
-          const presetAdapters = ['copilot', 'cursor', 'continue', 'windsurf'];
-          for (const preset of presetAdapters) {
+          const presetRuleAdapters = PRESET_ADAPTERS.filter(
+            (adapter) => adapter.isRuleType !== false,
+          ).map((adapter) => adapter.id);
+          for (const preset of presetRuleAdapters) {
             const adapter = config.adapters[preset];
             if (adapter && !Array.isArray(adapter) && adapter.enabled) {
               syncedRulesAdapterCount++;

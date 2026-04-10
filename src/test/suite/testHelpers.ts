@@ -7,6 +7,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { PRESET_ADAPTERS } from '../../adapters/PresetAdapter';
 import { RulesManager } from '../../services/RulesManager';
 import { SelectionStateManager } from '../../services/SelectionStateManager';
 import { WorkspaceDataManager } from '../../services/WorkspaceDataManager';
@@ -377,9 +378,11 @@ export async function waitForRulesLoaded(
 export async function cleanupTestFiles(
   workspaceFolder: vscode.WorkspaceFolder,
   paths: string[] = [
+    'CLAUDE.md',
     '.cursorrules',
     '.windsurfrules',
     '.github',
+    '.claude',
     '.continue',
     '.clinerules',
     '.roo-clinerules',
@@ -482,7 +485,9 @@ export async function switchToWorkspace(
 
     // 检查预设适配器
     const adaptersConfig = config.get<any>('adapters', {});
-    const presetAdapters = ['cursor', 'copilot', 'continue', 'windsurf', 'cline'];
+    const presetAdapters = PRESET_ADAPTERS.filter((adapter) => adapter.isRuleType !== false).map(
+      (adapter) => adapter.id,
+    );
     const enabledPresetAdapters = presetAdapters.filter(
       (name) => adaptersConfig[name]?.enabled === true,
     );

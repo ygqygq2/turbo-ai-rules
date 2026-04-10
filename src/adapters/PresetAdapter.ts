@@ -4,7 +4,7 @@
  * 支持规则源标记，实现部分更新
  */
 
-import type { ParsedRule } from '../types/rules';
+import type { AssetKind, ParsedRule } from '../types/rules';
 import { BaseAdapter } from './AIToolAdapter';
 
 /**
@@ -32,6 +32,8 @@ export interface PresetAdapterConfig {
   website?: string;
   /** 是否为规则类型（true=rules, false=skills），默认 true */
   isRuleType?: boolean;
+  /** 接受的资产类型；未指定时默认接受 rule + instruction */
+  assetKinds?: AssetKind[];
 }
 
 /**
@@ -46,6 +48,16 @@ export interface PresetAdapterConfig {
 export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
   // === IDE 集成类工具 ===
   {
+    id: 'claude-md',
+    name: 'Claude Code',
+    filePath: 'CLAUDE.md',
+    type: 'file',
+    defaultEnabled: false,
+    description: 'Claude Code project instructions',
+    website: 'https://docs.anthropic.com/en/docs/claude-code',
+    assetKinds: ['rule', 'instruction'],
+  },
+  {
     id: 'cursor',
     name: 'Cursor',
     filePath: '.cursorrules',
@@ -53,6 +65,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     defaultEnabled: true,
     description: 'AI-first code editor',
     website: 'https://cursor.com',
+    assetKinds: ['rule', 'instruction'],
   },
   {
     id: 'windsurf',
@@ -62,6 +75,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     defaultEnabled: false,
     description: 'Codeium AI IDE',
     website: 'https://codeium.com/windsurf',
+    assetKinds: ['rule', 'instruction'],
   },
   {
     id: 'copilot',
@@ -71,6 +85,47 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     defaultEnabled: false,
     description: 'GitHub AI pair programmer',
     website: 'https://github.com/features/copilot',
+    assetKinds: ['rule', 'instruction'],
+  },
+  {
+    id: 'copilot-instructions-files',
+    name: 'GitHub Copilot Instructions Files',
+    filePath: '.github/instructions',
+    type: 'directory',
+    defaultEnabled: false,
+    description: 'Scoped Copilot instruction files (*.instructions.md)',
+    website: 'https://code.visualstudio.com/docs/copilot/customization/custom-instructions',
+    assetKinds: ['instruction'],
+  },
+  {
+    id: 'copilot-agents',
+    name: 'GitHub Copilot Agents',
+    filePath: '.github/agents',
+    type: 'directory',
+    defaultEnabled: false,
+    description: 'Custom Copilot agents (*.agent.md)',
+    website: 'https://code.visualstudio.com/docs/copilot/customization/custom-agents',
+    assetKinds: ['agent'],
+  },
+  {
+    id: 'copilot-prompts',
+    name: 'GitHub Copilot Prompts',
+    filePath: '.github/prompts',
+    type: 'directory',
+    defaultEnabled: false,
+    description: 'Copilot prompt files (*.prompt.md)',
+    website: 'https://code.visualstudio.com/docs/copilot/customization/prompt-files',
+    assetKinds: ['prompt'],
+  },
+  {
+    id: 'copilot-hooks',
+    name: 'GitHub Copilot Hooks',
+    filePath: '.github/hooks',
+    type: 'directory',
+    defaultEnabled: false,
+    description: 'Copilot lifecycle hook configs (*.json)',
+    website: 'https://code.visualstudio.com/docs/copilot/customization/hooks',
+    assetKinds: ['hook'],
   },
 
   // === VSCode 扩展类工具 ===
@@ -82,6 +137,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     defaultEnabled: false,
     description: 'Open-source AI assistant',
     website: 'https://continue.dev',
+    assetKinds: ['rule', 'instruction'],
   },
   {
     id: 'cline',
@@ -91,6 +147,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     defaultEnabled: false,
     description: 'Autonomous coding agent',
     website: 'https://github.com/cline/cline',
+    assetKinds: ['rule', 'instruction'],
   },
   {
     id: 'roo-cline',
@@ -100,6 +157,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     defaultEnabled: false,
     description: 'Enhanced Cline fork',
     website: 'https://github.com/RooVetGit/Roo-Cline',
+    assetKinds: ['rule', 'instruction'],
   },
 
   // === 命令行工具 ===
@@ -111,6 +169,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     defaultEnabled: false,
     description: 'AI pair programming in the terminal',
     website: 'https://aider.chat',
+    assetKinds: ['rule', 'instruction'],
   },
 
   // === Web 平台类工具 ===
@@ -122,9 +181,41 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     defaultEnabled: false,
     description: 'StackBlitz AI-powered full-stack development',
     website: 'https://bolt.new',
+    assetKinds: ['rule', 'instruction'],
   },
 
   // === Skills 适配器 ===
+  {
+    id: 'claude-skills',
+    name: 'Claude Skills',
+    filePath: '.claude/skills',
+    type: 'directory',
+    defaultEnabled: false,
+    description: 'Claude Code skills library',
+    website: 'https://docs.anthropic.com/en/docs/claude-code',
+    isRuleType: false,
+    assetKinds: ['skill'],
+  },
+  {
+    id: 'claude-commands',
+    name: 'Claude Commands',
+    filePath: '.claude/commands',
+    type: 'directory',
+    defaultEnabled: false,
+    description: 'Claude Code slash commands',
+    website: 'https://docs.anthropic.com/en/docs/claude-code',
+    assetKinds: ['command'],
+  },
+  {
+    id: 'claude-agents',
+    name: 'Claude Agents',
+    filePath: '.claude/agents',
+    type: 'directory',
+    defaultEnabled: false,
+    description: 'Claude Code agent definitions',
+    website: 'https://docs.anthropic.com/en/docs/claude-code',
+    assetKinds: ['agent'],
+  },
   {
     id: 'cursor-skills',
     name: 'Cursor Skills',
@@ -134,6 +225,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     description: 'Cursor AI skills library',
     website: 'https://cursor.com/docs/context/skills',
     isRuleType: false,
+    assetKinds: ['skill'],
   },
   {
     id: 'copilot-skills',
@@ -144,6 +236,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     description: 'GitHub Copilot agent skills',
     website: 'https://code.visualstudio.com/docs/copilot/customization/agent-skills',
     isRuleType: false,
+    assetKinds: ['skill'],
   },
 ] as const;
 
@@ -182,11 +275,29 @@ export class PresetAdapter extends BaseAdapter {
     this.preserveDirectoryStructure = preserveDirectoryStructure;
   }
 
+  override async generate(rules: ParsedRule[], allRules?: ParsedRule[]) {
+    return super.generate(this.filterRulesByKind(rules), allRules);
+  }
+
   /**
    * 获取输出类型（PresetAdapter 都是单文件模式）
    */
   protected getOutputType(): 'file' | 'directory' {
     return this.config.type;
+  }
+
+  /**
+   * 获取目录输出路径
+   */
+  protected getDirectoryOutputPath(): string {
+    return this.config.filePath;
+  }
+
+  /**
+   * 目录型预设不生成额外索引文件，避免污染工具约定目录
+   */
+  protected shouldGenerateIndex(): boolean {
+    return this.config.type === 'file';
   }
 
   /**
@@ -270,5 +381,10 @@ export class PresetAdapter extends BaseAdapter {
    */
   public getConfig(): PresetAdapterConfig {
     return { ...this.config };
+  }
+
+  private filterRulesByKind(rules: ParsedRule[]): ParsedRule[] {
+    const acceptedKinds = this.config.assetKinds ?? ['rule', 'instruction'];
+    return rules.filter((rule) => acceptedKinds.includes((rule.kind ?? 'rule') as AssetKind));
   }
 }

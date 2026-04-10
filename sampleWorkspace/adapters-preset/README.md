@@ -3,7 +3,7 @@
 ## 📋 测试信息
 
 - **测试文件**: `src/test/suite/adapters/adapters-preset.test.ts`
-- **测试目标**: 验证所有 10 个预设适配器（8个规则 + 2个技能）的加载、配置和属性
+- **测试目标**: 验证所有 18 个预设适配器（含 Copilot / Claude 的目录型资产）的加载、配置和属性
 - **工作空间**: 不依赖 Git 源，纯配置测试
 
 ## 🧪 测试场景（13 个测试）
@@ -20,13 +20,14 @@
 - ✅ 超时设置：`TEST_TIMEOUTS.LONG` (120 秒)
 
 ### 1. 加载所有预设适配器
-**测试**: `Should load all 10 preset adapters`
+**测试**: `Should load all preset adapters`
 
 **验证**:
-- ✅ 从 `PRESET_ADAPTERS` 常量加载 10 个适配器
+- ✅ 从 `PRESET_ADAPTERS` 常量加载 18 个适配器
 - ✅ 包含完整列表：
-  - **Rules**: cursor, windsurf, copilot, continue, cline, roo-cline, aider, bolt
-  - **Skills**: cursor-skills, copilot-skills
+  - **Copilot**: copilot, copilot-instructions-files, copilot-agents, copilot-prompts, copilot-hooks, copilot-skills
+  - **Claude**: claude-md, claude-skills, claude-commands, claude-agents
+  - **Other**: cursor, cursor-skills, windsurf, continue, cline, roo-cline, aider, bolt
 
 **执行时间**: <50ms
 
@@ -274,20 +275,28 @@
 
 ## 📦 支持的预设适配器
 
-### 规则类型适配器（Rules, 8个）
+### 规则 / 资产型适配器
 
 | ID | 名称 | 输出文件 | 类型 |
 |----|------|----------|------|
 | cursor | Cursor | `.cursorrules` | file |
 | windsurf | Windsurf | `.windsurfrules` | file |
 | copilot | GitHub Copilot | `.github/copilot-instructions.md` | file |
+| copilot-instructions-files | GitHub Copilot Instructions Files | `.github/instructions` | directory |
+| copilot-agents | GitHub Copilot Agents | `.github/agents` | directory |
+| copilot-prompts | GitHub Copilot Prompts | `.github/prompts` | directory |
+| copilot-hooks | GitHub Copilot Hooks | `.github/hooks` | directory |
 | continue | Continue | `.continuerules` | file |
 | cline | Cline | `.clinerules` | file |
 | roo-cline | Roo-Cline | `.roo-clinerules` | file |
 | aider | Aider | `.aider.conf.yml` | file |
 | bolt | Bolt | `.bolt/prompt` | directory |
+| claude-md | Claude Code | `CLAUDE.md` | file |
+| claude-skills | Claude Skills | `.claude/skills` | directory |
+| claude-commands | Claude Commands | `.claude/commands` | directory |
+| claude-agents | Claude Agents | `.claude/agents` | directory |
 
-### 技能类型适配器（Skills, 2个）
+### 技能型适配器
 
 | ID | 名称 | 输出目录 | 类型 |
 |----|------|----------|------|
@@ -296,7 +305,7 @@
 
 ## 🎯 关键验证点
 
-- ✅ 适配器完整性（10个全加载：8个规则 + 2个技能）
+- ✅ 适配器完整性（18 个预设适配器全加载）
 - ✅ 属性完整性（id/name/filePath/type）
 - ✅ 命名规范（kebab-case）
 - ✅ 配置持久化（读写一致）

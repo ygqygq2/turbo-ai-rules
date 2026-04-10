@@ -114,6 +114,10 @@
       "name": "Workflows: Sync Rules"
     },
     {
+      "path": "workflows-adapter-suites",
+      "name": "Workflows: Adapter Suites"
+    },
+    {
       "path": "workflows-generateRules",
       "name": "Workflows: Generate Rules"
     },

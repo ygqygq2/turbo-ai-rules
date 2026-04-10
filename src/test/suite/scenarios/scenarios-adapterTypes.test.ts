@@ -12,6 +12,7 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 
+import { PRESET_ADAPTERS } from '../../../adapters/PresetAdapter';
 import { CONFIG_KEYS } from '../../../utils/constants';
 import { TEST_DELAYS, TEST_TIMEOUTS } from '../testConstants';
 import { sleep } from '../testHelpers';
@@ -46,7 +47,9 @@ describe('Adapter Types Tests', () => {
     const customAdapters = config.get<any[]>(CONFIG_KEYS.ADAPTERS_CUSTOM, []);
 
     // 预设适配器 (Cursor, Copilot, Continue) 都是规则适配器
-    const presetAdapters = ['cursor', 'copilot', 'continue'];
+    const presetAdapters = PRESET_ADAPTERS.filter((adapter) => adapter.isRuleType !== false).map(
+      (adapter) => adapter.id,
+    );
 
     for (const adapterName of presetAdapters) {
       if (adapters && adapters[adapterName]) {
@@ -74,6 +77,9 @@ describe('Adapter Types Tests', () => {
     const singleFileAdapters = [];
     if (adapters?.cursor?.enabled) {
       singleFileAdapters.push({ name: 'cursor', path: '.cursorrules' });
+    }
+    if (adapters?.['claude-md']?.enabled) {
+      singleFileAdapters.push({ name: 'claude-md', path: 'CLAUDE.md' });
     }
     if (adapters?.copilot?.enabled) {
       singleFileAdapters.push({ name: 'copilot', path: '.github/copilot-instructions.md' });
@@ -103,6 +109,9 @@ describe('Adapter Types Tests', () => {
     const quickSyncSupported = [];
 
     // 预设适配器都支持快速同步
+    if (adapters?.['claude-md']?.enabled) quickSyncSupported.push('claude-md');
+    if (adapters?.['claude-commands']?.enabled) quickSyncSupported.push('claude-commands');
+    if (adapters?.['claude-agents']?.enabled) quickSyncSupported.push('claude-agents');
     if (adapters?.cursor?.enabled) quickSyncSupported.push('cursor');
     if (adapters?.copilot?.enabled) quickSyncSupported.push('copilot');
     if (adapters?.continue?.enabled) quickSyncSupported.push('continue');

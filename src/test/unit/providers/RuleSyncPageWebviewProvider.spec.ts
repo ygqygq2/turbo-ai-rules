@@ -175,7 +175,7 @@ describe('RuleSyncPageWebviewProvider', () => {
     it('应该包含所有适配器（预置和自定义）', async () => {
       const data = await (provider as any).getRuleSyncData();
 
-      expect(data.adapters.length).toBeGreaterThanOrEqual(11); // 10 预置 + 1 自定义
+      expect(data.adapters.length).toBeGreaterThanOrEqual(19); // 18 预置 + 1 自定义
 
       const copilotAdapter = data.adapters.find((a: any) => a.id === 'copilot');
       expect(copilotAdapter).toBeDefined();
@@ -202,9 +202,20 @@ describe('RuleSyncPageWebviewProvider', () => {
       expect(cursorSuite).toBeDefined();
       expect(cursorSuite.adapterIds).toEqual(['cursor', 'cursor-skills']);
       expect(copilotSuite).toBeDefined();
-      expect(copilotSuite.adapterIds).toEqual(['copilot', 'copilot-skills']);
+      expect(copilotSuite.adapterIds).toEqual([
+        'copilot',
+        'copilot-instructions-files',
+        'copilot-skills',
+        'copilot-agents',
+        'copilot-prompts',
+      ]);
       expect(claudeSuite).toBeDefined();
-      expect(claudeSuite.adapterIds).toEqual(['cline', 'roo-cline', 'aider', 'bolt']);
+      expect(claudeSuite.adapterIds).toEqual([
+        'claude-md',
+        'claude-skills',
+        'claude-commands',
+        'claude-agents',
+      ]);
       expect(agenticSuite).toBeDefined();
       expect(agenticSuite.adapterIds).toEqual(['continue', 'cline', 'roo-cline', 'aider']);
     });
@@ -225,7 +236,7 @@ describe('RuleSyncPageWebviewProvider', () => {
       const states = await (provider as any).getAdapterStates();
 
       expect(Array.isArray(states)).toBe(true);
-      expect(states.length).toBeGreaterThanOrEqual(11);
+      expect(states.length).toBeGreaterThanOrEqual(19);
     });
 
     it('应该正确设置适配器属性', async () => {

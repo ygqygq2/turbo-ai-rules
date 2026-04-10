@@ -45,12 +45,13 @@
 | `scenarios-workspaceSwitching-ws1/` | `scenarios/scenarios-workspaceSwitching-shared.test.ts` | 共享测试文件 |
 | `scenarios-workspaceSwitching-ws2/` | `scenarios/scenarios-workspaceSwitching-shared.test.ts` | 共享测试文件 |
 
-### 📂 Workflows 类别 (8 个工作空间 → 7 个测试文件)
+### 📂 Workflows 类别 (9 个工作空间 → 8 个测试文件)
 
 | 工作空间 | 测试文件 | 说明 |
 |---------|---------|------|
 | `workflows-cursor/` | `workflows/workflows-cursor.test.ts` | Cursor 工作流 |
 | `workflows-generateRules/` | `workflows/workflows-generateRules.test.ts` | 生成规则 |
+| `workflows-adapter-suites/` | `workflows/workflows-adapterSuites.test.ts` | 适配器综合体 |
 | `workflows-multiSource/` | `workflows/workflows-multiSource.test.ts` | 多源管理 |
 | `workflows-ruleSelection/` | `workflows/workflows-ruleSelection.test.ts` | 规则选择 |
 | `workflows-skills/` | `workflows/workflows-skills.test.ts` | 技能卡流程 |
@@ -75,9 +76,9 @@
 | Commands | 6 | 5 | 1 (addSource) |
 | Adapters | 3 | 3 | 0 |
 | Scenarios | 10 | 8 | 2 (isolation, switching) |
-| Workflows | 8 | 7 | 0 |
+| Workflows | 9 | 8 | 0 |
 | Rules | 5 | 0 | - |
-| **总计** | **32** | **23** | **3** |
+| **总计** | **33** | **24** | **3** |
 
 ## 🔍 共享测试说明
 

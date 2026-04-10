@@ -192,17 +192,27 @@ export interface AdapterSuiteConfig {
  * AI 工具适配器配置集合
  *
  * 支持预设适配器和自定义适配器：
- * - 预设适配器：cursor, copilot, continue, windsurf, aider, cline, roo-cline, bolt, qodo-gen
+ * - 预设适配器：claude-md, claude-skills, claude-commands, claude-agents, cursor, copilot, copilot-instructions-files, copilot-agents, copilot-prompts, copilot-hooks, continue, windsurf, aider, cline, roo-cline, bolt, qodo-gen
  * - 自定义适配器：通过 custom 数组配置
  */
 export interface AdaptersConfig {
   // === IDE 集成类工具 ===
+  /** Claude Code root instructions */
+  'claude-md'?: AdapterConfig;
   /** Cursor AI editor */
   cursor?: AdapterConfig;
   /** Windsurf (Codeium IDE) */
   windsurf?: AdapterConfig;
   /** GitHub Copilot */
   copilot?: AdapterConfig;
+  /** GitHub Copilot scoped instruction files */
+  'copilot-instructions-files'?: AdapterConfig;
+  /** GitHub Copilot custom agents */
+  'copilot-agents'?: AdapterConfig;
+  /** GitHub Copilot prompt files */
+  'copilot-prompts'?: AdapterConfig;
+  /** GitHub Copilot lifecycle hooks */
+  'copilot-hooks'?: AdapterConfig;
 
   // === VSCode 扩展类工具 ===
   /** Continue.dev */
@@ -218,6 +228,18 @@ export interface AdaptersConfig {
   // === 命令行工具 ===
   /** Aider - AI pair programming */
   aider?: AdapterConfig;
+
+  // === Claude Code 目录能力 ===
+  /** Claude Code skills */
+  'claude-skills'?: AdapterConfig;
+  /** Claude Code commands */
+  'claude-commands'?: AdapterConfig;
+  /** Claude Code agents */
+  'claude-agents'?: AdapterConfig;
+  /** GitHub Copilot skills */
+  'copilot-skills'?: AdapterConfig;
+  /** Cursor skills */
+  'cursor-skills'?: AdapterConfig;
 
   // === Web 平台类工具 ===
   /** Bolt.new (StackBlitz) */

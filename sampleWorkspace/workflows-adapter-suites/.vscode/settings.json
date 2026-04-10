@@ -1,0 +1,67 @@
+{
+  "turbo-ai-rules.sync.onStartup": false,
+  "turbo-ai-rules.sources": [
+    {
+      "id": "ai-rules",
+      "name": "AI Rules",
+      "gitUrl": "https://github.com/ygqygq2/ai-rules.git",
+      "branch": "main",
+      "enabled": true,
+      "authentication": {
+        "type": "none"
+      }
+    }
+  ],
+  "turbo-ai-rules.adapters": {
+    "copilot": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "copilot-instructions-files": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "copilot-skills": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "copilot-agents": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "copilot-prompts": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "copilot-hooks": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "claude-md": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "claude-skills": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "claude-commands": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "claude-agents": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    }
+  }
+}

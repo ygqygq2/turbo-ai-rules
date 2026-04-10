@@ -1,6 +1,6 @@
 /**
  * 预设适配器集成测试
- * 测试新增的预设适配器（Windsurf, Cline, Roo-Cline, Aider, Bolt, Qodo Gen）
+ * 测试新增的预设适配器（Claude, Windsurf, Cline, Roo-Cline, Aider, Bolt, Skills）
  */
 import * as assert from 'assert';
 import * as fs from 'fs-extra';
@@ -26,14 +26,22 @@ describe('Preset Adapters Integration Tests', () => {
     // 清理生成的配置文件
     if (workspaceFolder) {
       const cleanupPaths = [
+        'CLAUDE.md',
         '.cursorrules',
         '.windsurfrules',
         '.github/copilot-instructions.md',
+        '.github/instructions',
+        '.github/agents',
+        '.github/prompts',
+        '.github/hooks',
         '.continuerules',
         '.clinerules',
         '.roo-clinerules',
         '.aider.conf.yml',
         '.bolt/prompt',
+        '.claude/skills',
+        '.claude/commands',
+        '.claude/agents',
         '.cursor/skills',
         '.github/skills',
       ];
@@ -55,14 +63,22 @@ describe('Preset Adapters Integration Tests', () => {
 
     // 检查核心预设适配器是否存在
     const expectedCoreAdapters = [
+      'claude-md',
       'cursor',
       'windsurf',
       'copilot',
+      'copilot-instructions-files',
+      'copilot-agents',
+      'copilot-prompts',
+      'copilot-hooks',
       'continue',
       'cline',
       'roo-cline',
       'aider',
       'bolt',
+      'claude-skills',
+      'claude-commands',
+      'claude-agents',
       'cursor-skills',
       'copilot-skills',
     ];

@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { PresetAdapter, PresetAdapterConfig } from '../../../adapters/PresetAdapter';
-import type { ParsedRule } from '../../../types/rules';
+import type { AssetKind, ParsedRule } from '../../../types/rules';
 
 // 测试用的预设配置
 const testConfig: PresetAdapterConfig = {
@@ -17,8 +17,22 @@ const testConfig: PresetAdapterConfig = {
   description: 'Test adapter for unit tests',
 };
 
+const testDirectoryConfig: PresetAdapterConfig = {
+  id: 'test-directory-adapter',
+  name: 'Test Directory Adapter',
+  filePath: '.github/prompts',
+  type: 'directory',
+  defaultEnabled: false,
+  description: 'Directory preset adapter for unit tests',
+  assetKinds: ['prompt'],
+};
+
 // 创建测试规则
-const createTestRule = (id: string, priority: 'low' | 'medium' | 'high'): ParsedRule => ({
+const createTestRule = (
+  id: string,
+  priority: 'low' | 'medium' | 'high',
+  kind?: AssetKind,
+): ParsedRule => ({
   id,
   title: `Rule ${id}`,
   content: `Content for ${id}`,
@@ -28,6 +42,7 @@ const createTestRule = (id: string, priority: 'low' | 'medium' | 'high'): Parsed
   metadata: {
     priority,
   },
+  ...(kind ? { kind } : {}),
 });
 
 describe('PresetAdapter', () => {
@@ -106,6 +121,31 @@ describe('PresetAdapter', () => {
     it('应该返回配置中的文件路径', () => {
       const adapter = new PresetAdapter(testConfig, true);
       expect(adapter.getFilePath()).toBe('.testrules');
+    });
+
+    it('目录型预设适配器应该返回目录路径', () => {
+      const adapter = new PresetAdapter(testDirectoryConfig, true);
+      expect(adapter.getFilePath()).toBe('.github/prompts');
+      expect((adapter as any).getDirectoryOutputPath()).toBe('.github/prompts');
+    });
+  });
+
+  describe('directory preset behavior', () => {
+    it('目录型预设不应该生成额外索引文件', () => {
+      const adapter = new PresetAdapter(testDirectoryConfig, true);
+      expect((adapter as any).shouldGenerateIndex()).toBe(false);
+    });
+
+    it('目录型预设应该只保留匹配的资产类型', async () => {
+      const adapter = new PresetAdapter(testDirectoryConfig, true);
+      const filtered = (adapter as any).filterRulesByKind([
+        createTestRule('prompt-a', 'high', 'prompt'),
+        createTestRule('agent-a', 'medium', 'agent'),
+        createTestRule('rule-a', 'low', 'rule'),
+      ]);
+
+      expect(filtered).toHaveLength(1);
+      expect(filtered[0].id).toBe('prompt-a');
     });
   });
 
