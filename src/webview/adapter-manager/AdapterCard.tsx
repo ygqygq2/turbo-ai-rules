@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '../components/Button';
 import { t } from '../utils/i18n';
+import type { AdapterAssetKind } from './AdapterManager';
 
 export interface AdapterCardProps {
   // id is reserved for future use (e.g., data-testid)
@@ -11,6 +12,8 @@ export interface AdapterCardProps {
   outputPath: string;
   /** 是否为规则类型适配器 */
   isRuleType: boolean;
+  /** 真实资产类型（预设适配器可细分到 instruction/command/agent/prompt/hook 等） */
+  assetKinds?: AdapterAssetKind[];
   /** 输出格式（自定义适配器） */
   format?: 'single-file' | 'directory' | 'merge-json';
   /** 文件过滤扩展名 */
@@ -42,6 +45,7 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
   enabled = true,
   outputPath,
   isRuleType,
+  assetKinds,
   format,
   fileExtensions,
   organizeBySource,
@@ -53,8 +57,77 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
   onDelete,
   onSettings,
 }) => {
-  const typeLabel = isRuleType ? t('adapterManager.ruleType') : t('adapterManager.skillType');
-  const typeIcon = isRuleType ? 'codicon-law' : 'codicon-tools';
+  const getTypeBadge = () => {
+    const normalizedKinds = assetKinds?.filter((kind) => kind && kind !== 'unknown') ?? [];
+
+    if (normalizedKinds.includes('rule') && normalizedKinds.includes('instruction')) {
+      return {
+        label: t('adapterManager.assetType.ruleInstruction'),
+        icon: 'codicon-law',
+        className: 'rule-type',
+      };
+    }
+
+    const primaryKind = normalizedKinds[0];
+    switch (primaryKind) {
+      case 'instruction':
+        return {
+          label: t('adapterManager.assetType.instruction'),
+          icon: 'codicon-note',
+          className: 'instruction-type',
+        };
+      case 'skill':
+        return {
+          label: t('adapterManager.assetType.skill'),
+          icon: 'codicon-tools',
+          className: 'skill-type',
+        };
+      case 'command':
+        return {
+          label: t('adapterManager.assetType.command'),
+          icon: 'codicon-terminal-cmd',
+          className: 'command-type',
+        };
+      case 'agent':
+        return {
+          label: t('adapterManager.assetType.agent'),
+          icon: 'codicon-hubot',
+          className: 'agent-type',
+        };
+      case 'prompt':
+        return {
+          label: t('adapterManager.assetType.prompt'),
+          icon: 'codicon-comment-discussion',
+          className: 'prompt-type',
+        };
+      case 'hook':
+        return {
+          label: t('adapterManager.assetType.hook'),
+          icon: 'codicon-zap',
+          className: 'hook-type',
+        };
+      case 'mcp':
+        return {
+          label: t('adapterManager.assetType.mcp'),
+          icon: 'codicon-plug',
+          className: 'mcp-type',
+        };
+      case 'rule':
+        return {
+          label: t('adapterManager.assetType.rule'),
+          icon: 'codicon-law',
+          className: 'rule-type',
+        };
+      default:
+        return {
+          label: isRuleType ? t('adapterManager.ruleType') : t('adapterManager.skillType'),
+          icon: isRuleType ? 'codicon-law' : 'codicon-tools',
+          className: isRuleType ? 'rule-type' : 'skill-type',
+        };
+    }
+  };
+
+  const typeBadge = getTypeBadge();
 
   return (
     <div
@@ -73,9 +146,9 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
             ></i>
             <h3 title={name}>{name}</h3>
             {/* 类型标签 */}
-            <div className={`type-badge ${isRuleType ? 'rule-type' : 'skill-type'}`}>
-              <i className={`codicon ${typeIcon}`}></i>
-              <span>{typeLabel}</span>
+            <div className={`type-badge ${typeBadge.className}`}>
+              <i className={`codicon ${typeBadge.icon}`}></i>
+              <span>{typeBadge.label}</span>
             </div>
           </div>
           {isPreset && description && <p className="adapter-description">{description}</p>}

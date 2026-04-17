@@ -170,6 +170,50 @@
   background-color: rgba(255, 255, 255, 0.25);
 }
 
+.subtabs-container {
+  margin-bottom: var(--spacing-sm);
+}
+
+.subtabs {
+  display: inline-flex;
+  gap: var(--spacing-xs);
+  background-color: var(--vscode-editorWidget-background);
+  padding: 4px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--vscode-editorWidget-border);
+}
+
+.subtab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: calc(var(--border-radius) - 2px);
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.subtab:hover {
+  background-color: var(--vscode-toolbar-hoverBackground);
+  color: var(--vscode-foreground);
+}
+
+.subtab.active {
+  background-color: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+
+.subtab-count {
+  background-color: rgba(255, 255, 255, 0.12);
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
 /* Tab 内容区 */
 .tab-content {
   flex: 1;
@@ -289,6 +333,60 @@
   border: 1px solid rgba(255, 165, 0, 0.3);
 }
 
+.type-badge.instruction-type {
+  background-color: rgba(0, 127, 212, 0.12);
+  color: var(--vscode-textLink-foreground);
+  border: 1px solid rgba(0, 127, 212, 0.28);
+}
+
+.type-badge.command-type {
+  background-color: rgba(220, 120, 20, 0.14);
+  color: #d7a45d;
+  border: 1px solid rgba(220, 120, 20, 0.28);
+}
+
+.type-badge.agent-type {
+  background-color: rgba(170, 110, 255, 0.14);
+  color: #c4a2ff;
+  border: 1px solid rgba(170, 110, 255, 0.28);
+}
+
+.type-badge.prompt-type {
+  background-color: rgba(0, 170, 140, 0.14);
+  color: #6dd7bf;
+  border: 1px solid rgba(0, 170, 140, 0.28);
+}
+
+.type-badge.hook-type {
+  background-color: rgba(60, 180, 255, 0.12);
+  color: #82d7ff;
+  border: 1px solid rgba(60, 180, 255, 0.26);
+}
+
+.type-badge.mcp-type {
+  background-color: rgba(120, 160, 255, 0.12);
+  color: #a9c3ff;
+  border: 1px solid rgba(120, 160, 255, 0.26);
+}
+
+.type-badge.suite-type {
+  background-color: rgba(153, 102, 255, 0.14);
+  color: var(--vscode-terminal-ansiMagenta, #9a6bff);
+  border: 1px solid rgba(153, 102, 255, 0.28);
+}
+
+.type-badge.preset-suite-type {
+  background-color: rgba(0, 127, 212, 0.15);
+  color: var(--vscode-textLink-foreground);
+  border: 1px solid rgba(0, 127, 212, 0.3);
+}
+
+.type-badge.custom-suite-type {
+  background-color: rgba(153, 102, 255, 0.14);
+  color: var(--vscode-terminal-ansiMagenta, #9a6bff);
+  border: 1px solid rgba(153, 102, 255, 0.28);
+}
+
 /* 设置按钮 */
 .settings-button {
   background: none;
@@ -385,7 +483,6 @@
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) 0;
   border-top: 1px solid var(--vscode-editorWidget-border);
-  border-bottom: 1px solid var(--vscode-editorWidget-border);
 }
 
 .adapter-card .info-row {
@@ -440,6 +537,7 @@
   display: flex;
   gap: var(--spacing-sm);
   padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--vscode-editorWidget-border);
   margin-top: auto;
 }
 
@@ -535,6 +633,10 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.suite-modal-content {
+  max-width: 720px;
 }
 
 .modal-header {
@@ -754,6 +856,101 @@
   margin-left: 22px;
   font-size: 0.85rem;
   color: var(--vscode-descriptionForeground);
+}
+
+.suite-card .adapter-icon {
+  color: var(--vscode-terminal-ansiMagenta, #9a6bff);
+}
+
+.suite-members-row {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.adapter-card .suite-members-row .label {
+  width: 100%;
+  min-width: 0;
+  justify-content: flex-start;
+  margin: 0;
+}
+
+.suite-member-tags {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-content: flex-start;
+  gap: 6px;
+}
+
+.suite-member-tag {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: min(220px, 100%);
+  padding: 4px 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--vscode-textLink-foreground) 22%, transparent);
+  background: color-mix(in srgb, var(--vscode-editorWidget-background) 70%, var(--vscode-textLink-foreground) 8%);
+  color: var(--vscode-foreground);
+  font-size: 0.78rem;
+  line-height: 1.2;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.suite-member-tag-text {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suite-member-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.suite-member-option {
+  align-items: flex-start;
+}
+
+.suite-member-label-row {
+  justify-content: space-between;
+  width: calc(100% - 24px);
+}
+
+.suite-member-name-block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.suite-member-meta-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.suite-member-source {
+  font-size: 0.8rem;
+}
+
+.suite-member-path {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--vscode-editor-font-family, 'Consolas', 'Courier New', monospace);
 }
 
 /* 提示框 */

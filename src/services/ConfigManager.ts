@@ -10,6 +10,7 @@ import type {
   CustomAdapterConfig,
   ExtensionConfig,
   ParserConfig,
+  RelativePathBase,
   RuleSource,
   StorageConfig,
   SyncConfig,
@@ -409,7 +410,7 @@ export class ConfigManager {
 
   /**
    * 批量更新预设适配器状态（只更新 Workspace 配置）
-   * @param adapters 预设适配器配置映射 { adapterId: { enabled, autoUpdate, sortBy, sortOrder } }
+   * @param adapters 预设适配器配置映射 { adapterId: { enabled, autoUpdate, sortBy, sortOrder, relativePathBase } }
    */
   public async updatePresetAdapters(
     adapters: Record<
@@ -419,6 +420,8 @@ export class ConfigManager {
         autoUpdate?: boolean;
         sortBy?: 'id' | 'priority' | 'none';
         sortOrder?: 'asc' | 'desc';
+        preserveDirectoryStructure?: boolean;
+        relativePathBase?: RelativePathBase;
       }
     >,
   ): Promise<void> {
@@ -434,6 +437,8 @@ export class ConfigManager {
             autoUpdate?: boolean;
             sortBy?: 'id' | 'priority' | 'none';
             sortOrder?: 'asc' | 'desc';
+            preserveDirectoryStructure?: boolean;
+            relativePathBase?: RelativePathBase;
           }
         >
       >(CONFIG_KEYS.ADAPTERS, {});
@@ -448,6 +453,8 @@ export class ConfigManager {
           autoUpdate?: boolean;
           sortBy?: 'id' | 'priority' | 'none';
           sortOrder?: 'asc' | 'desc';
+          preserveDirectoryStructure?: boolean;
+          relativePathBase?: RelativePathBase;
         }
       > = deepClone(currentAdaptersReadonly);
 
@@ -468,6 +475,12 @@ export class ConfigManager {
         if (config.sortOrder !== undefined) {
           currentAdapters[adapterId].sortOrder = config.sortOrder;
         }
+        if (config.preserveDirectoryStructure !== undefined) {
+          currentAdapters[adapterId].preserveDirectoryStructure = config.preserveDirectoryStructure;
+        }
+        if (config.relativePathBase !== undefined) {
+          currentAdapters[adapterId].relativePathBase = config.relativePathBase;
+        }
       }
 
       // 移除 custom 字段，并过滤掉完全默认的适配器（只保存用户修改过的配置）
@@ -479,6 +492,8 @@ export class ConfigManager {
           autoUpdate?: boolean;
           sortBy?: 'id' | 'priority' | 'none';
           sortOrder?: 'asc' | 'desc';
+          preserveDirectoryStructure?: boolean;
+          relativePathBase?: RelativePathBase;
         }
       > = {};
       for (const [key, value] of Object.entries(currentAdapters)) {
@@ -527,6 +542,31 @@ export class ConfigManager {
       Logger.error('Failed to update custom adapters', error as Error);
       throw new ConfigError(
         'Failed to update custom adapters',
+        ErrorCodes.CONFIG_INVALID_FORMAT,
+        error as Error,
+      );
+    }
+  }
+
+  /**
+   * 批量更新适配器综合体（只更新 Workspace 配置）
+   * @param suites 适配器综合体配置数组
+   */
+  public async updateAdapterSuites(suites: AdapterSuiteConfig[]): Promise<void> {
+    try {
+      const vscodeConfig = this.getVscodeConfig();
+
+      await vscodeConfig.update(
+        CONFIG_KEYS.ADAPTER_SUITES,
+        suites,
+        vscode.ConfigurationTarget.Workspace,
+      );
+
+      Logger.info('Adapter suites updated in workspace', { count: suites.length });
+    } catch (error) {
+      Logger.error('Failed to update adapter suites', error as Error);
+      throw new ConfigError(
+        'Failed to update adapter suites',
         ErrorCodes.CONFIG_INVALID_FORMAT,
         error as Error,
       );
@@ -706,6 +746,7 @@ export class ConfigManager {
       await this.updateConfig('sources', DEFAULT_CONFIG.sources);
       await this.updateConfig('storage', DEFAULT_CONFIG.storage);
       await this.updateConfig('adapters', DEFAULT_CONFIG.adapters);
+      await this.updateConfig('adapterSuites', DEFAULT_CONFIG.adapterSuites);
       await this.updateConfig('sync', DEFAULT_CONFIG.sync);
 
       Logger.info('Configuration reset to default');

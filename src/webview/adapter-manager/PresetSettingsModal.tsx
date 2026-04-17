@@ -5,13 +5,14 @@ import { t } from '../utils/i18n';
 export interface PresetAdapterSettings {
   id: string;
   name: string;
-  type: 'file' | 'directory';
+  type: 'file' | 'directory' | 'merge-json';
   isRuleType: boolean;
   sortBy: 'id' | 'priority' | 'none';
   sortOrder: 'asc' | 'desc';
   // Directory specific settings
   organizeBySource?: boolean;
   preserveDirectoryStructure?: boolean;
+  relativePathBase?: 'source-subpath' | 'asset-root';
   useOriginalFilename?: boolean;
   generateIndex?: boolean;
   indexPerSource?: boolean;
@@ -37,6 +38,9 @@ export const PresetSettingsModal: React.FC<PresetSettingsModalProps> = ({
   const [preserveDirectoryStructure, setPreserveDirectoryStructure] = useState(
     adapter.preserveDirectoryStructure ?? true,
   );
+  const [relativePathBase, setRelativePathBase] = useState<'source-subpath' | 'asset-root'>(
+    adapter.relativePathBase ?? 'source-subpath',
+  );
   const [useOriginalFilename, setUseOriginalFilename] = useState(
     adapter.useOriginalFilename ?? true,
   );
@@ -51,6 +55,7 @@ export const PresetSettingsModal: React.FC<PresetSettingsModalProps> = ({
       sortOrder,
       organizeBySource,
       preserveDirectoryStructure,
+      relativePathBase,
       useOriginalFilename,
       generateIndex,
       indexPerSource,
@@ -141,7 +146,7 @@ export const PresetSettingsModal: React.FC<PresetSettingsModalProps> = ({
                 </div>
               )}
             </>
-          ) : (
+          ) : adapter.type === 'directory' ? (
             /* 目录类型显示目录配置选项 */
             <div className="form-group">
               <div className="checkbox-group">
@@ -174,6 +179,42 @@ export const PresetSettingsModal: React.FC<PresetSettingsModalProps> = ({
                     {t('adapterManager.preserveDirectoryStructureDesc')}
                   </span>
                 </label>
+
+                {preserveDirectoryStructure && (
+                  <div className="form-group sub-option">
+                    <label>
+                      <i className="codicon codicon-symbol-namespace"></i>
+                      {t('adapterManager.relativePathBase')}
+                    </label>
+                    <div className="radio-group">
+                      <label className="radio-option">
+                        <input
+                          type="radio"
+                          name="preset-relativePathBase"
+                          checked={relativePathBase === 'source-subpath'}
+                          onChange={() => setRelativePathBase('source-subpath')}
+                        />
+                        <span className="radio-label">
+                          {t('adapterManager.relativePathBase.sourceSubpath')}
+                        </span>
+                      </label>
+                      <label className="radio-option">
+                        <input
+                          type="radio"
+                          name="preset-relativePathBase"
+                          checked={relativePathBase === 'asset-root'}
+                          onChange={() => setRelativePathBase('asset-root')}
+                        />
+                        <span className="radio-label">
+                          {t('adapterManager.relativePathBase.assetRoot')}
+                        </span>
+                      </label>
+                    </div>
+                    <span className="checkbox-description">
+                      {t('adapterManager.relativePathBaseDesc')}
+                    </span>
+                  </div>
+                )}
 
                 <label className="checkbox-option">
                   <input
@@ -222,6 +263,16 @@ export const PresetSettingsModal: React.FC<PresetSettingsModalProps> = ({
                   </label>
                 )}
               </div>
+            </div>
+          ) : (
+            <div className="form-group">
+              <label>
+                <i className="codicon codicon-json"></i>
+                Merge JSON
+              </label>
+              <p className="checkbox-description">
+                此预设会把结构化 JSON/YAML 片段合并到目标设置文件中；当前无额外可调参数。
+              </p>
             </div>
           )}
         </form>

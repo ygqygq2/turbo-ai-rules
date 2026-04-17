@@ -421,6 +421,14 @@ describe('BaseAdapter sorting and deduplication', () => {
       readonly name = 'DirectoryTest';
       readonly enabled = true;
 
+      getRelativePathBaseForTest(): string {
+        return this['relativePathBase'];
+      }
+
+      stripAssetRootPrefixForTest(relativePath: string, rule: ParsedRule): string {
+        return this.stripAssetRootPrefix(relativePath, rule);
+      }
+
       protected getOutputType(): 'file' | 'directory' {
         return 'directory';
       }
@@ -475,6 +483,74 @@ describe('BaseAdapter sorting and deduplication', () => {
 
       adapter.setPreserveDirectoryStructure(true);
       expect(adapter['preserveDirectoryStructure']).toBe(true);
+    });
+
+    it('should default relativePathBase to source-subpath', () => {
+      const adapter = new DirectoryTestAdapter();
+      expect(adapter.getRelativePathBaseForTest()).toBe('source-subpath');
+    });
+
+    it('should allow setting relativePathBase', () => {
+      const adapter = new DirectoryTestAdapter();
+      adapter.setRelativePathBase('asset-root');
+      expect(adapter.getRelativePathBaseForTest()).toBe('asset-root');
+    });
+
+    it('should strip typed asset root when using asset-root semantics', () => {
+      const adapter = new DirectoryTestAdapter();
+      const rule: ParsedRule = {
+        id: 'new-rule',
+        title: 'New Rule',
+        content: 'content',
+        rawContent: 'content',
+        sourceId: 'demo',
+        metadata: {},
+        filePath: '/repo/commands/0002-rules/new-rule.md',
+        kind: 'command',
+      };
+
+      expect(adapter.stripAssetRootPrefixForTest('commands/0002-rules/new-rule.md', rule)).toBe(
+        '0002-rules/new-rule.md',
+      );
+    });
+
+    it('should keep legacy numeric prefixes after removing the asset root', () => {
+      const adapter = new DirectoryTestAdapter();
+      const rule: ParsedRule = {
+        id: 'skill',
+        title: 'Skill',
+        content: 'content',
+        rawContent: 'content',
+        sourceId: 'demo',
+        metadata: {},
+        filePath: '/repo/1300-skills/0010-git-workflow-expert/SKILL.md',
+        kind: 'skill',
+      };
+
+      expect(
+        adapter.stripAssetRootPrefixForTest(
+          '1300-skills/0010-git-workflow-expert/SKILL.md',
+          rule,
+        ),
+      ).toBe('0010-git-workflow-expert/SKILL.md');
+    });
+
+    it('should remove hook container directories after stripping the asset root', () => {
+      const adapter = new DirectoryTestAdapter();
+      const rule: ParsedRule = {
+        id: 'hook-script',
+        title: 'Hook Script',
+        content: 'echo ok',
+        rawContent: 'echo ok',
+        sourceId: 'demo',
+        metadata: {},
+        filePath: '/repo/hooks/0002-scripts/lint-on-save.sh',
+        kind: 'hook',
+      };
+
+      expect(adapter.stripAssetRootPrefixForTest('hooks/0002-scripts/lint-on-save.sh', rule)).toBe(
+        'lint-on-save.sh',
+      );
     });
   });
 });

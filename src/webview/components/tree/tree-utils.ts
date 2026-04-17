@@ -71,6 +71,47 @@ export function toggleNode(nodes: TreeNode[], targetPath: string): TreeNode[] {
 }
 
 /**
+ * @description 根据已选文件路径自动展开其祖先目录，便于在树中直接看到已选项
+ * @param nodes {TreeNode[]}
+ * @param selectedPaths {string[]}
+ * @return {TreeNode[]}
+ */
+export function expandTreeForSelectedPaths(nodes: TreeNode[], selectedPaths: string[]): TreeNode[] {
+  if (selectedPaths.length === 0) {
+    return nodes;
+  }
+
+  const normalizedSelected = new Set(selectedPaths.map((item) => item.replace(/\\/g, '/')));
+
+  const expandNode = (node: TreeNode): [TreeNode, boolean] => {
+    if (node.type === 'file') {
+      return [node, normalizedSelected.has(node.path.replace(/\\/g, '/'))];
+    }
+
+    const children = node.children || [];
+    let hasSelectedDescendant = false;
+    const expandedChildren = children.map((child) => {
+      const [expandedChild, childHasSelection] = expandNode(child);
+      if (childHasSelection) {
+        hasSelectedDescendant = true;
+      }
+      return expandedChild;
+    });
+
+    return [
+      {
+        ...node,
+        children: expandedChildren,
+        expanded: node.expanded || hasSelectedDescendant,
+      },
+      hasSelectedDescendant,
+    ];
+  };
+
+  return nodes.map((node) => expandNode(node)[0]);
+}
+
+/**
  * @description 获取所有文件路径（用于全选）
  * @return default {string[]}
  * @param nodes {TreeNode[]}

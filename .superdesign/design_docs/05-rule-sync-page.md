@@ -39,15 +39,19 @@
 - 树形结构展示所有规则源(类似左侧规则树视图)
   ```
   📁 规则源 A (my-team-rules)
-    ├─ 📁 001-general-standards
-    │  ├─ 📄 coding-standards.md ☑
-    │  └─ 📄 naming-conventions.md ☑
-    ├─ 📁 100-programming-languages
-    │  └─ 📄 typescript-guide.md ☐
+    ├─ 📁 rules
+    │  ├─ 📁 001-general-standards
+    │  │  └─ 📄 001-coding-standards.mdc ☑
+    │  └─ 📁 100-programming-languages
+    │     └─ 📄 102-typescript.mdc ☐
+    ├─ 📁 skills
+    │  └─ 📄 0003-debugging.mdc ☑
   📁 规则源 B (public-rules)
-    ├─ 📄 README.md ☐
-    └─ 📁 best-practices
-       └─ 📄 react-patterns.md ☑
+    ├─ 📁 rules
+    │  └─ 📁 200-frameworks
+    │     └─ 📄 201-react.mdc ☑
+    └─ 📁 prompts
+       └─ 📄 0001-review.prompt.md ☐
   ```
 - 每个规则源作为顶层节点,显示源名称
 - 支持展开/收起目录(点击 chevron 图标)

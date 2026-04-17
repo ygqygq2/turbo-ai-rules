@@ -9,7 +9,14 @@ import * as vscode from 'vscode';
 
 import { PRESET_ADAPTERS } from '../adapters';
 import { ConfigManager } from '../services/ConfigManager';
-import type { CustomAdapterConfig, OutputType } from '../types/config';
+import type {
+  AdapterSuiteConfig,
+  CustomAdapterConfig,
+  OutputType,
+  RelativePathBase,
+} from '../types/config';
+import type { AssetKind } from '../types/rules';
+import { mergeById } from '../utils/configMerge';
 import { EXTENSION_ICON_PATH } from '../utils/constants';
 import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
@@ -25,12 +32,14 @@ interface PresetAdapterData {
   description: string;
   enabled: boolean;
   outputPath: string;
-  type: 'file' | 'directory';
+  type: 'file' | 'directory' | 'merge-json';
   isRuleType: boolean;
+  assetKinds?: AssetKind[];
   sortBy?: 'id' | 'priority' | 'none';
   sortOrder?: 'asc' | 'desc';
   organizeBySource?: boolean;
   preserveDirectoryStructure?: boolean;
+  relativePathBase?: RelativePathBase;
   useOriginalFilename?: boolean;
   generateIndex?: boolean;
   indexPerSource?: boolean;
@@ -45,6 +54,7 @@ interface CustomAdapterData {
   outputPath: string;
   format: 'single-file' | 'directory' | 'merge-json';
   isRuleType: boolean;
+  assetKinds?: AssetKind[];
   enabled: boolean;
   singleFileTemplate?: string;
   directoryStructure?: {
@@ -57,10 +67,30 @@ interface CustomAdapterData {
   indexPerSource?: boolean;
   indexFileName?: string;
   preserveDirectoryStructure?: boolean;
+  relativePathBase?: RelativePathBase;
   useOriginalFilename?: boolean;
   sortBy?: 'id' | 'priority' | 'none'; // 排序依据（仅单文件模式）
   sortOrder?: 'asc' | 'desc'; // 排序顺序（仅单文件模式）
   isNew?: boolean; // 标识是新增还是编辑
+}
+
+/**
+ * 自定义适配器综合体数据（用于前端展示）
+ */
+interface CustomSuiteData {
+  id: string;
+  name: string;
+  description?: string;
+  adapterIds: string[];
+  enabled: boolean;
+}
+
+interface PresetSuiteData {
+  id: string;
+  name: string;
+  description?: string;
+  adapterIds: string[];
+  enabled: boolean;
 }
 
 /**
@@ -69,6 +99,8 @@ interface CustomAdapterData {
 interface AdapterData {
   presetAdapters: PresetAdapterData[];
   customAdapters: CustomAdapterData[];
+  presetSuites: PresetSuiteData[];
+  customSuites: CustomSuiteData[];
 }
 
 function toCustomAdapterFormat(outputType: OutputType): CustomAdapterData['format'] {
@@ -373,6 +405,7 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
             sortOrder?: 'asc' | 'desc';
             organizeBySource?: boolean;
             preserveDirectoryStructure?: boolean;
+            relativePathBase?: RelativePathBase;
             useOriginalFilename?: boolean;
             generateIndex?: boolean;
             indexPerSource?: boolean;
@@ -387,10 +420,12 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         outputPath: presetConfig.filePath,
         type: presetConfig.type,
         isRuleType: presetConfig.isRuleType ?? true, // 根据配置决定，默认为规则类型
+        assetKinds: presetConfig.assetKinds,
         sortBy: adapterConfig?.sortBy ?? 'priority',
         sortOrder: adapterConfig?.sortOrder ?? 'asc',
         organizeBySource: adapterConfig?.organizeBySource,
         preserveDirectoryStructure: adapterConfig?.preserveDirectoryStructure,
+        relativePathBase: adapterConfig?.relativePathBase ?? presetConfig.relativePathBase,
         useOriginalFilename: adapterConfig?.useOriginalFilename,
         generateIndex: adapterConfig?.generateIndex,
         indexPerSource: adapterConfig?.indexPerSource,
@@ -411,16 +446,90 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
       indexPerSource: adapter.indexPerSource,
       indexFileName: adapter.indexFileName,
       preserveDirectoryStructure: adapter.preserveDirectoryStructure,
+      relativePathBase: adapter.relativePathBase,
       useOriginalFilename: adapter.useOriginalFilename,
       sortBy: adapter.sortBy,
       sortOrder: adapter.sortOrder,
       ...getCustomAdapterDataByOutputType(adapter),
     }));
 
+    const presetSuites = this.getPresetSuiteData(config.adapterSuites || []);
+    const customSuites = this.getCustomSuiteData(config.adapterSuites || []);
+
     return {
       presetAdapters,
       customAdapters,
+      presetSuites,
+      customSuites,
     };
+  }
+
+  private getPresetSuiteData(configuredSuites: AdapterSuiteConfig[]): PresetSuiteData[] {
+    const presetSuiteIds = new Set(this.getDefaultAdapterSuites().map((suite) => suite.id));
+    const configuredPresetSuites = configuredSuites.filter((suite) => presetSuiteIds.has(suite.id));
+
+    return mergeById<AdapterSuiteConfig>(configuredPresetSuites, this.getDefaultAdapterSuites()).map(
+      (suite) => ({
+        id: suite.id,
+        name: suite.name,
+        description: suite.description,
+        adapterIds: [...suite.adapterIds],
+        enabled: suite.enabled !== false,
+      }),
+    );
+  }
+
+  private getCustomSuiteData(configuredSuites: AdapterSuiteConfig[]): CustomSuiteData[] {
+    const presetSuiteIds = new Set(this.getDefaultAdapterSuites().map((suite) => suite.id));
+
+    return configuredSuites
+      .filter((suite) => !presetSuiteIds.has(suite.id))
+      .map((suite) => ({
+        id: suite.id,
+        name: suite.name,
+        description: suite.description,
+        adapterIds: [...suite.adapterIds],
+        enabled: suite.enabled !== false,
+      }));
+  }
+
+  private getDefaultAdapterSuites(): AdapterSuiteConfig[] {
+    return [
+      {
+        id: 'cursor-core',
+        name: t('ruleSyncPage.suite.cursorCore.name'),
+        description: t('ruleSyncPage.suite.cursorCore.description'),
+        adapterIds: ['cursor', 'cursor-skills'],
+        enabled: true,
+      },
+      {
+        id: 'copilot-core',
+        name: t('ruleSyncPage.suite.copilotCore.name'),
+        description: t('ruleSyncPage.suite.copilotCore.description'),
+        adapterIds: [
+          'copilot',
+          'copilot-instructions-files',
+          'copilot-skills',
+          'copilot-agents',
+          'copilot-prompts',
+        ],
+        enabled: true,
+      },
+      {
+        id: 'claude-core',
+        name: t('ruleSyncPage.suite.claudeCore.name'),
+        description: t('ruleSyncPage.suite.claudeCore.description'),
+        adapterIds: [
+          'claude-md',
+          'claude-skills',
+          'claude-commands',
+          'claude-agents',
+          'claude-hooks',
+          'claude-hooks-settings',
+        ],
+        enabled: true,
+      },
+    ];
   }
 
   /**
@@ -433,6 +542,8 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
       const data = payload as {
         presetAdapters?: PresetAdapterData[];
         customAdapters?: CustomAdapterData[];
+        presetSuites?: PresetSuiteData[];
+        customSuites?: CustomSuiteData[];
       };
 
       // 更新预设适配器状态
@@ -444,6 +555,8 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
             autoUpdate?: boolean;
             sortBy?: 'id' | 'priority' | 'none';
             sortOrder?: 'asc' | 'desc';
+            preserveDirectoryStructure?: boolean;
+            relativePathBase?: RelativePathBase;
           }
         > = {};
         for (const preset of data.presetAdapters) {
@@ -451,6 +564,8 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
             enabled: preset.enabled,
             sortBy: preset.sortBy,
             sortOrder: preset.sortOrder,
+            preserveDirectoryStructure: preset.preserveDirectoryStructure,
+            relativePathBase: preset.relativePathBase,
           };
         }
         await this.configManager.updatePresetAdapters(presetAdaptersConfig);
@@ -467,6 +582,45 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
           ...getCustomAdapterConfigByFormat(adapter),
         }));
         await this.configManager.updateCustomAdapters(customAdapters);
+      }
+
+      const suiteConfigs: AdapterSuiteConfig[] = [];
+
+      if (data.presetSuites) {
+        const defaultPresetMap = new Map(
+          this.getDefaultAdapterSuites().map((suite) => [suite.id, suite]),
+        );
+
+        for (const suite of data.presetSuites) {
+          const defaultSuite = defaultPresetMap.get(suite.id);
+          if (!defaultSuite || defaultSuite.enabled === suite.enabled) {
+            continue;
+          }
+
+          suiteConfigs.push({
+            id: suite.id,
+            name: suite.name,
+            description: suite.description?.trim() || undefined,
+            adapterIds: suite.adapterIds,
+            enabled: suite.enabled,
+          });
+        }
+      }
+
+      if (data.customSuites) {
+        suiteConfigs.push(
+          ...data.customSuites.map((suite) => ({
+            id: suite.id,
+            name: suite.name,
+            description: suite.description?.trim() || undefined,
+            adapterIds: suite.adapterIds,
+            enabled: suite.enabled,
+          })),
+        );
+      }
+
+      if (data.presetSuites || data.customSuites) {
+        await this.configManager.updateAdapterSuites(suiteConfigs);
       }
 
       Logger.info('All adapter configurations saved', { payload });
@@ -527,6 +681,7 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
         enabled: adapterData.enabled ?? true,
         outputPath: adapterData.outputPath,
         preserveDirectoryStructure: adapterData.preserveDirectoryStructure,
+        relativePathBase: adapterData.relativePathBase,
         useOriginalFilename: adapterData.useOriginalFilename,
         isRuleType: adapterData.isRuleType,
         indexPerSource: adapterData.indexPerSource,

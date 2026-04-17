@@ -95,6 +95,13 @@ export type RuleSortBy = 'id' | 'priority' | 'none';
 export type SortOrder = 'asc' | 'desc';
 
 /**
+ * 目录型适配器的相对路径基准
+ * - source-subpath: 相对于规则源 subPath 保持目录结构
+ * - asset-root: 相对于资产语义根目录（rules/skills/commands...）保持目录结构
+ */
+export type RelativePathBase = 'source-subpath' | 'asset-root';
+
+/**
  * AI 工具适配器配置
  */
 export interface AdapterConfig {
@@ -113,6 +120,11 @@ export interface AdapterConfig {
    * false: 所有文件平铺到输出目录根
    */
   preserveDirectoryStructure?: boolean;
+  /** 目录型适配器的相对路径基准（仅对 directory 类型有效）
+   * source-subpath: 相对于规则源 subPath 保持目录层级
+   * asset-root: 相对于资产类型根目录保持目录层级
+   */
+  relativePathBase?: RelativePathBase;
   /** 是否启用自动更新（默认继承全局 sync.auto 配置）
    * true: 参与定时同步，当全局 sync.auto=true 且 sync.interval > 0 时自动同步
    * false: 不参与定时同步，只能手动同步
@@ -147,6 +159,8 @@ export interface CustomAdapterConfig extends AdapterConfig {
   useOriginalFilename?: boolean;
   /** 是否保持目录结构(仅对 directory 类型有效), 默认 true。false 为平铺模式 */
   preserveDirectoryStructure?: boolean;
+  /** 目录结构的相对路径基准(仅对 directory 类型有效), 默认 source-subpath */
+  relativePathBase?: RelativePathBase;
   /** 是否生成索引文件(仅对 directory 类型有效), 默认 true */
   generateIndex?: boolean;
   /** 是否为每个源目录生成单独索引(仅当 organizeBySource=true 且 generateIndex=true 时有效), 默认 false */
@@ -192,13 +206,17 @@ export interface AdapterSuiteConfig {
  * AI 工具适配器配置集合
  *
  * 支持预设适配器和自定义适配器：
- * - 预设适配器：claude-md, claude-skills, claude-commands, claude-agents, cursor, copilot, copilot-instructions-files, copilot-agents, copilot-prompts, copilot-hooks, continue, windsurf, aider, cline, roo-cline, bolt, qodo-gen
+ * - 预设适配器：claude-md, claude-skills, claude-commands, claude-agents, claude-hooks, claude-hooks-settings, cursor, copilot, copilot-instructions-files, copilot-agents, copilot-prompts, copilot-hooks, continue, windsurf, aider, cline, roo-cline, bolt, qodo-gen
  * - 自定义适配器：通过 custom 数组配置
  */
 export interface AdaptersConfig {
   // === IDE 集成类工具 ===
   /** Claude Code root instructions */
   'claude-md'?: AdapterConfig;
+  /** Claude Code hook assets */
+  'claude-hooks'?: AdapterConfig;
+  /** Claude Code project hook settings */
+  'claude-hooks-settings'?: AdapterConfig;
   /** Cursor AI editor */
   cursor?: AdapterConfig;
   /** Windsurf (Codeium IDE) */

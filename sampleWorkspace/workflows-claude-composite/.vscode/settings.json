@@ -1,0 +1,151 @@
+{
+  "turbo-ai-rules.sync.conflictStrategy": "priority",
+  "turbo-ai-rules.sync.auto": false,
+  "turbo-ai-rules.sync.onStartup": false,
+
+  "turbo-ai-rules.sources": [
+    {
+      "id": "ai-rules-claude-composite",
+      "name": "AI Rules Claude Composite Test",
+      "gitUrl": "https://github.com/ygqygq2/ai-rules.git",
+      "branch": "main",
+      "subPath": "/",
+      "enabled": true,
+      "authentication": {
+        "type": "none"
+      }
+    }
+  ],
+
+  "turbo-ai-rules.adapters": {
+    "claude-md": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "claude-skills": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "claude-commands": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "claude-agents": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "claude-hooks": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "claude-hooks-settings": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "cursor": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "windsurf": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "copilot": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "copilot-instructions-files": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "copilot-agents": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "copilot-prompts": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "copilot-hooks": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "continue": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "cline": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "roo-cline": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "aider": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "bolt": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "cursor-skills": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "copilot-skills": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    }
+  },
+
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "raw-rules-directory",
+      "name": "Raw Rules Directory",
+      "enabled": true,
+      "outputPath": "rules",
+      "isRuleType": true,
+      "outputType": "directory",
+      "fileExtensions": [
+        "*.md"
+      ],
+      "organizeBySource": false,
+      "generateIndex": true,
+      "indexFileName": "index.md"
+    }
+  ],
+
+  "turbo-ai-rules.adapterSuites": []
+}

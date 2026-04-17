@@ -4,6 +4,8 @@ import { t } from '../utils/i18n';
 import { vscodeApi } from '../utils/vscode-api';
 import { AdapterCard } from './AdapterCard';
 import { AdapterModal } from './AdapterModal';
+import { AdapterSuiteCard } from './AdapterSuiteCard';
+import { AdapterSuiteModal } from './AdapterSuiteModal';
 import { PresetSettingsModal, PresetAdapterSettings } from './PresetSettingsModal';
 
 /**
@@ -15,7 +17,19 @@ export interface AdapterConfig {
   outputPath: string;
   /** 是否为规则类型适配器 (true=rules, false=skills) */
   isRuleType?: boolean;
+  assetKinds?: AdapterAssetKind[];
 }
+
+export type AdapterAssetKind =
+  | 'rule'
+  | 'instruction'
+  | 'skill'
+  | 'agent'
+  | 'prompt'
+  | 'command'
+  | 'hook'
+  | 'mcp'
+  | 'unknown';
 
 /**
  * 预设适配器数据
@@ -26,8 +40,10 @@ export interface PresetAdapter {
   description: string;
   enabled: boolean;
   outputPath: string;
+  type: 'file' | 'directory' | 'merge-json';
   /** 是否为规则类型适配器 */
   isRuleType: boolean;
+  assetKinds?: AdapterAssetKind[];
   /** 排序依据 */
   sortBy?: 'id' | 'priority' | 'none';
   /** 排序顺序 */
@@ -36,6 +52,8 @@ export interface PresetAdapter {
   organizeBySource?: boolean;
   /** 保留目录结构 */
   preserveDirectoryStructure?: boolean;
+  /** 目录结构的相对路径基准 */
+  relativePathBase?: 'source-subpath' | 'asset-root';
   /** 使用原文件名 */
   useOriginalFilename?: boolean;
   /** 生成索引 */
@@ -59,6 +77,7 @@ export interface CustomAdapter {
   };
   /** 是否为规则类型适配器 */
   isRuleType: boolean;
+  assetKinds?: AdapterAssetKind[];
   /** 是否启用 */
   enabled: boolean;
   /** 文件过滤扩展名 */
@@ -69,6 +88,8 @@ export interface CustomAdapter {
   generateIndex?: boolean;
   /** 是否保持目录结构（仅目录模式，false=平铺） */
   preserveDirectoryStructure?: boolean;
+  /** 保留目录结构时的相对路径基准（仅目录模式） */
+  relativePathBase?: 'source-subpath' | 'asset-root';
   /** 是否使用原始文件名（仅目录模式） */
   useOriginalFilename?: boolean;
   /** 索引文件名（仅目录模式） */
@@ -88,6 +109,27 @@ export interface EditingAdapter extends Partial<CustomAdapter> {
   isNew?: boolean;
 }
 
+export interface AdapterSuite {
+  id: string;
+  name: string;
+  description?: string;
+  adapterIds: string[];
+  enabled: boolean;
+}
+
+export interface EditingAdapterSuite extends Partial<AdapterSuite> {
+  isNew?: boolean;
+}
+
+export interface SuiteMemberOption {
+  id: string;
+  name: string;
+  outputPath: string;
+  isRuleType: boolean;
+  enabled: boolean;
+  source: 'preset' | 'custom';
+}
+
 /**
  * Adapter Manager 主组件
  */
@@ -95,19 +137,24 @@ export const AdapterManager: React.FC = () => {
   // 状态管理
   const [presetAdapters, setPresetAdapters] = useState<PresetAdapter[]>([]);
   const [customAdapters, setCustomAdapters] = useState<CustomAdapter[]>([]);
+  const [presetSuites, setPresetSuites] = useState<AdapterSuite[]>([]);
+  const [customSuites, setCustomSuites] = useState<AdapterSuite[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
 
   // Tab 和搜索状态
-  const [activeTab, setActiveTab] = useState<'preset' | 'custom'>('preset');
+  const [activeTab, setActiveTab] = useState<'preset' | 'custom' | 'suite'>('preset');
+  const [activeSuiteTab, setActiveSuiteTab] = useState<'preset' | 'custom'>('preset');
   const [searchQuery, setSearchQuery] = useState('');
 
   // 模态框状态
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAdapter, setEditingAdapter] = useState<EditingAdapter | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
+  const [suiteModalOpen, setSuiteModalOpen] = useState(false);
+  const [editingSuite, setEditingSuite] = useState<EditingAdapterSuite | null>(null);
 
   // 预设适配器设置弹出框状态
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -126,6 +173,41 @@ export const AdapterManager: React.FC = () => {
       adapter.outputPath.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
+  const filteredPresetSuites = presetSuites.filter(
+    (suite) =>
+      suite.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (suite.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      suite.adapterIds.some((adapterId) => adapterId.toLowerCase().includes(searchQuery.toLowerCase())),
+  );
+
+  const filteredCustomSuites = customSuites.filter(
+    (suite) =>
+      suite.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (suite.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      suite.adapterIds.some((adapterId) => adapterId.toLowerCase().includes(searchQuery.toLowerCase())),
+  );
+
+  const suiteMemberOptions: SuiteMemberOption[] = [
+    ...presetAdapters.map((adapter) => ({
+      id: adapter.id,
+      name: adapter.name,
+      outputPath: adapter.outputPath,
+      isRuleType: adapter.isRuleType,
+      enabled: adapter.enabled,
+      source: 'preset' as const,
+    })),
+    ...customAdapters.map((adapter) => ({
+      id: adapter.id,
+      name: adapter.name,
+      outputPath: adapter.outputPath,
+      isRuleType: adapter.isRuleType,
+      enabled: adapter.enabled,
+      source: 'custom' as const,
+    })),
+  ];
+
+  const suiteMemberNameMap = new Map(suiteMemberOptions.map((option) => [option.id, option.name]));
+
   // 初始化数据
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -135,6 +217,8 @@ export const AdapterManager: React.FC = () => {
         case 'init':
           setPresetAdapters(message.payload.presetAdapters || []);
           setCustomAdapters(message.payload.customAdapters || []);
+          setPresetSuites(message.payload.presetSuites || []);
+          setCustomSuites(message.payload.customSuites || []);
           setIsLoading(false);
           break;
 
@@ -165,6 +249,8 @@ export const AdapterManager: React.FC = () => {
         case 'updateAdapters':
           setPresetAdapters(message.payload.presetAdapters || []);
           setCustomAdapters(message.payload.customAdapters || []);
+          setPresetSuites(message.payload.presetSuites || []);
+          setCustomSuites(message.payload.customSuites || []);
           setHasChanges(false);
           break;
       }
@@ -198,19 +284,16 @@ export const AdapterManager: React.FC = () => {
    * @param adapter {PresetAdapter}
    */
   const handleOpenPresetSettings = (adapter: PresetAdapter) => {
-    // 判断type: 如果outputPath包含.且不包含/则为file，否则为directory
-    const type: 'file' | 'directory' =
-      adapter.outputPath.includes('.') && !adapter.outputPath.includes('/') ? 'file' : 'directory';
-
     const settings: PresetAdapterSettings = {
       id: adapter.id,
       name: adapter.name,
-      type,
+      type: adapter.type,
       isRuleType: adapter.isRuleType ?? true, // 默认为规则类型
       sortBy: adapter.sortBy || 'priority',
       sortOrder: adapter.sortOrder || 'asc',
       organizeBySource: adapter.organizeBySource,
       preserveDirectoryStructure: adapter.preserveDirectoryStructure,
+      relativePathBase: adapter.relativePathBase,
       useOriginalFilename: adapter.useOriginalFilename,
       generateIndex: adapter.generateIndex,
       indexPerSource: adapter.indexPerSource,
@@ -234,6 +317,7 @@ export const AdapterManager: React.FC = () => {
             sortOrder: settings.sortOrder,
             organizeBySource: settings.organizeBySource,
             preserveDirectoryStructure: settings.preserveDirectoryStructure,
+            relativePathBase: settings.relativePathBase,
             useOriginalFilename: settings.useOriginalFilename,
             generateIndex: settings.generateIndex,
             indexPerSource: settings.indexPerSource,
@@ -248,6 +332,8 @@ export const AdapterManager: React.FC = () => {
     vscodeApi.postMessage('saveAll', {
       presetAdapters: updatedPresetAdapters,
       customAdapters,
+      presetSuites,
+      customSuites,
     });
   };
 
@@ -307,6 +393,69 @@ export const AdapterManager: React.FC = () => {
     }
   };
 
+  const handleTogglePresetSuite = (suiteId: string) => {
+    setPresetSuites((prev) =>
+      prev.map((suite) => (suite.id === suiteId ? { ...suite, enabled: !suite.enabled } : suite)),
+    );
+    setHasChanges(true);
+  };
+
+  const handleToggleSuite = (suiteId: string) => {
+    setCustomSuites((prev) =>
+      prev.map((suite) => (suite.id === suiteId ? { ...suite, enabled: !suite.enabled } : suite)),
+    );
+    setHasChanges(true);
+  };
+
+  const handleAddSuite = () => {
+    setEditingSuite({
+      isNew: true,
+      id: '',
+      name: '',
+      description: '',
+      adapterIds: [],
+      enabled: true,
+    });
+    setSuiteModalOpen(true);
+  };
+
+  const handleEditSuite = (suite: AdapterSuite) => {
+    setEditingSuite({ ...suite, isNew: false });
+    setSuiteModalOpen(true);
+  };
+
+  const handleDeleteSuite = (suiteId: string) => {
+    const suite = customSuites.find((item) => item.id === suiteId);
+    if (!suite) {
+      return;
+    }
+
+    if (!confirm(t('adapterManager.confirmDeleteSuite'))) {
+      return;
+    }
+
+    setCustomSuites((prev) => prev.filter((item) => item.id !== suiteId));
+    setHasChanges(true);
+  };
+
+  const handleSaveSuite = (suite: AdapterSuite) => {
+    setCustomSuites((prev) => {
+      const next = [...prev];
+      const index = next.findIndex((item) => item.id === suite.id);
+
+      if (index >= 0) {
+        next[index] = suite;
+      } else {
+        next.push(suite);
+      }
+
+      return next;
+    });
+    setSuiteModalOpen(false);
+    setEditingSuite(null);
+    setHasChanges(true);
+  };
+
   /**
    * @description 保存适配器（新增或更新）
    * @param adapter {CustomAdapter}
@@ -323,6 +472,8 @@ export const AdapterManager: React.FC = () => {
     vscodeApi.postMessage('saveAll', {
       presetAdapters,
       customAdapters,
+      presetSuites,
+      customSuites,
     });
   };
 
@@ -398,10 +549,25 @@ export const AdapterManager: React.FC = () => {
                 {t('adapterManager.customAdapters')}
                 <span className="tab-count">{filteredCustomAdapters.length}</span>
               </button>
+              <button
+                className={`tab ${activeTab === 'suite' ? 'active' : ''}`}
+                onClick={() => setActiveTab('suite')}
+              >
+                <i className="codicon codicon-group-by-ref-type"></i>
+                {t('adapterManager.adapterSuites')}
+                <span className="tab-count">
+                  {filteredPresetSuites.length + filteredCustomSuites.length}
+                </span>
+              </button>
             </div>
             {activeTab === 'custom' && (
               <Button type="primary" icon="add" onClick={handleAddCustomAdapter}>
                 {t('adapterManager.addCustomAdapter')}
+              </Button>
+            )}
+            {activeTab === 'suite' && activeSuiteTab === 'custom' && (
+              <Button type="primary" icon="add" onClick={handleAddSuite}>
+                {t('adapterManager.addCustomSuite')}
               </Button>
             )}
           </div>
@@ -424,6 +590,7 @@ export const AdapterManager: React.FC = () => {
                       enabled={adapter.enabled}
                       outputPath={adapter.outputPath}
                       isRuleType={adapter.isRuleType}
+                      assetKinds={adapter.assetKinds}
                       sortBy={adapter.sortBy}
                       sortOrder={adapter.sortOrder}
                       isPreset={true}
@@ -433,7 +600,7 @@ export const AdapterManager: React.FC = () => {
                   ))
                 )}
               </div>
-            ) : (
+            ) : activeTab === 'custom' ? (
               <div className="adapter-cards-grid">
                 {filteredCustomAdapters.length === 0 ? (
                   <div className="empty-state">
@@ -459,6 +626,7 @@ export const AdapterManager: React.FC = () => {
                       name={adapter.name}
                       outputPath={adapter.outputPath}
                       isRuleType={adapter.isRuleType}
+                      assetKinds={adapter.assetKinds}
                       enabled={adapter.enabled}
                       format={adapter.format}
                       fileExtensions={adapter.fileExtensions}
@@ -474,6 +642,92 @@ export const AdapterManager: React.FC = () => {
                   ))
                 )}
               </div>
+            ) : (
+              <>
+                <div className="subtabs-container">
+                  <div className="subtabs">
+                    <button
+                      className={`subtab ${activeSuiteTab === 'preset' ? 'active' : ''}`}
+                      onClick={() => setActiveSuiteTab('preset')}
+                    >
+                      <i className="codicon codicon-verified-filled"></i>
+                      {t('adapterManager.presetSuites')}
+                      <span className="subtab-count">{filteredPresetSuites.length}</span>
+                    </button>
+                    <button
+                      className={`subtab ${activeSuiteTab === 'custom' ? 'active' : ''}`}
+                      onClick={() => setActiveSuiteTab('custom')}
+                    >
+                      <i className="codicon codicon-wrench"></i>
+                      {t('adapterManager.customSuites')}
+                      <span className="subtab-count">{filteredCustomSuites.length}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="adapter-cards-grid">
+                  {activeSuiteTab === 'preset' ? (
+                    filteredPresetSuites.length === 0 ? (
+                      <div className="empty-state">
+                        {searchQuery ? (
+                          <>
+                            <i className="codicon codicon-search icon"></i>
+                            <div className="message">{t('adapterManager.noMatchingSuites')}</div>
+                          </>
+                        ) : (
+                          <>
+                            <i className="codicon codicon-verified-filled icon"></i>
+                            <div className="message">{t('adapterManager.noPresetSuites')}</div>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      filteredPresetSuites.map((suite) => (
+                        <AdapterSuiteCard
+                          key={suite.id}
+                          suite={suite}
+                          variant="preset"
+                          memberNames={suite.adapterIds.map(
+                            (adapterId) => suiteMemberNameMap.get(adapterId) || adapterId,
+                          )}
+                          onToggle={() => handleTogglePresetSuite(suite.id)}
+                        />
+                      ))
+                    )
+                  ) : filteredCustomSuites.length === 0 ? (
+                    <div className="empty-state">
+                      {searchQuery ? (
+                        <>
+                          <i className="codicon codicon-search icon"></i>
+                          <div className="message">{t('adapterManager.noMatchingSuites')}</div>
+                        </>
+                      ) : (
+                        <>
+                          <i className="codicon codicon-group-by-ref-type icon"></i>
+                          <div className="message">{t('adapterManager.noCustomSuites')}</div>
+                          <Button type="primary" icon="add" onClick={handleAddSuite}>
+                            {t('adapterManager.addCustomSuite')}
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    filteredCustomSuites.map((suite) => (
+                      <AdapterSuiteCard
+                        key={suite.id}
+                        suite={suite}
+                        variant="custom"
+                        memberNames={suite.adapterIds.map(
+                          (adapterId) => suiteMemberNameMap.get(adapterId) || adapterId,
+                        )}
+                        onToggle={() => handleToggleSuite(suite.id)}
+                        onEdit={() => handleEditSuite(suite)}
+                        onDelete={() => handleDeleteSuite(suite.id)}
+                      />
+                    ))
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -506,6 +760,7 @@ export const AdapterManager: React.FC = () => {
             sortOrder: editingPresetAdapter.sortOrder || 'asc',
             organizeBySource: editingPresetAdapter.organizeBySource,
             preserveDirectoryStructure: editingPresetAdapter.preserveDirectoryStructure,
+            relativePathBase: editingPresetAdapter.relativePathBase,
             useOriginalFilename: editingPresetAdapter.useOriginalFilename,
             generateIndex: editingPresetAdapter.generateIndex,
             indexPerSource: editingPresetAdapter.indexPerSource,
@@ -514,6 +769,20 @@ export const AdapterManager: React.FC = () => {
           onClose={() => {
             setSettingsModalOpen(false);
             setEditingPresetAdapter(null);
+          }}
+        />
+      )}
+
+      {suiteModalOpen && editingSuite && (
+        <AdapterSuiteModal
+          suite={editingSuite}
+          isNew={editingSuite.isNew ?? true}
+          existingSuites={customSuites}
+          availableAdapters={suiteMemberOptions}
+          onSave={handleSaveSuite}
+          onClose={() => {
+            setSuiteModalOpen(false);
+            setEditingSuite(null);
           }}
         />
       )}

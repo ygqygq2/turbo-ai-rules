@@ -134,6 +134,60 @@ export function validateConfig(config: unknown): {
     }
   }
 
+  // 验证 adapters（可选）
+  if (cfg.adapters !== undefined) {
+    if (!cfg.adapters || typeof cfg.adapters !== 'object' || Array.isArray(cfg.adapters)) {
+      errors.push('adapters must be an object');
+    } else {
+      const adapters = cfg.adapters as Record<string, unknown>;
+      const isValidRelativePathBase = (value: unknown) =>
+        value === 'source-subpath' || value === 'asset-root';
+
+      for (const [adapterId, adapterConfig] of Object.entries(adapters)) {
+        if (adapterId === 'custom') {
+          if (adapterConfig !== undefined && !Array.isArray(adapterConfig)) {
+            errors.push('adapters.custom must be an array');
+            continue;
+          }
+
+          for (const [index, customAdapter] of (adapterConfig as unknown[] | undefined)?.entries() ||
+            []) {
+            if (!customAdapter || typeof customAdapter !== 'object') {
+              errors.push(`adapters.custom[${index}] must be an object`);
+              continue;
+            }
+
+            const custom = customAdapter as Record<string, unknown>;
+            if (
+              custom.relativePathBase !== undefined &&
+              !isValidRelativePathBase(custom.relativePathBase)
+            ) {
+              errors.push(
+                `adapters.custom[${index}].relativePathBase must be "source-subpath" or "asset-root"`,
+              );
+            }
+          }
+          continue;
+        }
+
+        if (!adapterConfig || typeof adapterConfig !== 'object' || Array.isArray(adapterConfig)) {
+          errors.push(`adapters.${adapterId} must be an object`);
+          continue;
+        }
+
+        const adapter = adapterConfig as Record<string, unknown>;
+        if (
+          adapter.relativePathBase !== undefined &&
+          !isValidRelativePathBase(adapter.relativePathBase)
+        ) {
+          errors.push(
+            `adapters.${adapterId}.relativePathBase must be "source-subpath" or "asset-root"`,
+          );
+        }
+      }
+    }
+  }
+
   // 验证 adapterSuites（可选）
   if (cfg.adapterSuites !== undefined) {
     if (!Array.isArray(cfg.adapterSuites)) {

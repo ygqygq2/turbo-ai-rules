@@ -32,6 +32,8 @@
 - `claude-skills`
 - `claude-commands`
 - `claude-agents`
+- `claude-hooks`
+- `claude-hooks-settings`
 
 ## 🧪 对应测试文件
 

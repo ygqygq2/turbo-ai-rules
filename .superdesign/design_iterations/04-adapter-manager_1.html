@@ -193,6 +193,51 @@
         background-color: rgba(255, 255, 255, 0.2);
       }
 
+      .subtabs-container {
+        margin-bottom: var(--spacing-md);
+      }
+
+      .subtabs {
+        display: inline-flex;
+        gap: var(--spacing-xs);
+        background-color: var(--vscode-editorWidget-background);
+        padding: 4px;
+        border-radius: var(--border-radius);
+        border: 1px solid var(--vscode-editorWidget-border);
+      }
+
+      .subtab {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+        padding: var(--spacing-xs) var(--spacing-md);
+        background: transparent;
+        border: none;
+        border-radius: calc(var(--border-radius) - 2px);
+        color: var(--vscode-descriptionForeground);
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.15s;
+      }
+
+      .subtab:hover {
+        background-color: var(--vscode-toolbar-hoverBackground);
+        color: var(--vscode-foreground);
+      }
+
+      .subtab.active {
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+      }
+
+      .subtab-count {
+        background-color: rgba(255, 255, 255, 0.1);
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
       /* Tab 内容 */
       .tab-content {
         flex: 1;
@@ -282,6 +327,21 @@
       .type-badge.skill-type {
         background-color: rgba(55, 148, 255, 0.15);
         color: #3794ff;
+      }
+
+      .type-badge.suite-type {
+        background-color: rgba(153, 102, 255, 0.14);
+        color: #c9a7ff;
+      }
+
+      .type-badge.preset-suite-type {
+        background-color: rgba(115, 201, 145, 0.15);
+        color: #73c991;
+      }
+
+      .type-badge.custom-suite-type {
+        background-color: rgba(153, 102, 255, 0.14);
+        color: #c9a7ff;
       }
 
       .adapter-description {
@@ -413,6 +473,10 @@
         margin-bottom: var(--spacing-md);
       }
 
+      .suite-card .adapter-icon {
+        color: #c9a7ff;
+      }
+
       /* 底部操作栏 */
       .footer-actions {
         display: flex;
@@ -483,10 +547,19 @@
               Custom Adapters
               <span class="tab-count">2</span>
             </button>
+            <button class="tab" onclick="switchTab('suite')">
+              <i class="codicon codicon-group-by-ref-type"></i>
+              Suites
+              <span class="tab-count">5</span>
+            </button>
           </div>
           <button class="btn btn-primary" id="addCustomBtn" style="display: none">
             <i class="codicon codicon-add"></i>
             Add Custom Adapter
+          </button>
+          <button class="btn btn-primary" id="addSuiteBtn" style="display: none">
+            <i class="codicon codicon-add"></i>
+            Add Custom Suite
           </button>
         </div>
 
@@ -727,6 +800,200 @@
             </div>
           </div>
         </div>
+
+        <!-- Tab 内容 - 综合体 -->
+        <div class="tab-content" id="suiteTab" style="display: none">
+          <div class="subtabs-container">
+            <div class="subtabs">
+              <button class="subtab active" onclick="switchSuiteTab('presetSuite')">
+                <i class="codicon codicon-verified-filled"></i>
+                Built-in Suites
+                <span class="subtab-count">3</span>
+              </button>
+              <button class="subtab" onclick="switchSuiteTab('customSuite')">
+                <i class="codicon codicon-symbol-property"></i>
+                Custom Suites
+                <span class="subtab-count">2</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="presetSuitePanel">
+            <div class="adapter-cards-grid">
+              <div class="adapter-card enabled custom suite-card">
+                <div class="card-header">
+                  <div class="adapter-info">
+                    <div class="adapter-name">
+                      <i class="codicon codicon-group-by-ref-type adapter-icon"></i>
+                      <h3>Cursor Core</h3>
+                      <div class="type-badge suite-type">
+                        <i class="codicon codicon-symbol-array"></i>
+                        <span>2 adapters</span>
+                      </div>
+                      <div class="type-badge preset-suite-type">
+                        <i class="codicon codicon-verified-filled"></i>
+                        <span>Built-in</span>
+                      </div>
+                    </div>
+                    <p class="adapter-description">
+                      Bundle Cursor rules with Cursor Skills for one-click sync
+                    </p>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="info-row">
+                    <span class="label"><i class="codicon codicon-symbol-key"></i>Suite ID</span>
+                    <span class="value truncate">cursor-core</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label"><i class="codicon codicon-list-unordered"></i>Members</span>
+                    <span class="value">Cursor, Cursor Skills</span>
+                  </div>
+                </div>
+                <div class="card-actions">
+                  <button class="btn btn-secondary">
+                    <i class="codicon codicon-debug-pause"></i>
+                    Disable
+                  </button>
+                </div>
+              </div>
+
+              <div class="adapter-card enabled custom suite-card">
+                <div class="card-header">
+                  <div class="adapter-info">
+                    <div class="adapter-name">
+                      <i class="codicon codicon-group-by-ref-type adapter-icon"></i>
+                      <h3>Copilot Core</h3>
+                      <div class="type-badge suite-type">
+                        <i class="codicon codicon-symbol-array"></i>
+                        <span>5 adapters</span>
+                      </div>
+                      <div class="type-badge preset-suite-type">
+                        <i class="codicon codicon-verified-filled"></i>
+                        <span>Built-in</span>
+                      </div>
+                    </div>
+                    <p class="adapter-description">
+                      Bundle Copilot instructions, skills, agents, and prompts for one-click setup
+                    </p>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="info-row">
+                    <span class="label"><i class="codicon codicon-symbol-key"></i>Suite ID</span>
+                    <span class="value truncate">copilot-core</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label"><i class="codicon codicon-list-unordered"></i>Members</span>
+                    <span class="value">Copilot, Instructions, Skills, Agents, Prompts</span>
+                  </div>
+                </div>
+                <div class="card-actions">
+                  <button class="btn btn-secondary">
+                    <i class="codicon codicon-debug-pause"></i>
+                    Disable
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="customSuitePanel" style="display: none">
+            <div class="adapter-cards-grid">
+              <div class="adapter-card enabled custom suite-card">
+                <div class="card-header">
+                  <div class="adapter-info">
+                    <div class="adapter-name">
+                      <i class="codicon codicon-group-by-ref-type adapter-icon"></i>
+                      <h3>Agent Workflow</h3>
+                      <div class="type-badge suite-type">
+                        <i class="codicon codicon-symbol-array"></i>
+                        <span>3 adapters</span>
+                      </div>
+                      <div class="type-badge custom-suite-type">
+                        <i class="codicon codicon-symbol-property"></i>
+                        <span>Custom</span>
+                      </div>
+                    </div>
+                    <p class="adapter-description">
+                      A custom bundle for personal multi-agent coding workflow
+                    </p>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="info-row">
+                    <span class="label"><i class="codicon codicon-symbol-key"></i>Suite ID</span>
+                    <span class="value truncate">agent-workflow</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label"><i class="codicon codicon-list-unordered"></i>Members</span>
+                    <span class="value">Continue, Cline, Development Skills</span>
+                  </div>
+                </div>
+                <div class="card-actions">
+                  <button class="btn btn-secondary">
+                    <i class="codicon codicon-debug-pause"></i>
+                    Disable
+                  </button>
+                  <button class="btn btn-secondary">
+                    <i class="codicon codicon-edit"></i>
+                    Edit
+                  </button>
+                  <button class="btn btn-danger">
+                    <i class="codicon codicon-trash"></i>
+                    Delete
+                  </button>
+                </div>
+              </div>
+
+              <div class="adapter-card disabled custom suite-card">
+                <div class="card-header">
+                  <div class="adapter-info">
+                    <div class="adapter-name">
+                      <i class="codicon codicon-group-by-ref-type adapter-icon"></i>
+                      <h3>Docs &amp; Prompts</h3>
+                      <div class="type-badge suite-type">
+                        <i class="codicon codicon-symbol-array"></i>
+                        <span>2 adapters</span>
+                      </div>
+                      <div class="type-badge custom-suite-type">
+                        <i class="codicon codicon-symbol-property"></i>
+                        <span>Custom</span>
+                      </div>
+                    </div>
+                    <p class="adapter-description">
+                      Personal documentation-oriented bundle for prompt-heavy projects
+                    </p>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="info-row">
+                    <span class="label"><i class="codicon codicon-symbol-key"></i>Suite ID</span>
+                    <span class="value truncate">docs-prompts</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label"><i class="codicon codicon-list-unordered"></i>Members</span>
+                    <span class="value">Copilot Prompts, Development Skills</span>
+                  </div>
+                </div>
+                <div class="card-actions">
+                  <button class="btn btn-primary">
+                    <i class="codicon codicon-debug-start"></i>
+                    Enable
+                  </button>
+                  <button class="btn btn-secondary">
+                    <i class="codicon codicon-edit"></i>
+                    Edit
+                  </button>
+                  <button class="btn btn-danger">
+                    <i class="codicon codicon-trash"></i>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 底部操作栏 -->
@@ -752,7 +1019,9 @@
       function switchTab(tab) {
         const presetTab = document.getElementById('presetTab');
         const customTab = document.getElementById('customTab');
+        const suiteTab = document.getElementById('suiteTab');
         const addBtn = document.getElementById('addCustomBtn');
+        const addSuiteBtn = document.getElementById('addSuiteBtn');
         const tabs = document.querySelectorAll('.tab');
 
         tabs.forEach((t) => t.classList.remove('active'));
@@ -760,13 +1029,46 @@
         if (tab === 'preset') {
           presetTab.style.display = 'block';
           customTab.style.display = 'none';
+          suiteTab.style.display = 'none';
           addBtn.style.display = 'none';
+          addSuiteBtn.style.display = 'none';
           tabs[0].classList.add('active');
-        } else {
+        } else if (tab === 'custom') {
           presetTab.style.display = 'none';
           customTab.style.display = 'block';
+          suiteTab.style.display = 'none';
           addBtn.style.display = 'inline-flex';
+          addSuiteBtn.style.display = 'none';
           tabs[1].classList.add('active');
+        } else {
+          presetTab.style.display = 'none';
+          customTab.style.display = 'none';
+          suiteTab.style.display = 'block';
+          addBtn.style.display = 'none';
+          addSuiteBtn.style.display = 'none';
+          tabs[2].classList.add('active');
+          switchSuiteTab('presetSuite');
+        }
+      }
+
+      function switchSuiteTab(tab) {
+        const presetSuitePanel = document.getElementById('presetSuitePanel');
+        const customSuitePanel = document.getElementById('customSuitePanel');
+        const addSuiteBtn = document.getElementById('addSuiteBtn');
+        const subtabs = document.querySelectorAll('.subtab');
+
+        subtabs.forEach((t) => t.classList.remove('active'));
+
+        if (tab === 'presetSuite') {
+          presetSuitePanel.style.display = 'block';
+          customSuitePanel.style.display = 'none';
+          addSuiteBtn.style.display = 'none';
+          subtabs[0].classList.add('active');
+        } else {
+          presetSuitePanel.style.display = 'none';
+          customSuitePanel.style.display = 'block';
+          addSuiteBtn.style.display = 'inline-flex';
+          subtabs[1].classList.add('active');
         }
       }
     </script>

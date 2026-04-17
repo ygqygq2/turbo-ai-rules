@@ -42,6 +42,8 @@ describe('Preset Adapters Integration Tests', () => {
         '.claude/skills',
         '.claude/commands',
         '.claude/agents',
+        '.claude/hooks',
+        '.claude/settings.json',
         '.cursor/skills',
         '.github/skills',
       ];
@@ -79,6 +81,8 @@ describe('Preset Adapters Integration Tests', () => {
       'claude-skills',
       'claude-commands',
       'claude-agents',
+      'claude-hooks',
+      'claude-hooks-settings',
       'cursor-skills',
       'copilot-skills',
     ];
@@ -175,8 +179,8 @@ describe('Preset Adapters Integration Tests', () => {
       assert.ok(adapter.filePath, `Adapter ${adapter.id} should have filePath`);
       assert.ok(adapter.type, `Adapter ${adapter.id} should have type`);
       assert.ok(
-        ['file', 'directory'].includes(adapter.type),
-        `Adapter ${adapter.id} type should be file or directory`,
+        ['file', 'directory', 'merge-json'].includes(adapter.type),
+        `Adapter ${adapter.id} type should be file, directory, or merge-json`,
       );
     }
   });

@@ -465,9 +465,9 @@ function mergeSourceBlocks(
 - 删除/更新时按 sourceId 过滤文件
 - **目录结构保持** (`preserveDirectoryStructure`)：
   - true（默认）: 保持相对于规则源 `subPath` 的完整目录层级
-    - 示例：`subPath=1300-skills/`，文件 `1300-skills/a/b/c/file.md` → `.skills/a/b/c/file.md`
+    - 示例：`subPath=skills/`，文件 `skills/0010-git-workflow-expert/SKILL.md` → `.skills/0010-git-workflow-expert/SKILL.md`
   - false: 平铺所有文件到输出目录（或按源组织时的源子目录）
-    - 示例：`1300-skills/a/b/c/file.md` → `.skills/file.md` 或 `.skills/sourceId/file.md`
+    - 示例：`skills/0010-git-workflow-expert/SKILL.md` → `.skills/SKILL.md` 或 `.skills/sourceId/SKILL.md`
 - **索引文件路径引用**: 自动使用实际生成的文件路径，确保链接正确
 
 ### 6.8 兼容性考虑

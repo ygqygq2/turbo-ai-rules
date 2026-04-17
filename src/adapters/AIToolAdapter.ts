@@ -6,6 +6,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import type { RelativePathBase } from '../types/config';
 import type { ParsedRule } from '../types/rules';
 import { debugLog } from '../utils/debugLog';
 import { splitPath } from '../utils/pathHelper';
@@ -77,6 +78,9 @@ export abstract class BaseAdapter implements AIToolAdapter {
 
   /** 是否保持目录层级结构（仅目录模式有效，默认 true 保持目录结构） */
   protected preserveDirectoryStructure: boolean = true;
+
+  /** 目录结构相对路径基准（仅目录模式有效） */
+  protected relativePathBase: RelativePathBase = 'source-subpath';
 
   /**
    * 统一的生成方法（模板方法模式）
@@ -310,8 +314,8 @@ export abstract class BaseAdapter implements AIToolAdapter {
 
   /**
    * 计算规则文件相对于规则源 subPath 的相对路径
-   * 例如：filePath = /cache/source/1300-skills/a/b/c/file.md, subPath = 1300-skills/
-   * 返回：a/b/c/file.md
+   * 例如：filePath = /cache/source/skills/0010-git-workflow-expert/SKILL.md, subPath = skills/
+   * 返回：0010-git-workflow-expert/SKILL.md
    *
    * 对于用户技能/规则（sourceId = 'user-skills' | 'user-rules'），返回相对于用户目录的路径
    */
@@ -387,6 +391,108 @@ export abstract class BaseAdapter implements AIToolAdapter {
   }
 
   /**
+   * 根据适配器配置计算目录输出时使用的相对路径。
+   */
+  protected async getRelativeOutputPath(rule: ParsedRule): Promise<string | null> {
+    const relativeToSubPath = await this.getRelativePathFromSubPath(rule.filePath, rule.sourceId);
+    if (!relativeToSubPath) {
+      return null;
+    }
+
+    if (this.relativePathBase !== 'asset-root') {
+      return relativeToSubPath;
+    }
+
+    return this.stripAssetRootPrefix(relativeToSubPath, rule);
+  }
+
+  /**
+   * 对外暴露目录模式下的相对输出路径，供生成/清理逻辑复用一致的路径计算。
+   */
+  public async getRelativeOutputPathForRule(rule: ParsedRule): Promise<string | null> {
+    return this.getRelativeOutputPath(rule);
+  }
+
+  /**
+   * 对 asset-root 模式：移除最前面的资产语义根目录，仅保留其后的结构。
+   */
+  protected stripAssetRootPrefix(relativePath: string, rule: ParsedRule): string {
+    const normalized = relativePath.replace(/\\/g, '/').replace(/^\/+/, '');
+    if (!normalized) {
+      return relativePath;
+    }
+
+    const segments = normalized.split('/').filter(Boolean);
+    if (segments.length === 0) {
+      return relativePath;
+    }
+
+    const firstSegment = this.normalizeRelativeRootSegment(segments[0]);
+    const rootCandidates = this.getAssetRootCandidates(rule);
+
+    if (!rootCandidates.includes(firstSegment)) {
+      return relativePath;
+    }
+
+    if (segments.length === 1) {
+      return path.basename(relativePath);
+    }
+
+    const strippedSegments = segments.slice(1);
+    return this.stripHookContainerPrefix(strippedSegments, rule, relativePath);
+  }
+
+  private stripHookContainerPrefix(
+    strippedSegments: string[],
+    rule: ParsedRule,
+    originalRelativePath: string,
+  ): string {
+    if ((rule.kind ?? 'rule') !== 'hook' || strippedSegments.length === 0) {
+      return strippedSegments.join('/');
+    }
+
+    const hookContainerKinds = new Set(['scripts', 'settings-fragments']);
+    const firstStrippedSegment = this.normalizeRelativeRootSegment(strippedSegments[0]);
+
+    if (!hookContainerKinds.has(firstStrippedSegment)) {
+      return strippedSegments.join('/');
+    }
+
+    if (strippedSegments.length === 1) {
+      return path.basename(originalRelativePath);
+    }
+
+    return strippedSegments.slice(1).join('/');
+  }
+
+  protected getAssetRootCandidates(rule: ParsedRule): string[] {
+    switch (rule.kind ?? 'rule') {
+      case 'rule':
+        return ['rules'];
+      case 'skill':
+        return ['skills'];
+      case 'agent':
+        return ['agents'];
+      case 'prompt':
+        return ['prompts'];
+      case 'command':
+        return ['commands'];
+      case 'hook':
+        return ['hooks'];
+      case 'mcp':
+        return ['mcp'];
+      case 'instruction':
+        return ['instructions'];
+      default:
+        return [];
+    }
+  }
+
+  private normalizeRelativeRootSegment(segment: string): string {
+    return segment.toLowerCase().replace(/^\d+-/, '');
+  }
+
+  /**
    * 写入规则文件
    * 对于 SKILL.md 文件（Skills 适配器），会复制整个父目录
    * 保持相对于规则源 subPath 的目录结构
@@ -403,17 +509,14 @@ export abstract class BaseAdapter implements AIToolAdapter {
     const Logger = (await import('../utils/logger')).Logger;
     const { toRelativePath } = await import('../utils/pathHelper');
 
-    // 计算相对于 subPath 的路径
-    let relativeToSubPath: string | null = null;
-    if (rule.sourceId) {
-      relativeToSubPath = await this.getRelativePathFromSubPath(rule.filePath, rule.sourceId);
-    }
+    // 计算目录输出使用的相对路径
+    const relativeOutputPath = await this.getRelativeOutputPath(rule);
 
     // 检查是否是 SKILL.md 文件（不区分大小写）
     const isSkillFile = path.basename(rule.filePath).toLowerCase() === 'skill.md';
     const shouldCopy = this.shouldCopySkillDirectory();
 
-    if (isSkillFile && shouldCopy && relativeToSubPath) {
+    if (isSkillFile && shouldCopy && relativeOutputPath) {
       // 复制整个父目录
       const sourceDir = path.dirname(rule.filePath);
 
@@ -421,11 +524,11 @@ export abstract class BaseAdapter implements AIToolAdapter {
       // 保持目录结构：使用完整的相对路径
       let dirRelativePath: string;
       if (this.preserveDirectoryStructure) {
-        // 保持目录结构：1300-skills/git-workflow-expert
-        dirRelativePath = path.dirname(relativeToSubPath);
+        // 保持目录结构：0010-git-workflow-expert 或 deeper/path/0010-git-workflow-expert
+        dirRelativePath = path.dirname(relativeOutputPath);
       } else {
         // 平铺模式：git-workflow-expert（只取最后一层目录名）
-        dirRelativePath = path.basename(path.dirname(relativeToSubPath));
+        dirRelativePath = path.basename(path.dirname(relativeOutputPath));
       }
 
       const targetDir = sourceId
@@ -436,6 +539,7 @@ export abstract class BaseAdapter implements AIToolAdapter {
         sourceDir: toRelativePath(sourceDir),
         targetDir: toRelativePath(targetDir),
         relativeToSubPath: dirRelativePath,
+        relativePathBase: this.relativePathBase,
         preserveStructure: this.preserveDirectoryStructure,
       });
       await safeCopyDir(sourceDir, targetDir);
@@ -450,11 +554,11 @@ export abstract class BaseAdapter implements AIToolAdapter {
       // 普通文件处理
       let targetPath: string;
 
-      if (this.preserveDirectoryStructure && relativeToSubPath) {
+      if (this.preserveDirectoryStructure && relativeOutputPath) {
         // 保持相对于 subPath 的目录结构
         targetPath = sourceId
-          ? path.join(outputPath, sourceId, relativeToSubPath)
-          : path.join(outputPath, relativeToSubPath);
+          ? path.join(outputPath, sourceId, relativeOutputPath)
+          : path.join(outputPath, relativeOutputPath);
       } else {
         // 平铺模式：所有文件直接放在输出目录下，不包含任何子目录
         // 例如: .skills/rule1.md, .skills/rule2.md
@@ -570,7 +674,7 @@ export abstract class BaseAdapter implements AIToolAdapter {
       if (content.startsWith('[Directory:')) {
         // 对于 SKILL 目录，如果当前规则是 SKILL.md，则返回目录下的 SKILL.md 路径
         if (isSkillFile) {
-          // relativePath 格式: .skills/sourceId/1300-skills/git-workflow-expert 或 .skills/git-workflow-expert
+          // relativePath 格式: .skills/sourceId/0010-git-workflow-expert 或 .skills/0010-git-workflow-expert
           const parts = splitPath(relativePath);
           if (parts.length > 1) {
             // 去掉第一个部分（outputPath）
@@ -627,6 +731,20 @@ export abstract class BaseAdapter implements AIToolAdapter {
   protected abstract getOutputType(): 'file' | 'directory' | 'merge-json';
 
   /**
+   * 对外暴露输出类型，供生成服务判断写入策略
+   */
+  public getOutputMode(): 'file' | 'directory' | 'merge-json' {
+    return this.getOutputType();
+  }
+
+  /**
+   * merge-json 模式下由适配器托管的顶层 JSON 键
+   */
+  public getManagedJsonRootKeys(): string[] | undefined {
+    return undefined;
+  }
+
+  /**
    * 生成头部内容（文件元数据、标题、说明、目录等）
    * 子类需要实现
    */
@@ -654,6 +772,13 @@ export abstract class BaseAdapter implements AIToolAdapter {
    */
   setPreserveDirectoryStructure(preserve: boolean): void {
     this.preserveDirectoryStructure = preserve;
+  }
+
+  /**
+   * 设置目录结构相对路径基准
+   */
+  setRelativePathBase(base: RelativePathBase): void {
+    this.relativePathBase = base;
   }
 
   /**

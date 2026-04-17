@@ -7,6 +7,7 @@
 
 export {
   buildTree,
+  expandTreeForSelectedPaths,
   getAllFilePaths,
   getDirectoryFilePaths,
   toggleNode,

@@ -38,6 +38,7 @@ export class CustomAdapter extends BaseAdapter {
     // 设置preserveDirectoryStructure：仅目录类型有效
     if (config.outputType === 'directory') {
       this.preserveDirectoryStructure = config.preserveDirectoryStructure ?? true;
+      this.relativePathBase = config.relativePathBase ?? 'source-subpath';
     }
   }
 

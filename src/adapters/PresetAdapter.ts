@@ -4,13 +4,17 @@
  * 支持规则源标记，实现部分更新
  */
 
+import * as path from 'path';
+import yaml from 'js-yaml';
+
+import type { RelativePathBase } from '../types/config';
 import type { AssetKind, ParsedRule } from '../types/rules';
 import { BaseAdapter } from './AIToolAdapter';
 
 /**
  * 文件类型
  */
-export type PresetFileType = 'file' | 'directory';
+export type PresetFileType = 'file' | 'directory' | 'merge-json';
 
 /**
  * 预设适配器配置
@@ -34,6 +38,12 @@ export interface PresetAdapterConfig {
   isRuleType?: boolean;
   /** 接受的资产类型；未指定时默认接受 rule + instruction */
   assetKinds?: AssetKind[];
+  /** 仅接受指定扩展名 */
+  fileExtensions?: string[];
+  /** 目录型预设的默认相对路径基准 */
+  relativePathBase?: RelativePathBase;
+  /** merge-json 模式下由适配器托管的顶层 JSON 键 */
+  managedJsonRootKeys?: string[];
 }
 
 /**
@@ -96,6 +106,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     description: 'Scoped Copilot instruction files (*.instructions.md)',
     website: 'https://code.visualstudio.com/docs/copilot/customization/custom-instructions',
     assetKinds: ['instruction'],
+    relativePathBase: 'asset-root',
   },
   {
     id: 'copilot-agents',
@@ -106,6 +117,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     description: 'Custom Copilot agents (*.agent.md)',
     website: 'https://code.visualstudio.com/docs/copilot/customization/custom-agents',
     assetKinds: ['agent'],
+    relativePathBase: 'asset-root',
   },
   {
     id: 'copilot-prompts',
@@ -116,6 +128,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     description: 'Copilot prompt files (*.prompt.md)',
     website: 'https://code.visualstudio.com/docs/copilot/customization/prompt-files',
     assetKinds: ['prompt'],
+    relativePathBase: 'asset-root',
   },
   {
     id: 'copilot-hooks',
@@ -126,6 +139,31 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     description: 'Copilot lifecycle hook configs (*.json)',
     website: 'https://code.visualstudio.com/docs/copilot/customization/hooks',
     assetKinds: ['hook'],
+    relativePathBase: 'asset-root',
+  },
+  {
+    id: 'claude-hooks',
+    name: 'Claude Hook Scripts',
+    filePath: '.claude/hooks',
+    type: 'directory',
+    defaultEnabled: false,
+    description: 'Claude Code hook runtime scripts',
+    website: 'https://docs.anthropic.com/en/docs/claude-code',
+    assetKinds: ['hook'],
+    fileExtensions: ['.sh', '.bash', '.zsh', '.py', '.js', '.mjs', '.cjs', '.ts'],
+    relativePathBase: 'asset-root',
+  },
+  {
+    id: 'claude-hooks-settings',
+    name: 'Claude Hook Settings',
+    filePath: '.claude/settings.json',
+    type: 'merge-json',
+    defaultEnabled: false,
+    description: 'Claude Code hook settings fragments merged into settings.json',
+    website: 'https://docs.anthropic.com/en/docs/claude-code',
+    assetKinds: ['hook'],
+    fileExtensions: ['.json', '.yaml', '.yml'],
+    managedJsonRootKeys: ['hooks'],
   },
 
   // === VSCode 扩展类工具 ===
@@ -195,6 +233,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     website: 'https://docs.anthropic.com/en/docs/claude-code',
     isRuleType: false,
     assetKinds: ['skill'],
+    relativePathBase: 'asset-root',
   },
   {
     id: 'claude-commands',
@@ -205,6 +244,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     description: 'Claude Code slash commands',
     website: 'https://docs.anthropic.com/en/docs/claude-code',
     assetKinds: ['command'],
+    relativePathBase: 'asset-root',
   },
   {
     id: 'claude-agents',
@@ -215,6 +255,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     description: 'Claude Code agent definitions',
     website: 'https://docs.anthropic.com/en/docs/claude-code',
     assetKinds: ['agent'],
+    relativePathBase: 'asset-root',
   },
   {
     id: 'cursor-skills',
@@ -226,6 +267,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     website: 'https://cursor.com/docs/context/skills',
     isRuleType: false,
     assetKinds: ['skill'],
+    relativePathBase: 'asset-root',
   },
   {
     id: 'copilot-skills',
@@ -237,6 +279,7 @@ export const PRESET_ADAPTERS: readonly PresetAdapterConfig[] = [
     website: 'https://code.visualstudio.com/docs/copilot/customization/agent-skills',
     isRuleType: false,
     assetKinds: ['skill'],
+    relativePathBase: 'asset-root',
   },
 ] as const;
 
@@ -258,6 +301,7 @@ export class PresetAdapter extends BaseAdapter {
    * @param sortBy 排序方式（默认 priority）
    * @param sortOrder 排序顺序（默认 asc）
    * @param preserveDirectoryStructure 是否保持目录结构（默认 true）
+   * @param relativePathBase 目录输出的相对路径基准（默认取预设配置）
    */
   constructor(
     config: PresetAdapterConfig,
@@ -265,6 +309,7 @@ export class PresetAdapter extends BaseAdapter {
     sortBy: 'id' | 'priority' | 'none' = 'priority',
     sortOrder: 'asc' | 'desc' = 'asc',
     preserveDirectoryStructure: boolean = true,
+    relativePathBase: RelativePathBase = config.relativePathBase ?? 'source-subpath',
   ) {
     super();
     this.config = config;
@@ -273,17 +318,28 @@ export class PresetAdapter extends BaseAdapter {
     this.sortBy = sortBy;
     this.sortOrder = sortOrder;
     this.preserveDirectoryStructure = preserveDirectoryStructure;
+    this.relativePathBase = relativePathBase;
   }
 
   override async generate(rules: ParsedRule[], allRules?: ParsedRule[]) {
-    return super.generate(this.filterRulesByKind(rules), allRules);
+    const filteredRules = this.filterRules(rules);
+
+    if (this.config.type === 'merge-json') {
+      return this.generateMergedJson(filteredRules);
+    }
+
+    return super.generate(filteredRules, allRules);
   }
 
   /**
    * 获取输出类型（PresetAdapter 都是单文件模式）
    */
-  protected getOutputType(): 'file' | 'directory' {
+  protected getOutputType(): 'file' | 'directory' | 'merge-json' {
     return this.config.type;
+  }
+
+  public override getManagedJsonRootKeys(): string[] | undefined {
+    return this.config.managedJsonRootKeys;
   }
 
   /**
@@ -298,6 +354,19 @@ export class PresetAdapter extends BaseAdapter {
    */
   protected shouldGenerateIndex(): boolean {
     return this.config.type === 'file';
+  }
+
+  override validate(content: string): boolean {
+    if (this.config.type === 'merge-json') {
+      try {
+        JSON.parse(content);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    return super.validate(content);
   }
 
   /**
@@ -383,8 +452,80 @@ export class PresetAdapter extends BaseAdapter {
     return { ...this.config };
   }
 
+  public filterRules(rules: ParsedRule[]): ParsedRule[] {
+    return this.filterRulesByExtension(this.filterRulesByKind(rules));
+  }
+
   private filterRulesByKind(rules: ParsedRule[]): ParsedRule[] {
     const acceptedKinds = this.config.assetKinds ?? ['rule', 'instruction'];
     return rules.filter((rule) => acceptedKinds.includes((rule.kind ?? 'rule') as AssetKind));
+  }
+
+  private filterRulesByExtension(rules: ParsedRule[]): ParsedRule[] {
+    if (!this.config.fileExtensions || this.config.fileExtensions.length === 0) {
+      return rules;
+    }
+
+    return rules.filter((rule) => {
+      const ext = path.extname(rule.filePath).toLowerCase();
+      return this.config.fileExtensions!.includes(ext);
+    });
+  }
+
+  private generateMergedJson(rules: ParsedRule[]) {
+    const merged = rules.reduce<Record<string, unknown>>((acc, rule) => {
+      if (!rule.rawContent?.trim()) {
+        return acc;
+      }
+
+      const ext = path.extname(rule.filePath).toLowerCase();
+      let parsed: unknown;
+
+      if (ext === '.json') {
+        parsed = JSON.parse(rule.rawContent);
+      } else if (ext === '.yaml' || ext === '.yml') {
+        parsed = yaml.load(rule.rawContent);
+      } else {
+        return acc;
+      }
+
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return acc;
+      }
+
+      return this.deepMerge(acc, parsed as Record<string, unknown>);
+    }, {});
+
+    return {
+      filePath: this.getFilePath(),
+      content: `${JSON.stringify(merged, null, 2)}\n`,
+      generatedAt: new Date(),
+      ruleCount: rules.length,
+    };
+  }
+
+  private deepMerge(
+    target: Record<string, unknown>,
+    source: Record<string, unknown>,
+  ): Record<string, unknown> {
+    const result: Record<string, unknown> = { ...target };
+
+    for (const [key, value] of Object.entries(source)) {
+      const existingValue = result[key];
+      if (this.isPlainObject(existingValue) && this.isPlainObject(value)) {
+        result[key] = this.deepMerge(
+          existingValue as Record<string, unknown>,
+          value as Record<string, unknown>,
+        );
+      } else {
+        result[key] = value;
+      }
+    }
+
+    return result;
+  }
+
+  private isPlainObject(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
   }
 }

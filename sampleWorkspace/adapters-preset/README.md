@@ -3,7 +3,7 @@
 ## 📋 测试信息
 
 - **测试文件**: `src/test/suite/adapters/adapters-preset.test.ts`
-- **测试目标**: 验证所有 18 个预设适配器（含 Copilot / Claude 的目录型资产）的加载、配置和属性
+- **测试目标**: 验证所有 20 个预设适配器（含 Copilot / Claude 的目录型资产）的加载、配置和属性
 - **工作空间**: 不依赖 Git 源，纯配置测试
 
 ## 🧪 测试场景（13 个测试）
@@ -23,10 +23,10 @@
 **测试**: `Should load all preset adapters`
 
 **验证**:
-- ✅ 从 `PRESET_ADAPTERS` 常量加载 18 个适配器
+- ✅ 从 `PRESET_ADAPTERS` 常量加载 20 个适配器
 - ✅ 包含完整列表：
   - **Copilot**: copilot, copilot-instructions-files, copilot-agents, copilot-prompts, copilot-hooks, copilot-skills
-  - **Claude**: claude-md, claude-skills, claude-commands, claude-agents
+  - **Claude**: claude-md, claude-skills, claude-commands, claude-agents, claude-hooks, claude-hooks-settings
   - **Other**: cursor, cursor-skills, windsurf, continue, cline, roo-cline, aider, bolt
 
 **执行时间**: <50ms
@@ -295,6 +295,8 @@
 | claude-skills | Claude Skills | `.claude/skills` | directory |
 | claude-commands | Claude Commands | `.claude/commands` | directory |
 | claude-agents | Claude Agents | `.claude/agents` | directory |
+| claude-hooks | Claude Hook Scripts | `.claude/hooks` | directory |
+| claude-hooks-settings | Claude Hook Settings | `.claude/settings.json` | merge-json |
 
 ### 技能型适配器
 
@@ -305,7 +307,7 @@
 
 ## 🎯 关键验证点
 
-- ✅ 适配器完整性（18 个预设适配器全加载）
+- ✅ 适配器完整性（20 个预设适配器全加载）
 - ✅ 属性完整性（id/name/filePath/type）
 - ✅ 命名规范（kebab-case）
 - ✅ 配置持久化（读写一致）

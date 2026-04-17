@@ -16,10 +16,13 @@
 import * as path from 'path';
 
 import type { AssetFormat, AssetKind } from '../types/rules';
+import {
+  classifyBySourceLayout,
+  classifyStructuredBySourceLayout,
+} from './sourceLayout/AssetClassificationStrategy';
+import type { AssetClassifierOptions } from './sourceLayout/types';
 
 export class AssetClassifier {
-  private static readonly NUMERIC_PREFIX_RE = /^\d+-/;
-
   // ─────────────────────────────────────────────────────────────────────
   // 公共 API
   // ─────────────────────────────────────────────────────────────────────
@@ -30,12 +33,17 @@ export class AssetClassifier {
    * @param filePath - 文件的绝对或相对路径
    * @param frontmatter - 已解析的 frontmatter 键值对（可选）
    */
-  static classifyFile(filePath: string, frontmatter?: Record<string, unknown>): AssetKind {
+  static classifyFile(
+    filePath: string,
+    frontmatter?: Record<string, unknown>,
+    options: AssetClassifierOptions = {},
+  ): AssetKind {
+    const sourceLayout = options.sourceLayout ?? 'unknown';
     const ext = path.extname(filePath).toLowerCase();
 
     // ── 1. 结构化格式（.json / .yaml / .yml）────────────────────────
     if (ext === '.json' || ext === '.yaml' || ext === '.yml') {
-      return AssetClassifier.classifyStructuredFile(filePath);
+      return classifyStructuredBySourceLayout(filePath, sourceLayout);
     }
 
     const basename = path.basename(filePath);
@@ -54,7 +62,7 @@ export class AssetClassifier {
     if (nameWithoutExtLC.endsWith('.instructions')) return 'instruction';
 
     // ── 4. 父目录名称 ─────────────────────────────────────────────────
-    const dirKind = AssetClassifier.classifyByDirectory(filePath);
+    const dirKind = classifyBySourceLayout(filePath, sourceLayout);
     if (dirKind !== null) return dirKind;
 
     // ── 5. frontmatter 字段 ──────────────────────────────────────────
@@ -99,80 +107,5 @@ export class AssetClassifier {
       default:
         return 'markdown';
     }
-  }
-
-  // ─────────────────────────────────────────────────────────────────────
-  // 私有辅助方法
-  // ─────────────────────────────────────────────────────────────────────
-
-  /**
-   * 对 .json / .yaml / .yml 文件按文件名和目录进行分类。
-   */
-  private static classifyStructuredFile(filePath: string): AssetKind {
-    const basenameLC = path.basename(filePath).toLowerCase();
-
-    // 已知 MCP 配置文件名
-    if (basenameLC === 'mcp.json' || basenameLC === '.mcp.json') {
-      return 'mcp';
-    }
-
-    // hooks 目录下的文件
-    const normalizedDirParts = AssetClassifier.getNormalizedDirectoryParts(filePath);
-    if (normalizedDirParts.includes('hooks') || normalizedDirParts.includes('hook')) {
-      return 'hook';
-    }
-
-    return 'unknown';
-  }
-
-  /**
-   * 根据规范化的父目录名称推导 AssetKind。
-   * 返回 `null` 表示无法通过目录名确定。
-   */
-  private static classifyByDirectory(filePath: string): AssetKind | null {
-    // 统一路径分隔符后逐段检查
-    const parts = filePath.replace(/\\/g, '/').split('/');
-    // 去掉最后一段（文件名本身）
-    const dirParts = parts.slice(0, -1).map((p) => AssetClassifier.normalizeDirectoryToken(p));
-
-    // 优先精确匹配直接父目录（最近一级）
-    const parentDir = dirParts[dirParts.length - 1];
-    switch (parentDir) {
-      case 'skills':
-      case 'skill':
-        return 'skill';
-      case 'agents':
-      case 'agent':
-        return 'agent';
-      case 'prompts':
-      case 'prompt':
-        return 'prompt';
-      case 'commands':
-      case 'command':
-        return 'command';
-      case 'hooks':
-        return 'hook';
-    }
-
-    // 再检查任意祖先目录（处理深层嵌套与编号目录）
-    if (dirParts.some((p) => p === 'skills' || p === 'skill')) return 'skill';
-    if (dirParts.some((p) => p === 'agents' || p === 'agent')) return 'agent';
-    if (dirParts.some((p) => p === 'prompts' || p === 'prompt')) return 'prompt';
-    if (dirParts.some((p) => p === 'commands' || p === 'command')) return 'command';
-    if (dirParts.some((p) => p === 'hooks' || p === 'hook')) return 'hook';
-
-    return null;
-  }
-
-  private static normalizeDirectoryToken(token: string): string {
-    return token.toLowerCase().replace(AssetClassifier.NUMERIC_PREFIX_RE, '');
-  }
-
-  private static getNormalizedDirectoryParts(filePath: string): string[] {
-    return filePath
-      .replace(/\\/g, '/')
-      .split('/')
-      .slice(0, -1)
-      .map((part) => AssetClassifier.normalizeDirectoryToken(part));
   }
 }

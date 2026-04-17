@@ -4,6 +4,7 @@ import { devtools } from 'zustand/middleware';
 import { createWebviewRPC } from '../common/messaging';
 import {
   buildTree,
+  expandTreeForSelectedPaths,
   getAllFilePaths,
   getDirectoryFilePaths,
   toggleNode as toggleTreeNode,
@@ -143,7 +144,10 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
           });
 
           // ✅ 构建 UI 树结构（FileTreeNode → TreeNode）
-          const tree = buildTree(source.fileTree);
+          const tree = expandTreeForSelectedPaths(
+            buildTree(source.fileTree),
+            source.selectedPaths || [],
+          );
           treeNodesBySource[source.id] = tree;
 
           // ✅ 直接使用后端返回的 selectedPaths（不需要从树中提取）
@@ -178,7 +182,7 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
        */
       toggleTreeNode: (sourceId, path) => {
         const state = get();
-        const key = `${sourceId}:${path}`;
+        const key = path ? `${sourceId}:${path}` : sourceId;
         const newExpanded = new Set(state.expandedNodes);
 
         if (newExpanded.has(key)) {
@@ -189,7 +193,7 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
 
         // 同时更新树节点的 expanded 状态
         const trees = { ...state.treeNodesBySource };
-        if (trees[sourceId]) {
+        if (path && trees[sourceId]) {
           trees[sourceId] = toggleTreeNode(trees[sourceId], path);
         }
 
@@ -248,11 +252,18 @@ export const useRuleSyncPageStore = create<RuleSyncPageState>()(
        */
       updateSelectionFromExtension: (sourceId: string, selectedPaths: string[]) => {
         const state = get();
+        const nextTrees = { ...state.treeNodesBySource };
+
+        if (nextTrees[sourceId]) {
+          nextTrees[sourceId] = expandTreeForSelectedPaths(nextTrees[sourceId], selectedPaths);
+        }
+
         set({
           selectedPathsBySource: {
             ...state.selectedPathsBySource,
             [sourceId]: selectedPaths,
           },
+          treeNodesBySource: nextTrees,
         });
       },
 

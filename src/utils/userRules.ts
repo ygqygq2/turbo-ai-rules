@@ -400,8 +400,10 @@ export function filterSkillRules(skills: ParsedRule[]): ParsedRule[] {
       continue;
     }
 
-    // 如果目录下有多个 .md 文件，查找 skill.md
-    const skillMdFile = skillsInDir.find((s) => path.basename(s.filePath) === 'skill.md');
+    // 如果目录下有多个 .md 文件，查找 skill.md（不区分大小写）
+    const skillMdFile = skillsInDir.find(
+      (s) => path.basename(s.filePath).toLowerCase() === 'skill.md',
+    );
     if (skillMdFile) {
       // 只保留 skill.md
       filtered.push(skillMdFile);

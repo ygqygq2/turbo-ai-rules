@@ -37,7 +37,8 @@ export const CompactRuleSelector: React.FC<CompactRuleSelectorProps> = ({
   onToggleSource,
 }) => {
   const allPaths = getAllFilePaths(treeNodes);
-  const selectedCount = selectedPaths.length;
+  const selectedPathSet = new Set(selectedPaths);
+  const selectedCount = allPaths.filter((path) => selectedPathSet.has(path)).length;
   const isAllSelected = selectedCount === allPaths.length && allPaths.length > 0;
 
   const handleToggleAll = (e: React.MouseEvent) => {

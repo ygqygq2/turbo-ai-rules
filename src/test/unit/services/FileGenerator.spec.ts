@@ -178,4 +178,67 @@ describe('FileGenerator', () => {
       },
     });
   });
+
+  it('should replace managed root keys when writing preset merge-json adapters', async () => {
+    generator.initializeAdapters({
+      cursor: { enabled: false },
+      copilot: { enabled: false },
+      continue: { enabled: false },
+      'claude-hooks-settings': { enabled: true },
+      custom: [],
+    });
+
+    const settingsPath = path.join(tempDir, '.claude', 'settings.json');
+    fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
+    fs.writeFileSync(
+      settingsPath,
+      JSON.stringify(
+        {
+          permissions: { defaultMode: 'acceptEdits' },
+          hooks: { PreToolUse: [{ matcher: 'Bash' }] },
+        },
+        null,
+        2,
+      ),
+    );
+
+    const rules: ParsedRule[] = [
+      {
+        id: 'pre-bash-hook',
+        title: 'Bash Validation Hook',
+        content:
+          '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"\\"$CLAUDE_PROJECT_DIR\\"/.claude/hooks/validate-bash.sh"}]}]}}',
+        rawContent:
+          '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"\\"$CLAUDE_PROJECT_DIR\\"/.claude/hooks/validate-bash.sh"}]}]}}',
+        sourceId: 's',
+        filePath: '/tmp/pre-bash-hook.json',
+        metadata: {},
+        kind: 'hook',
+        format: 'json',
+        relativePath: 'hooks/0001-settings-fragments/pre-bash-hook.json',
+      },
+    ];
+
+    const result = await generator.generateAll(rules, tempDir, 'priority', [
+      'claude-hooks-settings',
+    ]);
+
+    expect(result.failures).toHaveLength(0);
+    expect(JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))).toEqual({
+      permissions: { defaultMode: 'acceptEdits' },
+      hooks: {
+        PreToolUse: [
+          {
+            matcher: 'Bash',
+            hooks: [
+              {
+                type: 'command',
+                command: '"$CLAUDE_PROJECT_DIR"/.claude/hooks/validate-bash.sh',
+              },
+            ],
+          },
+        ],
+      },
+    });
+  });
 });

@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RulesTreeProvider } from '@/providers/RulesTreeProvider';
 import type { RuleSource } from '@/types/config';
 import type { ParsedRule } from '@/types/rules';
+import { getSourceRootPath } from '@/utils/rulePath';
 
 // Mock vscode 必须在其他 Mock 之前
 vi.mock('vscode', () => ({
@@ -38,6 +39,9 @@ vi.mock('vscode', () => ({
   ThemeIcon: class ThemeIcon {
     constructor(public id: string) {}
   },
+  ThemeColor: class ThemeColor {
+    constructor(public id: string) {}
+  },
   Uri: {
     file: (path: string) => ({ fsPath: path }),
   },
@@ -61,6 +65,9 @@ vi.mock('@/services/RulesManager');
 vi.mock('@/services/SelectionStateManager');
 vi.mock('@/services/WorkspaceDataManager');
 vi.mock('@/utils/logger');
+vi.mock('@/utils/i18n', () => ({
+  t: (key: string, ...args: any[]) => [key, ...args].join(' '),
+}));
 
 describe('RulesTreeProvider 单元测试', () => {
   let rulesTreeProvider: RulesTreeProvider;
@@ -91,6 +98,38 @@ describe('RulesTreeProvider 单元测试', () => {
       tags: ['test'],
       priority: 'medium' as const,
     },
+    kind: 'rule',
+    relativePath: 'rules/test.md',
+  };
+
+  const mockInstruction: ParsedRule = {
+    id: 'test-instruction',
+    title: 'Test Instruction',
+    content: 'Instruction content',
+    rawContent: 'Instruction content',
+    sourceId: 'test-source',
+    filePath: '/instructions/AGENTS.md',
+    metadata: {
+      tags: ['instruction'],
+      priority: 'medium' as const,
+    },
+    kind: 'instruction',
+    relativePath: 'AGENTS.md',
+  };
+
+  const mockAgent: ParsedRule = {
+    id: 'test-agent',
+    title: 'Test Agent',
+    content: 'Agent content',
+    rawContent: 'Agent content',
+    sourceId: 'test-source',
+    filePath: '/agents/0001-test.agent.md',
+    metadata: {
+      tags: ['agent'],
+      priority: 'medium' as const,
+    },
+    kind: 'agent',
+    relativePath: 'agents/0001-test.agent.md',
   };
 
   beforeEach(async () => {
@@ -109,10 +148,10 @@ describe('RulesTreeProvider 单元测试', () => {
     // Mock RulesManager
     const { RulesManager } = await import('@/services/RulesManager');
     mockRulesManager = {
-      getRulesBySource: vi.fn().mockReturnValue([mockRule]),
-      getAllRules: vi.fn().mockReturnValue([mockRule]),
+      getRulesBySource: vi.fn().mockReturnValue([mockRule, mockInstruction, mockAgent]),
+      getAllRules: vi.fn().mockReturnValue([mockRule, mockInstruction, mockAgent]),
       getStats: vi.fn().mockReturnValue({
-        totalRules: 1,
+        totalRules: 3,
         sourceCount: 1,
         enabledSourceCount: 1,
         conflictCount: 0,
@@ -123,10 +162,12 @@ describe('RulesTreeProvider 单元测试', () => {
     // Mock SelectionStateManager
     const { SelectionStateManager } = await import('@/services/SelectionStateManager');
     mockSelectionStateManager = {
-      getSelection: vi.fn().mockReturnValue([mockRule.filePath]),
-      getSelectionCount: vi.fn().mockReturnValue(1),
+      getSelection: vi.fn().mockReturnValue([mockRule.relativePath, mockInstruction.relativePath]),
+      getSelectionCount: vi.fn().mockReturnValue(2),
       updateSelection: vi.fn(),
-      initializeState: vi.fn().mockResolvedValue([mockRule.filePath]),
+      initializeState: vi
+        .fn()
+        .mockResolvedValue([mockRule.relativePath, mockInstruction.relativePath]),
       onStateChanged: vi.fn().mockReturnValue({ dispose: vi.fn() }),
     };
     (SelectionStateManager.getInstance as any) = vi.fn().mockReturnValue(mockSelectionStateManager);
@@ -178,6 +219,78 @@ describe('RulesTreeProvider 单元测试', () => {
       await rulesTreeProvider.getChildren();
 
       expect(mockSelectionStateManager.initializeState).toHaveBeenCalled();
+    });
+
+    it('应该在左侧仅展示 rule 和 instruction 资产', async () => {
+      await rulesTreeProvider.getChildren();
+
+      expect(mockSelectionStateManager.initializeState).toHaveBeenCalledWith(
+        'test-source',
+        2,
+        undefined,
+      );
+
+      const children = await rulesTreeProvider.getChildren({
+        data: { type: 'source', source: mockSource },
+      } as any);
+      const labels = children.map((item: any) => item.label);
+
+      expect(labels).toContain('Test Rule');
+      expect(labels).toContain('Test Instruction');
+      expect(labels).not.toContain('Test Agent');
+      expect(children).toHaveLength(2);
+    });
+
+    it('should count only visible explorer assets in source stats', async () => {
+      const sourceId = 'test-source';
+      const sourceRootPath = getSourceRootPath(sourceId);
+      vi.spyOn(rulesTreeProvider as any, 'loadRulesFromCache').mockResolvedValue([
+        {
+          id: 'python',
+          title: 'Python 最佳实践',
+          content: 'content',
+          rawContent: 'content',
+          sourceId,
+          filePath: `${sourceRootPath}/rules/101-python.mdc`,
+          metadata: {},
+          kind: 'rule',
+        },
+        {
+          id: 'ts',
+          title: 'TypeScript 最佳实践',
+          content: 'content',
+          rawContent: 'content',
+          sourceId,
+          filePath: `${sourceRootPath}/rules/102-typescript.mdc`,
+          metadata: {},
+          kind: 'rule',
+        },
+        {
+          id: 'skill',
+          title: 'Python 开发技巧',
+          content: 'content',
+          rawContent: 'content',
+          sourceId,
+          filePath: `${sourceRootPath}/skills/0001-python-development.mdc`,
+          metadata: {},
+          kind: 'skill',
+        },
+      ]);
+
+      vi.spyOn((rulesTreeProvider as any).selectionStateManager, 'initializeState').mockResolvedValue(
+        ['rules/101-python.mdc', 'rules/102-typescript.mdc', 'skills/0001-python-development.mdc'],
+      );
+      vi.spyOn((rulesTreeProvider as any).selectionStateManager, 'getSelection').mockReturnValue([
+        'rules/101-python.mdc',
+        'rules/102-typescript.mdc',
+        'skills/0001-python-development.mdc',
+      ]);
+
+      const rootItems = await rulesTreeProvider.getChildren();
+      const sourceItem = rootItems[0] as any;
+
+      expect(sourceItem.data.totalCount).toBe(2);
+      expect(sourceItem.data.selectedCount).toBe(2);
     });
   });
 

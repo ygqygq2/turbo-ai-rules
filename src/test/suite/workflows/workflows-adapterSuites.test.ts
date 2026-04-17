@@ -37,7 +37,14 @@ describe('Adapter Suites Workflow Tests', () => {
     'copilot-prompts',
   ];
 
-  const claudeCoreAdapters = ['claude-md', 'claude-skills', 'claude-commands', 'claude-agents'];
+  const claudeCoreAdapters = [
+    'claude-md',
+    'claude-skills',
+    'claude-commands',
+    'claude-agents',
+    'claude-hooks',
+    'claude-hooks-settings',
+  ];
 
   const cleanupPaths = [
     '.github/copilot-instructions.md',
@@ -50,6 +57,8 @@ describe('Adapter Suites Workflow Tests', () => {
     '.claude/skills',
     '.claude/commands',
     '.claude/agents',
+    '.claude/hooks',
+    '.claude/settings.json',
   ];
 
   async function syncAndSelectAllRules(): Promise<string[]> {
@@ -197,6 +206,14 @@ describe('Adapter Suites Workflow Tests', () => {
     assert.ok(
       await fs.pathExists(path.join(workspaceFolder.uri.fsPath, '.claude/agents')),
       'claude agents directory should exist',
+    );
+    assert.ok(
+      await fs.pathExists(path.join(workspaceFolder.uri.fsPath, '.claude/hooks')),
+      'claude hooks directory should exist',
+    );
+    assert.ok(
+      await fs.pathExists(path.join(workspaceFolder.uri.fsPath, '.claude/settings.json')),
+      'claude hook settings should exist',
     );
   });
 });

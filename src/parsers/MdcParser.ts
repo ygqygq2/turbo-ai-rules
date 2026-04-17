@@ -10,8 +10,10 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { AssetClassifier } from './AssetClassifier';
+import { SourceLayoutDetector } from './sourceLayout/SourceLayoutDetector';
 import { ErrorCodes, ParseError } from '../types/errors';
 import type { ParsedRule, RuleMetadata } from '../types/rules';
+import type { SourceLayout } from './sourceLayout/types';
 import {
   ASSET_FILE_EXTENSIONS,
   CONFIG_KEYS,
@@ -68,6 +70,14 @@ export class MdcParser {
    * @returns 解析后的规则
    */
   public async parseMdcFile(filePath: string, sourceId: string): Promise<ParsedRule> {
+    return this.parseMdcFileWithLayout(filePath, sourceId, 'unknown');
+  }
+
+  private async parseMdcFileWithLayout(
+    filePath: string,
+    sourceId: string,
+    sourceLayout: SourceLayout,
+  ): Promise<ParsedRule> {
     try {
       Logger.debug('Parsing MDC file', { filePath, sourceId });
 
@@ -202,7 +212,9 @@ export class MdcParser {
         },
         sourceId,
         filePath,
-        kind: AssetClassifier.classifyFile(filePath, metadata as Record<string, unknown>),
+        kind: AssetClassifier.classifyFile(filePath, metadata as Record<string, unknown>, {
+          sourceLayout,
+        }),
         format: AssetClassifier.getFormat(filePath),
       };
 
@@ -231,6 +243,14 @@ export class MdcParser {
    * @param sourceId 规则源 ID
    */
   public async parseAssetFile(filePath: string, sourceId: string): Promise<ParsedRule> {
+    return this.parseAssetFileWithLayout(filePath, sourceId, 'unknown');
+  }
+
+  private async parseAssetFileWithLayout(
+    filePath: string,
+    sourceId: string,
+    sourceLayout: SourceLayout,
+  ): Promise<ParsedRule> {
     const content = await safeReadFile(filePath);
     const ext = path.extname(filePath).toLowerCase();
 
@@ -260,7 +280,9 @@ export class MdcParser {
       },
       sourceId,
       filePath,
-      kind: AssetClassifier.classifyFile(filePath, metadata as Record<string, unknown>),
+      kind: AssetClassifier.classifyFile(filePath, metadata as Record<string, unknown>, {
+        sourceLayout,
+      }),
       format: AssetClassifier.getFormat(filePath),
     };
   }
@@ -359,6 +381,13 @@ export class MdcParser {
       const state = { filesProcessed: 0 };
       // sourceDirPath 用于计算每条规则的 relativePath
       const sourceDirPath = dirPath;
+      const sourceLayout = await SourceLayoutDetector.detect(dirPath);
+
+      Logger.debug('Detected source layout for parsing', {
+        dirPath,
+        sourceId,
+        sourceLayout,
+      });
 
       // 递归或非递归解析
       if (opts.recursive) {
@@ -371,6 +400,7 @@ export class MdcParser {
           state,
           0, // 当前深度
           sourceDirPath,
+          sourceLayout,
         );
       } else {
         // 非递归：只解析当前目录
@@ -382,7 +412,15 @@ export class MdcParser {
             });
             break;
           }
-          await this.parseFile(filePath, sourceId, rules, errors, state, sourceDirPath);
+          await this.parseFile(
+            filePath,
+            sourceId,
+            rules,
+            errors,
+            state,
+            sourceDirPath,
+            sourceLayout,
+          );
         }
       }
 
@@ -431,6 +469,7 @@ export class MdcParser {
     state: { filesProcessed: number },
     currentDepth: number,
     sourceDirPath: string,
+    sourceLayout: SourceLayout,
   ): Promise<void> {
     // 检查深度限制
     if (currentDepth >= options.maxDepth) {
@@ -463,7 +502,7 @@ export class MdcParser {
       );
       if (skillFilePath) {
         const fullPath = path.join(dirPath, skillFilePath.name);
-        await this.parseFile(fullPath, sourceId, rules, errors, state, sourceDirPath);
+        await this.parseFile(fullPath, sourceId, rules, errors, state, sourceDirPath, sourceLayout);
         Logger.debug('Found SKILL.md, skipping other files in directory', {
           dirPath,
           skillFile: fullPath,
@@ -479,7 +518,7 @@ export class MdcParser {
       if (state.filesProcessed >= options.maxFiles) {
         break;
       }
-      await this.parseFile(filePath, sourceId, rules, errors, state, sourceDirPath);
+      await this.parseFile(filePath, sourceId, rules, errors, state, sourceDirPath, sourceLayout);
     }
 
     // 递归解析子目录
@@ -497,6 +536,7 @@ export class MdcParser {
         state,
         currentDepth + 1,
         sourceDirPath,
+        sourceLayout,
       );
     }
   }
@@ -562,12 +602,13 @@ export class MdcParser {
     errors: Array<{ filePath: string; error: Error }>,
     state: { filesProcessed: number },
     sourceDirPath?: string,
+    sourceLayout: SourceLayout = 'unknown',
   ): Promise<void> {
     try {
       const ext = path.extname(filePath).toLowerCase();
       const rule = RULE_FILE_EXTENSIONS.includes(ext)
-        ? await this.parseMdcFile(filePath, sourceId)
-        : await this.parseAssetFile(filePath, sourceId);
+        ? await this.parseMdcFileWithLayout(filePath, sourceId, sourceLayout)
+        : await this.parseAssetFileWithLayout(filePath, sourceId, sourceLayout);
       if (sourceDirPath) {
         rule.relativePath = path.relative(sourceDirPath, filePath);
       }

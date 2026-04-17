@@ -118,6 +118,10 @@
       "name": "Workflows: Adapter Suites"
     },
     {
+      "path": "workflows-claude-composite",
+      "name": "Workflows: Claude Composite"
+    },
+    {
       "path": "workflows-generateRules",
       "name": "Workflows: Generate Rules"
     },

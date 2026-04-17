@@ -42,6 +42,9 @@ vi.mock('fs', () => ({
 
 // Mock ConfigManager
 const mockUpdateConfig = vi.fn();
+const mockUpdatePresetAdapters = vi.fn();
+const mockUpdateCustomAdapters = vi.fn();
+const mockUpdateAdapterSuites = vi.fn();
 vi.mock('@/services/ConfigManager', () => ({
   ConfigManager: {
     getInstance: vi.fn(() => ({
@@ -59,8 +62,20 @@ vi.mock('@/services/ConfigManager', () => ({
             },
           ],
         },
+        adapterSuites: [
+          {
+            id: 'team-suite',
+            name: 'Team Suite',
+            description: 'Shared bundle',
+            adapterIds: ['copilot', 'continue'],
+            enabled: true,
+          },
+        ],
       })),
       updateConfig: mockUpdateConfig,
+      updatePresetAdapters: mockUpdatePresetAdapters,
+      updateCustomAdapters: mockUpdateCustomAdapters,
+      updateAdapterSuites: mockUpdateAdapterSuites,
     })),
   },
 }));
@@ -131,9 +146,13 @@ describe('AdapterManagerWebviewProvider', () => {
 
       expect(data).toHaveProperty('presetAdapters');
       expect(data).toHaveProperty('customAdapters');
+      expect(data).toHaveProperty('presetSuites');
+      expect(data).toHaveProperty('customSuites');
 
       expect(Array.isArray(data.presetAdapters)).toBe(true);
       expect(Array.isArray(data.customAdapters)).toBe(true);
+      expect(Array.isArray(data.presetSuites)).toBe(true);
+      expect(Array.isArray(data.customSuites)).toBe(true);
       expect(data.customAdapters.length).toBe(1);
     });
 
@@ -154,6 +173,30 @@ describe('AdapterManagerWebviewProvider', () => {
       expect(data.customAdapters[0].name).toBe('Custom Adapter 1');
       expect(data.customAdapters[0].enabled).toBe(true);
       expect(data.customAdapters[0].outputPath).toBe('custom/path');
+    });
+
+    it('应该包含自定义综合体信息', async () => {
+      const data = await (provider as any).getAdapterData();
+
+      expect(data.customSuites[0]).toMatchObject({
+        id: 'team-suite',
+        name: 'Team Suite',
+        adapterIds: ['copilot', 'continue'],
+        enabled: true,
+      });
+    });
+
+    it('应该包含内置综合体信息', async () => {
+      const data = await (provider as any).getAdapterData();
+
+      expect(data.presetSuites.find((suite: any) => suite.id === 'cursor-core')).toMatchObject({
+        id: 'cursor-core',
+        enabled: true,
+      });
+      expect(data.presetSuites.find((suite: any) => suite.id === 'copilot-core')).toMatchObject({
+        id: 'copilot-core',
+        enabled: true,
+      });
     });
   });
 
@@ -285,24 +328,71 @@ describe('AdapterManagerWebviewProvider', () => {
 
   describe('handleSaveAll', () => {
     it('应该保存所有适配器配置', async () => {
+      (provider as any).configManager = {
+        updatePresetAdapters: mockUpdatePresetAdapters,
+        updateCustomAdapters: mockUpdateCustomAdapters,
+        updateAdapterSuites: mockUpdateAdapterSuites,
+      };
+
       const allData = {
-        presets: {
-          copilot: { enabled: false, autoUpdate: false },
-          cursor: { enabled: true, autoUpdate: true },
-          continue: { enabled: true, autoUpdate: false },
-        },
-        custom: [
+        presetAdapters: [
+          {
+            id: 'copilot',
+            name: 'Copilot',
+            description: 'desc',
+            enabled: false,
+            outputPath: '.github/copilot-instructions.md',
+            type: 'file',
+            isRuleType: true,
+          },
+        ],
+        customAdapters: [
           {
             id: 'custom1',
             name: 'Custom 1',
             enabled: true,
             outputPath: 'path1',
+            format: 'single-file',
+            isRuleType: true,
+          },
+        ],
+        presetSuites: [
+          {
+            id: 'cursor-core',
+            name: 'Cursor Core',
+            description: 'desc',
+            adapterIds: ['cursor', 'cursor-skills'],
+            enabled: false,
+          },
+        ],
+        customSuites: [
+          {
+            id: 'team-suite',
+            name: 'Team Suite',
+            description: 'Shared bundle',
+            adapterIds: ['copilot', 'custom1'],
+            enabled: true,
           },
         ],
       };
 
-      // handleSaveAll 当前是 TODO 状态，只测试不会抛错误
       await expect((provider as any).handleSaveAll(allData)).resolves.not.toThrow();
+      expect(mockUpdateAdapterSuites).toHaveBeenCalledWith([
+        {
+          id: 'cursor-core',
+          name: 'Cursor Core',
+          description: 'desc',
+          adapterIds: ['cursor', 'cursor-skills'],
+          enabled: false,
+        },
+        {
+          id: 'team-suite',
+          name: 'Team Suite',
+          description: 'Shared bundle',
+          adapterIds: ['copilot', 'custom1'],
+          enabled: true,
+        },
+      ]);
     });
   });
 
@@ -317,7 +407,7 @@ describe('AdapterManagerWebviewProvider', () => {
 
     it('应该处理 saveAll 消息', async () => {
       const handleSaveAllSpy = vi.spyOn(provider as any, 'handleSaveAll');
-      const payload = { presets: {}, custom: [] };
+      const payload = { presetAdapters: [], customAdapters: [], presetSuites: [], customSuites: [] };
 
       await (provider as any).handleMessage({ type: 'saveAll', payload });
 

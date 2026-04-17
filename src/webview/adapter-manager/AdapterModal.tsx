@@ -46,6 +46,9 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({
   const [preserveDirectoryStructure, setPreserveDirectoryStructure] = useState(
     adapter.preserveDirectoryStructure ?? false,
   );
+  const [relativePathBase, setRelativePathBase] = useState<'source-subpath' | 'asset-root'>(
+    adapter.relativePathBase ?? 'source-subpath',
+  );
   const [useOriginalFilename, setUseOriginalFilename] = useState(
     adapter.useOriginalFilename ?? true,
   );
@@ -144,6 +147,7 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({
       generateIndex,
       indexPerSource: organizeBySource && generateIndex ? indexPerSource : undefined,
       preserveDirectoryStructure,
+      relativePathBase,
       useOriginalFilename,
       indexFileName: generateIndex ? indexFileName : undefined,
       sortBy: format === 'single-file' ? sortBy : undefined,
@@ -528,6 +532,39 @@ export const AdapterModal: React.FC<AdapterModalProps> = ({
                       {t('adapterManager.preserveDirectoryStructureDesc')}
                     </span>
                   </label>
+                  {preserveDirectoryStructure && (
+                    <div className="form-group sub-option">
+                      <label>
+                        <i className="codicon codicon-symbol-namespace"></i>
+                        {t('adapterManager.relativePathBase')}
+                      </label>
+                      <div className="radio-group">
+                        <label className="radio-option">
+                          <input
+                            type="radio"
+                            name="relativePathBase"
+                            checked={relativePathBase === 'source-subpath'}
+                            onChange={() => setRelativePathBase('source-subpath')}
+                          />
+                          <span className="radio-label">
+                            {t('adapterManager.relativePathBase.sourceSubpath')}
+                          </span>
+                        </label>
+                        <label className="radio-option">
+                          <input
+                            type="radio"
+                            name="relativePathBase"
+                            checked={relativePathBase === 'asset-root'}
+                            onChange={() => setRelativePathBase('asset-root')}
+                          />
+                          <span className="radio-label">
+                            {t('adapterManager.relativePathBase.assetRoot')}
+                          </span>
+                        </label>
+                      </div>
+                      <span className="hint">{t('adapterManager.relativePathBaseDesc')}</span>
+                    </div>
+                  )}
                   <label className="checkbox-option">
                     <input
                       type="checkbox"

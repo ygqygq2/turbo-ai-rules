@@ -25,6 +25,7 @@ const testDirectoryConfig: PresetAdapterConfig = {
   defaultEnabled: false,
   description: 'Directory preset adapter for unit tests',
   assetKinds: ['prompt'],
+  relativePathBase: 'asset-root',
 };
 
 // 创建测试规则
@@ -134,6 +135,11 @@ describe('PresetAdapter', () => {
     it('目录型预设不应该生成额外索引文件', () => {
       const adapter = new PresetAdapter(testDirectoryConfig, true);
       expect((adapter as any).shouldGenerateIndex()).toBe(false);
+    });
+
+    it('目录型预设应该默认使用 asset-root 作为相对路径基准', () => {
+      const adapter = new PresetAdapter(testDirectoryConfig, true);
+      expect((adapter as any).relativePathBase).toBe('asset-root');
     });
 
     it('目录型预设应该只保留匹配的资产类型', async () => {

@@ -62,6 +62,17 @@
       "enabled": true,
       "sortBy": "priority",
       "sortOrder": "asc"
+    },
+    "claude-hooks": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "claude-hooks-settings": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc"
     }
   }
 }

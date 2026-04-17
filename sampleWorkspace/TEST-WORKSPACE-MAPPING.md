@@ -58,6 +58,7 @@
 | `workflows-syncRules/` | `workflows/workflows-syncRules.test.ts` | 同步规则 |
 | `workflows-userRules/` | `workflows/workflows-userRules.test.ts` | 用户规则 |
 | `workflows-userSkills/` | `workflows/workflows-userSkills.test.ts` | 用户技能卡 |
+| `workflows-claude-composite/` | `（手动综合测试工作空间）` | 原始 rules 同步 + Claude 综合适配器 |
 
 ### 📂 Rules 类别 (5 个示例工作空间)
 

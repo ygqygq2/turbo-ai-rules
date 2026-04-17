@@ -116,4 +116,32 @@ Simple content.
       expect(asset.content).toContain('echo lint');
     });
   });
+
+  describe('parseDirectory layout compatibility', () => {
+    it('should parse skill directories in type-first layout', async () => {
+      const skillDir = path.join(tempDir, 'skills', '0001-demo-skill');
+      fs.mkdirSync(skillDir, { recursive: true });
+      fs.writeFileSync(path.join(skillDir, 'SKILL.md'), '# Demo Skill\n\nDo something useful.\n');
+
+      const rules = await parser.parseDirectory(tempDir, 'type-first-source', { recursive: true });
+
+      expect(rules).toHaveLength(1);
+      expect(rules[0].kind).toBe('skill');
+      expect(rules[0].relativePath).toBe(path.join('skills', '0001-demo-skill', 'SKILL.md'));
+    });
+
+    it('should parse skill directories in legacy mixed layout', async () => {
+      const skillDir = path.join(tempDir, '1300-skills', '1301-demo-skill');
+      fs.mkdirSync(skillDir, { recursive: true });
+      fs.writeFileSync(path.join(skillDir, 'SKILL.md'), '# Legacy Skill\n\nStill works.\n');
+
+      const rules = await parser.parseDirectory(tempDir, 'legacy-source', { recursive: true });
+
+      expect(rules).toHaveLength(1);
+      expect(rules[0].kind).toBe('skill');
+      expect(rules[0].relativePath).toBe(
+        path.join('1300-skills', '1301-demo-skill', 'SKILL.md'),
+      );
+    });
+  });
 });

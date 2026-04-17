@@ -8,8 +8,8 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import type { AIToolAdapter, GeneratedConfig } from '../adapters';
-import { CustomAdapter, PRESET_ADAPTERS, PresetAdapter } from '../adapters';
-import type { AdaptersConfig } from '../types/config';
+import { BaseAdapter, CustomAdapter, PRESET_ADAPTERS, PresetAdapter } from '../adapters';
+import type { AdaptersConfig, RelativePathBase } from '../types/config';
 import { GenerateError, SystemError } from '../types/errors';
 import type { PartialUpdateOptions } from '../types/ruleMarker';
 import type { ConflictStrategy, ParsedRule } from '../types/rules';
@@ -18,6 +18,11 @@ import { ensureDir, safeWriteFile } from '../utils/fileSystem';
 import { ensureIgnored } from '../utils/gitignore';
 import { Logger } from '../utils/logger';
 import { partialUpdate } from '../utils/ruleMarkerMerger';
+import {
+  getUserSkillsDirectory,
+  USER_RULES_SOURCE_ID,
+  USER_SKILLS_SOURCE_ID,
+} from '../utils/userRules';
 
 /**
  * 生成结果
@@ -70,6 +75,7 @@ export class FileGenerator {
             sortBy?: string;
             sortOrder?: string;
             preserveDirectoryStructure?: boolean;
+            relativePathBase?: RelativePathBase;
           }
         >
       )[presetConfig.id];
@@ -80,6 +86,7 @@ export class FileGenerator {
         sortBy: adapterConfig?.sortBy,
         sortOrder: adapterConfig?.sortOrder,
         preserveDirectoryStructure: adapterConfig?.preserveDirectoryStructure,
+        relativePathBase: adapterConfig?.relativePathBase,
         rawConfig: adapterConfig,
       });
       if (enabled) {
@@ -87,9 +94,11 @@ export class FileGenerator {
         const sortOrder = (adapterConfig?.sortOrder as 'asc' | 'desc') || 'asc';
         const enableUserRules = adapterConfig?.enableUserRules ?? true;
         const preserveDirectoryStructure = adapterConfig?.preserveDirectoryStructure ?? true;
+        const relativePathBase =
+          adapterConfig?.relativePathBase ?? presetConfig.relativePathBase ?? 'source-subpath';
 
         Logger.debug(
-          `Creating PresetAdapter ${presetConfig.id} with sortBy=${sortBy}, sortOrder=${sortOrder}, enableUserRules=${enableUserRules}, preserveDirectoryStructure=${preserveDirectoryStructure}`,
+          `Creating PresetAdapter ${presetConfig.id} with sortBy=${sortBy}, sortOrder=${sortOrder}, enableUserRules=${enableUserRules}, preserveDirectoryStructure=${preserveDirectoryStructure}, relativePathBase=${relativePathBase}`,
         );
         const adapter = new PresetAdapter(
           presetConfig,
@@ -97,6 +106,7 @@ export class FileGenerator {
           sortBy,
           sortOrder,
           preserveDirectoryStructure,
+          relativePathBase,
         );
         adapter.setEnableUserRules(enableUserRules);
 
@@ -136,6 +146,9 @@ export class FileGenerator {
             customConfig.preserveDirectoryStructure !== undefined
           ) {
             adapter.setPreserveDirectoryStructure(customConfig.preserveDirectoryStructure);
+          }
+          if (customConfig.outputType === 'directory' && customConfig.relativePathBase) {
+            adapter.setRelativePathBase(customConfig.relativePathBase);
           }
 
           this.adapters.set(customConfig.id, adapter);
@@ -296,8 +309,10 @@ export class FileGenerator {
     workspaceRoot: string,
     allRules?: ParsedRule[],
   ): Promise<GeneratedConfig> {
+    const effectiveRules = this.getEffectiveRulesForAdapter(adapter, rules);
+
     // 生成配置内容（传递 allRules 用于用户规则保护）
-    const config = await adapter.generate(rules, allRules);
+    const config = await adapter.generate(effectiveRules, allRules);
 
     // 验证内容
     if (!adapter.validate(config.content)) {
@@ -306,9 +321,17 @@ export class FileGenerator {
 
     // 写入文件（传递 adapter 和 rules 用于判断输出类型和清理旧文件）
     const fullPath = path.join(workspaceRoot, config.filePath);
-    await this.writeConfigFile(fullPath, config.content, adapter, rules);
+    await this.writeConfigFile(fullPath, config.content, adapter, effectiveRules);
 
     return config;
+  }
+
+  private getEffectiveRulesForAdapter(adapter: AIToolAdapter, rules: ParsedRule[]): ParsedRule[] {
+    if (adapter instanceof PresetAdapter || adapter instanceof CustomAdapter) {
+      return adapter.filterRules(rules);
+    }
+
+    return rules;
   }
 
   /**
@@ -331,11 +354,14 @@ export class FileGenerator {
 
       // 判断是目录模式还是文件模式
       const isDirectoryMode = adapter && this.isDirectoryOutput(adapter);
+      const isMergeJsonMode = adapter && this.isMergeJsonOutput(adapter);
 
       if (isDirectoryMode) {
         // 目录模式：清理旧文件，然后写入新文件
         await this.cleanObsoleteDirectoryFiles(dir, adapter, rules || []);
         await this.writeDirectoryModeFile(dir, filePath, content);
+      } else if (isMergeJsonMode) {
+        await this.writeMergedJsonMode(filePath, content, adapter);
       } else {
         // 单文件模式：使用规则源标记
         await this.writeSingleFileMode(filePath, content);
@@ -353,14 +379,97 @@ export class FileGenerator {
    * 判断是否为目录输出模式
    */
   private isDirectoryOutput(adapter: AIToolAdapter): boolean {
-    // 对于 CustomAdapter，检查其配置
-    if ('config' in adapter && adapter.config) {
-      const customConfig = adapter.config as { outputType?: string };
-      return customConfig.outputType === 'directory';
+    if (adapter instanceof BaseAdapter) {
+      return adapter.getOutputMode() === 'directory';
     }
 
-    // 对于内置适配器，都是单文件模式
     return false;
+  }
+
+  private isMergeJsonOutput(adapter: AIToolAdapter): boolean {
+    if (adapter instanceof BaseAdapter) {
+      return adapter.getOutputMode() === 'merge-json';
+    }
+
+    return false;
+  }
+
+  private async writeMergedJsonMode(
+    filePath: string,
+    content: string,
+    adapter?: AIToolAdapter,
+  ): Promise<void> {
+    const nextGenerated = this.parseJsonObject(content, filePath);
+    const managedRootKeys =
+      adapter instanceof BaseAdapter ? adapter.getManagedJsonRootKeys() ?? [] : [];
+
+    if (!fs.existsSync(filePath)) {
+      await safeWriteFile(filePath, `${JSON.stringify(nextGenerated, null, 2)}\n`);
+      return;
+    }
+
+    const existingContent = fs.readFileSync(filePath, 'utf-8').trim();
+    const existingJson = existingContent
+      ? this.parseJsonObject(existingContent, filePath)
+      : ({} as Record<string, unknown>);
+
+    const sanitizedExisting = this.removeManagedJsonRootKeys(existingJson, managedRootKeys);
+    const merged = this.deepMergeJsonObjects(sanitizedExisting, nextGenerated);
+    await safeWriteFile(filePath, `${JSON.stringify(merged, null, 2)}\n`);
+  }
+
+  private parseJsonObject(content: string, filePath: string): Record<string, unknown> {
+    const parsed = JSON.parse(content) as unknown;
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new GenerateError(
+        `Merge JSON output must be an object: ${path.basename(filePath)}`,
+        'TAI-4005',
+      );
+    }
+
+    return parsed as Record<string, unknown>;
+  }
+
+  private removeManagedJsonRootKeys(
+    data: Record<string, unknown>,
+    managedRootKeys: string[],
+  ): Record<string, unknown> {
+    if (managedRootKeys.length === 0) {
+      return { ...data };
+    }
+
+    const cloned = { ...data };
+    for (const key of managedRootKeys) {
+      delete cloned[key];
+    }
+
+    return cloned;
+  }
+
+  private deepMergeJsonObjects(
+    target: Record<string, unknown>,
+    source: Record<string, unknown>,
+  ): Record<string, unknown> {
+    const result: Record<string, unknown> = { ...target };
+
+    for (const [key, value] of Object.entries(source)) {
+      const existingValue = result[key];
+      if (this.isPlainObject(existingValue) && this.isPlainObject(value)) {
+        result[key] = this.deepMergeJsonObjects(
+          existingValue as Record<string, unknown>,
+          value as Record<string, unknown>,
+        );
+      } else {
+        result[key] = value;
+      }
+    }
+
+    return result;
+  }
+
+  private isPlainObject(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
   }
 
   /**
@@ -615,17 +724,14 @@ export class FileGenerator {
 
         for (const rule of rules) {
           const isSkillFile = path.basename(rule.filePath).toLowerCase() === 'skill.md';
-          const isUserSkill = rule.sourceId === 'user-skills';
+          const isUserSkill = rule.sourceId === USER_SKILLS_SOURCE_ID;
 
           if (isSkillFile && isSkillsAdapter) {
             // SKILL.md 文件 - 记录需要同步的目录
 
             if (isUserSkill) {
               // 用户技能：从 ai-skills/ 目录计算相对路径
-              // FIXME: getUserSkillsDirectory not implemented yet
-              // const { getUserSkillsDirectory } = await import('../utils/userRules');
-              // const userSkillsDir = getUserSkillsDirectory();
-              const userSkillsDir = null;
+              const userSkillsDir = getUserSkillsDirectory();
 
               if (userSkillsDir) {
                 // 获取相对于 ai-skills/ 的路径
@@ -644,12 +750,11 @@ export class FileGenerator {
                 });
               }
             } else {
-              // 远程技能：使用原有逻辑
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const relativePath = await (adapter as any).getRelativePathFromSubPath(
-                rule.filePath,
-                rule.sourceId,
-              );
+              // 远程技能：使用与实际目录输出一致的相对路径逻辑
+              const relativePath =
+                adapter instanceof BaseAdapter
+                  ? await adapter.getRelativeOutputPathForRule(rule)
+                  : null;
               if (relativePath) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const preserveStructure = (adapter as any).preserveDirectoryStructure ?? true;
@@ -659,7 +764,7 @@ export class FileGenerator {
                 // 获取 SKILL.md 的父目录相对路径
                 let skillDirPath: string;
                 if (preserveStructure) {
-                  // 保持目录结构：1300-skills/git-workflow-expert
+                  // 保持目录结构：0010-git-workflow-expert
                   skillDirPath = path.dirname(relativePath);
                 } else {
                   // 平铺模式：git-workflow-expert（只取最后一层目录名）
@@ -688,8 +793,8 @@ export class FileGenerator {
             }
           } else {
             // 普通文件 - 记录完整相对路径
-            const isUserSkill = rule.sourceId === 'user-skills';
-            const isUserRule = rule.sourceId === 'user-rules';
+            const isUserSkill = rule.sourceId === USER_SKILLS_SOURCE_ID;
+            const isUserRule = rule.sourceId === USER_RULES_SOURCE_ID;
 
             if (isUserSkill || isUserRule) {
               // 用户内容（规则或技能）：使用文件名
@@ -703,11 +808,10 @@ export class FileGenerator {
               const organizeBySource = (adapter as any).shouldOrganizeBySource?.() ?? false;
 
               if (preserveStructure && rule.sourceId) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const relativePath = await (adapter as any).getRelativePathFromSubPath(
-                  rule.filePath,
-                  rule.sourceId,
-                );
+                const relativePath =
+                  adapter instanceof BaseAdapter
+                    ? await adapter.getRelativeOutputPathForRule(rule)
+                    : null;
                 if (relativePath) {
                   // 如果按源组织，前面加上 sourceId
                   const finalPath = organizeBySource
@@ -897,7 +1001,7 @@ export class FileGenerator {
     for (const [name, adapter] of adaptersToUpdate) {
       try {
         // 只对单文件适配器执行部分更新
-        if (this.isDirectoryOutput(adapter)) {
+        if (this.isDirectoryOutput(adapter) || this.isMergeJsonOutput(adapter)) {
           // 目录模式：直接覆盖对应文件
           const config = await this.generateForAdapter(adapter, rules, workspaceRoot);
           result.success.push(config);

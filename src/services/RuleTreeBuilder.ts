@@ -8,6 +8,7 @@ import * as path from 'path';
 
 import { MdcParser } from '../parsers/MdcParser';
 import { SystemError } from '../types/errors';
+import { ASSET_FILE_EXTENSIONS } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { GitManager } from './GitManager';
 
@@ -188,9 +189,9 @@ export class RuleTreeBuilder {
             expanded: depth < 2, // 默认展开前两层
           };
         } else if (stat.isFile()) {
-          // 文件节点：仅包含 .md/.mdc 文件
+          // 文件节点：包含所有可同步资产文件
           const ext = path.extname(name).toLowerCase();
-          if (!['.md', '.mdc'].includes(ext)) {
+          if (!ASSET_FILE_EXTENSIONS.includes(ext)) {
             return null;
           }
 

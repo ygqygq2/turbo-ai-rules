@@ -84,7 +84,7 @@ export const AdapterCard: React.FC<AdapterCardProps> = ({
         <div className="adapter-card-detail-item">
           <Icon icon="check" size={12} />
           <span>
-            将同步 <strong>{isSelected ? selectedAssetCount : 0}</strong> 项资产
+            将同步 <strong>{isSelected ? selectedAssetCount : 0}</strong> 项内容
           </span>
         </div>
       </div>

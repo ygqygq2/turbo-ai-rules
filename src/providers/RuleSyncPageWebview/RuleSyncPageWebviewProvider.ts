@@ -333,30 +333,15 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
           continue;
         }
 
-        // 获取该源的规则
-        const rules = this.rulesManager.getRulesBySource(source.id);
-        let totalRules = rules.length;
-
-        // 如果内存中没有，尝试从磁盘加载（使用 sourcePath 扫描）
-        if (totalRules === 0) {
-          const MdcParser = (await import('../../parsers/MdcParser')).MdcParser;
-          const parser = new MdcParser();
-          const parsedRules = await parser.parseDirectory(sourcePath, source.id, {
-            recursive: true,
-            maxDepth: 6,
-            maxFiles: 500,
-          });
-          totalRules = parsedRules.length;
-          if (parsedRules.length > 0) {
-            this.rulesManager.addRules(source.id, parsedRules);
-          }
-        }
+        // 优先从磁盘重新解析，确保同步页的 ALL 视图最接近真实源目录；失败时回退到缓存
+        const sourceRules = await this.loadSourceRulesForSyncPage(source.id, sourcePath);
+        const totalRules = sourceRules.length;
 
         // 获取该源的已选规则路径（已经是相对路径）
         const selectedPaths = this.selectionStateManager.getSelection(source.id);
 
         // ✅ 从规则构建文件树（使用源根目录路径，与左侧树和规则选择器一致）
-        const fileTree = buildFileTreeFromRules(rules, sourcePath);
+        const fileTree = buildFileTreeFromRules(sourceRules, sourcePath);
 
         // ✅ 直接返回 FileTreeNode 和 selectedPaths，不转换为 RuleTreeNode
         sources.push({
@@ -382,6 +367,39 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
     const suites = this.getAdapterSuiteStates(adapters, config.adapterSuites || []);
 
     return { sources, suites, adapters };
+  }
+
+  /**
+   * 同步页优先读取磁盘上的最新源目录结构，必要时回退到内存缓存。
+   */
+  private async loadSourceRulesForSyncPage(
+    sourceId: string,
+    sourcePath: string,
+  ): Promise<import('../../types/rules').ParsedRule[]> {
+    const cachedRules = this.rulesManager.getRulesBySource(sourceId);
+
+    try {
+      const MdcParser = (await import('../../parsers/MdcParser')).MdcParser;
+      const parser = new MdcParser();
+      const parsedRules = await parser.parseDirectory(sourcePath, sourceId, {
+        recursive: true,
+        maxDepth: 6,
+        maxFiles: 500,
+      });
+
+      if (parsedRules.length > 0) {
+        this.rulesManager.addRules(sourceId, parsedRules);
+        return parsedRules;
+      }
+    } catch (error) {
+      Logger.warn('Failed to parse source directly for sync page, falling back to cache', {
+        sourceId,
+        sourcePath,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    return cachedRules;
   }
 
   // ✅ 不再需要转换方法，直接使用 FileTreeNode 和 selectedPaths 数组
@@ -485,14 +503,14 @@ export class RuleSyncPageWebviewProvider extends BaseWebviewProvider {
         id: 'claude-core',
         name: t('ruleSyncPage.suite.claudeCore.name'),
         description: t('ruleSyncPage.suite.claudeCore.description'),
-        adapterIds: ['claude-md', 'claude-skills', 'claude-commands', 'claude-agents'],
-        enabled: true,
-      },
-      {
-        id: 'agentic-core',
-        name: t('ruleSyncPage.suite.agenticCore.name'),
-        description: t('ruleSyncPage.suite.agenticCore.description'),
-        adapterIds: ['continue', 'cline', 'roo-cline', 'aider'],
+        adapterIds: [
+          'claude-md',
+          'claude-skills',
+          'claude-commands',
+          'claude-agents',
+          'claude-hooks',
+          'claude-hooks-settings',
+        ],
         enabled: true,
       },
     ];

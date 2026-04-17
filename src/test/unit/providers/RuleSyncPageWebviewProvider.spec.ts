@@ -175,7 +175,7 @@ describe('RuleSyncPageWebviewProvider', () => {
     it('应该包含所有适配器（预置和自定义）', async () => {
       const data = await (provider as any).getRuleSyncData();
 
-      expect(data.adapters.length).toBeGreaterThanOrEqual(19); // 18 预置 + 1 自定义
+      expect(data.adapters.length).toBeGreaterThanOrEqual(21); // 20 预置 + 1 自定义
 
       const copilotAdapter = data.adapters.find((a: any) => a.id === 'copilot');
       expect(copilotAdapter).toBeDefined();
@@ -197,7 +197,6 @@ describe('RuleSyncPageWebviewProvider', () => {
       const cursorSuite = data.suites.find((suite: any) => suite.id === 'cursor-core');
       const copilotSuite = data.suites.find((suite: any) => suite.id === 'copilot-core');
       const claudeSuite = data.suites.find((suite: any) => suite.id === 'claude-core');
-      const agenticSuite = data.suites.find((suite: any) => suite.id === 'agentic-core');
 
       expect(cursorSuite).toBeDefined();
       expect(cursorSuite.adapterIds).toEqual(['cursor', 'cursor-skills']);
@@ -215,9 +214,10 @@ describe('RuleSyncPageWebviewProvider', () => {
         'claude-skills',
         'claude-commands',
         'claude-agents',
+        'claude-hooks',
+        'claude-hooks-settings',
       ]);
-      expect(agenticSuite).toBeDefined();
-      expect(agenticSuite.adapterIds).toEqual(['continue', 'cline', 'roo-cline', 'aider']);
+      expect(data.suites.find((suite: any) => suite.id === 'agentic-core')).toBeUndefined();
     });
 
     it('应该合并配置中的自定义综合体', async () => {
@@ -229,6 +229,38 @@ describe('RuleSyncPageWebviewProvider', () => {
       expect(customSuite.name).toBe('Custom Suite');
       expect(customSuite.adapterIds).toEqual(['copilot', 'custom1']);
     });
+
+    it('应该优先使用磁盘解析结果构建同步页树', async () => {
+      vi.spyOn(provider as any, 'loadSourceRulesForSyncPage').mockResolvedValue([
+        {
+          id: 'python-best-practices',
+          title: 'Python 最佳实践',
+          content: 'content',
+          rawContent: 'content',
+          sourceId: 'source1',
+          filePath: '/cache/source1/rules/101-python.mdc',
+          metadata: {},
+          kind: 'rule',
+        },
+        {
+          id: 'python-dev-skill',
+          title: 'Python 开发技巧',
+          content: 'content',
+          rawContent: 'content',
+          sourceId: 'source1',
+          filePath: '/cache/source1/skills/0001-python-development.mdc',
+          metadata: {},
+          kind: 'skill',
+        },
+      ]);
+
+      const data = await (provider as any).getRuleSyncData();
+      const source1 = data.sources.find((source: any) => source.id === 'source1');
+      const rootNames = source1.fileTree.map((node: any) => node.name);
+
+      expect(rootNames).toContain('rules');
+      expect(rootNames).toContain('skills');
+    });
   });
 
   describe('getAdapterStates', () => {
@@ -236,7 +268,7 @@ describe('RuleSyncPageWebviewProvider', () => {
       const states = await (provider as any).getAdapterStates();
 
       expect(Array.isArray(states)).toBe(true);
-      expect(states.length).toBeGreaterThanOrEqual(19);
+      expect(states.length).toBeGreaterThanOrEqual(21);
     });
 
     it('应该正确设置适配器属性', async () => {

@@ -15,6 +15,8 @@ import { t } from '../utils/i18n';
 import { Logger } from '../utils/logger';
 import { toRelativePath } from '../utils/rulePath';
 
+const RULES_EXPLORER_KINDS = new Set(['rule', 'instruction']);
+
 /**
  * 树节点类型
  */
@@ -435,6 +437,16 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
   }
 
   /**
+   * 左侧 Explorer 保持“快速同步规则”语义：
+   * - 兼容旧布局（默认 rule）
+   * - 兼容新布局（显式 kind）
+   * - 排除 skill/agent/prompt/command/hook/mcp 等非规则资产
+   */
+  private filterRulesForExplorer(rules: ParsedRule[]): ParsedRule[] {
+    return rules.filter((rule) => RULES_EXPLORER_KINDS.has(rule.kind ?? 'rule'));
+  }
+
+  /**
    * 获取根节点
    */
   private async getRootItems(): Promise<RuleTreeItem[]> {
@@ -475,8 +487,14 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
     const items: RuleTreeItem[] = [];
     for (const source of sources) {
       // 从缓存加载规则（如果内存中没有则从 Git 缓存目录解析）
-      const rules = await this.loadRulesFromCache(source.id);
+      const allAssets = await this.loadRulesFromCache(source.id);
+      const rules = this.filterRulesForExplorer(allAssets);
       const totalCount = rules.length;
+      const visibleRulePaths = new Set(
+        rules
+          .map((rule) => (rule.filePath ? toRelativePath(rule.filePath, source.id) : null))
+          .filter((item): item is string => Boolean(item)),
+      );
 
       // 获取该源的规则选择信息（从 SelectionStateManager 读取）
       let selectedCount = 0;
@@ -485,7 +503,8 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
         // 传入 undefined 因为这里还没有加载规则，无法获取路径
         await this.selectionStateManager.initializeState(source.id, totalCount, undefined);
         // 使用 getSelectionCount() 方法，它会正确处理空数组（全选）的情况
-        selectedCount = this.selectionStateManager.getSelectionCount(source.id);
+        const selectedPaths = this.selectionStateManager.getSelection(source.id);
+        selectedCount = selectedPaths.filter((selectedPath) => visibleRulePaths.has(selectedPath)).length;
       } catch (error) {
         Logger.warn('Failed to get rule selection', { sourceId: source.id, error });
         // 出错时默认全选
@@ -514,14 +533,15 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
    */
   private async getSourceRules(source: RuleSource): Promise<RuleTreeItem[]> {
     // 从 Git 缓存目录加载规则（会自动添加到 RulesManager）
-    const rules = await this.loadRulesFromCache(source.id);
+    const allAssets = await this.loadRulesFromCache(source.id);
+    const rules = this.filterRulesForExplorer(allAssets);
 
     if (rules.length === 0) {
       return [
         new RuleTreeItem(
           {
             type: 'empty',
-            label: 'No rules (sync to fetch)',
+            label: 'No rules or instructions (sync to fetch)',
           },
           vscode.TreeItemCollapsibleState.None,
         ),

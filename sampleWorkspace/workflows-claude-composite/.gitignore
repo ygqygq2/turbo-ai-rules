@@ -1,0 +1,14 @@
+CLAUDE.md
+.claude/
+.claude/settings.json
+rules/
+
+# Turbo AI Rules - Auto-generated files
+CLAUDE.md
+.cursorrules
+.claude/hooks
+.claude/settings.json
+.claude/skills
+.claude/commands
+.claude/agents
+rules
