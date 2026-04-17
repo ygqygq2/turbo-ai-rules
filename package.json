@@ -549,6 +549,20 @@
                 ],
                 "default": "asc",
                 "description": "Sort order (ascending or descending)"
+              },
+              "preserveDirectoryStructure": {
+                "type": "boolean",
+                "default": true,
+                "description": "For directory adapters, preserve the source directory structure instead of flattening files"
+              },
+              "relativePathBase": {
+                "type": "string",
+                "enum": [
+                  "source-subpath",
+                  "asset-root"
+                ],
+                "default": "source-subpath",
+                "description": "Base used to calculate relative output paths for directory adapters"
               }
             }
           }
@@ -620,6 +634,20 @@
                 "type": "boolean",
                 "default": true,
                 "description": "%turboAiRules.adapters.custom.items.properties.useOriginalFilename.description%"
+              },
+              "preserveDirectoryStructure": {
+                "type": "boolean",
+                "default": true,
+                "description": "Whether to preserve the source directory structure for directory outputs"
+              },
+              "relativePathBase": {
+                "type": "string",
+                "enum": [
+                  "source-subpath",
+                  "asset-root"
+                ],
+                "default": "source-subpath",
+                "description": "Base used to calculate relative paths for directory outputs"
               },
               "generateIndex": {
                 "type": "boolean",

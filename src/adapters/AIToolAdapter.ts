@@ -274,6 +274,13 @@ export abstract class BaseAdapter implements AIToolAdapter {
   }
 
   /**
+   * 对外暴露规则文件名计算，供生成/清理服务复用。
+   */
+  public getOutputFileNameForRule(rule: ParsedRule): string {
+    return this.getRuleFileName(rule);
+  }
+
+  /**
    * 按源 ID 组织文件
    */
   protected async generateBySource(
