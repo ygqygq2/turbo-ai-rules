@@ -48,6 +48,7 @@ interface WorkspaceState {
     sourceCount: number; // 规则源总数
     enabledSourceCount: number; // 已启用的规则源数量
     syncedSourceCount: number; // 至少同步过一次的源数量
+    syncedTargetAdapterCount: number; // 已同步的目标适配器数量（包含 rules + skills）
     syncedRulesAdapterCount: number; // 已同步的规则适配器数量
     totalSyncedSkills: number; // 已同步的 Skills 规则总数
     syncedSkillsAdapterCount: number; // 已同步的 Skills 适配器数量
@@ -91,6 +92,7 @@ const DEFAULT_WORKSPACE_STATE: WorkspaceState = {
     sourceCount: 0,
     enabledSourceCount: 0,
     syncedSourceCount: 0,
+    syncedTargetAdapterCount: 0,
     syncedRulesAdapterCount: 0,
     totalSyncedSkills: 0,
     syncedSkillsAdapterCount: 0,
@@ -357,6 +359,7 @@ export class WorkspaceStateManager {
     sourceCount: number;
     enabledSourceCount: number;
     syncedSourceCount: number;
+    syncedTargetAdapterCount?: number;
     syncedRulesAdapterCount?: number;
     totalSyncedSkills?: number;
     syncedSkillsAdapterCount?: number;
@@ -374,6 +377,7 @@ export class WorkspaceStateManager {
     sourceCount: number;
     enabledSourceCount: number;
     syncedSourceCount: number;
+    syncedTargetAdapterCount: number;
     syncedRulesAdapterCount: number;
     totalSyncedSkills: number;
     syncedSkillsAdapterCount: number;
@@ -562,6 +566,7 @@ export class WorkspaceStateManager {
         sourceCount: 0,
         enabledSourceCount: 0,
         syncedSourceCount: 0,
+        syncedTargetAdapterCount: 0,
         syncedRulesAdapterCount: 0,
         totalSyncedSkills: 0,
         syncedSkillsAdapterCount: 0,

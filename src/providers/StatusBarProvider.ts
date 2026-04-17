@@ -293,11 +293,11 @@ export class StatusBarProvider {
     try {
       const stateManager = WorkspaceStateManager.getInstance();
       const cachedStats = await stateManager.getRulesStats();
+      const targetAdapterCount =
+        cachedStats.syncedTargetAdapterCount ?? cachedStats.syncedRulesAdapterCount ?? 0;
 
       // 规则统计（带适配器数量）
-      lines.push(
-        t('statusBar.tooltip.syncedRules', totalSyncedRules, cachedStats.syncedRulesAdapterCount),
-      );
+      lines.push(t('statusBar.tooltip.syncedRules', totalSyncedRules, targetAdapterCount));
 
       // Skills 统计
       if (cachedStats.totalSyncedSkills !== undefined && cachedStats.totalSyncedSkills > 0) {
@@ -354,11 +354,11 @@ export class StatusBarProvider {
     try {
       const stateManager = WorkspaceStateManager.getInstance();
       const cachedStats = await stateManager.getRulesStats();
+      const targetAdapterCount =
+        cachedStats.syncedTargetAdapterCount ?? cachedStats.syncedRulesAdapterCount ?? 0;
 
       // 规则统计（带适配器数量）
-      lines.push(
-        t('statusBar.tooltip.syncedRules', totalSyncedRules, cachedStats.syncedRulesAdapterCount),
-      );
+      lines.push(t('statusBar.tooltip.syncedRules', totalSyncedRules, targetAdapterCount));
 
       // Skills 统计
       if (cachedStats.totalSyncedSkills !== undefined && cachedStats.totalSyncedSkills > 0) {

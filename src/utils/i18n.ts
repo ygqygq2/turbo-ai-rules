@@ -55,6 +55,9 @@ export function t(key: string, ...args: any[]): string {
   // 如果第一个参数是对象，使用 i18next 原生插值
   if (args.length > 0 && typeof args[0] === 'object' && !Array.isArray(args[0])) {
     translated = i18next.t(key, args[0]) as string;
+    Object.entries(args[0]).forEach(([name, value]) => {
+      translated = translated.replace(new RegExp(`{${name}}`, 'g'), String(value));
+    });
   }
   // 否则使用 l10n 格式 {0}, {1}, {2}...
   else if (args.length > 0) {

@@ -24,6 +24,7 @@ import { notify } from '../utils/notifications';
 import { ProgressManager } from '../utils/progressManager';
 import { syncAndParseSource } from '../utils/ruleLoader';
 import { toRelativePath } from '../utils/rulePath';
+import { calculateTargetAdapterStats } from '../utils/syncAdapterStats';
 
 /**
  * 按仓库分组源，确保同一仓库的不同分支/目录串行处理
@@ -403,38 +404,28 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
 
         // 计算适配器统计
         let syncedRulesAdapterCount = 0;
+        let syncedTargetAdapterCount = 0;
         let totalSyncedSkills = 0;
         let syncedSkillsAdapterCount = 0;
+        const selectedSkillAssetCount = mergedRules.filter((rule) => rule.kind === 'skill').length;
 
         // 统计本次生成的适配器
         if (effectiveTargetAdapters && effectiveTargetAdapters.length > 0) {
           // 获取所有自定义适配器配置
           const customAdapters = config.adapters.custom || [];
-          const presetRuleAdapters = PRESET_ADAPTERS.filter(
-            (adapter) => adapter.isRuleType !== false,
-          ).map((adapter) => adapter.id);
+          const adapterStats = calculateTargetAdapterStats(
+            effectiveTargetAdapters,
+            customAdapters,
+            selectedSkillAssetCount,
+          );
 
-          for (const targetAdapter of effectiveTargetAdapters) {
-            // 查找对应的自定义适配器配置
-            const adapterConfig = customAdapters.find((a) => a.id === targetAdapter);
-
-            if (adapterConfig) {
-              // 自定义适配器
-              if (adapterConfig.isRuleType === false) {
-                // Skills 适配器
-                syncedSkillsAdapterCount++;
-                totalSyncedSkills += mergedRules.length;
-              } else {
-                // 规则适配器
-                syncedRulesAdapterCount++;
-              }
-            } else if (presetRuleAdapters.includes(targetAdapter)) {
-              // 预设适配器都是规则类型
-              syncedRulesAdapterCount++;
-            }
-          }
+          syncedTargetAdapterCount = adapterStats.targetAdapterCount;
+          syncedRulesAdapterCount = adapterStats.ruleAdapterCount;
+          syncedSkillsAdapterCount = adapterStats.skillAdapterCount;
+          totalSyncedSkills = adapterStats.totalSyncedSkills;
 
           Logger.debug('Adapters stats calculated', {
+            syncedTargetAdapterCount,
             syncedRulesAdapterCount,
             totalSyncedSkills,
             syncedSkillsAdapterCount,
@@ -458,6 +449,7 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
               syncedRulesAdapterCount++;
             }
           }
+          syncedTargetAdapterCount = syncedRulesAdapterCount;
         }
 
         // 持久化聚合统计信息到 workspaceState（用于状态栏显示）
@@ -467,6 +459,7 @@ export async function syncRulesCommand(options?: string | SyncRulesOptions): Pro
           sourceCount: sources.length,
           enabledSourceCount: enabledSources.length,
           syncedSourceCount,
+          syncedTargetAdapterCount,
           syncedRulesAdapterCount,
           totalSyncedSkills,
           syncedSkillsAdapterCount,

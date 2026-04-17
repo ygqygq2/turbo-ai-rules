@@ -80,7 +80,7 @@ export function getLocale(): string {
  * @param options {any} - 可以是对象（i18next 格式）或其他类型（l10n 格式）
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function t(key: string, options?: any): string {
+export function t(key: string, ...args: any[]): string {
   let translated = i18next.t(key) as string;
 
   // 如果翻译键不存在或返回空值，返回键本身
@@ -89,12 +89,17 @@ export function t(key: string, options?: any): string {
   }
 
   // 如果参数是对象且包含具名属性，使用 i18next 原生插值
-  if (options && typeof options === 'object' && !Array.isArray(options)) {
-    translated = i18next.t(key, options) as string;
+  if (args.length === 1 && args[0] && typeof args[0] === 'object' && !Array.isArray(args[0])) {
+    translated = i18next.t(key, args[0]) as string;
+    Object.entries(args[0]).forEach(([name, value]) => {
+      translated = translated.replace(new RegExp(`\\{${name}\\}`, 'g'), String(value));
+    });
   }
-  // 否则作为位置参数处理 l10n 格式 {0}
-  else if (options !== undefined) {
-    translated = translated.replace(/\{0\}/g, String(options));
+  // 否则作为位置参数处理 l10n 格式 {0}, {1}, {2}...
+  else if (args.length > 0) {
+    args.forEach((arg, index) => {
+      translated = translated.replace(new RegExp(`\\{${index}\\}`, 'g'), String(arg));
+    });
   }
 
   return translated;
