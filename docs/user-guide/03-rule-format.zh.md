@@ -1,12 +1,18 @@
 # 规则文件格式 (MDC)
 
-> MDC (Markdown + YAML Frontmatter) 格式编写规则指南
-
-[English](./rule-format.md) | [中文](./rule-format.zh.md)
+> 使用 Markdown、MDC 及相关元数据编写规则 / 指令 / skill 风格内容的说明
 
 ---
 
 ## 📖 规则文件格式概述
+
+Turbo AI Rules 主要解析 **Markdown 系资产**。具体来说：
+
+- 宽松模式下支持纯 Markdown 文件
+- 宽松模式和严格模式都支持带 YAML frontmatter 的 MDC 风格文件
+- 同一套元数据约定可用于规则、指令以及很多 skill 风格文档
+
+对于 skills 这类目录型资产，核心入口文件（通常是 `skill.md`）仍遵循本页描述的解析规则。
 
 Turbo AI Rules 支持两种解析模式,以适应不同的使用场景:
 

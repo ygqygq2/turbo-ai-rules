@@ -2,19 +2,25 @@
 
 > Complete guide to all available commands in Turbo AI Rules
 
-[English](./commands.md) | [中文](./commands.zh.md)
-
 ---
 
 ## Overview
 
-The extension provides 6 core commands covering the complete workflow of rule source management, syncing, and config generation.
+Turbo AI Rules now exposes commands for **source management**, **asset selection**, **adapter management**, and **visual workflows**.
 
 ### Quick Access
 
 - **Status Bar**: Click **🤖 AI Rules** icon
 - **Command Palette**: `Ctrl+Shift+P` → Type `Turbo AI Rules`
 - **Tree View**: Right-click in **AI Rules** sidebar
+
+### Current Core Workflow
+
+1. `Add Source` - connect one or more Git-based asset repositories
+2. `Sync Rules` - pull and parse the latest assets
+3. `Manage Adapters` - enable preset/custom adapters and suites
+4. `Open Sync Page` - choose assets and grouped output targets
+5. `Generate Config Files` - regenerate outputs on demand
 
 ### Tree View Icon Legend
 
@@ -157,50 +163,6 @@ See [02. Configuration Guide](./02-configuration.md) for details.
 
 ---
 
-## 4. 🔍 Search Rules
-
-**Command**: `Turbo AI Rules: Search Rules`
-
-**Function**: Search for specific content in all synced rules
-
-### Use Cases
-
-- Find rules for specific tech stacks (e.g., "TypeScript", "React")
-- Search for rules on specific topics (e.g., "naming", "testing")
-- Browse the list of available rules
-
-### Steps
-
-1. Execute the command
-2. Enter search keywords (supports fuzzy search)
-3. Select a rule from the results to view details
-
-### Search Scope
-
-- Rule ID (`id`)
-- Rule title (`title`)
-- Rule tags (`tags`)
-- Rule description (`description`)
-
-### Example
-
-```
-Search: "typescript"
-Results:
-  - TypeScript Naming Conventions
-  - TypeScript Best Practices
-  - TypeScript Testing Guide
-  - React + TypeScript Patterns
-```
-
-### Tips
-
-- 🔤 Search is case-insensitive
-- 🏷️ Can filter quickly by tags (e.g., `#react`, `#testing`)
-- 📄 Selecting a rule will preview its content in the editor
-
----
-
 ## 5. 📝 Generate Config Files
 
 **Command**: `Turbo AI Rules: Generate Config Files`
@@ -333,7 +295,7 @@ Open the main dashboard webview with quick access to all features.
 Open advanced search interface with:
 
 - Multi-field search (title, tags, content)
-- Filter by source, priority, tags
+- Filter by source, priority, tags, and asset type
 - Search result preview
 - Export search results
 
@@ -341,7 +303,7 @@ Open advanced search interface with:
 
 **Command**: `Turbo AI Rules: Open Rule Sync Page`
 
-Open the rule selection interface with file tree view for selecting specific rules to sync.
+Open the asset selection interface with file tree view for selecting specific assets and applying them to one or more adapter suites.
 
 #### ℹ️ View Source Detail
 
@@ -372,7 +334,7 @@ Deselect all rules (useful for starting fresh selection).
 
 **Command**: `Turbo AI Rules: Select Rules`
 
-Open rule selector for a specific source to choose which rules to include.
+Open the per-source selector to choose which parsed assets should remain selected.
 
 #### 📄 Copy Rule Content
 
@@ -390,7 +352,7 @@ Export a rule to a standalone file.
 
 **Command**: `Turbo AI Rules: Ignore Rule`
 
-Mark a rule as ignored (won't be included in config generation).
+Mark a selected rule asset as ignored (won't be included in generated outputs).
 
 ### 7.3 Source Management Commands
 
@@ -464,16 +426,17 @@ Most advanced commands are accessible via:
 
 ### For First-Time Users
 
-1. **Initialize**: `Add Source` → Add rule sources
-2. **Sync**: `Sync Rules` → Get rules
-3. **Verify**: Check generated config files
-4. **Start Using**: AI tools will automatically load rules
+1. **Initialize**: `Add Source` → add one or more asset repositories
+2. **Sync**: `Sync Rules` → fetch and classify the latest assets
+3. **Enable outputs**: `Manage Adapters` → turn on the adapters/suites you need
+4. **Select assets**: `Open Rule Sync Page` → apply selected assets to your output suites
+5. **Verify**: check the generated files and directories in the workspace
 
 ### For Regular Use
 
 1. **Update**: Regularly `Sync Rules` to get latest updates
-2. **Search**: Use `Search Rules` to find specific rules
-3. **Adjust**: Use `Manage Sources` to fine-tune configuration
+2. **Search**: Use `Advanced Rule Search` to find specific assets
+3. **Adjust**: Use `Manage Sources` and `Manage Adapters` to fine-tune configuration
 
 ### For Team Collaboration
 

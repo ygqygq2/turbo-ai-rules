@@ -2,11 +2,17 @@
 
 > Complete guide to configuring Turbo AI Rules
 
-[English](./configuration.md) | [中文](./configuration.zh.md)
-
 ---
 
 ## ⚙️ Configuration Guide
+
+This guide focuses on the **current configuration model**:
+
+- Git-based asset sources
+- parser behavior for rule/instruction/skill-style files
+- preset adapters and custom adapters
+- adapter suites used by the sync page
+- sync, conflict resolution, and shared selection settings
 
 ### 📚 Configuration Hierarchy
 
@@ -77,10 +83,13 @@ Add to `.vscode/settings.json` or VS Code settings:
   "turbo-ai-rules.parser.strictMode": false,
   "turbo-ai-rules.parser.requireFrontmatter": false,
 
-  // ========== Built-in Adapters ==========
+  // ========== Preset Adapters ==========
   "turbo-ai-rules.adapters.cursor.enabled": false,
   "turbo-ai-rules.adapters.copilot.enabled": true,
   "turbo-ai-rules.adapters.continue.enabled": false,
+
+  // ========== Adapter Suites ==========
+  "turbo-ai-rules.adapterSuites": [],
 
   // ========== Custom Adapters ==========
   "turbo-ai-rules.adapters.custom": []

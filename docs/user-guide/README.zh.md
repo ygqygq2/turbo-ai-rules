@@ -4,9 +4,9 @@
 
 ## 📑 快速导航
 
-- [01. 命令详解](./01-commands.zh.md) - 所有命令的详细说明
-- [02. 配置指南](./02-configuration.zh.md) - 完整的配置选项和示例
-- [03. 规则文件格式](./03-rule-format.zh.md) - 如何编写 MDC 格式的规则
+- [01. 命令详解](./01-commands.zh.md) - 当前命令入口与同步工作流
+- [02. 配置指南](./02-configuration.zh.md) - 适配器、综合体、同步与自定义输出配置
+- [03. 规则文件格式](./03-rule-format.zh.md) - 如何编写规则 / 指令 / skill 风格内容
 - [04. 常见问题](./04-faq.zh.md) - 常见问题解答和故障排查
 
 ## 🚀 快速开始
@@ -17,7 +17,7 @@
 2. 点击 **安装**
 3. 重新加载 VS Code
 
-### 基本使用（三步走）
+### 基本使用（四步走）
 
 #### 1. 添加规则源
 
@@ -32,13 +32,36 @@
 命令: Turbo AI Rules: Sync Rules
 ```
 
-#### 3. 验证生成的配置文件
+#### 3. 选择资产和综合体
+
+```text
+命令: Turbo AI Rules: Open Sync Page
+操作:  选择已解析资产，并勾选一个或多个适配器综合体
+```
+
+#### 4. 验证生成的配置文件
 
 检查工作区根目录：
 
 - `.cursorrules` (Cursor AI)
 - `.github/copilot-instructions.md` (GitHub Copilot)
-- `rules/` (通用规则目录)
+- `.cursor/skills/` 或 `.github/skills/`（skills 类输出）
+- `.claude/commands/`、`.claude/hooks/`、`.vscode/mcp.json`（启用相关适配器/综合体时）
+
+## 🧩 扩展现在同步什么
+
+Turbo AI Rules 现在处理的不只是传统“规则”，而是一组更通用的 **AI 资产类型**：
+
+- `rule`
+- `instruction`
+- `skill`
+- `agent`
+- `prompt`
+- `command`
+- `hook`
+- `mcp`
+
+这些资产可以通过 **预设适配器**、**自定义适配器** 和 **适配器综合体** 安装到不同工具中。
 
 ## 📚 详细文档
 

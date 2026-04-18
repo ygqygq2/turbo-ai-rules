@@ -1,14 +1,18 @@
 # Rule File Format (MDC)
 
-> Guide to writing rules using MDC (Markdown + YAML Frontmatter) format
-
-[English](./rule-format.md) | [中文](./rule-format.zh.md)
+> Guide to authoring rule / instruction / skill-style content with Markdown, MDC, and related metadata
 
 ---
 
 ## 📖 Rule File Format (MDC)
 
-Rule files use **MDC** (Markdown + YAML Frontmatter) format, combining YAML metadata and Markdown content.
+Turbo AI Rules primarily parses **Markdown-based assets**. In practice, this means:
+
+- plain Markdown files are supported in relaxed mode
+- MDC-style files with YAML frontmatter are supported in both relaxed and strict mode
+- the same metadata conventions can be used for rules, instructions, and many skill-like documents
+
+Directory-style assets (such as skills with resources) are covered by the same parsing rules for their main Markdown entry file, usually `skill.md`.
 
 ### Basic Structure
 

@@ -24,10 +24,16 @@ This directory contains all project documentation, organized into user guides an
 
 | Document                                                                                                | Description                    |
 | ------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| [01. Commands](./user-guide/01-commands.md) / [命令详解](./user-guide/01-commands.zh.md)                | All available commands         |
-| [02. Configuration](./user-guide/02-configuration.md) / [配置指南](./user-guide/02-configuration.zh.md) | Complete configuration options |
-| [03. Rule Format](./user-guide/03-rule-format.md) / [规则格式](./user-guide/03-rule-format.zh.md)       | How to write rules             |
+| [01. Commands](./user-guide/01-commands.md) / [命令详解](./user-guide/01-commands.zh.md)                | Actual command entry points and workflows |
+| [02. Configuration](./user-guide/02-configuration.md) / [配置指南](./user-guide/02-configuration.zh.md) | Adapter, suite, sync, and custom output settings |
+| [03. Rule Format](./user-guide/03-rule-format.md) / [规则格式](./user-guide/03-rule-format.zh.md)       | How to author rule / instruction / skill-style content |
 | [04. FAQ](./user-guide/04-faq.md) / [常见问题](./user-guide/04-faq.zh.md)                               | Frequently asked questions     |
+
+### Current Product Shape
+
+- **Asset-centric**: the extension now works with more than just “rules”; it can classify and sync instructions, skills, agents, prompts, commands, hooks, and MCP fragments.
+- **Adapter + Suite model**: users can enable atomic adapters in settings, then apply selected assets to one or more adapter suites in the sync page.
+- **Composite outputs**: docs and samples now cover composite installs such as Claude commands/hooks/settings and custom MCP merge-json outputs.
 
 ---
 
@@ -117,6 +123,7 @@ This directory contains all project documentation, organized into user guides an
 
 - **Installing**: See [User Guide - Quick Start](./user-guide/README.md#-quick-start)
 - **Configuring**: See [02. Configuration Guide](./user-guide/02-configuration.md)
+- **Selecting assets / suites**: See [01. Commands](./user-guide/01-commands.md)
 - **Troubleshooting**: See [04. FAQ](./user-guide/04-faq.md)
 - **Contributing**: See [维护指南](./development/42-maintaining.md)
 - **UI Development**: See [Webview 最佳实践](./development/43-webview-best-practices.md)

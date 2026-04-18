@@ -2,11 +2,17 @@
 
 > Turbo AI Rules 完整配置指南
 
-[English](./configuration.md) | [中文](./configuration.zh.md)
-
 ---
 
 ## ⚙️ 配置指南
+
+本页聚焦 **当前配置模型**，包括：
+
+- Git 资产源配置
+- rule / instruction / skill 风格文件的解析配置
+- 预设适配器与自定义适配器
+- 同步页使用的适配器综合体（Adapter Suite）
+- 同步、冲突处理与共享选择状态配置
 
 ### 📚 配置层级
 

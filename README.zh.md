@@ -21,10 +21,15 @@
 
 - 🌐 **多源支持** - 从多个 Git 仓库同步规则
 - 🔄 **自动同步** - 定时或手动同步规则更新
-- 🎯 **智能适配** - 为 Cursor、Copilot、Continue 及自定义工具生成配置
-- 🧠 **Skills 支持** - 全面支持 AI Agent 技能（Cursor Skills、Copilot Skills）
+- 🧩 **资产化同步** - 用统一流程管理和生成 AI 资产
+  - 支持的资产类型包括 `rule`、`instruction`、`skill`、`agent`、`prompt`、`command`、`hook`、`mcp`
+  - 支持 Markdown / MDC / JSON / YAML / 目录类输入，结合路径和内容进行分类
+- 🎯 **智能适配器与综合体** - 为 Cursor、Copilot、Continue、Claude/Cline 生态以及自定义工具生成输出
+  - 预设适配器覆盖单文件规则、skills 目录、commands 目录、hooks 片段和 MCP 设置
+  - 适配器综合体（Adapter Suite）支持在同步页中一键选择一组输出
+- 🧠 **Skills 与资源复制** - 完整支持技能类资产
   - 保持目录结构并自动识别 `skill.md` 文件
-  - 自动复制资源文件（图片、配置等）
+  - 自动复制资源文件（图片、配置、脚本等）
   - 支持按规则源过滤，多仓库技能管理
 - 🔍 **规则搜索** - 快速查找和浏览规则
 - 🔐 **私有仓库** - 支持 Token 认证
@@ -88,7 +93,19 @@ workspace/
 ├── .cursorrules  # ✅ Cursor 配置 (默认生成)
 ```
 
-> **注意**: 默认只启用 Cursor 适配器。如需使用其他 AI 工具，请在设置中启用对应适配器（命令面板：`Turbo AI Rules: Manage Adapters`）。
+根据启用的适配器/综合体，扩展还可以生成例如：
+
+```
+workspace/
+├── .github/copilot-instructions.md
+├── .github/skills/
+├── .cursor/skills/
+├── .claude/commands/
+├── .claude/hooks/
+└── .vscode/mcp.json
+```
+
+> **注意**: 默认只启用 Cursor 单文件适配器。如需启用其他 AI 工具或组合输出，请先在 `Turbo AI Rules: Manage Adapters` 中开启对应适配器，再到 `Turbo AI Rules: Open Sync Page` 中选择资产和综合体。
 
 ---
 
@@ -97,9 +114,9 @@ workspace/
 ### 📘 用户指南
 
 - [📚 完整用户指南](./docs/user-guide/README.zh.md) - 详细使用说明
-- [📋 01. 命令详解](./docs/user-guide/01-commands.zh.md) - 所有可用命令
+- [📋 01. 命令详解](./docs/user-guide/01-commands.zh.md) - 当前命令入口与工作流说明
 - [⚙️ 02. 配置指南](./docs/user-guide/02-configuration.zh.md) - 配置选项和示例
-- [📝 03. 规则文件格式](./docs/user-guide/03-rule-format.zh.md) - 如何编写规则
+- [📝 03. 规则文件格式](./docs/user-guide/03-rule-format.zh.md) - 如何编写规则 / 指令 / skill 风格内容
 - [❓ 04. 常见问题](./docs/user-guide/04-faq.zh.md) - 常见问题解答
 
 ### 🛠️ 开发者指南
@@ -125,7 +142,29 @@ workspace/
 | Aider          | `.aider.conf.yml`                 | ⚙️ 已禁用 | 终端中的 AI 结对编程工具        |
 | Bolt.new       | `.bolt/prompt`                    | ⚙️ 已禁用 | StackBlitz AI 全栈开发平台      |
 | Qodo Gen       | `.qodo/rules.md`                  | ⚙️ 已禁用 | AI 测试生成和代码质量工具       |
+| Cursor Skills  | `.cursor/skills`                  | ⚙️ 已禁用 | Cursor 技能库目录               |
+| Copilot Skills | `.github/skills`                  | ⚙️ 已禁用 | GitHub Copilot 技能目录         |
 | 自定义适配器   | 可配置                            | ⚙️ 按需   | 支持任何 AI 工具的自定义配置    |
+
+### 支持的资产类型
+
+| 资产类型        | 常见输入形态                      | 常见输出示例                        |
+| --------------- | --------------------------------- | ----------------------------------- |
+| `rule`          | Markdown / MDC 规则文件           | `.cursorrules`、`.roorules`         |
+| `instruction`   | Markdown / MDC 指令文件           | `.github/copilot-instructions.md`   |
+| `skill`         | `skill.md` + 资源目录             | `.cursor/skills/*`、`.github/skills/*` |
+| `agent`         | agent 说明 / prompt 文件          | `.claude/agents/*` 或自定义路径     |
+| `prompt`        | prompt markdown 文件              | 工具专属 prompt 目录                |
+| `command`       | slash-command markdown 文件       | `.claude/commands/*`                |
+| `hook`          | hook JSON / 脚本片段              | `.claude/hooks/*` 或 hook settings  |
+| `mcp`           | MCP JSON 片段                     | `.vscode/mcp.json`                  |
+
+### 当前同步体验
+
+- 在 **Open Sync Page** 中查看所有已解析资产
+- **一次选择资产**，可同时应用到一个或多个适配器综合体
+- 支持生成 **Claude 组合输出**（如 `commands + hooks + settings`）或 **自定义 MCP merge-json** 等结果
+- 对支持块标记或 merge 策略的输出，尽量保护已有手工内容
 
 ### 规则文件格式
 

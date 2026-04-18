@@ -4,9 +4,9 @@
 
 ## 📑 Quick Navigation
 
-- [01. Commands Reference](./01-commands.md) - Detailed explanation of all commands
-- [02. Configuration Guide](./02-configuration.md) - Complete configuration options and examples
-- [03. Rule File Format](./03-rule-format.md) - How to write rules in MDC format
+- [01. Commands Reference](./01-commands.md) - Current command entry points and sync workflow
+- [02. Configuration Guide](./02-configuration.md) - Adapter, suite, sync, and custom output settings
+- [03. Rule File Format](./03-rule-format.md) - How to write rule / instruction / skill-style content
 - [04. FAQ](./04-faq.md) - Frequently asked questions and troubleshooting
 
 ## 🚀 Quick Start
@@ -17,7 +17,7 @@
 2. Click **Install**
 3. Reload VS Code
 
-### Basic Usage (3 Steps)
+### Basic Usage (4 Steps)
 
 #### 1. Add a Rule Source
 
@@ -32,13 +32,36 @@ Input:   Git repository URL
 Command: Turbo AI Rules: Sync Rules
 ```
 
-#### 3. Verify Generated Config Files
+#### 3. Select Assets and Suites
+
+```text
+Command: Turbo AI Rules: Open Sync Page
+Action:  Select parsed assets and choose one or more adapter suites
+```
+
+#### 4. Verify Generated Config Files
 
 Check workspace root directory for:
 
 - `.cursorrules` (Cursor AI)
 - `.github/copilot-instructions.md` (GitHub Copilot)
-- `rules/` (Generic rules directory)
+- `.cursor/skills/` or `.github/skills/` (skills-style outputs)
+- `.claude/commands/`, `.claude/hooks/`, `.vscode/mcp.json` (when related adapters/suites are enabled)
+
+## 🧩 What the Extension Syncs
+
+Turbo AI Rules now works with multiple **AI asset kinds**, not just plain rules.
+
+- `rule`
+- `instruction`
+- `skill`
+- `agent`
+- `prompt`
+- `command`
+- `hook`
+- `mcp`
+
+These assets can be installed through **preset adapters**, **custom adapters**, and **adapter suites**.
 
 ## 📚 Detailed Documentation
 

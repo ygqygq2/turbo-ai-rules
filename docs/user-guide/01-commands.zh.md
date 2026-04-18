@@ -2,19 +2,25 @@
 
 > Turbo AI Rules 所有可用命令的完整指南
 
-[English](./commands.md) | [中文](./commands.zh.md)
-
 ---
 
 ## 概览
 
-扩展提供 6 个核心命令，涵盖规则源管理、同步和配置生成的完整流程。
+Turbo AI Rules 当前的命令体系覆盖 **规则源管理**、**资产选择**、**适配器管理** 和 **可视化工作流**。
 
 ### 快速访问
 
 - **状态栏**: 点击 **🤖 AI Rules** 图标
 - **命令面板**: `Ctrl+Shift+P` → 输入 `Turbo AI Rules`
 - **树视图**: 在 **AI Rules** 侧边栏右键点击
+
+### 当前核心工作流
+
+1. `Add Source` - 接入一个或多个 Git 资产仓库
+2. `Sync Rules` - 拉取并解析最新资产
+3. `Manage Adapters` - 启用需要的适配器与综合体
+4. `Open Sync Page` - 选择资产并应用到一个或多个综合体
+5. `Generate Config Files` - 按需重新生成输出
 
 ### 树视图图标说明
 
@@ -157,50 +163,6 @@ Token:    ghp_xxxxxxxxxxxx (私有仓库)
 
 ---
 
-## 4. 🔍 搜索规则
-
-**命令**: `Turbo AI Rules: Search Rules`
-
-**功能**: 在所有已同步的规则中搜索特定内容
-
-### 使用场景
-
-- 查找特定技术栈的规则（如 "TypeScript", "React"）
-- 搜索特定主题的规则（如 "naming", "testing"）
-- 浏览可用的规则列表
-
-### 操作步骤
-
-1. 执行命令
-2. 输入搜索关键词（支持模糊搜索）
-3. 从结果列表中选择规则查看详情
-
-### 搜索范围
-
-- 规则 ID（`id`）
-- 规则标题（`title`）
-- 规则标签（`tags`）
-- 规则描述（`description`）
-
-### 示例
-
-```
-搜索: "typescript"
-结果:
-  - TypeScript Naming Conventions
-  - TypeScript Best Practices
-  - TypeScript Testing Guide
-  - React + TypeScript Patterns
-```
-
-### 提示
-
-- 🔤 搜索不区分大小写
-- 🏷️ 可以通过标签快速过滤（如 `#react`, `#testing`）
-- 📄 选择规则后会在编辑器中预览规则内容
-
----
-
 ## 5. 📝 生成配置文件
 
 **命令**: `Turbo AI Rules: Generate Config Files`
@@ -333,7 +295,7 @@ Token:    ghp_xxxxxxxxxxxx (私有仓库)
 打开高级搜索界面，支持：
 
 - 多字段搜索（标题、标签、内容）
-- 按源、优先级、标签过滤
+- 按源、优先级、标签、资产类型过滤
 - 搜索结果预览
 - 导出搜索结果
 
@@ -341,7 +303,7 @@ Token:    ghp_xxxxxxxxxxxx (私有仓库)
 
 **命令**: `Turbo AI Rules: Open Rule Sync Page`
 
-打开规则选择界面，以文件树视图选择要同步的特定规则。
+打开资产选择界面，以文件树视图选择要同步的资产，并应用到一个或多个适配器综合体。
 
 #### ℹ️ 查看源详情
 
@@ -372,7 +334,7 @@ Token:    ghp_xxxxxxxxxxxx (私有仓库)
 
 **命令**: `Turbo AI Rules: Select Rules`
 
-打开特定源的规则选择器，选择要包含的规则。
+打开特定规则源的选择器，决定哪些已解析资产保持选中状态。
 
 #### 📄 复制规则内容
 
@@ -390,7 +352,7 @@ Token:    ghp_xxxxxxxxxxxx (私有仓库)
 
 **命令**: `Turbo AI Rules: Ignore Rule`
 
-将规则标记为忽略（不会包含在配置生成中）。
+将选中的规则类资产标记为忽略（不会进入生成结果）。
 
 ### 7.3 源管理命令
 
@@ -464,16 +426,17 @@ Token:    ghp_xxxxxxxxxxxx (私有仓库)
 
 ### 首次使用
 
-1. **初始化**: `Add Source` → 添加规则源
-2. **同步**: `Sync Rules` → 获取规则
-3. **验证**: 检查生成的配置文件
-4. **开始使用**: AI 工具会自动加载规则
+1. **初始化**: `Add Source` → 添加一个或多个资产仓库
+2. **同步**: `Sync Rules` → 拉取并分类最新资产
+3. **启用输出**: `Manage Adapters` → 打开需要的适配器/综合体
+4. **选择资产**: `Open Rule Sync Page` → 将选中资产应用到目标综合体
+5. **验证**: 检查工作区内生成的文件和目录
 
 ### 日常使用
 
 1. **更新**: 定期 `Sync Rules` 获取最新更新
-2. **搜索**: 使用 `Search Rules` 查找特定规则
-3. **调整**: 通过 `Manage Sources` 调整配置
+2. **搜索**: 使用 `Advanced Rule Search` 查找特定资产
+3. **调整**: 通过 `Manage Sources` 和 `Manage Adapters` 调整配置
 
 ### 团队协作
 
