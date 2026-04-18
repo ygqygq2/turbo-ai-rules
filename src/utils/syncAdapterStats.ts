@@ -8,10 +8,7 @@ export interface SyncAdapterStats {
   totalSyncedSkills: number;
 }
 
-function isSkillAdapter(
-  adapterId: string,
-  customAdapters: CustomAdapterConfig[],
-): boolean {
+function isSkillAdapter(adapterId: string, customAdapters: CustomAdapterConfig[]): boolean {
   const customAdapter = customAdapters.find((adapter) => adapter.id === adapterId);
   if (customAdapter) {
     return customAdapter.isRuleType === false;

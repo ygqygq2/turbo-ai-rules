@@ -283,6 +283,18 @@ describe('RuleSyncPageWebviewProvider', () => {
         checked: false, // 默认未启用，checked 为 false
         assetCount: 0,
       });
+
+      const cursorSkills = states.find((s: any) => s.id === 'cursor-skills');
+      expect(cursorSkills).toMatchObject({
+        id: 'cursor-skills',
+        outputPath: '.cursor/skills/',
+      });
+
+      const copilotSkills = states.find((s: any) => s.id === 'copilot-skills');
+      expect(copilotSkills).toMatchObject({
+        id: 'copilot-skills',
+        outputPath: '.github/skills/',
+      });
     });
 
     it('应该包含自定义适配器', async () => {

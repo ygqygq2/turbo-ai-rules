@@ -16,11 +16,129 @@
     {
       "id": "test-skills",
       "name": "Test Skills Adapter",
-      "outputPath": "test-skills",
-      "outputType": "directory",
-      "fileExtension": ".md",
       "enabled": true,
-      "isRuleType": false
+      "outputPath": "test-skills",
+      "isRuleType": false,
+      "outputType": "directory",
+      "fileExtensions": [
+        "*.md"
+      ],
+      "organizeBySource": false,
+      "generateIndex": true,
+      "indexFileName": "index.md"
     }
-  ]
+  ],
+  "turbo-ai-rules.adapters": {
+    "claude-md": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "cursor": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "windsurf": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "copilot": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "copilot-instructions-files": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "copilot-agents": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "copilot-prompts": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "copilot-hooks": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "claude-hooks": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "claude-hooks-settings": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "continue": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "cline": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "roo-cline": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "aider": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "bolt": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc"
+    },
+    "claude-skills": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "claude-commands": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "claude-agents": {
+      "enabled": false,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "cursor-skills": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    },
+    "copilot-skills": {
+      "enabled": true,
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "relativePathBase": "asset-root"
+    }
+  },
+  "turbo-ai-rules.adapterSuites": []
 }

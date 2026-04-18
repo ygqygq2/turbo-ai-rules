@@ -154,8 +154,11 @@ export function isPathWithinBase(targetPath: string, allowedBase: string): boole
 export function normalizeOutputPathForDisplay(outputPath: string): string {
   if (!outputPath) return '';
 
-  // 去掉开头的 / 或 ./
-  let normalized = outputPath.replace(/^[./]+/, '');
+  // 去掉开头的 / 或 ./，但保留隐藏目录/文件前导点（如 .cursor / .github）
+  let normalized = outputPath.trim().replace(/^\/+/, '');
+  if (normalized.startsWith('./')) {
+    normalized = normalized.slice(2);
+  }
 
   // 判断是否为目录（没有扩展名的视为目录）
   const hasExtension = /\.[^/\\]+$/.test(normalized);

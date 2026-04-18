@@ -513,6 +513,102 @@
           "default": {},
           "scope": "resource",
           "description": "Adapter configurations (preset and custom adapters)",
+          "properties": {
+            "custom": {
+              "type": "array",
+              "default": [],
+              "items": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "name",
+                  "outputPath",
+                  "outputType"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]+$",
+                    "description": "%turboAiRules.adapters.custom.items.properties.id.description%"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "%turboAiRules.adapters.custom.items.properties.name.description%"
+                  },
+                  "enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "%turboAiRules.adapters.custom.items.properties.enabled.description%"
+                  },
+                  "enableUserRules": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "%turboAiRules.adapters.custom.items.properties.enableUserRules.description%"
+                  },
+                  "autoUpdate": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "%turboAiRules.adapters.custom.items.properties.autoUpdate.description%"
+                  },
+                  "outputPath": {
+                    "type": "string",
+                    "description": "%turboAiRules.adapters.custom.items.properties.outputPath.description%"
+                  },
+                  "outputType": {
+                    "type": "string",
+                    "enum": [
+                      "file",
+                      "directory",
+                      "merge-json"
+                    ],
+                    "description": "%turboAiRules.adapters.custom.items.properties.outputType.description%"
+                  },
+                  "fileExtensions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^\\.[a-z0-9]+$"
+                    },
+                    "description": "%turboAiRules.adapters.custom.items.properties.fileExtensions.description%"
+                  },
+                  "organizeBySource": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "%turboAiRules.adapters.custom.items.properties.organizeBySource.description%"
+                  },
+                  "useOriginalFilename": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "%turboAiRules.adapters.custom.items.properties.useOriginalFilename.description%"
+                  },
+                  "preserveDirectoryStructure": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to preserve the source directory structure for directory outputs"
+                  },
+                  "relativePathBase": {
+                    "type": "string",
+                    "enum": [
+                      "source-subpath",
+                      "asset-root"
+                    ],
+                    "default": "source-subpath",
+                    "description": "Base used to calculate relative paths for directory outputs"
+                  },
+                  "generateIndex": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "%turboAiRules.adapters.custom.items.properties.generateIndex.description%"
+                  },
+                  "indexFileName": {
+                    "type": "string",
+                    "default": "index.md",
+                    "description": "%turboAiRules.adapters.custom.items.properties.indexFileName.description%"
+                  }
+                }
+              }
+            }
+          },
           "additionalProperties": {
             "type": "object",
             "properties": {

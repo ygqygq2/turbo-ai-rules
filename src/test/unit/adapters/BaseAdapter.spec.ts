@@ -528,10 +528,7 @@ describe('BaseAdapter sorting and deduplication', () => {
       };
 
       expect(
-        adapter.stripAssetRootPrefixForTest(
-          '1300-skills/0010-git-workflow-expert/SKILL.md',
-          rule,
-        ),
+        adapter.stripAssetRootPrefixForTest('1300-skills/0010-git-workflow-expert/SKILL.md', rule),
       ).toBe('0010-git-workflow-expert/SKILL.md');
     });
 

@@ -150,8 +150,9 @@ export function validateConfig(config: unknown): {
             continue;
           }
 
-          for (const [index, customAdapter] of (adapterConfig as unknown[] | undefined)?.entries() ||
-            []) {
+          for (const [index, customAdapter] of (
+            adapterConfig as unknown[] | undefined
+          )?.entries() || []) {
             if (!customAdapter || typeof customAdapter !== 'object') {
               errors.push(`adapters.custom[${index}] must be an object`);
               continue;

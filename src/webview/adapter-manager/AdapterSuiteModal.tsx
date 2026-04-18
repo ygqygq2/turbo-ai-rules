@@ -171,9 +171,7 @@ export const AdapterSuiteModal: React.FC<AdapterSuiteModalProps> = ({
                   <i className="codicon codicon-check-all"></i>
                   {t('common.enabled')}
                 </span>
-                <span className="checkbox-description">
-                  {t('adapterManager.suiteEnabledDesc')}
-                </span>
+                <span className="checkbox-description">{t('adapterManager.suiteEnabledDesc')}</span>
               </label>
             </div>
           </div>

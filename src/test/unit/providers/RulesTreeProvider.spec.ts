@@ -277,9 +277,14 @@ describe('RulesTreeProvider 单元测试', () => {
         },
       ]);
 
-      vi.spyOn((rulesTreeProvider as any).selectionStateManager, 'initializeState').mockResolvedValue(
-        ['rules/101-python.mdc', 'rules/102-typescript.mdc', 'skills/0001-python-development.mdc'],
-      );
+      vi.spyOn(
+        (rulesTreeProvider as any).selectionStateManager,
+        'initializeState',
+      ).mockResolvedValue([
+        'rules/101-python.mdc',
+        'rules/102-typescript.mdc',
+        'skills/0001-python-development.mdc',
+      ]);
       vi.spyOn((rulesTreeProvider as any).selectionStateManager, 'getSelection').mockReturnValue([
         'rules/101-python.mdc',
         'rules/102-typescript.mdc',

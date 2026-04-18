@@ -5,8 +5,8 @@
 import * as vscode from 'vscode';
 
 import type {
-  AdapterSuiteConfig,
   AdaptersConfig,
+  AdapterSuiteConfig,
   CustomAdapterConfig,
   ExtensionConfig,
   ParserConfig,

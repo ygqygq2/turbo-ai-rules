@@ -177,14 +177,18 @@ export const AdapterManager: React.FC = () => {
     (suite) =>
       suite.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (suite.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      suite.adapterIds.some((adapterId) => adapterId.toLowerCase().includes(searchQuery.toLowerCase())),
+      suite.adapterIds.some((adapterId) =>
+        adapterId.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
   );
 
   const filteredCustomSuites = customSuites.filter(
     (suite) =>
       suite.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (suite.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      suite.adapterIds.some((adapterId) => adapterId.toLowerCase().includes(searchQuery.toLowerCase())),
+      suite.adapterIds.some((adapterId) =>
+        adapterId.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
   );
 
   const suiteMemberOptions: SuiteMemberOption[] = [

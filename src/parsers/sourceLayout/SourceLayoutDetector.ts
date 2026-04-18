@@ -1,13 +1,13 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 
-import type { SourceLayout } from './types';
 import {
   LEGACY_ROOT_DIRS,
   splitNormalizedDirectoryParts,
   splitRawDirectoryParts,
   TYPE_FIRST_ROOT_DIRS,
 } from './shared';
+import type { SourceLayout } from './types';
 
 export class SourceLayoutDetector {
   public static async detect(dirPath: string): Promise<SourceLayout> {

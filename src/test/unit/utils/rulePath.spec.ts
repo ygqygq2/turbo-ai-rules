@@ -45,6 +45,13 @@ describe('rulePath 工具函数', () => {
       expectPathToBe(result, 'rules/backend/001-nodejs.md');
     });
 
+    it('应在 Windows 风格绝对路径下统一返回 POSIX 分隔符', () => {
+      const sourceRoot = getSourceRootPath(sourceId).replace(/\//g, '\\');
+      const absolutePath = `${sourceRoot}\\rules\\backend\\001-nodejs.md`;
+      const result = toRelativePath(absolutePath, sourceId);
+      expect(result).toBe('rules/backend/001-nodejs.md');
+    });
+
     it('应返回不匹配的路径（向后兼容）', () => {
       const otherPath = '/some/other/path/rules/001.md';
       const result = toRelativePath(otherPath, sourceId);

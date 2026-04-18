@@ -213,7 +213,7 @@ describe('rule-sync-page store', () => {
     expect(nestedDir?.expanded).toBe(true);
     expect(state.selectedPathsBySource.source1).toEqual(['.project-rules/rules/react.md']);
   });
-  
+
   it('kind 过滤后源统计应只计算当前可见类型的已选项', () => {
     const store = useRuleSyncPageStore.getState();
 
@@ -271,8 +271,9 @@ describe('rule-sync-page store', () => {
     store.setKindFilter('rule');
 
     const filteredTree = store.getFilteredTreeNodes('source1');
-    const visiblePaths = filteredTree.flatMap((node) =>
-      node.children?.map((child) => child.path) || (node.type === 'file' ? [node.path] : []),
+    const visiblePaths = filteredTree.flatMap(
+      (node) =>
+        node.children?.map((child) => child.path) || (node.type === 'file' ? [node.path] : []),
     );
     const selectedPaths = useRuleSyncPageStore.getState().selectedPathsBySource.source1;
     const visibleSelectedCount = visiblePaths.filter((path) => selectedPaths.includes(path)).length;

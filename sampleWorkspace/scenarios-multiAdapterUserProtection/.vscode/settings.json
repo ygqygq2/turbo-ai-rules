@@ -9,20 +9,18 @@
       "autoSync": false
     }
   ],
-  "turbo-ai-rules.adapters": {
-    "custom": [
-      {
-        "id": "test-directory-adapter",
-        "name": "Test Directory Adapter",
-        "enabled": true,
-        "outputType": "directory",
-        "outputPath": "rules",
-        "fileExtension": ".md",
-        "sortBy": "priority",
-        "sortOrder": "asc",
-        "enableUserRules": true,
-        "isRuleType": true
-      }
-    ]
-  }
+  "turbo-ai-rules.adapters": {},
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "test-directory-adapter",
+      "name": "Test Directory Adapter",
+      "enabled": true,
+      "outputType": "directory",
+      "outputPath": "rules",
+      "sortBy": "priority",
+      "sortOrder": "asc",
+      "enableUserRules": true,
+      "isRuleType": true
+    }
+  ]
 }

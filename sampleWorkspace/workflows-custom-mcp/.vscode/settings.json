@@ -1,0 +1,33 @@
+{
+  "turbo-ai-rules.sync.onStartup": false,
+  "turbo-ai-rules.sources": [
+    {
+      "id": "ai-rules-mcp",
+      "name": "AI Rules MCP",
+      "gitUrl": "https://github.com/ygqygq2/ai-rules.git",
+      "branch": "main",
+      "subPath": "/mcp",
+      "enabled": true,
+      "authentication": {
+        "type": "none"
+      }
+    }
+  ],
+  "turbo-ai-rules.adapters": {},
+  "turbo-ai-rules.adapters.custom": [
+    {
+      "id": "mcp-json",
+      "name": "MCP JSON",
+      "enabled": true,
+      "outputPath": ".vscode/mcp.json",
+      "outputType": "merge-json",
+      "enableUserRules": false,
+      "fileExtensions": [
+        ".json"
+      ],
+      "sourceIds": [
+        "ai-rules-mcp"
+      ]
+    }
+  ]
+}

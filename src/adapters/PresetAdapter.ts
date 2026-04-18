@@ -4,8 +4,8 @@
  * 支持规则源标记，实现部分更新
  */
 
-import * as path from 'path';
 import yaml from 'js-yaml';
+import * as path from 'path';
 
 import type { RelativePathBase } from '../types/config';
 import type { AssetKind, ParsedRule } from '../types/rules';

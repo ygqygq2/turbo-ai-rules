@@ -413,6 +413,98 @@ describe('FileGenerator', () => {
     expect(fs.existsSync(path.join(tempDir, '.skills', '0001-python-development.mdc'))).toBe(false);
   });
 
+  it('should cleanup orphan files when directory adapters generate index files', async () => {
+    generator.initializeAdapters({
+      cursor: { enabled: false },
+      copilot: { enabled: false },
+      continue: { enabled: false },
+      custom: [
+        {
+          id: 'skills-dir-with-index',
+          name: 'Skills Dir With Index',
+          enabled: true,
+          outputPath: '.skills',
+          outputType: 'directory',
+          generateIndex: true,
+          preserveDirectoryStructure: false,
+          enableUserRules: false,
+        },
+      ],
+    });
+
+    const rule: ParsedRule = {
+      id: 'python-dev',
+      title: 'Python Development',
+      content: '# Python Development',
+      rawContent: '# Python Development',
+      sourceId: 's',
+      filePath: '/tmp/0001-python-development.mdc',
+      metadata: { tags: [], priority: 'low', version: '1.0.0' },
+    };
+
+    await generator.generateAll([rule], tempDir, 'priority', ['skills-dir-with-index']);
+
+    const orphanFile = path.join(tempDir, '.skills', 'old-orphan-skill.md');
+    fs.writeFileSync(orphanFile, '# Orphan Skill\n');
+    expect(fs.existsSync(orphanFile)).toBe(true);
+
+    const result = await generator.generateAll([rule], tempDir, 'priority', [
+      'skills-dir-with-index',
+    ]);
+
+    expect(result.failures).toHaveLength(0);
+    expect(fs.existsSync(path.join(tempDir, '.skills', 'index.md'))).toBe(true);
+    expect(fs.existsSync(path.join(tempDir, '.skills', '0001-python-development.mdc'))).toBe(true);
+    expect(fs.existsSync(orphanFile)).toBe(false);
+  });
+
+  it('should cleanup orphan directories when skill adapters regenerate with the same selection', async () => {
+    generator.initializeAdapters({
+      cursor: { enabled: false },
+      copilot: { enabled: false },
+      continue: { enabled: false },
+      'copilot-skills': { enabled: true },
+      custom: [],
+    });
+
+    const sourceSkillDir = path.join(
+      mockState.remoteSourceRoot,
+      'skills',
+      '0012-incident-response',
+    );
+    fs.mkdirSync(sourceSkillDir, { recursive: true });
+    fs.writeFileSync(path.join(sourceSkillDir, 'SKILL.md'), '# Incident Response\n');
+    fs.writeFileSync(path.join(sourceSkillDir, 'guide.md'), 'guide');
+
+    const skillRule: ParsedRule = {
+      id: 'incident-response',
+      title: 'Incident Response',
+      content: '# Incident Response',
+      rawContent: '# Incident Response',
+      sourceId: 'remote-source',
+      filePath: path.join(sourceSkillDir, 'SKILL.md'),
+      metadata: { tags: [], priority: 'low', version: '1.0.0' },
+      kind: 'skill',
+    };
+
+    await generator.generateAll([skillRule], tempDir, 'priority', ['copilot-skills']);
+
+    const orphanDir = path.join(tempDir, '.github', 'skills', 'old-remote-skill');
+    fs.mkdirSync(orphanDir, { recursive: true });
+    fs.writeFileSync(path.join(orphanDir, 'SKILL.md'), '# Old Remote\n');
+    expect(fs.existsSync(orphanDir)).toBe(true);
+
+    const result = await generator.generateAll([skillRule], tempDir, 'priority', [
+      'copilot-skills',
+    ]);
+
+    expect(result.failures).toHaveLength(0);
+    expect(
+      fs.existsSync(path.join(tempDir, '.github', 'skills', '0012-incident-response', 'SKILL.md')),
+    ).toBe(true);
+    expect(fs.existsSync(orphanDir)).toBe(false);
+  });
+
   it('should keep preset skill directories after cleanup and remove them when deselected', async () => {
     generator.initializeAdapters({
       cursor: { enabled: false },

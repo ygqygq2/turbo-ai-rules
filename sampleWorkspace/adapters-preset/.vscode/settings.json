@@ -12,5 +12,13 @@
       }
     }
   ],
-  "turbo-ai-rules.adapters": {}
+  "turbo-ai-rules.adapters": {
+    "custom": [],
+    "cursor": {
+      "enabled": true
+    },
+    "cursor-skills": {
+      "enabled": true
+    }
+  }
 }

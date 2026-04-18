@@ -407,7 +407,12 @@ describe('AdapterManagerWebviewProvider', () => {
 
     it('应该处理 saveAll 消息', async () => {
       const handleSaveAllSpy = vi.spyOn(provider as any, 'handleSaveAll');
-      const payload = { presetAdapters: [], customAdapters: [], presetSuites: [], customSuites: [] };
+      const payload = {
+        presetAdapters: [],
+        customAdapters: [],
+        presetSuites: [],
+        customSuites: [],
+      };
 
       await (provider as any).handleMessage({ type: 'saveAll', payload });
 

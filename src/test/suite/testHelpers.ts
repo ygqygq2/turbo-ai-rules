@@ -155,6 +155,52 @@ export async function activateWorkspace(workspaceFolder: vscode.WorkspaceFolder)
   }
 }
 
+export interface ResolvedSkillAdapter {
+  id: string;
+  outputPath: string;
+  source: 'custom' | 'preset';
+}
+
+/**
+ * @description 获取当前工作区中第一个启用的 skills 适配器（兼容 custom / preset）
+ */
+export function getEnabledSkillsAdapter(
+  workspaceFolder: vscode.WorkspaceFolder,
+): ResolvedSkillAdapter | undefined {
+  const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+  const customAdapters = config.get<any[]>(CONFIG_KEYS.ADAPTERS_CUSTOM, []);
+  const customSkillsAdapter = customAdapters.find(
+    (adapter) => adapter.enabled !== false && adapter.isRuleType === false,
+  );
+
+  if (customSkillsAdapter) {
+    return {
+      id: customSkillsAdapter.id,
+      outputPath: customSkillsAdapter.outputPath,
+      source: 'custom',
+    };
+  }
+
+  const presetAdapterStates = config.get<Record<string, { enabled?: boolean }>>(
+    CONFIG_KEYS.ADAPTERS,
+    {},
+  );
+  const presetSkillsAdapter = PRESET_ADAPTERS.find(
+    (adapter) =>
+      adapter.isRuleType === false && presetAdapterStates?.[adapter.id]?.enabled === true,
+  );
+
+  if (presetSkillsAdapter) {
+    return {
+      id: presetSkillsAdapter.id,
+      outputPath: presetSkillsAdapter.filePath,
+      source: 'preset',
+    };
+  }
+
+  return undefined;
+}
+
 /**
  * @description 睡眠指定毫秒数
  * @param ms {number} 毫秒数

@@ -1,13 +1,13 @@
 import * as path from 'path';
 
 import type { AssetKind } from '../../types/rules';
-import type { SourceLayout } from './types';
 import {
   normalizeDirectoryToken,
   splitNormalizedDirectoryParts,
   splitRawDirectoryParts,
   TYPE_FIRST_ROOT_DIRS,
 } from './shared';
+import type { SourceLayout } from './types';
 
 function classifyStructuredFile(filePath: string, sourceLayout: SourceLayout): AssetKind {
   const basenameLC = path.basename(filePath).toLowerCase();
@@ -122,7 +122,10 @@ function classifyLegacyDirectory(filePath: string): AssetKind | null {
   return null;
 }
 
-export function classifyBySourceLayout(filePath: string, sourceLayout: SourceLayout): AssetKind | null {
+export function classifyBySourceLayout(
+  filePath: string,
+  sourceLayout: SourceLayout,
+): AssetKind | null {
   if (sourceLayout === 'type-first') {
     return classifyTypeFirstDirectory(filePath);
   }

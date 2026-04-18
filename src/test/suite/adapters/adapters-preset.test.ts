@@ -9,8 +9,8 @@ import * as vscode from 'vscode';
 
 import { PRESET_ADAPTERS } from '../../../adapters/PresetAdapter';
 import { CONFIG_KEYS } from '../../../utils/constants';
-import { TEST_DELAYS, TEST_TIMEOUTS } from '../testConstants';
 import { testSyncWithAdapters } from '../../helpers/testCommands';
+import { TEST_DELAYS, TEST_TIMEOUTS } from '../testConstants';
 import { sleep, switchToWorkspace } from '../testHelpers';
 
 describe('Preset Adapters Integration Tests', () => {

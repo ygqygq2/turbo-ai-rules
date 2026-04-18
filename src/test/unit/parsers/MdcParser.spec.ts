@@ -139,9 +139,7 @@ Simple content.
 
       expect(rules).toHaveLength(1);
       expect(rules[0].kind).toBe('skill');
-      expect(rules[0].relativePath).toBe(
-        path.join('1300-skills', '1301-demo-skill', 'SKILL.md'),
-      );
+      expect(rules[0].relativePath).toBe(path.join('1300-skills', '1301-demo-skill', 'SKILL.md'));
     });
   });
 });

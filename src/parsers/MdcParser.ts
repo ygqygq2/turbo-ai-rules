@@ -9,11 +9,8 @@ import yaml from 'js-yaml';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { AssetClassifier } from './AssetClassifier';
-import { SourceLayoutDetector } from './sourceLayout/SourceLayoutDetector';
 import { ErrorCodes, ParseError } from '../types/errors';
 import type { ParsedRule, RuleMetadata } from '../types/rules';
-import type { SourceLayout } from './sourceLayout/types';
 import {
   ASSET_FILE_EXTENSIONS,
   CONFIG_KEYS,
@@ -24,6 +21,9 @@ import {
 import { safeReadFile } from '../utils/fileSystem';
 import { Logger } from '../utils/logger';
 import { validateRuleId } from '../utils/validator';
+import { AssetClassifier } from './AssetClassifier';
+import { SourceLayoutDetector } from './sourceLayout/SourceLayoutDetector';
+import type { SourceLayout } from './sourceLayout/types';
 
 /**
  * 解析选项

@@ -61,7 +61,8 @@ export function buildFileTreeFromRules(rules: ParsedRule[], basePath: string): F
     // 查找子目录
     const subDirs = new Set<string>();
     for (const dirPath of dirMap.keys()) {
-      const isSubDir = currentPath === '.' ? dirPath !== '.' : dirPath.startsWith(currentPath + path.sep);
+      const isSubDir =
+        currentPath === '.' ? dirPath !== '.' : dirPath.startsWith(currentPath + path.sep);
 
       if (isSubDir) {
         const relativePart =

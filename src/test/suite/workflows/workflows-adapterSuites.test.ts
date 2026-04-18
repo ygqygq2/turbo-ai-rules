@@ -14,6 +14,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { CONFIG_KEYS } from '../../../utils/constants';
+import { testSyncWithAdapters } from '../../helpers/testCommands';
 import { TEST_DELAYS, TEST_TIMEOUTS } from '../testConstants';
 import {
   clearSelectionStates,
@@ -22,7 +23,6 @@ import {
   sleep,
   switchToWorkspace,
 } from '../testHelpers';
-import { testSyncWithAdapters } from '../../helpers/testCommands';
 
 describe('Adapter Suites Workflow Tests', () => {
   let workspaceFolder: vscode.WorkspaceFolder;

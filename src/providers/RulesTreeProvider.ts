@@ -504,7 +504,9 @@ export class RulesTreeProvider implements vscode.TreeDataProvider<RuleTreeItem> 
         await this.selectionStateManager.initializeState(source.id, totalCount, undefined);
         // 使用 getSelectionCount() 方法，它会正确处理空数组（全选）的情况
         const selectedPaths = this.selectionStateManager.getSelection(source.id);
-        selectedCount = selectedPaths.filter((selectedPath) => visibleRulePaths.has(selectedPath)).length;
+        selectedCount = selectedPaths.filter((selectedPath) =>
+          visibleRulePaths.has(selectedPath),
+        ).length;
       } catch (error) {
         Logger.warn('Failed to get rule selection', { sourceId: source.id, error });
         // 出错时默认全选

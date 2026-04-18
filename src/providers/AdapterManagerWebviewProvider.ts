@@ -115,18 +115,6 @@ function toCustomAdapterFormat(outputType: OutputType): CustomAdapterData['forma
   }
 }
 
-function toCustomAdapterOutputType(format: CustomAdapterData['format']): OutputType {
-  switch (format) {
-    case 'directory':
-      return 'directory';
-    case 'merge-json':
-      return 'merge-json';
-    case 'single-file':
-    default:
-      return 'file';
-  }
-}
-
 function getCustomAdapterDataByOutputType(
   adapter: CustomAdapterConfig,
 ): Pick<CustomAdapterData, 'singleFileTemplate' | 'directoryStructure'> {
@@ -468,15 +456,16 @@ export class AdapterManagerWebviewProvider extends BaseWebviewProvider {
     const presetSuiteIds = new Set(this.getDefaultAdapterSuites().map((suite) => suite.id));
     const configuredPresetSuites = configuredSuites.filter((suite) => presetSuiteIds.has(suite.id));
 
-    return mergeById<AdapterSuiteConfig>(configuredPresetSuites, this.getDefaultAdapterSuites()).map(
-      (suite) => ({
-        id: suite.id,
-        name: suite.name,
-        description: suite.description,
-        adapterIds: [...suite.adapterIds],
-        enabled: suite.enabled !== false,
-      }),
-    );
+    return mergeById<AdapterSuiteConfig>(
+      configuredPresetSuites,
+      this.getDefaultAdapterSuites(),
+    ).map((suite) => ({
+      id: suite.id,
+      name: suite.name,
+      description: suite.description,
+      adapterIds: [...suite.adapterIds],
+      enabled: suite.enabled !== false,
+    }));
   }
 
   private getCustomSuiteData(configuredSuites: AdapterSuiteConfig[]): CustomSuiteData[] {

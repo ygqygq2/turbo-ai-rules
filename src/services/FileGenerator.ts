@@ -320,7 +320,8 @@ export class FileGenerator {
     }
 
     // 写入文件（传递 adapter 和 rules 用于判断输出类型和清理旧文件）
-    const fullPath = path.join(workspaceRoot, config.filePath);
+    const targetPath = this.isDirectoryOutput(adapter) ? adapter.getFilePath() : config.filePath;
+    const fullPath = path.join(workspaceRoot, targetPath);
     await this.writeConfigFile(fullPath, config.content, adapter, effectiveRules);
 
     return config;
@@ -401,7 +402,7 @@ export class FileGenerator {
   ): Promise<void> {
     const nextGenerated = this.parseJsonObject(content, filePath);
     const managedRootKeys =
-      adapter instanceof BaseAdapter ? adapter.getManagedJsonRootKeys() ?? [] : [];
+      adapter instanceof BaseAdapter ? (adapter.getManagedJsonRootKeys() ?? []) : [];
 
     if (!fs.existsSync(filePath)) {
       await safeWriteFile(filePath, `${JSON.stringify(nextGenerated, null, 2)}\n`);
@@ -792,9 +793,7 @@ export class FileGenerator {
               } else {
                 const fileName = adapter.getOutputFileNameForRule(rule);
                 const finalPath =
-                  organizeBySource && rule.sourceId
-                    ? path.join(rule.sourceId, fileName)
-                    : fileName;
+                  organizeBySource && rule.sourceId ? path.join(rule.sourceId, fileName) : fileName;
                 filePaths.add(finalPath);
               }
             } else {

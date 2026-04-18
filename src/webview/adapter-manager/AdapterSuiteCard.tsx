@@ -31,8 +31,12 @@ export const AdapterSuiteCard: React.FC<AdapterSuiteCardProps> = ({
               <i className="codicon codicon-symbol-array"></i>
               <span>{t('adapterManager.suiteMemberCount', suite.adapterIds.length)}</span>
             </div>
-            <div className={`type-badge ${variant === 'preset' ? 'preset-suite-type' : 'custom-suite-type'}`}>
-              <i className={`codicon ${variant === 'preset' ? 'codicon-verified-filled' : 'codicon-wrench'}`}></i>
+            <div
+              className={`type-badge ${variant === 'preset' ? 'preset-suite-type' : 'custom-suite-type'}`}
+            >
+              <i
+                className={`codicon ${variant === 'preset' ? 'codicon-verified-filled' : 'codicon-wrench'}`}
+              ></i>
               <span>
                 {variant === 'preset'
                   ? t('adapterManager.presetSuites')

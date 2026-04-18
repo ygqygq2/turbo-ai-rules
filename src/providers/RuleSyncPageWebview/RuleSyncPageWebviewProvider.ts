@@ -7,12 +7,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { PRESET_ADAPTERS } from '../../adapters/PresetAdapter';
 import { ConfigManager } from '../../services/ConfigManager';
 import { GitManager } from '../../services/GitManager';
 import { RulesManager } from '../../services/RulesManager';
 import { SelectionStateManager } from '../../services/SelectionStateManager';
 import type { AdapterConfig, AdapterSuiteConfig } from '../../types/config';
-import { PRESET_ADAPTERS } from '../../adapters/PresetAdapter';
 import { mergeById } from '../../utils/configMerge';
 import { EXTENSION_ICON_PATH } from '../../utils/constants';
 import { buildFileTreeFromRules, type FileTreeNode } from '../../utils/fileTreeBuilder';

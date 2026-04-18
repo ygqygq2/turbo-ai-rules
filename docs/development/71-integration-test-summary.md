@@ -122,7 +122,7 @@ pnpm test:suite:mocha -- --grep "Workspace isolation"
 
 - [集成测试设计方案](70-integration-test-design.md)
 - [集成测试参考](72-integration-test-reference.md)
-- [测试指南](../../sampleWorkspace/TESTING_GUIDE.md)
+- [sampleWorkspace README](../../sampleWorkspace/README.md)
 - [测试覆盖率分析](61-unit-test-coverage-analysis.md)
 
 ## 📝 注意事项

@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   expandHome,
   isPathWithinBase,
+  normalizeOutputPathForDisplay,
   normalizePath,
   resolveCachePath,
   resolveConfigPath,
@@ -220,6 +221,20 @@ describe('path 单元测试', () => {
       const traversal = '/base/path/subdir/../../etc';
       const normalized = path.resolve(normalizePath(traversal));
       expect(normalized.startsWith(path.resolve(normalizePath(base)))).toBe(false);
+    });
+  });
+
+  describe('normalizeOutputPathForDisplay', () => {
+    it('应保留隐藏目录和文件的前导点', () => {
+      expect(normalizeOutputPathForDisplay('.cursor/skills')).toBe('.cursor/skills/');
+      expect(normalizeOutputPathForDisplay('.github/skills')).toBe('.github/skills/');
+      expect(normalizeOutputPathForDisplay('.cursorrules')).toBe('.cursorrules');
+    });
+
+    it('应去掉仅用于相对路径表示的前导斜杠或点斜杠', () => {
+      expect(normalizeOutputPathForDisplay('/.cursor/skills')).toBe('.cursor/skills/');
+      expect(normalizeOutputPathForDisplay('./.github/skills')).toBe('.github/skills/');
+      expect(normalizeOutputPathForDisplay('./custom/path')).toBe('custom/path/');
     });
   });
 

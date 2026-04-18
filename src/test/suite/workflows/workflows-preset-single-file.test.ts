@@ -30,6 +30,34 @@ describe('Preset Single File Workflow Tests', () => {
   let rulesManager: any;
   let selectionStateManager: any;
 
+  async function syncRulesAndWaitForSourceRules(sourceId: string): Promise<any[]> {
+    await vscode.commands.executeCommand('turbo-ai-rules.syncRules');
+
+    let sourceRules: any[] = [];
+    for (let i = 0; i < 20; i++) {
+      await sleep(TEST_DELAYS.MEDIUM);
+      sourceRules = rulesManager.getRulesBySource(sourceId);
+      if (sourceRules.length > 0) {
+        break;
+      }
+    }
+
+    return sourceRules;
+  }
+
+  async function generateCursorRulesAndReadContent(): Promise<string> {
+    await vscode.commands.executeCommand('turbo-ai-rules.generateRules');
+    await sleep(TEST_DELAYS.MEDIUM);
+
+    const cursorRulesPath = path.join(workspaceFolder.uri.fsPath, '.cursorrules');
+    assert.ok(await fs.pathExists(cursorRulesPath), '.cursorrules file should be generated');
+    return fs.readFile(cursorRulesPath, 'utf-8');
+  }
+
+  function countGeneratedRules(content: string): number {
+    return (content.match(/BEGIN_RULE/g) || []).length;
+  }
+
   before(async function () {
     this.timeout(TEST_TIMEOUTS.LONG);
 
@@ -216,6 +244,64 @@ describe('Preset Single File Workflow Tests', () => {
 
     // 规则数量应该一致（增量同步不应该重复）
     assert.strictEqual(secondCount, firstCount, 'Incremental sync should maintain rule count');
+  });
+
+  it('Should preserve updated selection across re-sync and regenerate correct output', async function () {
+    this.timeout(TEST_TIMEOUTS.EXTRA_LONG);
+
+    const config = vscode.workspace.getConfiguration('turbo-ai-rules', workspaceFolder.uri);
+    const sources = config.get<any[]>(CONFIG_KEYS.SOURCES, []);
+
+    if (sources.length === 0) {
+      this.skip();
+      return;
+    }
+
+    const sourceId = sources[0].id;
+    const allRules = await syncRulesAndWaitForSourceRules(sourceId);
+    assert.ok(allRules.length >= 3, 'Should have enough rules to verify selection changes');
+
+    const initiallySelectedRules = allRules.slice(0, 3);
+    const initiallySelectedPaths = initiallySelectedRules.map((rule: any) => rule.filePath);
+    selectionStateManager.updateSelection(
+      sourceId,
+      initiallySelectedPaths,
+      false,
+      workspaceFolder.uri.fsPath,
+    );
+    await selectionStateManager.persistToDisk(sourceId, workspaceFolder.uri.fsPath);
+
+    const initialContent = await generateCursorRulesAndReadContent();
+    const initialGeneratedRuleCount = countGeneratedRules(initialContent);
+    assert.ok(initialGeneratedRuleCount > 0, 'Initial generation should contain generated rules');
+
+    const updatedSelectedRules = initiallySelectedRules.slice(0, 1);
+    const updatedSelectedPaths = updatedSelectedRules.map((rule: any) => rule.filePath);
+    selectionStateManager.updateSelection(
+      sourceId,
+      updatedSelectedPaths,
+      false,
+      workspaceFolder.uri.fsPath,
+    );
+    await selectionStateManager.persistToDisk(sourceId, workspaceFolder.uri.fsPath);
+
+    await syncRulesAndWaitForSourceRules(sourceId);
+
+    const updatedContent = await generateCursorRulesAndReadContent();
+    const updatedGeneratedRuleCount = countGeneratedRules(updatedContent);
+    assert.ok(
+      updatedGeneratedRuleCount > 0,
+      'Updated generation should still contain generated rules',
+    );
+    assert.ok(
+      updatedGeneratedRuleCount < initialGeneratedRuleCount,
+      'Updated generation should contain fewer generated rule blocks after selection is reduced',
+    );
+    assert.notStrictEqual(
+      updatedContent,
+      initialContent,
+      'Output should change after selection updates',
+    );
   });
 
   it('Should handle empty selection gracefully', async function () {

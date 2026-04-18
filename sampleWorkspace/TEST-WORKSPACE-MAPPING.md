@@ -26,11 +26,11 @@
 
 | 工作空间 | 测试文件 | 说明 |
 |---------|---------|------|
-| `adapters-custom/` | `adapters/adapters-custom.test.ts` | 自定义适配器 |
+| `adapters-custom-rule/` | `adapters/adapters-custom-rule.test.ts` | 自定义规则适配器 |
+| `adapters-custom-skills/` | `adapters/adapters-custom-skills.test.ts` | 自定义技能适配器 |
 | `adapters-preset/` | `adapters/adapters-preset.test.ts` | 预设适配器 |
-| `adapters-skills/` | `adapters/adapters-skills.test.ts` | 技能卡适配器 |
 
-### 📂 Scenarios 类别 (10 个工作空间 → 8 个测试文件)
+### 📂 Scenarios 类别 (11 个工作空间 → 8 个测试文件 + 1 手动夹具)
 
 | 工作空间 | 测试文件 | 说明 |
 |---------|---------|------|
@@ -44,8 +44,9 @@
 | `scenarios-workspaceIsolation-ws2/` | `scenarios/scenarios-workspaceIsolation-shared.test.ts` | 共享测试文件 |
 | `scenarios-workspaceSwitching-ws1/` | `scenarios/scenarios-workspaceSwitching-shared.test.ts` | 共享测试文件 |
 | `scenarios-workspaceSwitching-ws2/` | `scenarios/scenarios-workspaceSwitching-shared.test.ts` | 共享测试文件 |
+| `scenarios-multiAdapterUserProtection/` | `（手动夹具工作空间）` | 多适配器 + 用户保护场景，当前无独立自动测试 |
 
-### 📂 Workflows 类别 (9 个工作空间 → 8 个测试文件)
+### 📂 Workflows 类别 (14 个工作空间 → 10 个测试文件 + 3 手动/预留工作空间)
 
 | 工作空间 | 测试文件 | 说明 |
 |---------|---------|------|
@@ -53,12 +54,17 @@
 | `workflows-generateRules/` | `workflows/workflows-generateRules.test.ts` | 生成规则 |
 | `workflows-adapter-suites/` | `workflows/workflows-adapterSuites.test.ts` | 适配器综合体 |
 | `workflows-multiSource/` | `workflows/workflows-multiSource.test.ts` | 多源管理 |
+| `workflows-preset-single-file/` | `workflows/workflows-preset-single-file.test.ts` | 预设单文件工作流 |
+| `workflows-preset-directory/` | `（预留工作空间）` | 目录型 preset 工作流夹具，当前无独立自动测试 |
+| `workflows-preset-skills/` | `workflows/workflows-preset-skills.test.ts` | 预设 skills 工作流 |
+| `workflows-custom-single-file/` | `（预留工作空间）` | 单文件 custom 工作流夹具，当前无独立自动测试 |
+| `workflows-custom-directory/` | `（预留工作空间）` | 目录型 custom 工作流夹具，当前无独立自动测试 |
+| `workflows-custom-skills/` | `workflows/workflows-custom-skills.test.ts` | 自定义 skills 工作流 |
+| `workflows-custom-mcp/` | `workflows/workflows-custom-mcp.test.ts` | 自定义 MCP merge-json 工作流 |
+| `workflows-custom-user-rules/` | `workflows/workflows-custom-user-rules.test.ts` | 自定义适配器 + 用户规则 |
 | `workflows-ruleSelection/` | `workflows/workflows-ruleSelection.test.ts` | 规则选择 |
-| `workflows-skills/` | `workflows/workflows-skills.test.ts` | 技能卡流程 |
 | `workflows-syncRules/` | `workflows/workflows-syncRules.test.ts` | 同步规则 |
-| `workflows-userRules/` | `workflows/workflows-userRules.test.ts` | 用户规则 |
-| `workflows-userSkills/` | `workflows/workflows-userSkills.test.ts` | 用户技能卡 |
-| `workflows-claude-composite/` | `（手动综合测试工作空间）` | 原始 rules 同步 + Claude 综合适配器 |
+| `workflows-claude-composite/` | `workflows/workflows-claude-composite.test.ts` | Claude commands / agents / hooks / settings 综合工作流 |
 
 ### 📂 Rules 类别 (5 个示例工作空间)
 
@@ -77,9 +83,9 @@
 | Commands | 6 | 5 | 1 (addSource) |
 | Adapters | 3 | 3 | 0 |
 | Scenarios | 10 | 8 | 2 (isolation, switching) |
-| Workflows | 9 | 8 | 0 |
+| Workflows | 10 | 10 | 0 |
 | Rules | 5 | 0 | - |
-| **总计** | **33** | **24** | **3** |
+| **总计** | **34** | **26** | **3** |
 
 ## 🔍 共享测试说明
 
@@ -137,4 +143,4 @@ TEST_FILE=workflows/workflows-cursor pnpm test:suite:mocha:file
 
 ---
 
-*此文档由测试重组脚本自动生成和维护*
+*此文档需要与 `test.code-workspace` 和 `src/test/suite/**` 保持同步。*

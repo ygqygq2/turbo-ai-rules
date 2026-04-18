@@ -4,12 +4,12 @@ import { devtools } from 'zustand/middleware';
 import { createWebviewRPC } from '../common/messaging';
 import {
   buildTree,
+  collectKinds,
   expandTreeForSelectedPaths,
+  filterTreeByKind,
   getAllFilePaths,
   getDirectoryFilePaths,
   toggleNode as toggleTreeNode,
-  collectKinds,
-  filterTreeByKind,
   type TreeNodeType as TreeNode,
 } from '../components/tree';
 

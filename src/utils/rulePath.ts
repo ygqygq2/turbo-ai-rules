@@ -30,14 +30,14 @@ export function toRelativePath(absolutePath: string, sourceId: string): string {
   const sourceRoot = getSourceRootPath(sourceId);
 
   // 规范化路径以处理不同平台的路径分隔符
-  const normalizedAbsPath = path.normalize(absolutePath);
-  const normalizedSourceRoot = path.normalize(sourceRoot);
+  const normalizedAbsPath = path.normalize(absolutePath).replace(/\\/g, '/');
+  const normalizedSourceRoot = path.normalize(sourceRoot).replace(/\\/g, '/');
 
   // 如果路径以源根目录开头，提取相对路径
   if (normalizedAbsPath.startsWith(normalizedSourceRoot)) {
     const relativePath = normalizedAbsPath.substring(normalizedSourceRoot.length);
-    // 移除开头的路径分隔符（Unix 的 / 或 Windows 的 \）
-    return relativePath.replace(/^[/\\]+/, '');
+    // 移除开头的路径分隔符，统一为 POSIX 风格
+    return relativePath.replace(/^\/+/, '');
   }
 
   // 如果不是以源根目录开头，返回原路径（向后兼容）

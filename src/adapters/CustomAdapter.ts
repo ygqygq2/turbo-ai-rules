@@ -3,8 +3,8 @@
  * 支持灵活的输出配置: 文件/目录、文件过滤、源组织等
  */
 
-import * as path from 'path';
 import yaml from 'js-yaml';
+import * as path from 'path';
 
 import type { CustomAdapterConfig } from '../types/config';
 import type { ParsedRule } from '../types/rules';
