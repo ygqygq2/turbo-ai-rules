@@ -2,7 +2,7 @@
 
 All notable changes to the "turbo-ai-rules" extension will be documented in this file.
 
-# [3.0.0] (Planned)
+# [3.0.0]
 
 ## ♻️ 架构升级
 
